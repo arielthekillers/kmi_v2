@@ -1,0 +1,12 @@
+# PHP and General ignores
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+.env
+uploads/*
+!uploads/.gitkeep
+data/*
+!data/.gitkeep
+kmi_v2.zip
+v1/

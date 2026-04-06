@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS kelas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    legacy_id VARCHAR(50) UNIQUE,
+    tingkat VARCHAR(10) NOT NULL,
+    abjad VARCHAR(10) NOT NULL,
+    gender ENUM('Pa', 'Pi', 'Pa+Pi') NOT NULL,
+    jumlah_murid INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nis VARCHAR(20) UNIQUE NOT NULL,
+    nama VARCHAR(100) NOT NULL,
+    kelas_id INT,
+    gender ENUM('L', 'P') NOT NULL,
+    tempat_lahir VARCHAR(50),
+    tanggal_lahir DATE,
+    nama_wali VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE SET NULL
+);

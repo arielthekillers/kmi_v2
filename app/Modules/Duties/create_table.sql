@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS duties (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    day VARCHAR(20) NOT NULL,
+    type ENUM('diwan', 'keliling') NOT NULL DEFAULT 'diwan',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
