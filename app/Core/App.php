@@ -2,15 +2,18 @@
 
 namespace App\Core;
 
-class App {
+class App
+{
     protected $router;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->router = new Router();
         $this->registerRoutes();
     }
 
-    protected function registerRoutes() {
+    protected function registerRoutes()
+    {
         // Root Route
         $this->router->get('/', ['App\Controllers\DashboardController', 'index']);
 
@@ -32,7 +35,8 @@ class App {
         $this->router->get('/avatar', ['App\Controllers\MediaController', 'avatar']);
         $this->router->get('/tvshowcase', ['App\Controllers\TvShowcaseController', 'index']);
         $this->router->get('/api/tv-data', ['App\Controllers\TvShowcaseController', 'apiData']);
-        
+        $this->router->post('/tvshowcase/upload-audio', ['App\Controllers\TvShowcaseController', 'uploadAudio']);
+
         // Subjects Routes
         $this->router->get('/subjects', ['App\Controllers\SubjectController', 'index']);
         $this->router->post('/subjects/store', ['App\Controllers\SubjectController', 'store']);
@@ -42,6 +46,7 @@ class App {
         $this->router->get('/teachers', ['App\Controllers\TeacherController', 'index']);
         $this->router->post('/teachers/store', ['App\Controllers\TeacherController', 'store']);
         $this->router->get('/teachers/delete', ['App\Controllers\TeacherController', 'delete']);
+        $this->router->post('/teachers/reset-password', ['App\Controllers\TeacherController', 'resetPassword']);
 
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);
@@ -80,7 +85,8 @@ class App {
         $this->router->get('/attendance/report', ['App\Controllers\AttendanceController', 'report']);
     }
 
-    public function run() {
+    public function run()
+    {
         echo $this->router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
     }
 }

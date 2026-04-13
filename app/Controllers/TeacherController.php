@@ -124,4 +124,66 @@ class TeacherController extends Controller {
         }
         $this->redirect('/teachers');
     }
+
+    public function resetPassword() {
+        require_admin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') $this->redirect('/teachers');
+        csrf_validate_token();
+
+        $id = $_POST['id'] ?? '';
+        if (empty($id)) {
+            add_flash('ID pengajar tidak ditemukan.', 'error');
+            $this->redirect('/teachers');
+        }
+
+        // Generate random 6-digit password
+        $newPassword = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+
+            // Fetch teacher info — hp stored in users.hp (check both tables)
+            $stmt = $db->prepare("SELECT nama, hp FROM users WHERE id = ?");
+            $stmt->execute([$id]);
+            $teacher = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$teacher) {
+                add_flash('Pengajar tidak ditemukan.', 'error');
+                $this->redirect('/teachers');
+            }
+
+            // Save new hashed + plain password
+            $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
+            $upd->execute([$hashedPassword, $newPassword, $id]);
+
+            // Build WA link
+            $hp = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
+            if ($hp && substr($hp, 0, 1) === '0') $hp = '62' . substr($hp, 1);
+
+            require_once __DIR__ . '/../../helpers/utilities.php';
+            $loginUrl = url('/login');
+            $waMsg  = "Assalamu'alaikum Wr. Wb.\n\nBerikut akun antum untuk login di KMI App:\n\n";
+            $waMsg .= "Username: " . ($teacher['hp'] ?? '-') . "\n";
+            $waMsg .= "Password: " . $newPassword . "\n\n";
+            $waMsg .= "Link Login: " . $loginUrl . "\n\n";
+            $waMsg .= "Mohon dijaga kerahasiaannya.\n\nSyukron";
+            $waLink = $hp ? "https://wa.me/{$hp}?text=" . rawurlencode($waMsg) : null;
+
+            // Session already started by auth helpers — just write to it
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            $_SESSION['reset_result'] = [
+                'nama'     => $teacher['nama'],
+                'hp'       => $teacher['hp'] ?? '-',
+                'password' => $newPassword,
+                'wa_link'  => $waLink
+            ];
+
+            add_flash('Password ' . $teacher['nama'] . ' berhasil direset.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal reset password: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect('/teachers');
+    }
 }
