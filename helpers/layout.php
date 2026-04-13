@@ -168,17 +168,82 @@ function renderHeader($title = "KMI App")
                         </button>
                     </div>
 
-                    <!-- User / Auth -->
-                    <div class="hidden md:flex items-center gap-4">
+                    <!-- User / Auth Dropdown -->
+                    <div class="hidden md:flex items-center">
                         <?php if (is_logged_in()):
                             $__user = function_exists('auth_get_current_user') ? auth_get_current_user() : null;
                             $__display_name = function_exists('auth_get_display_name') ? auth_get_display_name() : (is_array($__user) ? ($__user['nama'] ?? ($__user['username'] ?? '')) : (string)$__user);
+                            $__role = auth_get_role();
+                            $__initials = mb_strtoupper(mb_substr(trim($__display_name), 0, 1));
                         ?>
-                            <span class="text-sm text-gray-600">Halo, <strong><?= htmlspecialchars($__display_name) ?></strong></span>
-                            <?php if (auth_get_role() === 'pengajar'): ?>
-                                <a href="<?= url('/profil') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">Profil Saya</a>
-                            <?php endif; ?>
-                            <a href="<?= url('/logout') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">Logout</a>
+                        <div class="relative" id="user-dropdown-wrapper">
+                            <!-- Trigger -->
+                            <button onclick="toggleUserDropdown()"
+                                    class="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition-colors group"
+                                    aria-haspopup="true" aria-expanded="false" id="user-dropdown-btn">
+                                <!-- Avatar circle -->
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                                    <?= htmlspecialchars($__initials) ?>
+                                </div>
+                                <div class="text-left">
+                                    <div class="text-sm font-semibold text-gray-800 leading-none"><?= htmlspecialchars($__display_name) ?></div>
+                                    <div class="text-[10px] text-gray-400 leading-tight capitalize mt-0.5"><?= htmlspecialchars($__role) ?></div>
+                                </div>
+                                <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="user-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+
+                            <!-- Dropdown Panel -->
+                            <div id="user-dropdown-panel"
+                                 class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 origin-top-right"
+                                 role="menu">
+
+                                <!-- User info header -->
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <div class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($__display_name) ?></div>
+                                    <div class="text-xs text-gray-500 capitalize"><?= htmlspecialchars($__role) ?></div>
+                                </div>
+
+                                <?php if ($__role === 'pengajar'): ?>
+                                <!-- Update Profil -->
+                                <a href="<?= url('/profil') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    Update Profil
+                                </a>
+                                <?php endif; ?>
+
+                                <?php if ($__role === 'admin'): ?>
+                                <!-- Settings submenu -->
+                                <div class="relative group/settings">
+                                    <button class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <span class="flex-1 text-left">Settings</span>
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </button>
+                                    <!-- Sub-dropdown -->
+                                    <div class="hidden group-hover/settings:block absolute left-full top-0 -ml-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                                        <a href="<?= url('/settings/general') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            General
+                                        </a>
+                                        <a href="<?= url('/settings/tvshowcase') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                            TV Showcase
+                                        </a>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <div class="border-t border-gray-100 my-1"></div>
+
+                                <!-- Logout -->
+                                <a href="<?= url('/logout') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors" role="menuitem">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
                         <?php else: ?>
                             <a href="<?= url('/login') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">Login</a>
                         <?php endif; ?>
@@ -246,32 +311,41 @@ function renderFooter()
     <script>
         function initTomSelects() {
             document.querySelectorAll('select.tom-select').forEach((el) => {
-                if (el.tomselect) return; // Already initialized
-                
-                // Check if it's in a hidden container (like a modal) that is currently not displayed
-                // TomSelect needs visibility to calculate width correctly, but usually works okay.
-                // We'll proceed.
-                
+                if (el.tomselect) return;
                 new TomSelect(el, {
                     create: false,
-                    dropdownParent: 'body', // Fix z-index clipping
-                    sortField: {
-                        field: "text",
-                        direction: "asc"
-                    },
+                    dropdownParent: 'body',
+                    sortField: { field: "text", direction: "asc" },
                     onInitialize: function() {
-                        // Fix for Tailwind resets
                         this.wrapper.classList.remove('form-control');
-                        this.wrapper.style.display = 'block'; // Ensure wrapper is block
-                        // Remove Tailwind border/shadow classes copied from select to avoid double border
+                        this.wrapper.style.display = 'block';
                         this.wrapper.classList.remove('border', 'border-gray-300', 'shadow-sm', 'rounded-md', 'p-2');
                     }
                 });
             });
         }
-        
-        // Initialize on load
         document.addEventListener('DOMContentLoaded', initTomSelects);
+
+        // ── User dropdown ──────────────────────────────────────────────
+        function toggleUserDropdown() {
+            const panel   = document.getElementById('user-dropdown-panel');
+            const chevron = document.getElementById('user-chevron');
+            if (!panel) return;
+            const isOpen = !panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('user-dropdown-wrapper');
+            const panel   = document.getElementById('user-dropdown-panel');
+            if (wrapper && panel && !wrapper.contains(e.target)) {
+                panel.classList.add('hidden');
+                const chevron = document.getElementById('user-chevron');
+                if (chevron) chevron.style.transform = '';
+            }
+        });
     </script>
     </body>
 
