@@ -10,6 +10,7 @@ class TvShowcaseController extends Controller {
         // Just render the tvshowcase view. Note it lacks header/footer so we 
         // will let it render completely independently.
         require_once __DIR__ . '/../../helpers/utilities.php'; // ensure url() is available
+        header('Content-Type: text/html; charset=UTF-8');
         extract([]); 
         require_once __DIR__ . '/../Views/tvshowcase.php';
     }
