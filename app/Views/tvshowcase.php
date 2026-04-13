@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -663,7 +663,7 @@
 
     <!-- Audio Player -->
     <audio id="bgm" loop>
-        <source src="<?= url('/sound/bgm.mp3') ?>" type="audio/mpeg">
+        <source src="<?= url('/uploads/bgm.mp3') ?>" type="audio/mpeg">
     </audio>
 
     <!-- Music Control -->
@@ -1676,7 +1676,9 @@
             update();
         }
 
-        function toggleMusic(forcePlay = false) {
+        let bgmPlayingPromise = null;
+
+        async function toggleMusic(forcePlay = false) {
             const bgm = document.getElementById('bgm');
             const btn = document.getElementById('music-toggle');
             const iconPlay = document.getElementById('icon-play');
@@ -1686,8 +1688,13 @@
             if (!bgm) return;
 
             if (forcePlay || bgm.paused) {
-                bgm.volume = 0.5;
-                bgm.play().then(() => {
+                try {
+                    bgm.volume = 0.5;
+                    // Store the promise to track state
+                    bgmPlayingPromise = bgm.play();
+                    
+                    await bgmPlayingPromise;
+                    
                     iconPlay.classList.add('hidden');
                     iconPause.classList.remove('hidden');
                     btn.classList.add('bg-indigo-600', 'text-white', 'shadow-indigo-500/50');
@@ -1695,10 +1702,22 @@
                     textSpan.textContent = 'Pause Music';
                     textSpan.classList.add('text-white');
                     textSpan.classList.remove('text-slate-800');
-                }).catch(e => {
+                } catch (e) {
                     console.error("Audio play failed or requires interaction", e);
-                });
+                    bgmPlayingPromise = null;
+                }
             } else {
+                // If there's an active play promise, wait for it before pausing
+                if (bgmPlayingPromise) {
+                    try {
+                        await bgmPlayingPromise;
+                    } catch (e) {
+                        // ignore play failure
+                    } finally {
+                        bgmPlayingPromise = null;
+                    }
+                }
+                
                 bgm.pause();
                 iconPlay.classList.remove('hidden');
                 iconPause.classList.add('hidden');

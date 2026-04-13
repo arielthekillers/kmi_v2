@@ -88,7 +88,7 @@ $limitLow       = $effectiveMaxMB < 20;
                             <div class="text-sm font-semibold text-green-800">BGM aktif — bgm.mp3</div>
                             <div class="text-xs text-green-600"><?= $bgmSize ?> &bull; Diperbarui <?= $bgmMtime ?></div>
                         </div>
-                        <a href="<?= url('/sound/bgm.mp3') ?>" target="_blank"
+                        <a href="<?= url('/uploads/bgm.mp3') ?>" target="_blank"
                            class="ml-auto text-xs text-green-700 hover:text-green-900 underline">Putar</a>
                     </div>
                     <?php else: ?>

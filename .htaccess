@@ -7,11 +7,18 @@ php_value max_execution_time 120
 
 # ── Disable compression for audio files ───────────────────────────────
 # Audio files are already compressed — gzipping them causes ERR_CONTENT_DECODING_FAILED
-<IfModule mod_deflate.c>
-    SetEnvIfNoCase Request_URI \.(mp3|ogg|wav|m4a|aac|flac)$ no-gzip dont-vary
+# On LiteSpeed, E=no-gzip:1 is the most reliable way to disable compression.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule \.(mp3|ogg|wav|m4a|aac|flac|webm)$ - [E=no-gzip:1]
 </IfModule>
+
+<IfModule mod_deflate.c>
+    SetEnvIfNoCase Request_URI \.(mp3|ogg|wav|m4a|aac|flac|webm)$ no-gzip dont-vary
+</IfModule>
+
 <IfModule mod_headers.c>
-    <FilesMatch "\.(mp3|ogg|wav|m4a|aac|flac)$">
+    <FilesMatch "\.(mp3|ogg|wav|m4a|aac|flac|webm)$">
         Header set Cache-Control "public, max-age=86400"
         Header unset Content-Encoding
     </FilesMatch>

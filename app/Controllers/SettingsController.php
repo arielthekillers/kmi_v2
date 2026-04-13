@@ -17,7 +17,7 @@ class SettingsController extends Controller {
         require_admin();
 
         // Check if a BGM file already exists
-        $bgmPath = __DIR__ . '/../../sound/bgm.mp3';
+        $bgmPath = __DIR__ . '/../../uploads/bgm.mp3';
         $bgmExists = file_exists($bgmPath);
         $bgmSize   = $bgmExists ? round(filesize($bgmPath) / 1024 / 1024, 2) . ' MB' : null;
         $bgmMtime  = $bgmExists ? date('d M Y, H:i', filemtime($bgmPath)) : null;
@@ -70,11 +70,11 @@ class SettingsController extends Controller {
             $this->redirect('/settings/tvshowcase');
         }
 
-        $targetDir = __DIR__ . '/../../sound/';
+        $targetDir = __DIR__ . '/../../uploads/';
         if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
 
         if (!move_uploaded_file($file['tmp_name'], $targetDir . 'bgm.mp3')) {
-            add_flash('Gagal menyimpan file. Periksa permission folder sound/.', 'error');
+            add_flash('Gagal menyimpan file. Periksa permission folder uploads/.', 'error');
             $this->redirect('/settings/tvshowcase');
         }
 
