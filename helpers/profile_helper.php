@@ -131,14 +131,24 @@ function get_teacher_biodata($teacherId) {
     
     // Try by numeric ID
     if (is_numeric($teacherId)) {
-        $sql = "SELECT u.*, tp.*, u.id as user_id, u.nama as nama 
+        $sql = "SELECT u.*, tp.*, u.id as user_id, u.nama as nama, 
+                       tp.phone as hp, tp.gender as jenis_kelamin, 
+                       tp.birth_place as tempat_lahir, tp.birth_date as tanggal_lahir,
+                       tp.address as alamat, tp.education as pendidikan_terakhir,
+                       tp.year_graduated as tahun_lulus, tp.father_name as nama_ayah,
+                       tp.mother_name as nama_ibu, tp.nip as nik
                 FROM users u 
                 LEFT JOIN teacher_profiles tp ON u.id = tp.user_id 
                 WHERE u.id = ?";
         $stmt = $db->query($sql, [$teacherId]);
     } else {
         // Try by legacy_id
-        $sql = "SELECT u.*, tp.*, u.id as user_id, u.nama as nama 
+        $sql = "SELECT u.*, tp.*, u.id as user_id, u.nama as nama,
+                       tp.phone as hp, tp.gender as jenis_kelamin, 
+                       tp.birth_place as tempat_lahir, tp.birth_date as tanggal_lahir,
+                       tp.address as alamat, tp.education as pendidikan_terakhir,
+                       tp.year_graduated as tahun_lulus, tp.father_name as nama_ayah,
+                       tp.mother_name as nama_ibu, tp.nip as nik
                 FROM users u 
                 LEFT JOIN teacher_profiles tp ON u.id = tp.user_id 
                 WHERE u.legacy_id = ?";
