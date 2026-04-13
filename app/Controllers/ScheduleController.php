@@ -168,14 +168,8 @@ class ScheduleController extends Controller {
         $days = ['Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis'];
         $hours = range(1, 7);
 
-        $myScheduleList = $scheduleModel->getByTeacher($currentUserId);
-        $mySchedule = [];
-        foreach ($myScheduleList as $row) {
-             $mySchedule[$row['day']][$row['hour']] = [
-                 'mapel' => $row['subject_id'],
-                 'kelas' => $row['kelas_id']
-             ];
-        }
+        // getByTeacher() already returns a nested [$day][$hour] => ['mapel'=>..., 'kelas'=>...] array
+        $mySchedule = $scheduleModel->getByTeacher($currentUserId);
 
         $this->view('schedule/my_schedule', [
             'kelasData' => $kelasData,
