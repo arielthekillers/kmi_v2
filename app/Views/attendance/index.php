@@ -49,7 +49,7 @@
         }
         ksort($slotsByJam);
         
-        $firstJam = array_key_first($slotsByJam);
+        reset($slotsByJam); $firstJam = key($slotsByJam);
         $activeJam = $_GET['jam'] ?? $firstJam;
         if (!isset($slotsByJam[$activeJam])) $activeJam = $firstJam;
     ?>
@@ -62,12 +62,16 @@
                     $doneCount = 0;
                     foreach($slots as $s) if(!empty($s['absensi'])) $doneCount++;
                     $isComplete = $doneCount === $count;
-                    $indicatorColor = $isComplete ? 'bg-green-500' : ($doneCount > 0 ? 'bg-yellow-500' : 'bg-gray-300');
+                    $badgeClass = $isComplete
+                        ? 'bg-green-100 text-green-700 ring-1 ring-green-400'
+                        : ($doneCount > 0
+                            ? 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-400'
+                            : 'bg-gray-100 text-gray-500 ring-1 ring-gray-300');
                 ?>
                     <a href="?date=<?= htmlspecialchars($selectedDate) ?>&jam=<?= $jam ?>" 
                        class="<?= $isActive ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
                         Jam ke-<?= $jam ?>
-                        <span class="inline-flex items-center justify-center h-5 w-5 rounded-full text-xs text-white <?= $indicatorColor ?>">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $badgeClass ?>">
                             <?= $doneCount ?>/<?= $count ?>
                         </span>
                     </a>
