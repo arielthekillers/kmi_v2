@@ -1,3 +1,22 @@
+# ── PHP Upload Limits ─────────────────────────────────────────────────
+# Required for BGM audio uploads (override server defaults)
+php_value upload_max_filesize 32M
+php_value post_max_size 32M
+php_value memory_limit 128M
+php_value max_execution_time 120
+
+# ── Disable compression for audio files ───────────────────────────────
+# Audio files are already compressed — gzipping them causes ERR_CONTENT_DECODING_FAILED
+<IfModule mod_deflate.c>
+    SetEnvIfNoCase Request_URI \.(mp3|ogg|wav|m4a|aac|flac)$ no-gzip dont-vary
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "\.(mp3|ogg|wav|m4a|aac|flac)$">
+        Header set Cache-Control "public, max-age=86400"
+        Header unset Content-Encoding
+    </FilesMatch>
+</IfModule>
+
 RewriteEngine On
 
 # Redirect Trailing Slashes If Not A Folder...

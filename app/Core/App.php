@@ -35,7 +35,11 @@ class App
         $this->router->get('/avatar', ['App\Controllers\MediaController', 'avatar']);
         $this->router->get('/tvshowcase', ['App\Controllers\TvShowcaseController', 'index']);
         $this->router->get('/api/tv-data', ['App\Controllers\TvShowcaseController', 'apiData']);
-        $this->router->post('/tvshowcase/upload-audio', ['App\Controllers\TvShowcaseController', 'uploadAudio']);
+
+        // Settings Routes (admin only)
+        $this->router->get('/settings/general', ['App\Controllers\SettingsController', 'general']);
+        $this->router->get('/settings/tvshowcase', ['App\Controllers\SettingsController', 'tvshowcase']);
+        $this->router->post('/settings/upload-audio', ['App\Controllers\SettingsController', 'uploadAudio']);
 
         // Subjects Routes
         $this->router->get('/subjects', ['App\Controllers\SubjectController', 'index']);

@@ -161,32 +161,9 @@ unset($_SESSION['reset_result']);
 
 <?php endif; ?>
 
-<!-- ─── Upload BGM TV Showcase ──────────────────────────────────────── -->
-<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="text-base font-semibold text-gray-900 mb-1 flex items-center gap-2">
-        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-        </svg>
-        Upload BGM TV Showcase
-    </h3>
-    <p class="text-sm text-gray-500 mb-4">Ganti background music yang diputar di TV Showcase. Format: MP3, OGG, WAV, M4A. Maks. 20 MB.</p>
-    <form action="<?= url('/tvshowcase/upload-audio') ?>" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-        <?= csrf_token_field() ?>
-        <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">File Audio</label>
-            <input type="file" name="audio" accept="audio/mpeg,audio/ogg,audio/wav,audio/mp4,audio/x-m4a,.mp3,.ogg,.wav,.m4a"
-                   required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-gray-300 rounded-lg p-1.5">
-        </div>
-        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
-            Upload
-        </button>
-    </form>
-</div>
 
 <!-- ─── Modal: Tambah/Edit Pengajar ─────────────────────────────────── -->
+
 <div id="addPengajarModal" class="hidden fixed z-50 inset-0 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="toggleModal('addPengajarModal')"></div>
