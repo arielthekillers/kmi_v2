@@ -1034,7 +1034,7 @@
             const slide = appData.activeSlides[appData.currentSlideIndex];
 
             if (slide.type === 'schedule') {
-                const gradeLabel = slide.grade ? ` â€¢ Kelas ${slide.grade}` : '';
+                const gradeLabel = slide.grade ? ` • Kelas ${slide.grade}` : '';
                 badge.textContent = `Jam Ke-${slide.hour}${gradeLabel} (${slide.page}/${slide.totalPages})`;
             } else if (slide.type === 'break') {
                 // Update badge for break time
@@ -1065,19 +1065,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>`;
                         breakMessage = 'Waktu Istirahat I';
-                        breakSubmessage = '30 Menit â€¢ 08:30 - 09:00';
+                        breakSubmessage = '30 Menit • 08:30 - 09:00';
                     } else if (slide.breakType === 'istirahat2') {
                         breakIcon = `<svg class="w-20 h-20 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>`;
                         breakMessage = 'Waktu Istirahat II';
-                        breakSubmessage = '30 Menit â€¢ 10:30 - 11:00';
+                        breakSubmessage = '30 Menit • 10:30 - 11:00';
                     } else if (slide.breakType === 'dzuhur') {
                         breakIcon = `<svg class="w-20 h-20 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                         </svg>`;
                         breakMessage = 'Waktu Istirahat Dzuhur & Makan Siang';
-                        breakSubmessage = '90 Menit â€¢ 12:30 - 14:00';
+                        breakSubmessage = '90 Menit • 12:30 - 14:00';
                     }
 
                     html = `<div class="flex h-full w-full flex-col items-center justify-center gap-6">
@@ -1291,7 +1291,7 @@
                             
                             <!-- Subject and Class -->
                             <div class="text-xs text-slate-500 font-medium">
-                                ${escapeHtml(item.mapel)} <span class="text-slate-300">â€¢</span> ${escapeHtml(item.kelas)}
+                                ${escapeHtml(item.mapel)} <span class="text-slate-300">•</span> ${escapeHtml(item.kelas)}
                             </div>
                         </div>
                         
@@ -1313,7 +1313,7 @@
                         <!-- Fallback if no profile -->
                         <div class="flex-1 min-w-0">
                             <div class="font-bold text-slate-800 text-sm truncate">${escapeHtml(item.pengajar)}</div>
-                            <div class="text-xs text-slate-500 mt-0.5 font-medium">${escapeHtml(item.mapel)} <span class="text-slate-300">â€¢</span> ${escapeHtml(item.kelas)}</div>
+                            <div class="text-xs text-slate-500 mt-0.5 font-medium">${escapeHtml(item.mapel)} <span class="text-slate-300">•</span> ${escapeHtml(item.kelas)}</div>
                             ${item.verifier && item.verifier !== '-' ? `<div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> by ${escapeHtml(item.verifier)}</div>` : ''}
                         </div>
                         <div class="shrink-0">
