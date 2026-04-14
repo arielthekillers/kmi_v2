@@ -57,7 +57,7 @@ class TeacherModel extends Model {
     }
 
     public function create($data) {
-        $this->db->getConnection()->beginTransaction();
+        $this->db->beginTransaction();
         try {
             // 1. Insert User
             $stmt = $this->db->prepare("INSERT INTO users (username, password, password_plain, nama, role) VALUES (?, ?, ?, ?, 'pengajar')");
@@ -67,22 +67,22 @@ class TeacherModel extends Model {
                 $data['password_plain'],
                 $data['nama']
             ]);
-            $userId = $this->db->getConnection()->lastInsertId();
+            $userId = $this->db->lastInsertId();
 
             // 2. Insert Profile
             $stmtProfile = $this->db->prepare("INSERT INTO teacher_profiles (user_id, phone) VALUES (?, ?)");
             $stmtProfile->execute([$userId, $data['hp']]);
 
-            $this->db->getConnection()->commit();
+            $this->db->commit();
             return $userId;
         } catch (\Exception $e) {
-            $this->db->getConnection()->rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
 
     public function update($id, $data) {
-        $this->db->getConnection()->beginTransaction();
+        $this->db->beginTransaction();
         try {
             // Update User
             $fields = ['nama = ?'];
@@ -114,10 +114,10 @@ class TeacherModel extends Model {
                 $stmtProfile->execute([$id, $data['hp']]);
             }
 
-            $this->db->getConnection()->commit();
+            $this->db->commit();
             return true;
         } catch (\Exception $e) {
-            $this->db->getConnection()->rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
