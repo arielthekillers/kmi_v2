@@ -189,6 +189,22 @@ class TanqihController extends Controller {
         $endDate = $_GET['end'] ?? date('Y-m-d', strtotime('next thursday'));
 
         $data = $this->tanqihModel->getReportStats($startDate, $endDate);
+        
+        // Access Control: Non-admins only see their own report
+        $userRole = auth_get_role();
+        $userId = auth_get_user_id();
+
+        if ($userRole !== 'admin') {
+            $filteredReport = [];
+            if (isset($data['report'][$userId])) {
+                $filteredReport[$userId] = $data['report'][$userId];
+            }
+            $data['report'] = $filteredReport;
+            
+            // Recalculate global stats for the filtered view? 
+            // Better to hide global stats or keep context. Legacy usually hides.
+            $data['globalStats'] = null; 
+        }
 
         $this->view('tanqih/report', [
             'title' => 'Laporan Tanqih',

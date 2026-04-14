@@ -317,18 +317,12 @@ if (!function_exists('auth_get_user_id')) {
     function auth_is_syeikh_diwan_today($date = null)
     {
         $role = auth_get_role();
-        if ($role === 'admin') return true; // Admins always have access
+        if ($role === 'admin') return true; 
         if ($role !== 'pengajar') return false;
 
         $userId = auth_get_user_id();
         if (!$userId) return false;
 
-        // Load Picket Data
-        $filePiket = __DIR__ . '/../data/piket.json';
-        if (!file_exists($filePiket)) return false;
-        
-        $piketSchedule = json_decode(file_get_contents($filePiket), true) ?? [];
-        
         $timestamp = $date ? strtotime($date) : time();
         $dayMap = [
             'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa',
@@ -337,11 +331,15 @@ if (!function_exists('auth_get_user_id')) {
         $dayNameEnglish = date('D', $timestamp);
         $dayName = $dayMap[$dayNameEnglish] ?? '';
 
-        if (isset($piketSchedule[$dayName]) && is_array($piketSchedule[$dayName])) {
-            return in_array($userId, $piketSchedule[$dayName]);
+        // Use Database instead of JSON
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'syeikh'");
+            $stmt->execute([$userId, $dayName]);
+            return (bool) $stmt->fetch();
+        } catch (\Exception $e) {
+            return false;
         }
-        
-        return false;
     }
 }
 
@@ -354,18 +352,12 @@ if (!function_exists('auth_is_piket_keliling_today')) {
     function auth_is_piket_keliling_today($date = null)
     {
         $role = auth_get_role();
-        if ($role === 'admin') return true; // Admins always have access
+        if ($role === 'admin') return true; 
         if ($role !== 'pengajar') return false;
 
         $userId = auth_get_user_id();
         if (!$userId) return false;
 
-        // Load Picket Keliling Data
-        $filePiket = __DIR__ . '/../data/piket_keliling.json';
-        if (!file_exists($filePiket)) return false;
-        
-        $piketSchedule = json_decode(file_get_contents($filePiket), true) ?? [];
-        
         $timestamp = $date ? strtotime($date) : time();
         $dayMap = [
             'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa',
@@ -374,11 +366,15 @@ if (!function_exists('auth_is_piket_keliling_today')) {
         $dayNameEnglish = date('D', $timestamp);
         $dayName = $dayMap[$dayNameEnglish] ?? '';
 
-        if (isset($piketSchedule[$dayName]) && is_array($piketSchedule[$dayName])) {
-            return in_array($userId, $piketSchedule[$dayName]);
+        // Use Database instead of JSON
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'keliling'");
+            $stmt->execute([$userId, $dayName]);
+            return (bool) $stmt->fetch();
+        } catch (\Exception $e) {
+            return false;
         }
-        
-        return false;
     }
 }
 
