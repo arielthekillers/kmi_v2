@@ -14,13 +14,18 @@ class SettingModel extends Model {
      * If not found, returns $default.
      */
     public function get($key, $default = null) {
-        $stmt = $this->db->prepare("SELECT setting_value FROM {$this->table} WHERE {$this->primaryKey} = ?");
-        $stmt->execute([$key]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($row) {
-            $value = json_decode($row['setting_value'], true);
-            return $value === null ? $row['setting_value'] : $value;
+        try {
+            $stmt = $this->db->prepare("SELECT setting_value FROM {$this->table} WHERE {$this->primaryKey} = ?");
+            $stmt->execute([$key]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($row) {
+                $value = json_decode($row['setting_value'], true);
+                return $value === null ? $row['setting_value'] : $value;
+            }
+        } catch (\PDOException $e) {
+            // Table might not exist yet on production, return default
+            return $default;
         }
         
         return $default;
