@@ -88,7 +88,7 @@ renderHeader("Profil Saya");
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">No. HP</label>
-                    <input type="text" value="<?= htmlspecialchars($teacher['hp']) ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 text-gray-600">
+                    <input type="text" name="hp" value="<?= htmlspecialchars($teacher['hp']) ?>" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                 </div>
             </div>
         </div>

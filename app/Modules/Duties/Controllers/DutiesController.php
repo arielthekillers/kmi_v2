@@ -10,10 +10,11 @@ class DutiesController extends Controller {
     public function index() {
         $db = Database::getInstance();
         
-        // Fetch All Duties joined with Users
-        $sql = "SELECT d.*, u.nama, u.hp 
+        // Fetch All Duties joined with Users and Profiles for HP
+        $sql = "SELECT d.*, u.nama, tp.phone as hp 
                 FROM duties d 
                 JOIN users u ON d.user_id = u.id 
+                LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                 ORDER BY d.id ASC";
         
         $rows = $db->query($sql)->fetchAll();
