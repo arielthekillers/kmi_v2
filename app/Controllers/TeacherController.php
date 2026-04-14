@@ -143,8 +143,8 @@ class TeacherController extends Controller {
         try {
             $db = \App\Core\Database::getInstance()->getConnection();
 
-            // Fetch teacher info — hp stored in users.hp (check both tables)
-            $stmt = $db->prepare("SELECT nama, hp FROM users WHERE id = ?");
+            // Fetch teacher info — hp stored in teacher_profiles.phone
+            $stmt = $db->prepare("SELECT u.nama, tp.phone as hp FROM users u LEFT JOIN teacher_profiles tp ON u.id = tp.user_id WHERE u.id = ?");
             $stmt->execute([$id]);
             $teacher = $stmt->fetch(\PDO::FETCH_ASSOC);
 
