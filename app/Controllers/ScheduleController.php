@@ -125,16 +125,16 @@ class ScheduleController extends Controller {
         $newSchedule = $_POST['schedule'] ?? [];
 
         if (empty($kelasId)) {
-            add_flash('error', 'ID Kelas tidak ditemukan.');
+            add_flash('ID Kelas tidak ditemukan.', 'error');
             redirect('/schedule');
         }
 
         $model = new ScheduleModel();
         try {
             $model->updateBatch($kelasId, $newSchedule);
-            add_flash('success', 'Jadwal berhasil diperbarui.');
+            add_flash('Jadwal berhasil diperbarui.', 'success');
         } catch (\Exception $e) {
-            add_flash('error', 'Gagal menyimpan jadwal: ' . $e->getMessage());
+            add_flash('Gagal menyimpan jadwal: ' . $e->getMessage(), 'error');
         }
 
         redirect('/schedule?kelas_id=' . urlencode($kelasId));

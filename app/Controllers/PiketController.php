@@ -56,9 +56,9 @@ class PiketController extends Controller {
         $data = $_POST['piket'] ?? [];
         try {
             $this->piketModel->updateSchedule('syeikh', $data);
-            add_flash('success', 'Jadwal Syeikh Diwan berhasil disimpan.');
+            add_flash('Jadwal Syeikh Diwan berhasil disimpan.', 'success');
         } catch (\Exception $e) {
-            add_flash('error', 'Gagal menyimpan jadwal: ' . $e->getMessage());
+            add_flash('Gagal menyimpan jadwal: ' . $e->getMessage(), 'error');
         }
         redirect('/piket/office');
     }
@@ -86,9 +86,9 @@ class PiketController extends Controller {
         $data = $_POST['piket'] ?? [];
         try {
             $this->piketModel->updateSchedule('keliling', $data);
-            add_flash('success', 'Jadwal Piket Keliling berhasil disimpan.');
+            add_flash('Jadwal Piket Keliling berhasil disimpan.', 'success');
         } catch (\Exception $e) {
-            add_flash('error', 'Gagal menyimpan jadwal: ' . $e->getMessage());
+            add_flash('Gagal menyimpan jadwal: ' . $e->getMessage(), 'error');
         }
         redirect('/piket/roaming');
     }

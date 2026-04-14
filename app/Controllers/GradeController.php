@@ -99,12 +99,12 @@ class GradeController extends Controller {
                 $model = new GradeModel();
                 try {
                     $model->createExam($data);
-                    add_flash('success', 'Data koreksi berhasil ditambahkan.');
+                    add_flash('Data koreksi berhasil ditambahkan.', 'success');
                 } catch (\Exception $e) {
-                    add_flash('error', 'Gagal: ' . $e->getMessage());
+                    add_flash('Gagal: ' . $e->getMessage(), 'error');
                 }
             } else {
-                add_flash('error', 'Semua field harus diisi.');
+                add_flash('Semua field harus diisi.', 'error');
             }
             redirect('/grades');
         }
@@ -120,7 +120,7 @@ class GradeController extends Controller {
         $exam = $model->getExamById($id);
 
         if (!$exam) {
-            add_flash('error', 'Data koreksi tidak ditemukan.');
+            add_flash('Data koreksi tidak ditemukan.', 'error');
             redirect('/grades');
         }
 
@@ -166,7 +166,7 @@ class GradeController extends Controller {
         $newStatus = 'proses';
         if ($action === 'finish') {
             if (!$allFilled) {
-                add_flash('error', 'Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.');
+                add_flash('Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.', 'error');
             } else {
                 $newStatus = 'selesai';
             }
@@ -175,14 +175,14 @@ class GradeController extends Controller {
         try {
             $model->saveGrades($id, $exam, $studentIds, $skors, $newStatus);
             if ($action === 'finish' && $allFilled) {
-                add_flash('success', 'Koreksi selesai.'); // Redirecting to list might be better for "Finish"
+                add_flash('Koreksi selesai.', 'success'); // Redirecting to list might be better for "Finish"
                 redirect('/grades');
             } else {
-                add_flash('success', 'Draft nilai tersimpan.');
+                add_flash('Draft nilai tersimpan.', 'success');
                 redirect('/grades/edit?id=' . $id);
             }
         } catch (\Exception $e) {
-            add_flash('error', 'Gagal menyimpan: ' . $e->getMessage());
+            add_flash('Gagal menyimpan: ' . $e->getMessage(), 'error');
             redirect('/grades/edit?id=' . $id);
         }
     }
@@ -193,7 +193,7 @@ class GradeController extends Controller {
         if ($id) {
             $model = new GradeModel();
             $model->deleteExam($id);
-            add_flash('success', 'Data koreksi dihapus.');
+            add_flash('Data koreksi dihapus.', 'success');
         }
         redirect('/grades');
     }
@@ -206,7 +206,7 @@ class GradeController extends Controller {
             if ($id) {
                 $model = new GradeModel();
                 $model->unlockExam($id);
-                add_flash('success', 'Akes koreksi dibuka kembali.');
+                add_flash('Akes koreksi dibuka kembali.', 'success');
             }
         }
         redirect('/grades'); // Or back to where they were?
