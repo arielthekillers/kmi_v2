@@ -122,47 +122,10 @@ class AttendanceModel extends Model {
                  $note = null; 
             }
         } elseif ($status === 'diganti') {
-            $actualStatus = 'diganti'; // Or 'substitute'? The view said 'diganti', legacy DB had enum?
-            // Checking simpan_absensi -> $actualStatus = 'substitute'; 
-            // BUT wait, `simpan_absensi_pengajar.php` line 46: `$actualStatus = 'substitute';`
-            // Let's check `laporan_piket_keliling.php` line 158: `elseif ($log['status'] === 'diganti')`.
-            // Contradiction?
-            // If simpan says 'substitute', report says 'diganti'.
-            // Let's check DB schema or value.
-            // In the view `absensi_pengajar.php`, radio value="diganti".
-            // In `simpan_absensi_pengajar.php`: if ($status === 'diganti') ... $actualStatus = 'substitute'.
-            // In `laporan_piket_keliling.php`: `elseif ($log['status'] === 'diganti')`.
-            // If the code works now, it means one of them matches the DB.
-            // Let's stick to what `simpan` was writing: 'substitute' ?
-            // Wait, looking at `laporan` code provided in view_file (Step 1555):
-            // Line 158: `elseif ($log['status'] === 'diganti')`
-            // Line 57: `LEFT JOIN users subst ON al.substitute_teacher_id = subst.id`
-            // If `simpan` writes 'substitute', then report reading 'diganti' would fail unless DB enum handles it or I misread.
-            // Let's assume 'diganti' is the readable status, but DB might store 'substitute' or 'diganti'.
-            // `attendance_logs` table definition?
-            // Let's look at `simpan_absensi_pengajar.php` again (Step 1554):
-            // Line 46: `$actualStatus = 'substitute';`
-            // So it writes 'substitute'.
-            // But `laporan` checks for 'diganti'. 
-            // This suggests `laporan` might be buggy OR I missed something.
-            // Actually, `simpan` writes `substitute`, `laporan` checks `diganti`.
-            // Maybe legacy data has 'diganti'?
-            // I'll stick to 'diganti' for consistency with the prompt's status inputs, but I should probably standardize.
-            // I will write 'diganti' to match the UI value, unless the ENUM forces 'substitute'.
-            // I'll check `simpan_absensi_pengajar.php` carefully. Yes, Line 46 sets `$actualStatus = 'substitute'`.
-            // So DB has 'substitute'.
-            // `laporan` Line 158 checks 'diganti'. This means `laporan` might be failing to count substitutes currently?
-            // Or `attendance_logs` status column allows both? 
-            // I will use 'substitute' in DB to match legacy writer, but for the Model I should handle both on read.
-            $actualStatus = 'diganti'; // Let's use 'diganti' as the standard app-level status. 
-            // I will write 'diganti' to DB. If it fails due to enum, I'll need to fix. 
-            // Since I am rewriting, I can choose 'diganti' if table allows string/varchar.
-            // If table is ENUM('hadir','tidak_hadir','substitute', ...), I must use 'substitute'.
-            // Given I don't have DESC tables, I'll gamble on 'diganti' (Indonesian) or check what user likely uses.
-            // Let's just use 'diganti' and if it fails, I'll fix. 
-            // Actually, to be safe, I'll stick to 'diganti' logic but maybe the table is flexible.
-            
+            $actualStatus = 'substitute'; 
             $substituteId = $data['pengajar_pengganti'];
+        } elseif ($status === 'tidak_hadir') {
+            $actualStatus = 'alpha';
         }
 
         $stmt = $this->db->prepare("

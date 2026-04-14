@@ -20,7 +20,7 @@ class AttendanceController extends Controller {
         // Check Permissions (Piket Keliling allowed)
         if (!auth_is_piket_keliling_today($date) && auth_get_role() !== 'admin') {
             add_flash('Anda tidak memiliki akses untuk mengelola absensi pada tanggal ini.', 'error');
-            redirect('/');
+            $this->redirect('/');
         }
 
         $schedule = $this->attendanceModel->getDailyScheduleWithAttendance($date);
@@ -57,12 +57,12 @@ class AttendanceController extends Controller {
         // Permission Check
         if (!auth_is_piket_keliling_today($date) && auth_get_role() !== 'admin') {
              add_flash('Access Denied', 'error');
-             redirect('/attendance?date=' . urlencode($date));
+             $this->redirect('/attendance?date=' . urlencode($date));
         }
 
         if (!$date || !$key || !$status) {
             add_flash('Data tidak lengkap.', 'error');
-            redirect('/attendance?date=' . urlencode($date));
+            $this->redirect('/attendance?date=' . urlencode($date));
         }
 
         list($kelasId, $hour) = explode('|', $key);
@@ -86,7 +86,7 @@ class AttendanceController extends Controller {
             add_flash('Gagal menyimpan: ' . $e->getMessage(), 'error');
         }
 
-        redirect('/attendance?date=' . urlencode($date) . '&jam=' . urlencode($hour));
+        $this->redirect('/attendance?date=' . urlencode($date) . '&jam=' . urlencode($hour));
     }
 
     public function report() {
