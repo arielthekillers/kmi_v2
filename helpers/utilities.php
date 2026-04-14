@@ -46,3 +46,21 @@ if (!function_exists('url')) {
         return $protocol . "://" . $host . $baseDir . '/' . $path;
     }
 }
+
+if (!function_exists('get_setting')) {
+    function get_setting($key, $default = null) {
+        $model = new \App\Models\SettingModel();
+        return $model->get($key, $default);
+    }
+}
+
+if (!function_exists('redirect')) {
+    function redirect($url) {
+        if (function_exists('url')) {
+            header("Location: " . url($url));
+        } else {
+            header("Location: " . $url);
+        }
+        exit;
+    }
+}

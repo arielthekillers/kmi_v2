@@ -208,14 +208,15 @@ class TvShowcaseController extends Controller {
                 'syeikh' => $piketSyeikh,
                 'keliling' => $piketKeliling
             ],
-            'quotes' => [
+            'hours_config' => (new \App\Models\SettingModel())->getTvHours(),
+            'quotes' => (new \App\Models\SettingModel())->get('tv_showcase_quotes', [
                 "Pancajiwa Pondok: Keikhlasan, Kesederhanaan, Berdikari, Ukhuwah Islamiyah, dan Kebebasan.",
                 "Motto Pondok: Berbudi tinggi, Berbadan sehat, Berpengetahuan luas, dan Berpikiran bebas.",
                 "إنّ تنفيذ التربية الخلقية والعقلية لا يكفي بمجرد الكلام، بل لا بدّ أن يكون بالقدوة الصالحة...",
                 "الوعي مبعث كلّ النجاح",
                 "من وعى انتبه",
                 "Think globally, act locally!"
-            ]
+            ])
         ]);
         exit;
     }

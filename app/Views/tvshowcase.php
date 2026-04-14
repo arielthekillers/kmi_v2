@@ -700,7 +700,8 @@
             currentSlideIndex: 0,
             stats: null,
             latest: [],
-            piket: { syeikh: [], keliling: [] }
+            piket: { syeikh: [], keliling: [] },
+            hours_config: []
         };
 
         let slideInterval = null;
@@ -749,44 +750,37 @@
         }
 
         function getCurrentHourBlock() {
+            // Allow URL parameter override for testing
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('hour')) return parseInt(urlParams.get('hour'));
+
             const now = getWIBDate();
             const h = now.getHours();
             const m = now.getMinutes();
             const time = h + (m / 60);
 
-            // Jam 1: 07:00 - 07:45
-            if (time >= 7.0 && time < 7.75) return 1;
+            // Use dynamic hours config if available
+            if (appData.hours_config && appData.hours_config.length > 0) {
+                for (const row of appData.hours_config) {
+                    const [startH, startM] = row.start.split(':').map(Number);
+                    const [endH, endM] = row.end.split(':').map(Number);
+                    const startTime = startH + (startM / 60);
+                    const endTime = endH + (endM / 60);
 
-            // Jam 2: 07:45 - 08:30
-            if (time >= 7.75 && time < 8.5) return 2;
-
-            // Istirahat Pertama: 08:30 - 09:00 (return null to show no schedule)
-            if (time >= 8.5 && time < 9.0) return null;
-
-            // Jam 3: 09:00 - 09:45
-            if (time >= 9.0 && time < 9.75) return 3;
-
-            // Jam 4: 09:45 - 10:30
-            if (time >= 9.75 && time < 10.5) return 4;
-
-            // Istirahat Kedua: 10:30 - 11:00 (return null)
-            if (time >= 10.5 && time < 11.0) return null;
-
-            // Jam 5: 11:00 - 11:45
-            if (time >= 11.0 && time < 11.75) return 5;
-
-            // Jam 6: 11:45 - 12:30
-            if (time >= 11.75 && time < 12.5) return 6;
-
-            // Istirahat Sholat Dzuhur & Makan Siang: 12:30 - 14:00 (return null)
-            if (time >= 12.5 && time < 14.0) return null;
-
-            // Jam 7: 14:00 - 14:45
-            if (time >= 14.0 && time < 14.75) return 7;
-
-            // Allow URL parameter override for testing
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('hour')) return parseInt(urlParams.get('hour'));
+                    if (time >= startTime && time < endTime) {
+                        return row.type === 'jam' ? row.value : null;
+                    }
+                }
+            } else {
+                // Fallback to legacy hardcoded if config fails
+                if (time >= 7.0 && time < 7.75) return 1;
+                if (time >= 7.75 && time < 8.5) return 2;
+                if (time >= 9.0 && time < 9.75) return 3;
+                if (time >= 9.75 && time < 10.5) return 4;
+                if (time >= 11.0 && time < 11.75) return 5;
+                if (time >= 11.75 && time < 12.5) return 6;
+                if (time >= 14.0 && time < 14.75) return 7;
+            }
 
             return null; // Outside class hours
         }
@@ -802,12 +796,29 @@
             const time = h + (m / 60);
 
             let breakType = null;
-            if (time >= 8.5 && time < 9.0) {
-                breakType = 'istirahat1';
-            } else if (time >= 10.5 && time < 11.0) {
-                breakType = 'istirahat2';
-            } else if (time >= 12.5 && time < 14.0) {
-                breakType = 'dzuhur';
+            if (appData.hours_config && appData.hours_config.length > 0) {
+                for (const row of appData.hours_config) {
+                    if (row.type !== 'break') continue;
+                    
+                    const [startH, startM] = row.start.split(':').map(Number);
+                    const [endH, endM] = row.end.split(':').map(Number);
+                    const startTime = startH + (startM / 60);
+                    const endTime = endH + (endM / 60);
+
+                    if (time >= startTime && time < endTime) {
+                        breakType = row.value;
+                        break;
+                    }
+                }
+            } else {
+                // Fallback
+                if (time >= 8.5 && time < 9.0) {
+                    breakType = 'istirahat1';
+                } else if (time >= 10.5 && time < 11.0) {
+                    breakType = 'istirahat2';
+                } else if (time >= 12.5 && time < 14.0) {
+                    breakType = 'dzuhur';
+                }
             }
 
             // If break time, add break slide
@@ -954,6 +965,7 @@
                 appData.latest = data.latest_verifications;
                 appData.schedule = data.schedule_by_hour;
                 appData.piket = data.piket || { syeikh: [], keliling: [] };
+                appData.hours_config = data.hours_config || [];
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;

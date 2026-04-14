@@ -38,8 +38,12 @@ class App
 
         // Settings Routes (admin only)
         $this->router->get('/settings/general', ['App\Controllers\SettingsController', 'general']);
-        $this->router->get('/settings/tvshowcase', ['App\Controllers\SettingsController', 'tvshowcase']);
+        $this->router->get('/settings/tv/bgm', ['App\Controllers\SettingsController', 'tvShowcaseBgm']);
+        $this->router->get('/settings/tv/hours', ['App\Controllers\SettingsController', 'tvShowcaseHours']);
+        $this->router->get('/settings/tv/quotes', ['App\Controllers\SettingsController', 'tvShowcaseQuotes']);
         $this->router->post('/settings/upload-audio', ['App\Controllers\SettingsController', 'uploadAudio']);
+        $this->router->post('/settings/update-hours', ['App\Controllers\SettingsController', 'updateHours']);
+        $this->router->post('/settings/update-quotes', ['App\Controllers\SettingsController', 'updateQuotes']);
 
         // Subjects Routes
         $this->router->get('/subjects', ['App\Controllers\SubjectController', 'index']);

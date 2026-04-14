@@ -16,11 +16,27 @@ function renderHeader($title = "KMI App")
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
         <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <style>
             body {
                 font-family: 'Inter', sans-serif;
             }
+            /* Flatpickr Indigo Theme */
+            .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.continueSelection, .flatpickr-day.startRange.continueSelection, .flatpickr-day.endRange.continueSelection, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+                background: #4f46e5 !important;
+                border-color: #4f46e5 !important;
+            }
+            .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-weekdays {
+                background: transparent;
+            }
+            .flatpickr-calendar {
+                border-radius: 12px;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                border: 1px solid #f3f4f6;
+            }
+
             /* Tom Select Tailwind Tweaks */
             .ts-control {
                 border-radius: 0.375rem; /* rounded-md */
@@ -227,7 +243,7 @@ function renderHeader($title = "KMI App")
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                             General
                                         </a>
-                                        <a href="<?= url('/settings/tvshowcase') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <a href="<?= url('/settings/tv/bgm') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                             TV Showcase
                                         </a>
@@ -283,13 +299,51 @@ function renderHeader($title = "KMI App")
                     <?php endif; ?>
                     <a href="<?= url('/grades') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Koreksi Ujian</a>
 
-                    <?php if (is_logged_in()): ?>
-                        <?php if (auth_get_role() === 'pengajar'): ?>
-                            <a href="<?= url('/profil') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">Profil Saya</a>
+                    <?php if (is_logged_in()): 
+                        $__user = function_exists('auth_get_current_user') ? auth_get_current_user() : null;
+                        $__display_name = function_exists('auth_get_display_name') ? auth_get_display_name() : (is_array($__user) ? ($__user['nama'] ?? ($__user['username'] ?? '')) : (string)$__user);
+                        $__role = auth_get_role();
+                        $__initials = mb_strtoupper(mb_substr(trim($__display_name), 0, 1));
+                    ?>
+                        <div class="border-t border-gray-100 my-2"></div>
+                        <div class="px-3 py-3 flex items-center gap-3 bg-gray-50 rounded-lg mx-2">
+                             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                                <?= htmlspecialchars($__initials) ?>
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($__display_name) ?></div>
+                                <div class="text-xs text-gray-500 capitalize"><?= htmlspecialchars($__role) ?></div>
+                            </div>
+                        </div>
+                        
+                        <?php if ($__role === 'pengajar'): ?>
+                            <a href="<?= url('/profil') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                Profil Saya
+                            </a>
                         <?php endif; ?>
-                        <a href="<?= url('/logout') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">Logout</a>
+
+                        <?php if ($__role === 'admin'): ?>
+                            <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Settings</div>
+                            <a href="<?= url('/settings/general') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                General Settings
+                            </a>
+                            <a href="<?= url('/settings/tv/bgm') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                TV Showcase
+                            </a>
+                        <?php endif; ?>
+
+                        <a href="<?= url('/logout') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            Logout
+                        </a>
                     <?php else: ?>
-                        <a href="<?= url('/login') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">Login</a>
+                        <a href="<?= url('/login') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            Login
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
