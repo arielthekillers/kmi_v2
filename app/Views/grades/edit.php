@@ -60,7 +60,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         <div>
             <div class="text-xs text-gray-500 uppercase tracking-wide">Skor Max (Soal)</div>
             <div class="flex justify-center mt-1">
-                <input type="number" name="skor_maks" id="skor_maks_input" value="<?= $skor_maks ?>" 
+                <input type="number" name="skor_maks" id="skor_maks_input" value="<?= (float)$skor_maks ?>" 
                     <?= !$canEditSkorMaks ? 'disabled' : '' ?>
                     oninput="updateConfig()"
                     class="w-20 text-center font-bold text-lg text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-1 border">
@@ -112,7 +112,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             <?= htmlspecialchars(preg_replace('/^Siswa\s+.*?\s*No\s+(\d+)/i', 'No. $1', $row['nama'])) ?>
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap">
-                            <input type="text" name="skor[]" value="<?= $row['skor'] ?>"
+                            <input type="text" name="skor[]" value="<?= is_numeric($row['skor']) ? (float)$row['skor'] : $row['skor'] ?>"
                                 <?= !$canEditScores ? 'disabled' : '' ?>
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm p-1 border transition-shadow text-center disabled:bg-gray-100 disabled:text-gray-500"
                                 placeholder="<?= !$canEditScores ? '-' : '...' ?>" oninput="calculateRow(this)">
