@@ -41,7 +41,6 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Pelajaran</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Skor Tertinggi (Soal)</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rentang Nilai (Max-Min)</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                     </tr>
@@ -55,9 +54,6 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 <?= htmlspecialchars($p['nama']) ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <?= htmlspecialchars($p['skor_maks']) ?>
-                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <?= htmlspecialchars($p['skala']) ?>
@@ -65,7 +61,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2">
-                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skor_maks']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
+                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
                                     <a href="<?= url('/subjects/delete?id=' . $id) ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus data pelajaran ini?')" class="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors" title="Hapus">
@@ -156,10 +152,6 @@
                             <input type="text" name="nama" id="inputNama" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Skor Tertinggi (Total Poin Soal)</label>
-                            <input type="number" name="skor_maks" id="inputSkor" required value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-gray-700">Rentang Nilai (Max - Min)</label>
                             <select name="skala" id="inputSkala" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
                                 <option value="80-30">80 - 30 (Standar)</option>
@@ -186,16 +178,14 @@
 
     function openAdd() {
         document.getElementById('inputNama').value = '';
-        document.getElementById('inputSkor').value = '100';
         document.getElementById('inputSkala').value = '80-30';
         document.getElementById('inputId').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Pelajaran';
         toggleModal('addModal');
     }
 
-    function editPelajaran(id, nama, skor, skala) {
+    function editPelajaran(id, nama, skala) {
         document.getElementById('inputNama').value = nama;
-        document.getElementById('inputSkor').value = skor;
         document.getElementById('inputSkala').value = skala;
         document.getElementById('inputId').value = id;
         document.getElementById('modalTitle').textContent = 'Edit Pelajaran';

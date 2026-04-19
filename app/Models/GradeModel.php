@@ -50,7 +50,7 @@ class GradeModel extends Model {
         $stmt = $this->db->prepare("
             SELECT e.*, 
                    k.tingkat, k.abjad, k.jumlah_murid,
-                   sub.nama as mapel_nama, sub.skala, sub.skor_maks,
+                   sub.nama as mapel_nama, sub.skala, 
                    u.nama as pengajar_nama
             FROM exams e
             JOIN kelas k ON e.kelas_id = k.id
@@ -80,8 +80,8 @@ class GradeModel extends Model {
             $this->db->beginTransaction();
 
             // Insert Exam
-            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, status, created_at) VALUES (?, ?, ?, 'belum', NOW())");
-            $stmt->execute([$data['subject_id'], $data['kelas_id'], $data['teacher_id']]);
+            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, skor_maks, status, created_at) VALUES (?, ?, ?, ?, 'belum', NOW())");
+            $stmt->execute([$data['subject_id'], $data['kelas_id'], $data['teacher_id'], $data['skor_maks'] ?? 100]);
             $examId = $this->db->lastInsertId();
 
             // Link existing grades if any (migration logic mainly)
@@ -114,6 +114,10 @@ class GradeModel extends Model {
             $skor_maks = (float)($examData['skor_maks'] ?? 100);
             if ($skor_maks <= 0) $skor_maks = 100;
 
+            // Also ensure the DB is updated if it was changed in examData (passed from Controller)
+            $stmtUpdExam = $this->db->prepare("UPDATE exams SET skor_maks = ? WHERE id = ?");
+            $stmtUpdExam->execute([$skor_maks, $examId]);
+
             $skala = $examData['skala'] ?? '80-30';
             list($max_val, $min_val) = explode('-', $skala);
             $max_val = (int)$max_val;
@@ -142,7 +146,7 @@ class GradeModel extends Model {
                      $score_raw_db = '0';
                 } elseif (is_numeric($skor_input)) {
                     $skor = (float) $skor_input;
-                    $nilai_akhir = ($skor / $skor_maks) * $max_val;
+                    $nilai_akhir = round(($skor / $skor_maks) * $max_val);
                     if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
                     if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
                     $score_raw_db = $skor_input;

@@ -38,12 +38,12 @@ class SubjectModel extends Model {
     }
 
     public function create($data) {
-        $stmt = $this->db->prepare("INSERT INTO subjects (nama, skor_maks, skala) VALUES (?, ?, ?)");
-        return $stmt->execute([$data['nama'], $data['skor_maks'], $data['skala']]);
+        $stmt = $this->db->prepare("INSERT INTO subjects (nama, skala) VALUES (?, ?)");
+        return $stmt->execute([$data['nama'], $data['skala']]);
     }
 
     public function update($id, $data) {
-        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, skor_maks = ?, skala = ? WHERE id = ?");
-        return $stmt->execute([$data['nama'], $data['skor_maks'], $data['skala'], $id]);
+        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, skala = ? WHERE id = ?");
+        return $stmt->execute([$data['nama'], $data['skala'], $id]);
     }
 }

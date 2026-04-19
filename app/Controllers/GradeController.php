@@ -92,7 +92,8 @@ class GradeController extends Controller {
             $data = [
                 'subject_id' => $_POST['id_pelajaran'] ?? null,
                 'kelas_id' => $_POST['id_kelas'] ?? null,
-                'teacher_id' => $_POST['id_pengajar'] ?? null
+                'teacher_id' => $_POST['id_pengajar'] ?? null,
+                'skor_maks' => (int)($_POST['skor_maks'] ?? 100)
             ];
 
             if ($data['subject_id'] && $data['kelas_id'] && $data['teacher_id']) {
@@ -149,6 +150,11 @@ class GradeController extends Controller {
         $model = new GradeModel();
         $exam = $model->getExamById($id);
         if (!$exam) redirect('/grades');
+
+        // Allow updating skor_maks during correction
+        if (isset($_POST['skor_maks']) && is_numeric($_POST['skor_maks'])) {
+            $exam['skor_maks'] = (float)$_POST['skor_maks'];
+        }
 
         $studentIds = $_POST['student_id'] ?? [];
         $skors = $_POST['skor'] ?? [];

@@ -326,6 +326,10 @@
                             </select>
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Skor Tertinggi (Total Poin Soal)</label>
+                            <input type="number" name="skor_maks" required value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">Kelas</label>
                             <select name="id_kelas" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
                                 <?php foreach ($kelas as $k): ?>

@@ -66,7 +66,6 @@ class SubjectController extends Controller {
         $id = $_POST['id'] ?? '';
         $data = [
             'nama' => htmlspecialchars($_POST['nama'] ?? ''),
-            'skor_maks' => (int)($_POST['skor_maks'] ?? 100),
             'skala' => htmlspecialchars($_POST['skala'] ?? '80-30')
         ];
 

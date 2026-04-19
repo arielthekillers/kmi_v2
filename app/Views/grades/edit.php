@@ -47,8 +47,13 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
     <div class="grid grid-cols-3 gap-4 text-center bg-gray-50 p-3 rounded-lg border border-gray-100">
         <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide">Skor Max</div>
-            <div class="font-bold text-lg text-gray-900"><?= $skor_maks ?></div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Skor Max (Soal)</div>
+            <div class="flex justify-center mt-1">
+                <input type="number" name="skor_maks" id="skor_maks_input" value="<?= $skor_maks ?>" 
+                    <?= $isReadOnly ? 'disabled' : '' ?>
+                    oninput="updateConfig()"
+                    class="w-20 text-center font-bold text-lg text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-1 border">
+            </div>
         </div>
         <div>
             <div class="text-xs text-gray-500 uppercase tracking-wide">Nilai Max</div>
@@ -106,7 +111,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 placeholder="<?= $isReadOnly ? '-' : 'Skor' ?>" oninput="calculateRow(this)">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="text" readonly tabindex="-1" value="<?= $row['nilai'] ?>"
+                            <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
                                 class="nilai-output bg-transparent text-gray-900 font-bold block w-24 border-none sm:text-sm p-0 text-center">
                         </td>
                     </tr>
@@ -160,9 +165,17 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         return confirm('Apakah Anda yakin ingin menyelesaikan pemeriksaan ini? Status akan menjadi Selesai dan tidak dapat diubah lagi.');
     }
 
-    const skorMaks = parseFloat(document.getElementById('skor_maks').value) || 100;
+    let skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
     const nilaiMaks = parseFloat(document.getElementById('nilai_maks').value) || 100;
     const nilaiMin = parseFloat(document.getElementById('nilai_min').value) || 0;
+
+    function updateConfig() {
+        skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
+        // Recalculate all rows
+        document.querySelectorAll('input[name="skor[]"]').forEach(input => {
+            calculateRow(input);
+        });
+    }
 
     function calculateRow(input) {
         const row = input.closest('tr');
@@ -200,7 +213,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
         // CASE 5: Normal Calculation
         // Formula: (Score / MaxScore) * MaxGrade
-        let nilai = (skor / skorMaks) * nilaiMaks;
+        let nilai = Math.round((skor / skorMaks) * nilaiMaks);
 
         // Floor at MinGrade
         if (nilai < nilaiMin) nilai = nilaiMin;
@@ -208,7 +221,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         // Cap at Max
         if (nilai > nilaiMaks) nilai = nilaiMaks;
 
-        output.value = nilai.toFixed(2);
+        output.value = nilai;
         updateAverage();
     }
 
