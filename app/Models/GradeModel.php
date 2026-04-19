@@ -107,18 +107,17 @@ class GradeModel extends Model {
         }
     }
 
-    public function saveGrades($examId, $examData, $studentIds, $skors, $status = 'proses') {
+    public function saveGrades($examId, $subjectId, $skor_maks, $skala, $studentIds, $skors, $status = 'proses') {
         try {
             $this->db->beginTransaction();
 
-            $skor_maks = (float)($examData['skor_maks'] ?? 100);
+            $skor_maks = (float)($skor_maks ?? 100);
             if ($skor_maks <= 0) $skor_maks = 100;
 
             // Also ensure the DB is updated if it was changed in examData (passed from Controller)
-            $stmtUpdExam = $this->db->prepare("UPDATE exams SET skor_maks = ? WHERE id = ?");
-            $stmtUpdExam->execute([$skor_maks, $examId]);
+// Data will be updated in a single query at the end to ensure consistency.
 
-            $skala = $examData['skala'] ?? '80-30';
+            $skala = $skala ?? '80-30';
             list($max_val, $min_val) = explode('-', $skala);
             $max_val = (int)$max_val;
             $min_val = (int)$min_val;
@@ -130,6 +129,17 @@ class GradeModel extends Model {
                         score_final = VALUES(score_final),
                         updated_at = VALUES(updated_at)";
             $stmt = $this->db->prepare($sql);
+
+            // If studentIds is empty (Admin case), fetch all existing grades to recalculate them with new skor_maks
+            if (empty($studentIds)) {
+                $stmtGet = $this->db->prepare("SELECT student_id, score_raw FROM grades WHERE exam_id = ?");
+                $stmtGet->execute([$examId]);
+                while ($row = $stmtGet->fetch(PDO::FETCH_ASSOC)) {
+                    $studentIds[] = $row['student_id'];
+                    $skors[] = $row['score_raw'] ?? '';
+                }
+            }
+
 
             for ($i = 0; $i < count($studentIds); $i++) {
                 $studentId = $studentIds[$i];
@@ -156,15 +166,15 @@ class GradeModel extends Model {
                 }
 
                 if ($score_raw_db !== null) {
-                    $stmt->execute([$studentId, $examData['subject_id'], $examId, $score_raw_db, $nilai_akhir]);
+                    $stmt->execute([$studentId, $subjectId, $examId, $score_raw_db, $nilai_akhir]);
                 } else {
-                    $stmt->execute([$studentId, $examData['subject_id'], $examId, null, null]);
+                    $stmt->execute([$studentId, $subjectId, $examId, null, null]);
                 }
             }
 
-            // Update Status
-            $stmtUpd = $this->db->prepare("UPDATE exams SET status = ? WHERE id = ?");
-            $stmtUpd->execute([$status, $examId]);
+            // Update Status and Skor Maks in one go
+            $stmtUpd = $this->db->prepare("UPDATE exams SET status = ?, skor_maks = ? WHERE id = ?");
+            $stmtUpd->execute([$status, $skor_maks, $examId]);
 
             $this->db->commit();
             return true;

@@ -131,6 +131,11 @@ class GradeController extends Controller {
         // but let's allow it for now as per legacy.
 
         $students = $model->getGrades($id, $exam['kelas_id']);
+        
+        // Natural Sorting for Students
+        usort($students, function ($a, $b) {
+            return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
+        });
 
         $this->view('grades/edit', [
             'exam' => $exam,
@@ -151,40 +156,54 @@ class GradeController extends Controller {
         $exam = $model->getExamById($id);
         if (!$exam) redirect('/grades');
 
-        // Allow updating skor_maks during correction
-        if (isset($_POST['skor_maks']) && is_numeric($_POST['skor_maks'])) {
-            $exam['skor_maks'] = (float)$_POST['skor_maks'];
-        }
+        $userRole = auth_get_role();
+        $newStatus = $exam['status'] ?? 'proses';
+        $skorMaksPost = $_POST['skor_maks'] ?? null;
 
-        $studentIds = $_POST['student_id'] ?? [];
-        $skors = $_POST['skor'] ?? [];
-        $action = $_POST['action'] ?? 'save';
-
-        // Validation for Finish
-        $allFilled = true;
-        foreach ($skors as $s) {
-            if (trim($s) === '') {
-                $allFilled = false;
-                break;
+        if ($userRole === 'admin') {
+            // Admin only updates skor_maks configuration
+            if ($skorMaksPost !== null && is_numeric($skorMaksPost)) {
+                $exam['skor_maks'] = (float)$skorMaksPost;
             }
-        }
+            $studentIds = [];
+            $skors = [];
+            $action = 'save';
+        } else {
+            // Examiner updates student scores
+            $studentIds = $_POST['student_id'] ?? [];
+            $skors = $_POST['skor'] ?? [];
+            $action = $_POST['action'] ?? 'save';
+            // Use current skor_maks from database for examiners, ignore any POST attempt
+            // $exam['skor_maks'] remains from getExamById
 
-        $newStatus = 'proses';
-        if ($action === 'finish') {
-            if (!$allFilled) {
-                add_flash('Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.', 'error');
+            $allFilled = true;
+            foreach ($skors as $s) {
+                if (trim($s) === '') {
+                    $allFilled = false;
+                    break;
+                }
+            }
+
+            if ($action === 'finish') {
+                if (!$allFilled) {
+                    add_flash('Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.', 'error');
+                    $newStatus = 'proses';
+                } else {
+                    $newStatus = 'selesai';
+                }
             } else {
-                $newStatus = 'selesai';
+                $newStatus = 'proses';
             }
         }
 
         try {
-            $model->saveGrades($id, $exam, $studentIds, $skors, $newStatus);
-            if ($action === 'finish' && $allFilled) {
-                add_flash('Koreksi selesai.', 'success'); // Redirecting to list might be better for "Finish"
+            $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus);
+            if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
+                add_flash('Koreksi selesai.', 'success');
                 redirect('/grades');
             } else {
-                add_flash('Draft nilai tersimpan.', 'success');
+                $msg = ($userRole === 'admin') ? 'Konfigurasi skor berhasil diupdate.' : 'Draft nilai tersimpan.';
+                add_flash($msg, 'success');
                 redirect('/grades/edit?id=' . $id);
             }
         } catch (\Exception $e) {

@@ -3,7 +3,9 @@
 $id = $exam['id'];
 $isFinished = ($exam['status'] ?? '') === 'selesai';
 $userRole = auth_get_role();
-$isReadOnly = $isFinished || ($userRole === 'admin');
+$isReadOnly = $isFinished;
+$canEditSkorMaks = ($userRole === 'admin' && !$isFinished);
+$canEditScores = ($userRole !== 'admin' && !$isFinished);
 
 // Parse Scale for JS
 $skala = $exam['skala'] ?? '80-30';
@@ -12,13 +14,22 @@ $max_val = (int)$max_val;
 $min_val = (int)$min_val;
 $skor_maks = (float)($exam['skor_maks'] ?? 100);
 
+// Locale-safe values for JS (ensure dot as decimal separator)
+$js_skor_maks = number_format($skor_maks, 2, '.', '');
+$js_nilai_maks = number_format($max_val, 2, '.', '');
+$js_nilai_min = number_format($min_val, 2, '.', '');
+
 renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 ?>
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+<form method="post" action="<?= url('/grades/update') ?>" id="gradeForm">
+    <?= csrf_token_field() ?>
+    <input type="hidden" name="id" value="<?= $id ?>">
+
 
     <!-- Info Card -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 flex flex-col md:flex-row md:justify-between gap-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 flex flex-col md:flex-row md:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($exam['mapel_nama']) ?></h1>
             <div class="mt-1 flex items-center text-sm text-gray-500 gap-4">
@@ -45,12 +56,12 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-4 text-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+    <div class="grid grid-cols-3 gap-2 text-center bg-gray-50 p-2 rounded-lg border border-gray-100 mb-4">
         <div>
             <div class="text-xs text-gray-500 uppercase tracking-wide">Skor Max (Soal)</div>
             <div class="flex justify-center mt-1">
                 <input type="number" name="skor_maks" id="skor_maks_input" value="<?= $skor_maks ?>" 
-                    <?= $isReadOnly ? 'disabled' : '' ?>
+                    <?= !$canEditSkorMaks ? 'disabled' : '' ?>
                     oninput="updateConfig()"
                     class="w-20 text-center font-bold text-lg text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-1 border">
             </div>
@@ -67,23 +78,19 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 </div>
 
 <!-- Hidden Config for JS -->
-<input type="hidden" id="skor_maks" value="<?= $skor_maks ?>">
-<input type="hidden" id="nilai_maks" value="<?= $max_val ?>">
-<input type="hidden" id="nilai_min" value="<?= $min_val ?>">
+<input type="hidden" id="nilai_maks" value="<?= $js_nilai_maks ?>">
+<input type="hidden" id="nilai_min" value="<?= $js_nilai_min ?>">
 
-<!-- Form -->
-<form method="post" action="<?= url('/grades/update') ?>" id="gradeForm">
-    <?= csrf_token_field() ?>
-    <input type="hidden" name="id" value="<?= $id ?>">
+<!-- Student Table -->
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">No</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Santri</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skor Semifinal</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai Akhir</th>
+                    <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-12">No</th>
+                    <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Nama Santri</th>
+                    <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-24 sm:w-32 text-center">Skor</th>
+                    <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider w-16 sm:w-20 text-center">Nilai</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -97,34 +104,34 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                     }
                 ?>
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-500 font-mono">
                             <?= $i + 1 ?>
                             <input type="hidden" name="student_id[]" value="<?= $row['student_id'] ?>">
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            <?= htmlspecialchars($row['nama']) ?>
+                        <td class="px-3 py-2 text-sm font-medium text-gray-900 leading-tight">
+                            <?= htmlspecialchars(preg_replace('/^Siswa\s+.*?\s*No\s+(\d+)/i', 'No. $1', $row['nama'])) ?>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 py-2 whitespace-nowrap">
                             <input type="text" name="skor[]" value="<?= $row['skor'] ?>"
-                                <?= $isReadOnly ? 'disabled' : '' ?>
-                                class="w-full sm:w-32 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border transition-shadow text-center disabled:bg-gray-100 disabled:text-gray-500"
-                                placeholder="<?= $isReadOnly ? '-' : 'Skor' ?>" oninput="calculateRow(this)">
+                                <?= !$canEditScores ? 'disabled' : '' ?>
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm p-1 border transition-shadow text-center disabled:bg-gray-100 disabled:text-gray-500"
+                                placeholder="<?= !$canEditScores ? '-' : '...' ?>" oninput="calculateRow(this)">
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 py-2 whitespace-nowrap">
                             <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
-                                class="nilai-output bg-transparent text-gray-900 font-bold block w-24 border-none sm:text-sm p-0 text-center">
+                                class="nilai-output bg-transparent text-gray-900 font-bold block w-full border-none text-sm p-0 text-center">
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
 
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-            <div class="text-xs text-gray-500">
-                * Ketik <b>-</b> untuk absen (Nilai 0). Ketik <b>0</b> untuk salah semua (Nilai Min).
+        <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <div class="text-[10px] text-gray-500 uppercase">
+                * <b>-</b> = Absen, <b>0</b> = Salah
             </div>
-            <div class="font-medium text-gray-900">
-                Rata-rata Kelas: <span id="rataRataDisplay" class="text-indigo-600 text-lg ml-2"><?= $countNilai > 0 ? round($totalNilai / $countNilai, 2) : 0 ?></span>
+            <div class="text-xs font-semibold text-gray-900">
+                Rata-rata: <span id="rataRataDisplay" class="text-indigo-600 text-sm ml-1"><?= $countNilai > 0 ? round($totalNilai / $countNilai, 2) : 0 ?></span>
             </div>
         </div>
     </div>
@@ -133,18 +140,20 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
     <?php if (!$isReadOnly): ?>
     <div class="fixed bottom-0 inset-x-0 pb-6 px-4 pointer-events-none">
         <div class="max-w-4xl mx-auto flex justify-end gap-3 pointer-events-auto">
-            <button type="submit" name="action" value="save" onclick="return confirm('Apakah Anda yakin ingin menyimpan draft penilaian ini?');" class="bg-white hover:bg-gray-50 text-indigo-600 font-bold py-3 px-6 rounded-full shadow-lg border border-indigo-100 transition-transform transform hover:-translate-y-1 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
-                Simpan Draft
-            </button>
-            <button type="submit" name="action" value="finish" onclick="return validateFinish()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-xl transition-transform transform hover:-translate-y-1 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Selesai Diperiksa
-            </button>
+                <button type="submit" name="action" value="save" onclick="return confirm('Apakah Anda yakin ingin menyimpan <?= $userRole === 'admin' ? 'konfigurasi' : 'draft nilai' ?> ini?');" class="bg-white hover:bg-gray-50 text-indigo-600 font-bold py-3 px-6 rounded-full shadow-lg border border-indigo-100 transition-transform transform hover:-translate-y-1 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <?= $userRole === 'admin' ? 'Simpan Update' : 'Simpan Draft' ?>
+                </button>
+                <?php if ($canEditScores): ?>
+                <button type="submit" name="action" value="finish" onclick="return validateFinish()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-xl transition-transform transform hover:-translate-y-1 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Selesai Diperiksa
+                </button>
+                <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
@@ -165,75 +174,76 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         return confirm('Apakah Anda yakin ingin menyelesaikan pemeriksaan ini? Status akan menjadi Selesai dan tidak dapat diubah lagi.');
     }
 
-    let skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
-    const nilaiMaks = parseFloat(document.getElementById('nilai_maks').value) || 100;
-    const nilaiMin = parseFloat(document.getElementById('nilai_min').value) || 0;
-
-    function updateConfig() {
-        skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
+    // Robust real-time calculation logic
+    window.updateConfig = function() {
+        const skorMaksInput = document.getElementById('skor_maks_input');
+        if (!skorMaksInput) return;
+        
+        let currentSkorMaks = parseFloat(skorMaksInput.value) || 100;
+        
         // Recalculate all rows
         document.querySelectorAll('input[name="skor[]"]').forEach(input => {
-            calculateRow(input);
+            window.calculateRow(input, currentSkorMaks);
         });
-    }
+        window.updateAverage();
+    };
 
-    function calculateRow(input) {
+    window.calculateRow = function(input, overrideSkorMaks = null) {
         const row = input.closest('tr');
         const output = row.querySelector('.nilai-output');
+        const nilaiMaks = parseFloat(document.getElementById('nilai_maks').value) || 100;
+        const nilaiMin = parseFloat(document.getElementById('nilai_min').value) || 0;
+        const skorMaks = overrideSkorMaks || parseFloat(document.getElementById('skor_maks_input').value) || 100;
+        
         let valStr = input.value.trim();
 
         // CASE 1: Absent (-)
         if (valStr === '-') {
-            output.value = '0'; // Absen = 0 strictly
-            updateAverage();
+            output.value = '0'; 
+            window.updateAverage();
             return;
         }
 
         // CASE 2: Empty
         if (valStr === '') {
             output.value = '';
-            updateAverage();
+            window.updateAverage();
             return;
         }
 
-        let skor = parseFloat(valStr);
+        let skor = parseFloat(valStr.replace(',', '.')); // Robust parsing
 
         // CASE 3: Invalid Input
         if (isNaN(skor)) {
-            // output.value = ''; // Optional: Clear or keep previous?
             return;
         }
 
         // CASE 4: Score 0 (All Wrong) -> Get Minimum Grade
         if (skor === 0) {
-            output.value = nilaiMin;
-            updateAverage();
+            output.value = Math.round(nilaiMin);
+            window.updateAverage();
             return;
         }
 
         // CASE 5: Normal Calculation
-        // Formula: (Score / MaxScore) * MaxGrade
         let nilai = Math.round((skor / skorMaks) * nilaiMaks);
 
-        // Floor at MinGrade
+        // Clamping
         if (nilai < nilaiMin) nilai = nilaiMin;
-
-        // Cap at Max
         if (nilai > nilaiMaks) nilai = nilaiMaks;
 
-        output.value = nilai;
-        updateAverage();
-    }
+        output.value = Math.round(nilai);
+        window.updateAverage();
+    };
 
-    function updateAverage() {
+    window.updateAverage = function() {
         const outputs = document.querySelectorAll('.nilai-output');
         let total = 0;
         let count = 0;
 
         outputs.forEach(el => {
-            let valStr = el.value;
+            let valStr = el.value.trim();
             if (valStr !== '') {
-                // If it's a number (including 0 from absent), count it
                 let val = parseFloat(valStr);
                 if (!isNaN(val)) {
                     total += val;
@@ -243,8 +253,10 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         });
 
         const avg = count > 0 ? (total / count).toFixed(2) : 0;
-        document.getElementById('rataRataDisplay').textContent = avg;
-    }
+        const display = document.getElementById('rataRataDisplay');
+        if (display) display.textContent = avg;
+    };
+
 </script>
 
 <?php renderFooter(); ?>
