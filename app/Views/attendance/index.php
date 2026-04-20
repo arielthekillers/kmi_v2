@@ -6,33 +6,28 @@
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Absensi Pengajar</h2>
         <p class="text-gray-500 text-sm mb-6">Catat kehadiran guru pengajar setiap jam pelajaran.</p>
 
-        <!-- Date Filter -->
-        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <form method="GET" class="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Pilih Tanggal</label>
-                    <input type="date" name="date" value="<?= htmlspecialchars($selectedDate) ?>" onchange="this.form.submit()" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+        <!-- Compact Filter Bar -->
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4 pl-1">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                    <i class="ri-calendar-check-line text-xl"></i>
                 </div>
                 <div>
-                    <a href="?date=<?= date('Y-m-d') ?>" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                        Hari Ini
-                    </a>
-                </div>
-            </form>
-        </div>
-        
-        <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 mb-6">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                     <!-- Info Icon -->
-                     <svg class="h-5 w-5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-indigo-700">
-                        <strong><?= date('d M Y', strtotime($selectedDate)) ?></strong> - Total <?= count($schedule) ?> jadwal mengajar
-                    </p>
+                    <h3 class="text-sm font-bold text-gray-900 leading-tight"><?= date('d M Y', strtotime($selectedDate)) ?></h3>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Total <?= count($schedule) ?> jadwal mengajar</p>
                 </div>
             </div>
+            
+            <form method="GET" class="flex items-center gap-2 w-full md:w-auto">
+                <div class="relative flex-1 md:flex-none">
+                    <input type="date" name="date" value="<?= htmlspecialchars($selectedDate) ?>" onchange="this.form.submit()" 
+                           class="block w-full md:w-48 pl-3 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all outline-none">
+                </div>
+                <a href="?date=<?= date('Y-m-d') ?>" 
+                   class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex-shrink-0">
+                    Hari Ini
+                </a>
+            </form>
         </div>
     </div>
 
@@ -50,106 +45,154 @@
         ksort($slotsByJam);
         
         reset($slotsByJam); $firstJam = key($slotsByJam);
-        $activeJam = $_GET['jam'] ?? $firstJam;
+        // Default to detected current hour if no parameter is provided
+        $activeJam = $_GET['jam'] ?? ($currentDetectedHour ?? $firstJam);
+        // Fallback to first available jam if detected hour has no schedule for today
         if (!isset($slotsByJam[$activeJam])) $activeJam = $firstJam;
     ?>
-        <!-- Hour Tabs -->
-        <div class="border-b border-gray-200 mb-6 overflow-x-auto">
-            <nav class="-mb-px flex space-x-4 px-2" aria-label="Tabs">
-                <?php foreach ($slotsByJam as $jam => $slots): 
-                    $isActive = $jam == $activeJam;
-                    $count = count($slots);
-                    $doneCount = 0;
-                    foreach($slots as $s) if(!empty($s['absensi'])) $doneCount++;
-                    $isComplete = $doneCount === $count;
-                    $badgeClass = $isComplete
-                        ? 'bg-green-100 text-green-700 ring-1 ring-green-400'
-                        : ($doneCount > 0
-                            ? 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-400'
-                            : 'bg-gray-100 text-gray-500 ring-1 ring-gray-300');
-                ?>
-                    <a href="?date=<?= htmlspecialchars($selectedDate) ?>&jam=<?= $jam ?>" 
-                       class="<?= $isActive ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ?> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
-                        Jam ke-<?= $jam ?>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $badgeClass ?>">
-                            <?= $doneCount ?>/<?= $count ?>
-                        </span>
-                    </a>
-                <?php endforeach; ?>
-            </nav>
-        </div>
-
-        <!-- Grid Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php foreach ($slotsByJam[$activeJam] as $slot): 
-                $absensi = $slot['absensi'];
-                $hasRecord = !empty($absensi);
-                $status = $absensi['status'] ?? '';
-                
-                $statusBadge = '';
-                $cardBorder = 'border-gray-200';
-                $cardBg = 'bg-white';
-                
-                if ($status === 'hadir') {
-                    $cardBorder = 'border-green-200';
-                    $cardBg = 'bg-green-50';
-                    $ketepatan = $absensi['ketepatan'] ?? '';
-                    if ($ketepatan === 'tepat_waktu') {
-                        $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Hadir Tepat Waktu</span>';
-                    } else {
-                        $jamDatang = $absensi['jam_datang'] ?? '';
-                        $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Terlambat (' . htmlspecialchars($jamDatang) . ')</span>';
-                    }
-                } elseif ($status === 'tidak_hadir') {
-                    $cardBorder = 'border-red-200';
-                    $cardBg = 'bg-red-50';
-                    $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Tidak Hadir</span>';
-                } elseif ($status === 'diganti' || $status === 'substitute') {
-                    $cardBorder = 'border-blue-200';
-                    $cardBg = 'bg-blue-50';
-                    $penggantiId = $absensi['pengajar_pengganti'] ?? '';
-                    $penggantiName = $pengajarList[$penggantiId]['nama'] ?? 'Unknown';
-                    $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Diganti: ' . htmlspecialchars($penggantiName) . '</span>';
-                }
-            ?>
-            <div class="<?= $cardBg ?> border <?= $cardBorder ?> rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex flex-col">
-                <div class="p-5 flex-1">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-white border border-gray-200 text-xs font-bold text-gray-600 shadow-sm">
-                            <?= htmlspecialchars($slot['kelas_name']) ?>
-                        </span>
-                        <?php if ($hasRecord): ?>
-                            <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <?php else: ?>
-                            <span class="h-5 w-5 block rounded-full border-2 border-gray-300"></span>
-                        <?php endif; ?>
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Sidebar Navigation (Sticky on mobile for quick access) -->
+            <aside class="w-full md:w-64 flex-shrink-0">
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden sticky top-20 z-30">
+                    <div class="hidden md:block px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Jam Pelajaran</h3>
                     </div>
-                    
-                    <h3 class="text-base font-bold text-gray-900 mb-1 line-clamp-1" title="<?= htmlspecialchars($slot['mapel_name']) ?>">
-                        <?= htmlspecialchars($slot['mapel_name']) ?>
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-4 flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span class="line-clamp-1" title="<?= htmlspecialchars($slot['teacher_name']) ?>">
-                           <?= htmlspecialchars($slot['teacher_name']) ?>
+                    <!-- Mobile Hint -->
+                    <div class="md:hidden flex items-center justify-between px-4 py-2 border-b border-gray-50 bg-gray-50/30">
+                        <span class="text-[10px] font-bold text-indigo-500 flex items-center gap-1 uppercase tracking-wider">
+                            <i class="ri-arrow-left-right-line"></i> Geser jam ke samping
                         </span>
-                    </p>
-
-                    <?php if ($hasRecord): ?>
-                        <div class="mt-2 text-center">
-                            <?= $statusBadge ?>
+                        <div class="flex gap-1">
+                            <div class="w-1 h-1 rounded-full bg-indigo-200 animate-pulse"></div>
+                            <div class="w-1 h-1 rounded-full bg-indigo-300 animate-pulse" style="animation-delay: 0.2s"></div>
+                            <div class="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" style="animation-delay: 0.4s"></div>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                    <nav class="p-2 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-3 md:pb-2 no-scrollbar snap-x">
+                        <?php foreach ($slotsByJam as $jam => $slots): 
+                            $isActive = $jam == $activeJam;
+                            $count = count($slots);
+                            $doneCount = 0;
+                            foreach($slots as $s) if(!empty($s['absensi'])) $doneCount++;
+                            $isComplete = $doneCount === $count;
+                            
+                            $badgeClass = $isComplete
+                                ? 'bg-green-100 text-green-700'
+                                : ($doneCount > 0
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-500');
+                            
+                            $activeClass = $isActive 
+                                ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-100' 
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+                            
+                            $isDetected = ($jam == ($currentDetectedHour ?? ''));
+                        ?>
+                            <a href="?date=<?= htmlspecialchars($selectedDate) ?>&jam=<?= $jam ?>" 
+                               id="<?= $isActive ? 'active-jam-tab' : '' ?>"
+                               class="whitespace-nowrap flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200 group <?= $activeClass ?> snap-start min-w-[55%] md:min-w-0">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs <?= $isActive ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200' ?>">
+                                        <?= $jam ?>
+                                    </div>
+                                    <span class="flex-shrink-0">Jam ke-<?= $jam ?></span>
+                                    <?php if ($isDetected): ?>
+                                        <span class="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse flex-shrink-0" title="Sedang Berlangsung"></span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ml-2 <?= $badgeClass ?>">
+                                    <?= $doneCount ?>/<?= $count ?>
+                                </span>
+                            </a>
+<?php endforeach; ?>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="flex-1">
+                <div class="mb-6 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-gray-900">Peserta KBM - Jam ke-<?= $activeJam ?></h3>
+                    <div class="text-xs text-gray-500">
+                        Menampilkan <?= count($slotsByJam[$activeJam]) ?> kelas
+                    </div>
                 </div>
 
-                <div class="px-5 py-3 bg-white/50 border-t border-gray-100 rounded-b-xl">
-                     <button onclick="openAbsensiModal('<?= $slot['key'] ?>', <?= htmlspecialchars(json_encode($slot['kelas_name']), ENT_QUOTES) ?>, '<?= $slot['hour'] ?>', <?= htmlspecialchars(json_encode($slot['mapel_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($slot['teacher_name']), ENT_QUOTES) ?>, '<?= $slot['pengajar_id'] ?>', <?= htmlspecialchars(json_encode($absensi), ENT_QUOTES, 'UTF-8') ?>)" 
-                            class="w-full inline-flex justify-center items-center px-4 py-2 text-sm font-medium rounded-lg shadow-sm text-white <?= $hasRecord ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-indigo-600 hover:bg-indigo-700' ?> transition-colors">
-                        <?= $hasRecord ? 'Edit Absensi' : 'Catat Absensi' ?>
-                    </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <?php foreach ($slotsByJam[$activeJam] as $slot): 
+                        $absensi = $slot['absensi'];
+                        $hasRecord = !empty($absensi);
+                        $status = $absensi['status'] ?? '';
+                        
+                        $statusBadge = '';
+                        $cardBorder = 'border-gray-200';
+                        $cardBg = 'bg-white';
+                        
+                        if ($status === 'hadir') {
+                            $cardBorder = 'border-green-200';
+                            $cardBg = 'bg-green-50/50';
+                            $ketepatan = $absensi['ketepatan'] ?? '';
+                            if ($ketepatan === 'tepat_waktu') {
+                                $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 uppercase tracking-wider">Hadir Tepat</span>';
+                            } else {
+                                $jamDatang = $absensi['jam_datang'] ?? '';
+                                $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 uppercase tracking-wider">Terlambat (' . htmlspecialchars($jamDatang) . ')</span>';
+                            }
+                        } elseif ($status === 'tidak_hadir' || $status === 'alpha') {
+                            $cardBorder = 'border-red-200';
+                            $cardBg = 'bg-red-50/50';
+                            $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 uppercase tracking-wider">Tidak Hadir</span>';
+                        } elseif ($status === 'diganti' || $status === 'substitute') {
+                            $cardBorder = 'border-blue-200';
+                            $cardBg = 'bg-blue-50/50';
+                            $penggantiId = $absensi['pengajar_pengganti'] ?? '';
+                            $penggantiName = $pengajarList[$penggantiId]['nama'] ?? 'Unknown';
+                            $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Diganti: ' . htmlspecialchars($penggantiName) . '</span>';
+                        }
+                    ?>
+                    <div class="<?= $cardBg ?> border-2 <?= $cardBorder ?> rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group overflow-hidden">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="px-3 py-1 rounded-lg bg-white border border-gray-100 text-xs font-bold text-gray-700 shadow-sm group-hover:border-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                    Kelas <?= htmlspecialchars($slot['kelas_name']) ?>
+                                </div>
+                                <?php if ($hasRecord): ?>
+                                    <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg shadow-green-100">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="w-6 h-6 rounded-full border-2 border-gray-200 group-hover:border-indigo-300 transition-colors"></div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <h3 class="text-base font-bold text-gray-900 mb-1 leading-tight line-clamp-2" title="<?= htmlspecialchars($slot['mapel_name']) ?>">
+                                <?= htmlspecialchars($slot['mapel_name']) ?>
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-6 flex items-center gap-1.5 font-medium">
+                                <i class="ri-user-star-line text-gray-400"></i>
+                                <span class="line-clamp-1">
+                                   <?= htmlspecialchars($slot['teacher_name']) ?>
+                                </span>
+                            </p>
+
+                            <?php if ($hasRecord): ?>
+                                <div class="mt-2">
+                                    <?= $statusBadge ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
+                             <button onclick="openAbsensiModal('<?= $slot['key'] ?>', <?= htmlspecialchars(json_encode($slot['kelas_name']), ENT_QUOTES) ?>, '<?= $slot['hour'] ?>', <?= htmlspecialchars(json_encode($slot['mapel_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($slot['teacher_name']), ENT_QUOTES) ?>, '<?= $slot['pengajar_id'] ?>', <?= htmlspecialchars(json_encode($absensi), ENT_QUOTES, 'UTF-8') ?>)" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm text-white transition-all duration-200 <?= $hasRecord ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100' ?>">
+                                <i class="<?= $hasRecord ? 'ri-edit-line' : 'ri-checkbox-circle-line' ?> mr-2 text-sm"></i>
+                                <?= $hasRecord ? 'Edit Absensi' : 'Catat Absensi' ?>
+                            </button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
-            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </main>
@@ -282,6 +325,18 @@ function openAbsensiModal(key, kelas, jam, mapel, pengajar, pengajarId, absensi)
     
     toggleModal('absensiModal');
 }
+
+// Auto-scroll active tab into view on mobile
+document.addEventListener('DOMContentLoaded', () => {
+    const activeTab = document.getElementById('active-jam-tab');
+    if (activeTab && window.innerWidth < 768) { // Only on mobile/tablet
+        activeTab.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest', 
+            inline: 'center' 
+        });
+    }
+});
 
 function updateStatusFields(status) {
     document.getElementById('field_ketepatan').classList.add('hidden');

@@ -27,18 +27,43 @@ class AttendanceController extends Controller {
 
         $schedule = $this->attendanceModel->getDailyScheduleWithAttendance($date);
         
-        // Helper to get Teachers for Dropdown (reusing from existing or model)
-        // We can use a simpler query here or a TeacherModel
+        // Helper to get Teachers for Dropdown (Teachers active in current academic year)
         $db = \App\Core\Database::getInstance()->getConnection();
-        $teachers = $db->query("SELECT id, nama FROM users WHERE role IN ('pengajar', 'admin') ORDER BY nama ASC")->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $yearId = get_active_academic_year_id();
+        $stmt = $db->prepare("
+            SELECT DISTINCT u.id, u.nama 
+            FROM users u 
+            JOIN schedules s ON u.id = s.teacher_id 
+            WHERE s.academic_year_id = ?
+            ORDER BY u.nama ASC
+        ");
+        $stmt->execute([$yearId]);
+        $teachers = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        
         $pengajarList = [];
         foreach($teachers as $id => $nama) $pengajarList[$id] = ['nama' => $nama];
+
+        // Determine current active jam Ke-X based on settings
+        $settingModel = new \App\Models\SettingModel();
+        $hoursConfig = $settingModel->getTvHours();
+        $currentTime = date('H:i');
+        $currentHour = null;
+
+        foreach ($hoursConfig as $row) {
+            if ($row['type'] === 'jam') {
+                if ($currentTime >= $row['start'] && $currentTime <= $row['end']) {
+                    $currentHour = $row['value'];
+                    break;
+                }
+            }
+        }
 
         $this->view('attendance/index', [
             'title' => 'Absensi Pengajar',
             'selectedDate' => $date,
             'schedule' => $schedule,
-            'pengajarList' => $pengajarList
+            'pengajarList' => $pengajarList,
+            'currentDetectedHour' => $currentHour
         ]);
     }
 
@@ -99,9 +124,8 @@ class AttendanceController extends Controller {
         $kelasId = $_GET['kelas_id'] ?? '';
         $pengajarId = $_GET['pengajar_id'] ?? '';
 
-        // Fetch active academic year
-        $yearArr = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-        $yearId = $yearArr ? (int)$yearArr['id'] : 0;
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $yearId = get_active_academic_year_id();
 
         $logs = $this->attendanceModel->getReportStats($startDate, $endDate, $kelasId, $pengajarId);
         
@@ -110,7 +134,16 @@ class AttendanceController extends Controller {
         $kelasStmt->execute([$yearId]);
         $kelasData = $kelasStmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $teachers = $db->query("SELECT id, nama FROM users WHERE role IN ('pengajar', 'admin') ORDER BY nama ASC")->fetchAll(\PDO::FETCH_ASSOC);
+        // Fetch All Teachers active in current academic year
+        $teacherStmt = $db->prepare("
+            SELECT DISTINCT u.id, u.nama 
+            FROM users u 
+            JOIN schedules s ON u.id = s.teacher_id 
+            WHERE s.academic_year_id = ?
+            ORDER BY u.nama ASC
+        ");
+        $teacherStmt->execute([$yearId]);
+        $teachers = $teacherStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Process aggregated stats
         $stats = [

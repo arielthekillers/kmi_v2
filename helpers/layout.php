@@ -56,6 +56,14 @@ function renderHeader($title = "KMI App")
             .ts-wrapper {
                 min-width: 150px;
             }
+            /* Hide scrollbar but keep functionality */
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none; /* IE and Edge */
+                scrollbar-width: none; /* Firefox */
+            }
         </style>
     </head>
 

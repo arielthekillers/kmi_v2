@@ -75,3 +75,16 @@ if (!function_exists('get_active_academic_year')) {
         }
     }
 }
+
+if (!function_exists('get_active_academic_year_id')) {
+    function get_active_academic_year_id() {
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+            $id = $stmt->fetchColumn();
+            return $id ? (int)$id : 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+}

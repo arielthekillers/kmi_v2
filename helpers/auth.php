@@ -334,8 +334,9 @@ if (!function_exists('auth_get_user_id')) {
         // Use Database instead of JSON
         try {
             $db = \App\Core\Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'syeikh'");
-            $stmt->execute([$userId, $dayName]);
+            $yearId = get_active_academic_year_id();
+            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'syeikh' AND academic_year_id = ?");
+            $stmt->execute([$userId, $dayName, $yearId]);
             return (bool) $stmt->fetch();
         } catch (\Exception $e) {
             return false;
@@ -369,8 +370,9 @@ if (!function_exists('auth_is_piket_keliling_today')) {
         // Use Database instead of JSON
         try {
             $db = \App\Core\Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'keliling'");
-            $stmt->execute([$userId, $dayName]);
+            $yearId = get_active_academic_year_id();
+            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'keliling' AND academic_year_id = ?");
+            $stmt->execute([$userId, $dayName, $yearId]);
             return (bool) $stmt->fetch();
         } catch (\Exception $e) {
             return false;
