@@ -3,7 +3,15 @@
 namespace App\Core;
 
 class Controller {
+    protected $currentYear;
+
+    public function __construct() {
+        $yearModel = new \App\Models\AcademicYearModel();
+        $this->currentYear = $yearModel->getActive();
+    }
+
     public function view($view, $data = []) {
+        $data['currentYear'] = $this->currentYear;
         extract($data);
         // Assuming views are in specific module folders or a shared view folder
         // For this refactor, let's support absolute path or relative to Module

@@ -12,9 +12,11 @@ class PiketController extends Controller {
     protected $piketModel;
 
     public function __construct() {
+        parent::__construct();
         $this->teacherModel = new TeacherModel();
         $this->piketModel = new PiketModel();
     }
+
 
     private function getCommonData() {
         require_login();

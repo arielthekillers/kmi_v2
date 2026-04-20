@@ -9,9 +9,17 @@ abstract class Model {
     protected $table;
     protected $primaryKey = 'id';
 
+    protected $academic_year_id;
+
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
+        
+        // Fetch active academic year
+        $stmt = $this->db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+        $year = $stmt->fetch(PDO::FETCH_ASSOC);
+        $this->academic_year_id = $year ? $year['id'] : null;
     }
+
 
     public function findAll() {
         $stmt = $this->db->query("SELECT * FROM {$this->table}");

@@ -10,7 +10,8 @@ class GradeModel extends Model {
 
     public function getAllExams($filters = []) {
         $sql = "SELECT e.*, 
-                       k.tingkat, k.abjad, k.jumlah_murid,
+                       k.tingkat, k.abjad, 
+                       (SELECT COUNT(*) FROM student_enrollments se WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id) as jumlah_murid,
                        sub.nama as mapel_nama,
                        u.nama as pengajar_nama,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count
@@ -18,9 +19,9 @@ class GradeModel extends Model {
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
                 LEFT JOIN users u ON e.teacher_id = u.id
-                WHERE 1=1";
+                WHERE e.academic_year_id = ?";
 
-        $params = [];
+        $params = [$this->academic_year_id];
 
         if (!empty($filters['kelas'])) {
             $sql .= " AND e.kelas_id = ?";
@@ -49,7 +50,8 @@ class GradeModel extends Model {
     public function getExamById($id) {
         $stmt = $this->db->prepare("
             SELECT e.*, 
-                   k.tingkat, k.abjad, k.jumlah_murid,
+                   k.tingkat, k.abjad, 
+                   (SELECT COUNT(*) FROM student_enrollments se WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id) as jumlah_murid,
                    sub.nama as mapel_nama, sub.skala, 
                    u.nama as pengajar_nama
             FROM exams e
@@ -67,11 +69,12 @@ class GradeModel extends Model {
             SELECT s.id as student_id, s.nama, s.nis,
                    g.score_raw as skor, g.score_final as nilai
             FROM students s
+            INNER JOIN student_enrollments se ON s.id = se.student_id
             LEFT JOIN grades g ON s.id = g.student_id AND g.exam_id = ?
-            WHERE s.kelas_id = ?
+            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active'
             ORDER BY s.nama ASC
         ");
-        $stmt->execute([$examId, $classId]);
+        $stmt->execute([$examId, $classId, $this->academic_year_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -80,15 +83,17 @@ class GradeModel extends Model {
             $this->db->beginTransaction();
 
             // Insert Exam
-            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, skor_maks, status, created_at) VALUES (?, ?, ?, ?, 'belum', NOW())");
-            $stmt->execute([$data['subject_id'], $data['kelas_id'], $data['teacher_id'], $data['skor_maks'] ?? 100]);
+            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, skor_maks, status, academic_year_id, created_at) VALUES (?, ?, ?, ?, 'belum', ?, NOW())");
+            $stmt->execute([$data['subject_id'], $data['kelas_id'], $data['teacher_id'], $data['skor_maks'] ?? 100, $this->academic_year_id]);
             $examId = $this->db->lastInsertId();
 
-            // Link existing grades if any (migration logic mainly)
-            // Or assume fresh start. Implementation plan said createExam.
-            // Let's replicate simpan_koreksi logic for robustness.
-            $stmtStudents = $this->db->prepare("SELECT id FROM students WHERE kelas_id = ?");
-            $stmtStudents->execute([$data['kelas_id']]);
+            // Link existing grades if any
+            $stmtStudents = $this->db->prepare("
+                SELECT s.id FROM students s 
+                INNER JOIN student_enrollments se ON s.id = se.student_id
+                WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active'
+            ");
+            $stmtStudents->execute([$data['kelas_id'], $this->academic_year_id]);
             $studentIds = $stmtStudents->fetchAll(PDO::FETCH_COLUMN);
 
             if (!empty($studentIds)) {

@@ -17,8 +17,10 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tingkat</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abjad</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Murid</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pa/Pi</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wali Kelas</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jml Santri</th>
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
@@ -42,12 +44,18 @@
                             <div class="text-sm text-gray-500"><?= htmlspecialchars($class['abjad']) ?></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $class['gender'] == 'Pa' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800' ?>">
                                 <?= htmlspecialchars($class['gender']) ?>
                             </span>
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900"><?= htmlspecialchars($class['wali_kelas'] ?? '-') ?></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500 italic"><?= htmlspecialchars($class['location'] ?? '-') ?></div>
+                        </td>
                          <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900"><?= number_format($class['jumlah_murid']) ?></div>
+                            <div class="text-sm font-bold text-indigo-600"><?= number_format($class['jumlah_murid']) ?></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="/classes/delete?id=<?= $class['id'] ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Yakin hapus kelas ini?');">
@@ -94,9 +102,18 @@
                     <option value="Pi">Pi (Putri)</option>
                 </select>
             </div>
-             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Murid</label>
-                <input type="number" name="jumlah_murid" min="0" value="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Wali Kelas (Opsional)</label>
+                <select name="teacher_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
+                    <option value="">-- Pilih Wali Kelas --</option>
+                    <?php foreach ($teachers as $t): ?>
+                    <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi Kelas (Opsional)</label>
+                <input type="text" name="location" placeholder="Gedung A, Lantai 2, dll" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2">
             </div>
             <div class="flex justify-end pt-2">
                 <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">

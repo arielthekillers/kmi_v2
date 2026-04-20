@@ -9,8 +9,10 @@ class AttendanceController extends Controller {
     protected $attendanceModel;
 
     public function __construct() {
+        parent::__construct();
         $this->attendanceModel = new AttendanceModel();
     }
+
 
     public function index() {
         require_login();
@@ -97,11 +99,17 @@ class AttendanceController extends Controller {
         $kelasId = $_GET['kelas_id'] ?? '';
         $pengajarId = $_GET['pengajar_id'] ?? '';
 
+        // Fetch active academic year
+        $yearArr = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        $yearId = $yearArr ? (int)$yearArr['id'] : 0;
+
         $logs = $this->attendanceModel->getReportStats($startDate, $endDate, $kelasId, $pengajarId);
         
-        // Fetch All Classes and Teachers for Filter Dropdowns
-        $db = \App\Core\Database::getInstance()->getConnection();
-        $kelasData = $db->query("SELECT * FROM kelas ORDER BY tingkat ASC, abjad ASC")->fetchAll(\PDO::FETCH_ASSOC);
+        // Fetch All Classes for Active Year
+        $kelasStmt = $db->prepare("SELECT * FROM kelas WHERE academic_year_id = ? ORDER BY tingkat ASC, abjad ASC");
+        $kelasStmt->execute([$yearId]);
+        $kelasData = $kelasStmt->fetchAll(\PDO::FETCH_ASSOC);
+
         $teachers = $db->query("SELECT id, nama FROM users WHERE role IN ('pengajar', 'admin') ORDER BY nama ASC")->fetchAll(\PDO::FETCH_ASSOC);
 
         // Process aggregated stats
@@ -114,11 +122,10 @@ class AttendanceController extends Controller {
             'diganti' => 0
         ];
 
-        // Enrich logs with 'mapel_name' if needed (requires fetching schedule or joining)
-        // For now, let's leave mapel empty or fetch if critical. The legacy fetched it via separate map.
-        // We'll mimic that to show Mapel.
+        // Enrich logs with 'mapel_name'
         $scheduleMap = [];
-        $schStmt = $db->query("SELECT s.*, sub.nama as mapel_name FROM schedules s JOIN subjects sub ON s.subject_id = sub.id");
+        $schStmt = $db->prepare("SELECT s.*, sub.nama as mapel_name FROM schedules s JOIN subjects sub ON s.subject_id = sub.id WHERE s.academic_year_id = ?");
+        $schStmt->execute([$yearId]);
         while ($r = $schStmt->fetch(\PDO::FETCH_ASSOC)) {
             $scheduleMap[$r['kelas_id']][$r['day']][$r['hour']] = $r['mapel_name'];
         }

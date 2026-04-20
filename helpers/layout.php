@@ -17,6 +17,7 @@ function renderHeader($title = "KMI App")
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <style>
@@ -58,12 +59,15 @@ function renderHeader($title = "KMI App")
         </style>
     </head>
 
-    <body class="bg-gray-50 text-gray-800">
+    <body class="bg-slate-50 text-gray-800">
 
         <?php
         if (session_status() === PHP_SESSION_NONE) session_start();
         $flash = $_SESSION['flash'] ?? null;
         unset($_SESSION['flash']);
+
+        // Fetch Current Academic Year
+        $__currentYearName = get_active_academic_year();
         ?>
 
         <?php if ($flash): ?>
@@ -115,7 +119,7 @@ function renderHeader($title = "KMI App")
             </script>
         <?php endif; ?>
 
-        <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <!-- Logo & Desktop Nav -->
@@ -129,49 +133,82 @@ function renderHeader($title = "KMI App")
 
                         <?php $current = basename($_SERVER['PHP_SELF']); ?>
                         <div class="hidden md:flex items-center space-x-1">
-                            <a href="<?= url('/') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>" <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'aria-current="page"' : '' ?>>Dashboard</a>
-                            <?php if (auth_get_role() === 'admin'): ?>
-                                <!-- Master Data Dropdown -->
-                                <div class="relative group">
-                                    <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                        Master Data
-                                        <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                    <div class="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg border border-gray-100 hidden group-hover:block py-1 z-50">
-                                        <a href="<?= url('/subjects') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/subjects') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Master Pelajaran</a>
-                                        <a href="<?= url('/teachers') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/teachers') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Data Pengajar</a>
-                                        <a href="<?= url('/classes') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/classes') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Data Kelas</a>
-                                    </div>
-                                </div>
-                                <!-- Jadwal Dropdown -->
-                                <div class="relative group">
-                                    <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                        Jadwal
-                                        <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
-                                    <div class="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg border border-gray-100 hidden group-hover:block py-1 z-50">
-                                        <a href="<?= url('/schedule') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/schedule') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Jadwal Pelajaran</a>
-                                        <a href="<?= url('/piket/office') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/piket/office') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Jadwal Syeikh Diwan</a>
-                                        <a href="<?= url('/piket/roaming') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/piket/roaming') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Jadwal Piket Keliling</a>
-                                        <a href="<?= url('/attendance') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/attendance') !== false && strpos($_SERVER['REQUEST_URI'], '/report') === false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Absensi Pengajar</a>
-                                        <a href="<?= url('/attendance/report') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 <?= (strpos($_SERVER['REQUEST_URI'], '/attendance/report') !== false) ? 'bg-gray-50 text-indigo-600' : '' ?>">Laporan Piket Keliling</a>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                            <a href="<?= url('/') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>">
+                                <i class="ri-dashboard-line mr-1"></i> Dashboard
+                            </a>
                             
-                            <?php if (auth_get_role() === 'pengajar'): ?>
-                                <a href="<?= url('/jadwal-saya') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/jadwal-saya') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>" <?= (strpos($_SERVER['REQUEST_URI'], '/jadwal-saya') !== false) ? 'aria-current="page"' : '' ?>>Jadwal Mengajar</a>
+                            <?php if (auth_get_role() === 'admin'): ?>
+                                <!-- Group 1: Pusat Data -->
+                                <div class="relative group">
+                                    <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                        <i class="ri-database-2-line"></i> Pusat Data <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
+                                    <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                        <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Master Data</div>
+                                        <a href="<?= url('/teachers') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-user-star-line text-gray-400"></i> Data Pengajar
+                                        </a>
+                                        <a href="<?= url('/students') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-user-heart-line text-gray-400"></i> Data Santri
+                                        </a>
+                                        <a href="<?= url('/subjects') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-book-open-line text-gray-400"></i> Master Pelajaran
+                                        </a>
+                                        <a href="<?= url('/academic-years') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                            <i class="ri-calendar-2-line text-gray-400"></i> Tahun Ajaran
+                                        </a>
+
+                                        <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Penyusunan & Jadwal</div>
+                                        <a href="<?= url('/classes') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-community-line text-gray-400"></i> Data Kelas
+                                        </a>
+                                        <a href="<?= url('/schedule') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-calendar-todo-line text-gray-400"></i> Jadwal Pelajaran
+                                        </a>
+                                        <a href="<?= url('/piket/office') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-government-line text-gray-400"></i> Jadwal Syeikh Diwan
+                                        </a>
+                                        <a href="<?= url('/piket/roaming') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-walk-line text-gray-400"></i> Jadwal Piket Keliling
+                                        </a>
+                                    </div>
+                                </div>
                             <?php endif; ?>
 
                             <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
-                                <a href="<?= url('/tanqih') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/tanqih') !== false && strpos($_SERVER['REQUEST_URI'], '/report') === false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>">Tanqih Idad</a>
-                                <a href="<?= url('/tanqih/report') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/tanqih/report') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>">Laporan Tanqih Idad</a>
+                                <!-- Group 2: KMI Taklim -->
+                                <div class="relative group">
+                                    <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                        <i class="ri-honor-line"></i> Layanan KMI <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
+                                    <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                        <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Taklim & Evaluasi</div>
+                                        <a href="<?= url('/attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-user-received-2-line text-gray-400"></i> Absensi Pengajar
+                                        </a>
+                                        <a href="<?= url('/tanqih') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-checkbox-circle-line text-gray-400"></i> Tanqih Idad
+                                        </a>
+                                        <a href="<?= url('/grades') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                            <i class="ri-edit-2-line text-gray-400"></i> Koreksi Ujian
+                                        </a>
+
+                                        <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pusat Laporan</div>
+                                        <a href="<?= url('/tanqih/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-file-list-3-line text-gray-400"></i> Laporan Tanqih
+                                        </a>
+                                        <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                            <i class="ri-file-chart-line text-gray-400"></i> Laporan Piket Keliling
+                                        </a>
+                                    </div>
+                                </div>
                             <?php endif; ?>
 
-                            <?php if (auth_get_role() === 'pengajar' && auth_is_piket_keliling_today()): ?>
-                                <a href="<?= url('/attendance') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/attendance') !== false)  ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>" <?= (strpos($_SERVER['REQUEST_URI'], '/attendance') !== false)  ? 'aria-current="page"' : '' ?>>Absensi Pengajar</a>
+                            <?php if (auth_get_role() === 'pengajar'): ?>
+                                <a href="<?= url('/jadwal-saya') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">
+                                    <i class="ri-calendar-check-line mr-1"></i> Jadwal Mengajar
+                                </a>
                             <?php endif; ?>
-                            <a href="<?= url('/grades') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>" <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'aria-current="page"' : '' ?>>Koreksi Ujian</a>
                         </div>
                     </div>
 
@@ -185,13 +222,17 @@ function renderHeader($title = "KMI App")
                     </div>
 
                     <!-- User / Auth Dropdown -->
-                    <div class="hidden md:flex items-center">
+                    <div class="hidden md:flex items-center gap-4">
                         <?php if (is_logged_in()):
                             $__user = function_exists('auth_get_current_user') ? auth_get_current_user() : null;
                             $__display_name = function_exists('auth_get_display_name') ? auth_get_display_name() : (is_array($__user) ? ($__user['nama'] ?? ($__user['username'] ?? '')) : (string)$__user);
                             $__role = auth_get_role();
                             $__initials = mb_strtoupper(mb_substr(trim($__display_name), 0, 1));
                         ?>
+                        <div class="flex items-center px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold">
+                            <i class="ri-calendar-event-line mr-1"></i> TA: <?= htmlspecialchars($__currentYearName) ?>
+                        </div>
+
                         <div class="relative" id="user-dropdown-wrapper">
                             <!-- Trigger -->
                             <button onclick="toggleUserDropdown()"
@@ -243,7 +284,7 @@ function renderHeader($title = "KMI App")
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                             General
                                         </a>
-                                        <a href="<?= url('/settings/tv/bgm') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                        <a href="<?= url('/settings/tv/bgm') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50">
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                             TV Showcase
                                         </a>
@@ -270,35 +311,58 @@ function renderHeader($title = "KMI App")
             <!-- Mobile Menu -->
             <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100">
                 <div class="px-2 pt-2 pb-3 space-y-1">
-                    <a href="<?= url('/') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>" <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'aria-current="page"' : '' ?>>Dashboard</a>
-                    <?php if (auth_get_role() === 'pengajar'): ?>
-                        <a href="<?= url('/jadwal-saya') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/jadwal-saya') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Jadwal Mengajar</a>
-                    <?php endif; ?>
+                    <a href="<?= url('/') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 bg-indigo-50">
+                        <i class="ri-dashboard-line mr-1"></i> Dashboard
+                    </a>
+                    
                     <?php if (auth_get_role() === 'admin'): ?>
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Master Data</div>
-                        <a href="<?= url('/subjects') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/subjects') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Daftar Pelajaran</a>
-                        <a href="<?= url('/teachers') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/teachers') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Data Pengajar</a>
-                        <a href="<?= url('/classes') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/classes') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Data Kelas</a>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Jadwal</div>
-                        <a href="<?= url('/schedule') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/schedule') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Jadwal Pelajaran</a>
-                        <a href="<?= url('/piket/office') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/piket/office') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Jadwal Piket Kantor</a>
-                        <a href="<?= url('/piket/roaming') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/piket/roaming') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Jadwal Piket Keliling</a>
-                        <a href="<?= url('/attendance') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/attendance') !== false && strpos($_SERVER['REQUEST_URI'], '/report') === false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Absensi Pengajar</a>
-                        <a href="<?= url('/attendance/report') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/attendance/report') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50' ?>">Laporan Piket Keliling</a>
+                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Pusat Data</div>
+                        <a href="<?= url('/teachers') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-star-line mr-2"></i>Data Pengajar
+                        </a>
+                        <a href="<?= url('/students') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-heart-line mr-2"></i>Data Santri
+                        </a>
+                        <a href="<?= url('/subjects') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-book-open-line mr-2"></i>Master Pelajaran
+                        </a>
+                        <a href="<?= url('/academic-years') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-calendar-2-line mr-2"></i>Tahun Ajaran
+                        </a>
+                        
+                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-t pt-2">Penyusunan & Jadwal</div>
+                        <a href="<?= url('/classes') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-community-line mr-2"></i>Data Kelas
+                        </a>
+                        <a href="<?= url('/schedule') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-calendar-todo-line mr-2"></i>Jadwal Pelajaran
+                        </a>
+                        <a href="<?= url('/piket/office') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-government-line mr-2"></i>Jadwal Syeikh Diwan
+                        </a>
+                        <a href="<?= url('/piket/roaming') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-walk-line mr-2"></i>Jadwal Piket Keliling
+                        </a>
                     <?php endif; ?>
 
                     <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <a href="<?= url('/tanqih') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/tanqih') !== false && strpos($_SERVER['REQUEST_URI'], '/report') === false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Tanqih Idad</a>
-                        <a href="<?= url('/tanqih/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/tanqih/report') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Laporan Tanqih Idad</a>
+                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-t pt-2">Layanan KMI</div>
+                        <a href="<?= url('/attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-received-2-line mr-2"></i>Absensi Pengajar
+                        </a>
+                        <a href="<?= url('/tanqih') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-checkbox-circle-line mr-2"></i>Tanqih Idad
+                        </a>
+                        <a href="<?= url('/grades') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-edit-2-line mr-2"></i>Koreksi Ujian
+                        </a>
+                        <a href="<?= url('/tanqih/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 border-t mt-1">
+                            <i class="ri-file-list-3-line mr-2"></i>Laporan Tanqih
+                        </a>
+                        <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
+                        </a>
                     <?php endif; ?>
-
-                    <?php if (auth_get_role() === 'pengajar' && auth_is_piket_keliling_today()): ?>
-                        <a href="<?= url('/attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/attendance') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Absensi Pengajar</a>
-                    <?php endif; ?>
-                    <a href="<?= url('/grades') ?>" class="block px-3 py-2 rounded-md text-base font-medium <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-50' ?>">Koreksi Ujian</a>
-
                     <?php if (is_logged_in()): 
                         $__user = function_exists('auth_get_current_user') ? auth_get_current_user() : null;
                         $__display_name = function_exists('auth_get_display_name') ? auth_get_display_name() : (is_array($__user) ? ($__user['nama'] ?? ($__user['username'] ?? '')) : (string)$__user);
@@ -318,31 +382,26 @@ function renderHeader($title = "KMI App")
                         
                         <?php if ($__role === 'pengajar'): ?>
                             <a href="<?= url('/profil') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                Profil Saya
+                                <i class="ri-user-settings-line text-gray-400"></i> Profil Saya
                             </a>
                         <?php endif; ?>
 
                         <?php if ($__role === 'admin'): ?>
                             <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Settings</div>
                             <a href="<?= url('/settings/general') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                General Settings
+                                 <i class="ri-settings-4-line text-gray-400"></i> General Settings
                             </a>
                             <a href="<?= url('/settings/tv/bgm') ?>" class="block pl-6 pr-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                TV Showcase
+                                <i class="ri-tv-2-line text-gray-400"></i> TV Showcase
                             </a>
                         <?php endif; ?>
 
                         <a href="<?= url('/logout') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                            Logout
+                            <i class="ri-logout-box-line"></i> Logout
                         </a>
                     <?php else: ?>
                         <a href="<?= url('/login') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                            Login
+                            <i class="ri-login-box-line"></i> Login
                         </a>
                     <?php endif; ?>
                 </div>

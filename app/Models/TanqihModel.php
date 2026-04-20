@@ -13,9 +13,9 @@ class TanqihModel extends Model {
             SELECT t.*, u.nama as verifier_name 
             FROM {$this->table} t 
             LEFT JOIN users u ON t.verifier_id = u.id 
-            WHERE date = ?
+            WHERE date = ? AND academic_year_id = ?
         ");
-        $stmt->execute([$date]);
+        $stmt->execute([$date, $this->academic_year_id]);
         
         $logs = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -26,17 +26,17 @@ class TanqihModel extends Model {
 
     public function verify($date, $kelasId, $hour, $verifierId, $status = 'verified') {
         $stmt = $this->db->prepare("
-            INSERT INTO {$this->table} (date, kelas_id, hour, verifier_id, status, verified_at) 
-            VALUES (?, ?, ?, ?, ?, NOW())
+            INSERT INTO {$this->table} (date, kelas_id, hour, verifier_id, status, academic_year_id, verified_at) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
             status = VALUES(status), verifier_id = VALUES(verifier_id), verified_at = NOW()
         ");
-        return $stmt->execute([$date, $kelasId, $hour, $verifierId, $status]);
+        return $stmt->execute([$date, $kelasId, $hour, $verifierId, $status, $this->academic_year_id]);
     }
 
     public function unverify($date, $kelasId, $hour) {
-        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE date = ? AND kelas_id = ? AND hour = ?");
-        return $stmt->execute([$date, $kelasId, $hour]);
+        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE date = ? AND kelas_id = ? AND hour = ? AND academic_year_id = ?");
+        return $stmt->execute([$date, $kelasId, $hour, $this->academic_year_id]);
     }
 
     /**
@@ -128,8 +128,10 @@ class TanqihModel extends Model {
         // Return structured as [Day => [Rows]]
         $sql = "SELECT s.*, u.nama as teacher_nama 
                 FROM schedules s 
-                LEFT JOIN users u ON s.teacher_id = u.id";
-        $stmt = $this->db->query($sql);
+                LEFT JOIN users u ON s.teacher_id = u.id
+                WHERE s.academic_year_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$this->academic_year_id]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $grouped = [];
@@ -141,8 +143,8 @@ class TanqihModel extends Model {
 
     private function getVerificationsInRange($startDate, $endDate) {
         // Return keyed by Date|Kelas|Hour
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE date BETWEEN ? AND ?");
-        $stmt->execute([$startDate, $endDate]);
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE (date BETWEEN ? AND ?) AND academic_year_id = ?");
+        $stmt->execute([$startDate, $endDate, $this->academic_year_id]);
         
         $data = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

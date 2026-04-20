@@ -64,3 +64,14 @@ if (!function_exists('redirect')) {
         exit;
     }
 }
+if (!function_exists('get_active_academic_year')) {
+    function get_active_academic_year() {
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->query("SELECT name FROM academic_years WHERE is_active = 1 LIMIT 1");
+            return $stmt->fetchColumn() ?: 'None';
+        } catch (\Exception $e) {
+            return 'None';
+        }
+    }
+}

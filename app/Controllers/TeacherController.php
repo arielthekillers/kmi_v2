@@ -9,8 +9,10 @@ class TeacherController extends Controller {
     protected $teacherModel;
 
     public function __construct() {
+        parent::__construct();
         $this->teacherModel = new TeacherModel();
     }
+
 
     public function index() {
         require_admin();

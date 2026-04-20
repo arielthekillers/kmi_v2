@@ -7,28 +7,36 @@ use App\Core\Database;
 class Attendance {
     protected $db;
 
+    protected $academic_year_id;
+
     public function __construct() {
         $this->db = Database::getInstance();
+        $year = $this->db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
+        $this->academic_year_id = $year ? (int)$year['id'] : null;
     }
 
     public function getKelasList() {
-        return $this->db->query("SELECT * FROM kelas ORDER BY tingkat ASC, abjad ASC")->fetchAll();
+        return $this->db->query("SELECT * FROM kelas WHERE academic_year_id = ? ORDER BY tingkat ASC, abjad ASC", [$this->academic_year_id])->fetchAll();
     }
 
     public function getStudentsByKelas($kelasId) {
         return $this->db->query(
-            "SELECT * FROM students WHERE kelas_id = ? ORDER BY nama ASC", 
-            [$kelasId]
+            "SELECT s.* FROM students s 
+             INNER JOIN student_enrollments se ON s.id = se.student_id
+             WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' 
+             ORDER BY s.nama ASC", 
+            [$kelasId, $this->academic_year_id]
         )->fetchAll();
     }
 
     public function getAttendanceByClassAndDate($kelasId, $date) {
         $sql = "SELECT s.id as student_id, s.nama, s.nis, a.status, a.note 
                 FROM students s 
+                INNER JOIN student_enrollments se ON s.id = se.student_id
                 LEFT JOIN attendance a ON s.id = a.student_id AND a.date = ?
-                WHERE s.kelas_id = ? 
+                WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' 
                 ORDER BY s.nama ASC";
-        return $this->db->query($sql, [$date, $kelasId])->fetchAll();
+        return $this->db->query($sql, [$date, $kelasId, $this->academic_year_id])->fetchAll();
     }
 
     public function save($data) {

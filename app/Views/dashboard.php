@@ -1,130 +1,9 @@
 <?php
-require_once __DIR__ . '/../../helpers/auth.php';
-require_once __DIR__ . '/../../helpers/layout.php';
-require_login();
+// app/Views/dashboard.php
+// Logic has been moved to DashboardController.php
+// Data is passed via $data array
 
-// Database Connection
-require_once __DIR__ . '/../../app/Core/Database.php';
-$db = \App\Core\Database::getInstance();
-$pdo = $db->getConnection();
-
-// Helper Data
-$currentUserRole = function_exists('auth_get_role') ? auth_get_role() : 'admin';
-$currentUserId = function_exists('auth_get_user_id') ? auth_get_user_id() : null;
-$todayDate = date('Y-m-d');
-$dayMap = [
-    'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa',
-    'Wed' => 'Rabu', 'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'
-];
-$todayDay = $dayMap[date('D')] ?? '';
-
-// 1. Basic Counts (Master Data)
-$stats = [
-    'pelajaran' => $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
-    'kelas' => $pdo->query("SELECT COUNT(*) FROM kelas")->fetchColumn(),
-    'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role IN ('pengajar', 'admin')")->fetchColumn(), // Admin is also teacher? Usually separate.
-    'koreksi' => 0
-];
-// Adjust pengajar count if role is strictly 'pengajar'
-// $stats['pengajar'] = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar'")->fetchColumn(); 
-
-// 2. Koreksi Stats
-$koreksiSql = "SELECT COUNT(*) as total, SUM(CASE WHEN status='selesai' THEN 1 ELSE 0 END) as selesaicount FROM exams";
-if ($currentUserRole === 'pengajar' && $currentUserId) {
-    $stmt = $pdo->prepare($koreksiSql . " WHERE teacher_id = ?");
-    $stmt->execute([$currentUserId]);
-    $kRes = $stmt->fetch(PDO::FETCH_ASSOC);
-} else {
-    $kRes = $pdo->query($koreksiSql)->fetch(PDO::FETCH_ASSOC);
-}
-$stats['koreksi'] = $kRes['total'];
-$totalKoreksi = $kRes['total'];
-$finishedKoreksi = $kRes['selesaicount'] ?? 0;
-$correctionPercent = $totalKoreksi > 0 ? round(($finishedKoreksi / $totalKoreksi) * 100) : 0;
-
-// 3. Tanqih Idad Summary (Attendance)
-// Total Slots Today
-$sqlSlots = "SELECT COUNT(*) FROM schedules WHERE day = ?";
-$paramsSlots = [$todayDay];
-
-if ($currentUserRole === 'pengajar' && $currentUserId) {
-    $sqlSlots .= " AND teacher_id = ?";
-    $paramsSlots[] = $currentUserId;
-}
-
-$stmtSlots = $pdo->prepare($sqlSlots);
-$stmtSlots->execute($paramsSlots);
-$totalSlotsToday = $stmtSlots->fetchColumn();
-
-// Verified Slots (Tanqih Table)
-// Assuming table `tanqih` has columns: date, kelas_id, hour, ...
-// We need to count distinct verified slots for today.
-// Warning: If schedule changed but tanqih exists? Usually fine.
-$sqlVerified = "SELECT COUNT(*) FROM tanqih WHERE date = ?";
-$paramsVerified = [$todayDate];
-
-if ($currentUserRole === 'pengajar' && $currentUserId) {
-    // We need to verify if the slot verified belongs to this teacher.
-    // This is tricky without joining schedules.
-    // Query: Count tanqih entries where (kelas_id, hour) matches a schedule entry for this teacher on this day.
-    $sqlVerified = "
-        SELECT COUNT(*) 
-        FROM tanqih t
-        JOIN schedules s ON t.kelas_id = s.kelas_id AND t.hour = s.hour
-        WHERE t.date = ? AND s.day = ? AND s.teacher_id = ?
-    ";
-    $paramsVerified = [$todayDate, $todayDay, $currentUserId];
-}
-
-$stmtVerified = $pdo->prepare($sqlVerified);
-$stmtVerified->execute($paramsVerified);
-$verifiedCount = $stmtVerified->fetchColumn();
-
-$attendancePercent = $totalSlotsToday > 0 ? round(($verifiedCount / $totalSlotsToday) * 100) : 0;
-
-
-// 4. Piket Summary (Syeikh & Keliling)
-// Syeikh
-$stmt = $pdo->prepare("
-    SELECT u.nama 
-    FROM piket_schedule p 
-    JOIN users u ON p.user_id = u.id 
-    WHERE p.type = 'syeikh' AND p.day = ?
-");
-$stmt->execute([$todayDay]);
-$piketTodayNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-// Keliling
-$stmt = $pdo->prepare("
-    SELECT u.nama 
-    FROM piket_schedule p 
-    JOIN users u ON p.user_id = u.id 
-    WHERE p.type = 'keliling' AND p.day = ?
-");
-$stmt->execute([$todayDay]);
-$piketKelilingTodayNames = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-
-// 5. Absensi Pengajar Summary
-$stmt = $pdo->prepare("
-    SELECT status, COUNT(*) as cnt 
-    FROM attendance_logs 
-    WHERE date = ? 
-    GROUP BY status
-");
-$stmt->execute([$todayDate]);
-$absensiStats = ['hadir' => 0, 'tidak_hadir' => 0]; // 'recorded' is sum
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    if ($row['status'] === 'hadir') $absensiStats['hadir'] = $row['cnt'];
-    elseif ($row['status'] === 'tidak_hadir') $absensiStats['tidak_hadir'] = $row['cnt'];
-}
-
-// Calculate Total Santri (Sum of jumlah_murid in kelas)
-$totalSantri = $pdo->query("SELECT SUM(jumlah_murid) FROM kelas")->fetchColumn() ?? 0;
-
-
-
-renderHeader("Dashboard");
+renderHeader ("Dashboard");
 ?>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -137,7 +16,7 @@ renderHeader("Dashboard");
         </div>
         <div class="mt-4 md:mt-0">
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                Tahun Ajaran 2025/2026
+                Tahun Ajaran <?= htmlspecialchars($yearName) ?>
             </span>
         </div>
     </div>
@@ -156,11 +35,11 @@ renderHeader("Dashboard");
             </div>
             <h3 class="text-lg font-bold text-gray-900 mb-1">Syeikh Diwan</h3>
             <div class="flex-1 mt-2">
-                <?php if (empty($piketTodayNames)): ?>
+                <?php if (empty($piketSyeikh)): ?>
                     <p class="text-sm text-gray-400 italic">Tidak ada jadwal.</p>
                 <?php else: ?>
                     <ul class="space-y-1">
-                        <?php foreach ($piketTodayNames as $name): ?>
+                        <?php foreach ($piketSyeikh as $name): ?>
                         <li class="flex items-center text-sm font-medium text-gray-700">
                             <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-2"></span>
                             <?= htmlspecialchars($name) ?>
@@ -184,11 +63,11 @@ renderHeader("Dashboard");
             </div>
             <h3 class="text-lg font-bold text-gray-900 mb-1">Piket Keliling</h3>
             <div class="flex-1 mt-2">
-                <?php if (empty($piketKelilingTodayNames)): ?>
+                <?php if (empty($piketKeliling)): ?>
                     <p class="text-sm text-gray-400 italic">Tidak ada jadwal.</p>
                 <?php else: ?>
                     <ul class="space-y-1">
-                        <?php foreach ($piketKelilingTodayNames as $name): ?>
+                        <?php foreach ($piketKeliling as $name): ?>
                         <li class="flex items-center text-sm font-medium text-gray-700">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mr-2"></span>
                             <?= htmlspecialchars($name) ?>
@@ -253,7 +132,7 @@ renderHeader("Dashboard");
                 </p>
             </div>
             <a href="<?= url('/tanqih') ?>" class="mt-4 text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center">
-                <?= ($currentUserRole === 'admin' || $currentUserRole === 'pengajar') ? 'Buka Tanqih' : 'Lihat Data' ?>
+                <?= ($role === 'admin' || $role === 'pengajar') ? 'Buka Tanqih' : 'Lihat Data' ?>
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </a>
         </div>
@@ -283,7 +162,7 @@ renderHeader("Dashboard");
     </div>
 
     <!-- Admin Master Data Section (Mini Cards) -->
-    <?php if ($currentUserRole === 'admin'): ?>
+    <?php if ($role === 'admin'): ?>
     <h3 class="text-lg font-semibold text-gray-800 mb-4">Master Data</h3>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <a href="<?= url('/subjects') ?>" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow group">
@@ -301,7 +180,7 @@ renderHeader("Dashboard");
             <div class="flex items-center justify-between">
                 <div>
                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Total Santri</p>
-                   <p class="text-xl font-bold text-gray-900 mt-1"><?= $totalSantri ?></p>
+                   <p class="text-xl font-bold text-gray-900 mt-1"><?= $stats['santri'] ?></p>
                 </div>
                 <div class="bg-pink-50 p-2 rounded-lg text-pink-600 group-hover:bg-pink-100 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>

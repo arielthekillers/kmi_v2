@@ -81,12 +81,15 @@ class DashboardController extends Controller {
         $koreksiPercent = ($koreksiStats['total'] > 0) ? round(($koreksiStats['selesai'] / $koreksiStats['total']) * 100) : 0;
 
 
+        // Active Year for Stats
+        $activeYearId = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetchColumn();
+
         // Master Data Stats
         $stats = [
             'pelajaran' => $db->query("SELECT COUNT(*) as c FROM subjects")->fetch()['c'],
-            'kelas' => $db->query("SELECT COUNT(*) as c FROM kelas")->fetch()['c'],
-            'pengajar' => $db->query("SELECT COUNT(*) as c FROM users WHERE role = 'guru'")->fetch()['c'],
-            'santri' => $db->query("SELECT COUNT(*) as c FROM students")->fetch()['c']
+            'kelas' => $db->query("SELECT COUNT(*) as c FROM kelas WHERE academic_year_id = ?", [$activeYearId])->fetch()['c'],
+            'pengajar' => $db->query("SELECT COUNT(*) as c FROM users WHERE role = 'pengajar'")->fetch()['c'],
+            'santri' => $db->query("SELECT COUNT(*) FROM student_enrollments WHERE academic_year_id = ? AND status = 'Active'", [$activeYearId])->fetchColumn()
         ];
 
         // Pass data to view

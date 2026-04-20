@@ -14,9 +14,13 @@ class ClassController extends Controller {
             return;
         }
 
+        $db = \App\Core\Database::getInstance();
+        $teachers = $db->query("SELECT id, nama FROM users WHERE role = 'pengajar' ORDER BY nama ASC")->fetchAll();
+
         $data = [
             'title' => 'Data Kelas',
             'classes' => Kelas::all(),
+            'teachers' => $teachers,
             'user' => $_SESSION['nama'] ?? 'User',
             'role' => $_SESSION['role'] ?? 'user'
         ];
@@ -33,7 +37,8 @@ class ClassController extends Controller {
                 'tingkat' => $_POST['tingkat'],
                 'abjad' => $_POST['abjad'],
                 'gender' => $_POST['gender'],
-                'jumlah_murid' => $_POST['jumlah_murid'] ?? 0
+                'location' => $_POST['location'] ?? null,
+                'teacher_id' => $_POST['teacher_id'] ?? null
             ]);
             $this->redirect('/classes');
         }

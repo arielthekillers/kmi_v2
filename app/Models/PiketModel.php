@@ -14,8 +14,8 @@ class PiketModel extends Model {
      * @return array ['Senin' => [user_id1, user_id2], ...]
      */
     public function getSchedule($type) {
-        $stmt = $this->db->prepare("SELECT * FROM piket_schedule WHERE type = ?");
-        $stmt->execute([$type]);
+        $stmt = $this->db->prepare("SELECT * FROM piket_schedule WHERE type = ? AND academic_year_id = ?");
+        $stmt->execute([$type, $this->academic_year_id]);
         
         $schedule = [];
         $days = ['Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis'];
@@ -41,12 +41,12 @@ class PiketModel extends Model {
         try {
             $this->db->beginTransaction();
 
-            // 1. Delete existing for this type
-            $stmt = $this->db->prepare("DELETE FROM piket_schedule WHERE type = ?");
-            $stmt->execute([$type]);
+            // 1. Delete existing for this type for current year
+            $stmt = $this->db->prepare("DELETE FROM piket_schedule WHERE type = ? AND academic_year_id = ?");
+            $stmt->execute([$type, $this->academic_year_id]);
 
             // 2. Insert new
-            $stmtInsert = $this->db->prepare("INSERT INTO piket_schedule (user_id, day, type) VALUES (?, ?, ?)");
+            $stmtInsert = $this->db->prepare("INSERT INTO piket_schedule (user_id, day, type, academic_year_id) VALUES (?, ?, ?, ?)");
             
             foreach ($data as $day => $userIds) {
                 if (!is_array($userIds)) continue;
@@ -54,7 +54,7 @@ class PiketModel extends Model {
                 $userIds = array_values(array_unique(array_filter($userIds)));
                 
                 foreach ($userIds as $userId) {
-                    $stmtInsert->execute([$userId, $day, $type]);
+                    $stmtInsert->execute([$userId, $day, $type, $this->academic_year_id]);
                 }
             }
 

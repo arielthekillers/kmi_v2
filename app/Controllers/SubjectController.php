@@ -9,8 +9,10 @@ class SubjectController extends Controller {
     protected $subjectModel;
 
     public function __construct() {
+        parent::__construct();
         $this->subjectModel = new SubjectModel();
     }
+
 
     public function index() {
         require_admin();

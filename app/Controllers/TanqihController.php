@@ -11,8 +11,10 @@ class TanqihController extends Controller {
     protected $tanqihModel;
 
     public function __construct() {
+        parent::__construct();
         $this->tanqihModel = new TanqihModel();
     }
+
 
     public function index() {
         require_login();
@@ -38,6 +40,10 @@ class TanqihController extends Controller {
         $dayNameEnglish = date('D', $timestamp);
         $dayNameVideo = $dayMap[$dayNameEnglish] ?? '';
 
+        // Fetch active academic year
+        $year = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        $yearId = $year ? (int)$year['id'] : 0;
+
         // Query borrowed from asistensi.php
         $sql = "SELECT s.*, 
                        k.tingkat, k.abjad, 
@@ -47,11 +53,11 @@ class TanqihController extends Controller {
                 JOIN kelas k ON s.kelas_id = k.id
                 JOIN subjects sub ON s.subject_id = sub.id
                 LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE s.day = ?
+                WHERE s.day = ? AND s.academic_year_id = ?
                 ORDER BY s.hour ASC, k.tingkat ASC, k.abjad ASC";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([$dayNameVideo]);
+        $stmt->execute([$dayNameVideo, $yearId]);
         $schedulesRaw = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Fetch Logs

@@ -440,6 +440,17 @@ if (!function_exists('csrf_token_field')) {
     }
 }
 
+if (!function_exists('csrf_input')) {
+    /**
+     * Alias for csrf_token_field()
+     */
+    function csrf_input()
+    {
+        return csrf_token_field();
+    }
+}
+
+
 if (!function_exists('require_admin')) {
     function require_admin()
     {

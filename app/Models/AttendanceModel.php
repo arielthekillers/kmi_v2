@@ -28,16 +28,16 @@ class AttendanceModel extends Model {
                 JOIN kelas k ON s.kelas_id = k.id
                 JOIN subjects sub ON s.subject_id = sub.id
                 LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE s.day = ?
+                WHERE s.day = ? AND s.academic_year_id = ?
                 ORDER BY s.hour ASC, k.tingkat ASC, k.abjad ASC";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$dayName]);
+        $stmt->execute([$dayName, $this->academic_year_id]);
         $schedulesRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // 2. Fetch Attendance Logs for Date
-        $attStmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE date = ?");
-        $attStmt->execute([$date]);
+        $attStmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE date = ? AND academic_year_id = ?");
+        $attStmt->execute([$date, $this->academic_year_id]);
         
         $attendanceLogs = []; // Key: classId|hour
         while($row = $attStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -129,8 +129,8 @@ class AttendanceModel extends Model {
         }
 
         $stmt = $this->db->prepare("
-            INSERT INTO {$this->table} (date, kelas_id, hour, teacher_id, status, substitute_teacher_id, note, petugas_id, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO {$this->table} (date, kelas_id, hour, teacher_id, status, substitute_teacher_id, note, petugas_id, academic_year_id, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
                 status = VALUES(status), 
                 substitute_teacher_id = VALUES(substitute_teacher_id), 
@@ -139,7 +139,7 @@ class AttendanceModel extends Model {
                 updated_at = NOW()
         ");
         return $stmt->execute([
-            $date, $kelasId, $hour, $teacherId, $actualStatus, $substituteId, $note, $petugasId
+            $date, $kelasId, $hour, $teacherId, $actualStatus, $substituteId, $note, $petugasId, $this->academic_year_id
         ]);
     }
     
@@ -153,7 +153,7 @@ class AttendanceModel extends Model {
                 JOIN kelas k ON al.kelas_id = k.id
                 LEFT JOIN users u ON al.teacher_id = u.id
                 LEFT JOIN users subst ON al.substitute_teacher_id = subst.id
-                WHERE al.date BETWEEN ? AND ?";
+                WHERE al.date BETWEEN ? AND ? AND al.academic_year_id = ?";
         
         if ($classId) {
             $sql .= " AND al.kelas_id = ?";
@@ -168,6 +168,7 @@ class AttendanceModel extends Model {
 
         $sql .= " ORDER BY al.date DESC, k.tingkat ASC, k.abjad ASC, al.hour ASC";
 
+        $params[] = $this->academic_year_id;
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

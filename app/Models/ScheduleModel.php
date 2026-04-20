@@ -9,8 +9,8 @@ class ScheduleModel extends Model {
     protected $table = 'schedules';
 
     public function getByClass($classId) {
-        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE kelas_id = ?");
-        $stmt->execute([$classId]);
+        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE kelas_id = ? AND academic_year_id = ?");
+        $stmt->execute([$classId, $this->academic_year_id]);
         $result = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $result[$row['day']][$row['hour']] = [
@@ -22,8 +22,8 @@ class ScheduleModel extends Model {
     }
 
     public function getByTeacher($teacherId) {
-        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE teacher_id = ?");
-        $stmt->execute([$teacherId]);
+        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE teacher_id = ? AND academic_year_id = ?");
+        $stmt->execute([$teacherId, $this->academic_year_id]);
         $result = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $result[$row['day']][$row['hour']] = [
@@ -38,12 +38,12 @@ class ScheduleModel extends Model {
         try {
             $this->db->beginTransaction();
 
-            // 1. Delete existing schedule for this class
-            $stmtDelete = $this->db->prepare("DELETE FROM schedules WHERE kelas_id = ?");
-            $stmtDelete->execute([$classId]);
+            // 1. Delete existing schedule for this class for current year
+            $stmtDelete = $this->db->prepare("DELETE FROM schedules WHERE kelas_id = ? AND academic_year_id = ?");
+            $stmtDelete->execute([$classId, $this->academic_year_id]);
 
             // 2. Insert new schedule
-            $stmtInsert = $this->db->prepare("INSERT INTO schedules (kelas_id, day, hour, subject_id, teacher_id) VALUES (?, ?, ?, ?, ?)");
+            $stmtInsert = $this->db->prepare("INSERT INTO schedules (kelas_id, day, hour, subject_id, teacher_id, academic_year_id) VALUES (?, ?, ?, ?, ?, ?)");
 
             foreach ($scheduleData as $day => $hours) {
                 foreach ($hours as $hour => $slot) {
@@ -51,7 +51,7 @@ class ScheduleModel extends Model {
                     $pengajarId = $slot['pengajar'] ?? null;
 
                     if (!empty($mapelId) && !empty($pengajarId)) {
-                        $stmtInsert->execute([$classId, $day, $hour, $mapelId, $pengajarId]);
+                        $stmtInsert->execute([$classId, $day, $hour, $mapelId, $pengajarId, $this->academic_year_id]);
                     }
                 }
             }

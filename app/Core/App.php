@@ -61,6 +61,7 @@ class App
         $this->router->post('/classes/store', ['App\Controllers\KelasController', 'store']);
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);
+        $this->router->get('/classes/detail', ['App\Controllers\KelasController', 'detail']);
         $this->router->post('/classes/store', ['App\Controllers\KelasController', 'store']);
         $this->router->get('/classes/delete', ['App\Controllers\KelasController', 'delete']);
 
@@ -91,7 +92,26 @@ class App
         $this->router->get('/attendance', ['App\Controllers\AttendanceController', 'index']);
         $this->router->post('/attendance/store', ['App\Controllers\AttendanceController', 'store']);
         $this->router->get('/attendance/report', ['App\Controllers\AttendanceController', 'report']);
+
+        // Students Routes (Modul)
+        $this->router->get('/students', ['App\Modules\Students\Controllers\StudentController', 'index']);
+        $this->router->get('/students/create', ['App\Modules\Students\Controllers\StudentController', 'create']);
+        $this->router->post('/students/store', ['App\Modules\Students\Controllers\StudentController', 'store']);
+        $this->router->get('/students/edit', ['App\Modules\Students\Controllers\StudentController', 'edit']);
+        $this->router->post('/students/update', ['App\Modules\Students\Controllers\StudentController', 'update']);
+        $this->router->get('/students/delete', ['App\Modules\Students\Controllers\StudentController', 'delete']);
+        $this->router->get('/students/promote', ['App\Modules\Students\Controllers\StudentController', 'promote']);
+        $this->router->post('/students/promote/store', ['App\Modules\Students\Controllers\StudentController', 'processPromotion']);
+
+        // API regions proxy
+        $this->router->get('/api/regions', ['App\Modules\Students\Controllers\StudentController', 'apiRegions']);
+
+        // Academic Year Routes
+        $this->router->get('/academic-years', ['App\Controllers\AcademicYearController', 'index']);
+        $this->router->post('/academic-years/store', ['App\Controllers\AcademicYearController', 'store']);
+        $this->router->post('/academic-years/set-active', ['App\Controllers\AcademicYearController', 'setActive']);
     }
+
 
     public function run()
     {

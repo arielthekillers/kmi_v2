@@ -18,8 +18,8 @@ class GradeController extends Controller {
         $subjectModel = new SubjectModel();
         $teacherModel = new TeacherModel();
 
-        // Data for Filters
-        $kelas = $kelasModel->findAll();
+        // Data for Filters (Active Year Only)
+        $kelas = $kelasModel->findAllActive();
         // Sort Kelas
          try {
             uasort($kelas, function ($a, $b) {

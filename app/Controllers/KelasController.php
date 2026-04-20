@@ -9,32 +9,23 @@ class KelasController extends Controller {
     protected $kelasModel;
 
     public function __construct() {
+        parent::__construct();
         $this->kelasModel = new KelasModel();
     }
 
+
     public function index() {
-        // Auth check (using helper)
         require_admin();
         
+        $db = \App\Core\Database::getInstance();
+        $teachers = $db->query("SELECT id, nama FROM users WHERE role = 'pengajar' ORDER BY nama ASC")->fetchAll();
         $groupedKelas = $this->kelasModel->getAllGrouped();
         
-        // Render common header manually or via Layout logic?
-        // For now, let's assume we use the existing global helpers in the view or layout
-        // But Controller::view should header/footer if configured
-        
-        // We'll wrap the view call with header/footer in the view file OR
-        // Controller::view calls can just include the content, and we assume layout is handled.
-        // Let's stick to the current pattern: calling renderHeader/Footer inside the view (or around it).
-        // BUT, better MVC approach is Layouts.
-        // For this quick refactor, I'll pass the view content to a layout OR ensure the view calls helpers.
-        // My extracted view relies on renderHeader being called BEFORE it? No, it relies on it being called.
-        // I will make a layout wrapper in Controller::view later.
-        // For now, let's emit header/footer in the Controller or View.
-        
-        // Let's update Controller.php to support layouts or just call helpers in the view.
-        // The simplest path right now:
         renderHeader("Master Kelas");
-        $this->view('kelas/index', ['groupedKelas' => $groupedKelas]);
+        $this->view('kelas/index', [
+            'groupedKelas' => $groupedKelas,
+            'teachers' => $teachers
+        ]);
         renderFooter();
     }
 
@@ -46,7 +37,8 @@ class KelasController extends Controller {
         $data = [
             'tingkat' => htmlspecialchars($_POST['tingkat'] ?? ''),
             'abjad' => htmlspecialchars($_POST['abjad'] ?? ''),
-            'jumlah_murid' => (int)($_POST['jumlah_murid'] ?? 0)
+            'location' => htmlspecialchars($_POST['location'] ?? ''),
+            'teacher_id' => $_POST['teacher_id'] ?? null
         ];
 
         try {
@@ -63,6 +55,38 @@ class KelasController extends Controller {
         }
 
         $this->redirect('/classes');
+    }
+
+    public function detail() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        if (!$id) $this->redirect('/classes');
+
+        $kelas = $this->kelasModel->find($id);
+        if (!$kelas) {
+            add_flash('Kelas tidak ditemukan.', 'error');
+            $this->redirect('/classes');
+        }
+
+        $tab = $_GET['tab'] ?? 'overview';
+        $data = [
+            'title' => "Detail Kelas " . $kelas['tingkat'] . "-" . $kelas['abjad'],
+            'kelas' => $kelas,
+            'tab' => $tab,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+
+        // Fetch Tab-specific data
+        if ($tab === 'santri') {
+            $data['students'] = $this->kelasModel->getStudentsWithDetails($id);
+        } elseif ($tab === 'jadwal') {
+            $data['schedule'] = $this->kelasModel->getScheduleWithDetails($id);
+        }
+
+        renderHeader($data['title']);
+        $this->view('kelas/detail', $data);
+        renderFooter();
     }
 
     public function delete() {

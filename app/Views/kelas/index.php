@@ -10,17 +10,17 @@
     </div>
 
 <!-- Content -->
-<div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+<div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
     <?php foreach ($groupedKelas as $tingkat => $items): ?>
         <?php foreach ($items as $k): ?>
             <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative group">
                 <div class="p-3">
                     <div class="flex justify-between items-start">
-                        <div class="text-xl font-bold text-gray-900">
+                        <a href="<?= url('/classes/detail?id=' . $k['id']) ?>" class="text-xl font-bold text-gray-900 hover:text-indigo-600 transition-colors">
                             <?= htmlspecialchars($k['tingkat']) ?>-<?= htmlspecialchars($k['abjad']) ?>
-                        </div>
+                        </a>
                         <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 flex bg-white/90 rounded-md shadow-sm border border-gray-100">
-                            <button onclick='editKelas("<?= $k['id'] ?>", "<?= $k['tingkat'] ?>", "<?= $k['abjad'] ?>", "<?= $k['jumlah_murid'] ?>")' class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-l-md" title="Edit">
+                            <button onclick='editKelas("<?= $k['id'] ?>", "<?= $k['tingkat'] ?>", "<?= $k['abjad'] ?>", "<?= $k['location'] ?>", "<?= $k['teacher_id'] ?>")' class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-l-md" title="Edit">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
                             <div class="w-px bg-gray-200"></div>
@@ -29,11 +29,22 @@
                             </a>
                         </div>
                     </div>
-                    <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                        <span class="flex items-center gap-1">
-                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            <?= htmlspecialchars($k['jumlah_murid']) ?>
-                        </span>
+                    <div class="mt-2 space-y-1">
+                        <div class="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
+                            <i class="ri-user-star-line text-indigo-400"></i>
+                            <span class="truncate"><?= htmlspecialchars($k['wali_kelas'] ?? '-') ?></span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[10px] text-gray-400 italic">
+                            <i class="ri-map-pin-line"></i>
+                            <span class="truncate"><?= htmlspecialchars($k['location'] ?: '-') ?></span>
+                        </div>
+                        <div class="pt-1 flex items-center justify-between text-[11px]">
+                            <span class="flex items-center gap-1 text-indigo-600 font-bold">
+                                <i class="ri-team-line"></i>
+                                <?= number_format($k['jumlah_murid']) ?> Santri
+                            </span>
+                            <a href="<?= url('/classes/detail?id=' . $k['id']) ?>" class="text-[10px] text-indigo-500 font-bold hover:underline">Detail &rarr;</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -72,9 +83,18 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Jumlah Murid</label>
-                            <input type="number" name="jumlah_murid" id="inputMurid" required min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                            <p class="mt-1 text-xs text-gray-500">Jumlah ini akan menentukan banyaknya baris nilai.</p>
+                            <label class="block text-sm font-medium text-gray-700">Wali Kelas</label>
+                            <select name="teacher_id" id="inputTeacher" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm">
+                                <option value="">-- Pilih Wali Kelas --</option>
+                                <?php foreach ($teachers as $t): ?>
+                                <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Lokasi Kelas</label>
+                            <input type="text" name="location" id="inputLocation" placeholder="Gedung A, Lantai 2, dll" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm">
+                            <p class="mt-1 text-[10px] text-gray-400 italic">* Boleh dikosongkan</p>
                         </div>
                     </div>
                 </div>
@@ -95,16 +115,18 @@
     function openAdd() {
         document.getElementById('inputTingkat').value = '';
         document.getElementById('inputAbjad').value = '';
-        document.getElementById('inputMurid').value = '';
+        document.getElementById('inputLocation').value = '';
+        document.getElementById('inputTeacher').value = '';
         document.getElementById('inputId').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Kelas';
         toggleModal('addKelasModal');
     }
 
-    function editKelas(id, tingkat, abjad, murid) {
+    function editKelas(id, tingkat, abjad, location, teacherId) {
         document.getElementById('inputTingkat').value = tingkat;
         document.getElementById('inputAbjad').value = abjad;
-        document.getElementById('inputMurid').value = murid;
+        document.getElementById('inputLocation').value = location;
+        document.getElementById('inputTeacher').value = teacherId;
         document.getElementById('inputId').value = id;
         document.getElementById('modalTitle').textContent = 'Edit Kelas';
         toggleModal('addKelasModal');
