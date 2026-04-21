@@ -1,18 +1,33 @@
-<?php renderHeader("Koreksi Ujian"); ?>
+<?php 
+renderHeader("Koreksi Ujian"); 
+$isAdmin = (auth_get_role() === 'admin');
+?>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate flex items-center gap-3">
                 Koreksi Ujian
+                <?php if (isset($currentYear)): ?>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200">
+                        <i class="ri-calendar-line mr-1"></i> TA: <?= htmlspecialchars($currentYear['name'] ?? '-') ?>
+                    </span>
+                <?php endif; ?>
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-                Kelola jadwal koreksi dan input nilai.
+                Kelola jadwal koreksi dan input nilai untuk tahun ajaran aktif.
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <?php if (auth_get_role() === 'admin'): ?>
+            <?php if (isset($activeSession)): ?>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold <?= $activeSession['is_open'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?> border border-current">
+                    <i class="ri-door-<?= $activeSession['is_open'] ? 'open' : 'closed' ?>-line mr-1"></i>
+                    Sesi <?= $activeSession['type'] ?>: <?= $activeSession['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
+                </span>
+            <?php endif; ?>
+
+            <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
                 <button onclick="toggleModal('addKoreksiModal')" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
                     + Tambah Koreksi
                 </button>
@@ -136,11 +151,11 @@
 
     <!-- Filters -->
     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <form method="GET" action="<?= url('/grades') ?>" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <form method="GET" action="<?= url('/grades') ?>" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <!-- Kelas -->
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Kelas</label>
-                <select name="kelas" class="tom-select block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Kelas</label>
+                <select name="kelas" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                     <option value="">Semua Kelas</option>
                     <?php foreach ($kelas as $k): ?>
                         <option value="<?= $k['id'] ?>" <?= $filters['kelas'] == $k['id'] ? 'selected' : '' ?>>
@@ -151,8 +166,8 @@
             </div>
             <!-- Pelajaran -->
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Pelajaran</label>
-                <select name="pelajaran" class="tom-select block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pelajaran</label>
+                <select name="pelajaran" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                     <option value="">Semua Pelajaran</option>
                     <?php foreach ($pelajaran as $p): ?>
                         <option value="<?= $p['id'] ?>" <?= $filters['pelajaran'] == $p['id'] ? 'selected' : '' ?>>
@@ -164,8 +179,8 @@
             <!-- Pengajar -->
             <?php if (auth_get_role() === 'admin'): ?>
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Pemeriksa</label>
-                <select name="pengajar" class="tom-select block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pemeriksa</label>
+                <select name="pengajar" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                     <option value="">Semua Pemeriksa</option>
                     <?php foreach ($pengajar as $p): ?>
                         <option value="<?= $p['id'] ?>" <?= $filters['pengajar'] == $p['id'] ? 'selected' : '' ?>>
@@ -177,8 +192,8 @@
             <?php endif; ?>
             <!-- Status -->
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                <select name="status" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</label>
+                <select name="status" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                     <option value="">Semua Status</option>
                     <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
                     <option value="proses" <?= $filters['status'] === 'proses' ? 'selected' : '' ?>>Proses / Draft</option>
@@ -186,11 +201,12 @@
                 </select>
             </div>
 
-            <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md text-sm transition-colors border border-gray-300">
-                    Filter
+            <!-- Actions -->
+            <div class="flex gap-2 mt-[27px]">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 rounded-xl text-xs transition-all shadow-sm shadow-indigo-100 flex items-center justify-center gap-2 h-[38px]">
+                    <i class="ri-filter-3-line"></i> Filter
                 </button>
-                <a href="<?= url('/grades') ?>" class="bg-white hover:bg-gray-50 text-gray-500 font-medium py-2 px-3 rounded-md text-sm transition-colors border border-gray-300 flex items-center justify-center">
+                <a href="<?= url('/grades') ?>" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 rounded-xl text-xs transition-all flex items-center justify-center h-[38px]">
                     Reset
                 </a>
             </div>
@@ -211,6 +227,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelajaran</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahap</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pemeriksa</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -219,6 +236,8 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($exams as $k):
                         $id = $k['id'];
+                        $isAdmin = (auth_get_role() === 'admin');
+                        $isPanitia = auth_is_panitia($k['exam_session_id']);
                         $mapel = $k['mapel_nama'] ?? 'Unknown';
                         $klsFull = "Kelas " . ($k['tingkat'] ?? '?') . "-" . ($k['abjad'] ?? '?');
                         $guru = $k['pengajar_nama'] ?? 'Unknown';
@@ -251,6 +270,11 @@
                                     <?= htmlspecialchars($klsFull) ?>
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                    <?= htmlspecialchars($k['exam_type'] ?? '-') ?>
+                                </span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap align-middle">
                                 <div class="w-full max-w-xs">
                                     <div class="flex items-center justify-between mb-1">
@@ -273,7 +297,7 @@
                                         <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md">
                                             Lihat Nilai
                                         </a>
-                                        <?php if (auth_get_role() === 'admin'): ?>
+                                        <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
                                             <form action="<?= url('/grades/unlock') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membuka kembali akses edit untuk koreksi ini?');" class="inline">
                                                 <?= csrf_token_field() ?>
                                                 <input type="hidden" name="id" value="<?= $id ?>">
@@ -283,12 +307,21 @@
                                             </form>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md shadow-sm">
-                                            Input Nilai
-                                        </a>
+                                        <?php 
+                                            $canInput = ($isAdmin || $isPanitia || ($k['session_is_open'] == 1)); 
+                                        ?>
+                                        <?php if ($canInput): ?>
+                                            <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md shadow-sm">
+                                                Input Nilai
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-gray-400 bg-gray-50 px-3 py-1 rounded-md cursor-not-allowed italic text-xs border border-gray-200" title="Sesi ditutup oleh panitia">
+                                                Sesi Ditutup
+                                            </span>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                     
-                                    <?php if (auth_get_role() === 'admin'): ?>
+                                    <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
                                         <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus data koreksi ini?');" class="text-red-600 hover:text-red-900 p-1">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                        </a>
@@ -314,13 +347,39 @@
             <form action="<?= url('/grades/create') ?>" method="POST">
                 <?= csrf_token_field() ?>
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Tambah Koreksi Baru</h3>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center justify-between">
+                        Tambah Koreksi Baru
+                        <?php if (isset($activeSession)): ?>
+                            <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">Sesi: <?= $activeSession['type'] ?></span>
+                        <?php endif; ?>
+                    </h3>
+
+                    <?php if (!isset($activeSession)): ?>
+                        <div class="bg-red-50 text-red-700 p-3 rounded text-sm mb-4">
+                            <strong>Peringatan!</strong> Belum ada sesi ujian (UUPT/UPT/dll) yang diaktifkan oleh Panitia. Anda tidak dapat membuat data koreksi baru.
+                        </div>
+                    <?php endif; ?>
 
                     <div class="space-y-4">
                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Kelas</label>
+                            <select name="id_kelas" id="modal_id_kelas" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white" onchange="onClassChange()">
+                                <option value="">Pilih Kelas...</option>
+                                <?php foreach ($kelas as $k): ?>
+                                    <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['tingkat']) ?> - <?= htmlspecialchars($k['abjad']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">Pelajaran</label>
-                            <select name="id_pelajaran" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
-                                <?php foreach ($pelajaran as $p): ?>
+                            <select name="id_pelajaran" id="modal_id_pelajaran" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white" onchange="onSubjectChange()">
+                                <option value="">Pilih Kelas Terlebih Dahulu...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pemeriksa</label>
+                            <select name="id_pengajar" id="modal_id_pengajar" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
+                                <?php foreach ($pengajar as $p): ?>
                                     <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nama']) ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -328,22 +387,6 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Skor Tertinggi (Total Poin Soal)</label>
                             <input type="number" name="skor_maks" required value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                            <select name="id_kelas" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
-                                <?php foreach ($kelas as $k): ?>
-                                    <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['tingkat']) ?> - <?= htmlspecialchars($k['abjad']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Pemeriksa</label>
-                            <select name="id_pengajar" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
-                                <?php foreach ($pengajar as $p): ?>
-                                    <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['nama']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -357,10 +400,50 @@
 </div>
 
 <script>
+    const teachingMap = <?= json_encode($teachingMap) ?>;
+
     function toggleModal(id) {
         document.getElementById(id).classList.toggle('hidden');
         if (!document.getElementById(id).classList.contains('hidden')) {
             setTimeout(initTomSelects, 50);
+        }
+    }
+
+    function onClassChange() {
+        const classSelect = document.getElementById('modal_id_kelas');
+        const subjectSelect = document.getElementById('modal_id_pelajaran');
+        const classId = classSelect.value;
+        
+        // Clear subjects
+        const tsSubject = subjectSelect.tomselect;
+        tsSubject.clear();
+        tsSubject.clearOptions();
+        
+        if (classId && teachingMap[classId]) {
+            const subjects = teachingMap[classId];
+            subjects.forEach(s => {
+                tsSubject.addOption({
+                    value: s.subject_id,
+                    text: s.subject_name
+                });
+            });
+            tsSubject.refreshOptions(false);
+        } else {
+            tsSubject.addOption({ value: "", text: "Pilih Kelas Terlebih Dahulu..." });
+        }
+    }
+
+    function onSubjectChange() {
+        const classId = document.getElementById('modal_id_kelas').value;
+        const subjectId = document.getElementById('modal_id_pelajaran').value;
+        const pengajarSelect = document.getElementById('modal_id_pengajar');
+        
+        if (classId && subjectId && teachingMap[classId]) {
+            const assignment = teachingMap[classId].find(s => s.subject_id == subjectId);
+            if (assignment && assignment.teacher_id) {
+                const tsPengajar = pengajarSelect.tomselect;
+                tsPengajar.setValue(assignment.teacher_id);
+            }
         }
     }
 </script>

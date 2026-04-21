@@ -152,10 +152,17 @@ function renderHeader($title = "KMI App")
                         </a>
                     <?php endif; ?>
 
-                    <a href="<?= url('/grades') ?>" class="flex items-center px-4 py-2 text-sm font-medium rounded-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' ?>">
-                        <i class="ri-pencil-ruler-2-line mr-3 text-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false) ? 'text-indigo-600' : 'text-gray-400' ?>"></i>
+                    <a href="<?= url('/grades') ?>" class="flex items-center px-4 py-2 text-sm font-medium rounded-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false && strpos($_SERVER['REQUEST_URI'], '/panitia') === false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' ?>">
+                        <i class="ri-pencil-ruler-2-line mr-3 text-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades') !== false && strpos($_SERVER['REQUEST_URI'], '/panitia') === false) ? 'text-indigo-600' : 'text-gray-400' ?>"></i>
                         Koreksi Ujian
                     </a>
+
+                    <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                        <a href="<?= url('/grades/panitia') ?>" class="flex items-center px-4 py-2 text-sm font-medium rounded-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades/panitia') !== false) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' ?>">
+                            <i class="ri-group-line mr-3 text-lg <?= (strpos($_SERVER['REQUEST_URI'], '/grades/panitia') !== false) ? 'text-indigo-600' : 'text-gray-400' ?>"></i>
+                            Panitia Ujian
+                        </a>
+                    <?php endif; ?>
 
                 </nav>
 

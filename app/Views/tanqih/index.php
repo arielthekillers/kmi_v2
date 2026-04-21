@@ -2,104 +2,186 @@
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="md:flex md:items-center md:justify-between mb-6">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Tanqih Idad
-            </h2>
-            <p class="mt-1 text-sm text-gray-500">
-                Verifikasi persiapan mengajar guru sebelum masuk kelas.
-                <?php if ($isPiketToday): ?>
-                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Anda Petugas Piket Hari Ini
-                    </span>
-                <?php endif; ?>
-            </p>
-        </div>
-        <div class="mt-4 flex md:mt-0 md:ml-4">
-            <form method="GET" class="flex items-center gap-2">
-                <input type="date" name="date" value="<?= htmlspecialchars($selectedDate) ?>" onchange="this.form.submit()" class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
-            </form>
-        </div>
-    </div>
-
-    <!-- Stats & Filters -->
-    <div class="mb-6 space-y-4">
-        <!-- Search & Tabs -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <!-- Search -->
-            <div class="w-full sm:w-1/2 relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <input type="text" id="searchInput" placeholder="Cari nama pengajar, mapel, atau kelas..." 
-                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out">
+    <!-- Compact Filter Bar -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4 pl-1">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                <i class="ri-checkbox-circle-line text-xl"></i>
             </div>
-            
-            <!-- Tabs -->
-            <div class="w-full sm:w-auto flex bg-gray-100 p-1 rounded-lg">
-                <button onclick="filterList('pending')" id="tab-pending" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 transition-all">
-                    Belum (<span id="count-pending">0</span>)
-                </button>
-                <button onclick="filterList('verified')" id="tab-verified" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all">
-                    Sudah (<span id="count-verified">0</span>)
-                </button>
-                <button onclick="filterList('all')" id="tab-all" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all">
-                    Semua
-                </button>
+            <div>
+                <h3 class="text-sm font-bold text-gray-900 leading-tight"><?= date('d M Y', strtotime($selectedDate)) ?></h3>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Total <?= count($dailySchedule) ?> jadwal verifikasi</p>
             </div>
+            <?php if ($isPiketToday): ?>
+                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 uppercase tracking-wider">
+                    Piket Hari Ini
+                </span>
+            <?php endif; ?>
         </div>
+        
+        <form method="GET" class="flex items-center gap-2 w-full md:w-auto">
+            <div class="relative flex-1 md:flex-none">
+                <input type="date" name="date" value="<?= htmlspecialchars($selectedDate) ?>" onchange="this.form.submit()" 
+                       class="block w-full md:w-48 pl-3 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all outline-none">
+            </div>
+            <a href="?date=<?= date('Y-m-d') ?>" 
+               class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex-shrink-0">
+                Hari Ini
+            </a>
+        </form>
     </div>
 
     <?php if (empty($dailySchedule)): ?>
-        <div class="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
             <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada jadwal</h3>
             <p class="mt-1 text-sm text-gray-500">Tidak ada kegiatan belajar mengajar pada hari ini.</p>
         </div>
-    <?php else: ?>
+    <?php else: 
+        // Group by Jam
+        $slotsByJam = [];
+        foreach ($dailySchedule as $slot) {
+            $slotsByJam[$slot['hour']][] = $slot;
+        }
+        ksort($slotsByJam);
+        reset($slotsByJam); $firstJam = key($slotsByJam);
+        $activeJam = $_GET['jam'] ?? ($currentDetectedHour ?? $firstJam);
+        if (!isset($slotsByJam[$activeJam])) $activeJam = $firstJam;
+    ?>
+    
+    <div class="flex flex-col md:flex-row gap-8">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden sticky top-20 z-30">
+                <div class="hidden md:block px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Jam Pelajaran</h3>
+                </div>
+                <!-- Mobile Scroll Hint -->
+                <div class="md:hidden flex items-center justify-between px-4 py-2 border-b border-gray-50 bg-gray-50/30">
+                    <span class="text-[10px] font-bold text-indigo-500 flex items-center gap-1 uppercase tracking-wider">
+                        <i class="ri-arrow-left-right-line"></i> Geser jam
+                    </span>
+                    <div class="flex gap-1">
+                        <div class="w-1 h-1 rounded-full bg-indigo-200 animate-pulse"></div>
+                        <div class="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
+                <nav class="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-3 md:pb-2 no-scrollbar snap-x">
+                    <?php for ($jam = 1; $jam <= 7; $jam++): 
+                        $slots = $slotsByJam[$jam] ?? [];
+                        $isActive = $jam == $activeJam;
+                        $count = count($slots);
+                        $doneCount = 0;
+                        $pendingCount = 0;
+                        foreach($slots as $s) {
+                            if($s['is_verified']) $doneCount++;
+                            else $pendingCount++;
+                        }
+                        $isComplete = $count > 0 && $doneCount === $count;
+                        
+                        $badgeClass = $isComplete
+                            ? 'bg-green-100 text-green-700'
+                            : ($doneCount > 0
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-gray-100 text-gray-400');
+                        
+                        $activeClass = $isActive 
+                            ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-100' 
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+                        
+                        $isDetected = ($jam == ($currentDetectedHour ?? ''));
+                    ?>
+                        <a href="?date=<?= htmlspecialchars($selectedDate) ?>&jam=<?= $jam ?>" 
+                           id="<?= $isActive ? 'active-jam-tab' : '' ?>"
+                           class="whitespace-nowrap flex items-center justify-between px-3 py-2.5 text-sm rounded-xl transition-all duration-200 group <?= $activeClass ?> snap-start min-w-[55%] md:min-w-0">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs <?= $isActive ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200' ?>">
+                                    <?= $jam ?>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold leading-none">Jam ke-<?= $jam ?></span>
+                                    <?php if ($pendingCount > 0): ?>
+                                        <span class="text-[9px] text-red-500 font-bold mt-1"><?= $pendingCount ?> belum</span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if ($isDetected): ?>
+                                    <span class="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse flex-shrink-0" title="Sedang Berlangsung"></span>
+                                <?php endif; ?>
+                            </div>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 <?= $badgeClass ?>">
+                                <?= $doneCount ?>/<?= $count ?>
+                            </span>
+                        </a>
+                    <?php endfor; ?>
+                </nav>
+            </div>
+        </aside>
 
-        <div class="bg-white shadow overflow-hidden rounded-md border border-gray-200">
-            <ul role="list" class="divide-y divide-gray-200">
+        <!-- Main Content -->
+        <div class="flex-1">
+            <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+                <div class="w-full sm:w-1/2 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ri-search-line text-gray-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Cari data..." 
+                        class="block w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl leading-5 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white sm:text-sm transition-all">
+                </div>
+                
+                <div class="w-full sm:w-auto flex bg-gray-100 p-1 rounded-xl">
+                    <button onclick="filterList('pending')" id="tab-pending" class="flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg shadow-sm bg-white text-gray-900 transition-all">
+                        Belum (<span id="count-pending">0</span>)
+                    </button>
+                    <button onclick="filterList('verified')" id="tab-verified" class="flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                        Sudah (<span id="count-verified">0</span>)
+                    </button>
+                    <button onclick="filterList('all')" id="tab-all" class="flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                        Semua
+                    </button>
+                </div>
+            </div>
+
+            <div id="tanqih-list" class="grid grid-cols-1 gap-4">
                 <?php foreach ($dailySchedule as $item): 
                     $isVerified = $item['is_verified'];
                     $isJustified = $isVerified && isset($item['verification']['status']) && $item['verification']['status'] === 'justified';
                     $timestamp = $isVerified ? ($item['verification']['timestamp'] ?? 0) : 0;
                 ?>
-                <li class="bg-white hover:bg-gray-50 transition-colors schedule-item" 
+                <div class="bg-white rounded-2xl border-2 <?= $isVerified ? 'border-green-100 bg-green-50/10' : 'border-gray-100' ?> p-4 hover:shadow-md transition-all schedule-item" 
                     data-name="<?= strtolower(htmlspecialchars($item['teacher_name'] . ' ' . $item['subject_name'] . ' ' . $item['kelas_name'])) ?>"
                     data-status="<?= $isVerified ? 'verified' : 'pending' ?>"
                     data-timestamp="<?= $timestamp ?>"
+                    data-hour="<?= $item['hour'] ?>"
                     data-original-order="<?= $item['hour'] * 1000 + $item['kelas_id'] ?>">
-                    <div class="px-3 py-3 sm:px-6 flex items-center justify-between gap-3">
-                        <div class="flex items-center min-w-0 gap-3">
-                            <!-- Time Badge -->
-                            <div class="flex-shrink-0 flex flex-col items-center justify-center h-12 w-12 rounded-lg bg-indigo-100 text-indigo-700 font-bold border border-indigo-200">
-                                <span class="text-xs uppercase">Jam</span>
-                                <span class="text-lg leading-none"><?= $item['hour'] ?></span>
+                    
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-100">
+                                    <?= htmlspecialchars($item['kelas_name']) ?>
+                                </span>
+                                <!-- Jam Badge (Hidden by default, shown during search) -->
+                                <span class="jam-badge hidden px-2 py-0.5 rounded-lg bg-gray-100 text-gray-600 text-[10px] font-bold border border-gray-200">
+                                    Jam <?= $item['hour'] ?>
+                                </span>
+                                <?php if ($isVerified): ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold <?= $isJustified ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' ?>">
+                                        <i class="ri-checkbox-circle-fill mr-1"></i> <?= $isJustified ? 'Justifikasi' : 'Terverifikasi' ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
-                            
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-medium text-indigo-600 truncate"><?= htmlspecialchars($item['teacher_name']) ?></p>
-                                <p class="flex items-center flex-wrap text-sm text-gray-500">
-                                    <span class="font-semibold text-gray-800 mr-2"><?= htmlspecialchars($item['subject_name']) ?></span>
-                                    <span class="text-gray-400 whitespace-nowrap">• <?= htmlspecialchars($item['kelas_name']) ?></span>
-                                </p>
-                            </div>
+                            <h4 class="text-base font-bold text-gray-900 truncate"><?= htmlspecialchars($item['teacher_name']) ?></h4>
+                            <p class="text-xs text-gray-500 font-medium"><?= htmlspecialchars($item['subject_name']) ?></p>
                         </div>
 
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-3">
                             <?php if ($isVerified): ?>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500">Oleh <?= htmlspecialchars($item['verifier_name']) ?></p>
-                                    <p class="text-xs text-gray-400">
-                                        <?= date('H:i', $item['verification']['timestamp']) ?>
-                                    </p>
+                                <div class="hidden sm:block text-right">
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Oleh <?= htmlspecialchars($item['verifier_name']) ?></p>
+                                    <p class="text-xs text-gray-500"><?= date('H:i', $item['verification']['timestamp']) ?></p>
                                 </div>
                                 <?php if ($canVerify): ?>
-                                <form action="<?= url('/tanqih/verify') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan verifikasi ini? Data akan dihapus dari laporan.');">
+                                <form action="<?= url('/tanqih/verify') ?>" method="POST">
                                     <?= csrf_token_field() ?>
                                     <input type="hidden" name="date" value="<?= $selectedDate ?>">
                                     <input type="hidden" name="kelas_id" value="<?= $item['kelas_id'] ?>">
@@ -107,20 +189,10 @@
                                     <input type="hidden" name="pengajar_id" value="<?= $item['pengajar_id'] ?>">
                                     <input type="hidden" name="action" value="unverify">
                                     <input type="hidden" name="ajax" value="1">
-                                    <button type="button" onclick="verifyAsync(this.form)" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full <?= $isJustified ? 'text-yellow-700 bg-yellow-100 font-semibold' : 'text-green-700 bg-green-100' ?> hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors" title="Batalkan Verifikasi?">
-                                        <svg class="mr-1.5 h-2 w-2 <?= $isJustified ? 'text-yellow-500' : 'text-green-500' ?>" fill="currentColor" viewBox="0 0 8 8">
-                                            <circle cx="4" cy="4" r="3" />
-                                        </svg>
-                                        <?= $isJustified ? 'Justifikasi' : 'Sudah' ?>
+                                    <button type="button" onclick="verifyAsync(this.form)" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm" title="Batalkan Verifikasi?">
+                                        <i class="ri-close-line text-xl"></i>
                                     </button>
                                 </form>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full <?= $isJustified ? 'text-yellow-700 bg-yellow-100 font-semibold' : 'text-green-700 bg-green-100' ?>">
-                                        <svg class="mr-1.5 h-2 w-2 <?= $isJustified ? 'text-yellow-500' : 'text-green-500' ?>" fill="currentColor" viewBox="0 0 8 8">
-                                            <circle cx="4" cy="4" r="3" />
-                                        </svg>
-                                        <?= $isJustified ? 'Justifikasi' : 'Sudah' ?>
-                                    </span>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <?php if ($canVerify): ?>
@@ -135,26 +207,21 @@
                                     <input type="hidden" name="ajax" value="1">
                                     <button type="button" 
                                         onclick="openVerifyModal(<?= htmlspecialchars(json_encode($item['teacher_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($item['subject_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($item['kelas_name']), ENT_QUOTES) ?>, '<?= $item['hour'] ?>', 'form-verify-<?= $item['kelas_id'] ?>-<?= $item['hour'] ?>', 'status-<?= $item['kelas_id'] ?>-<?= $item['hour'] ?>')"
-                                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
-                                        <svg class="h-5 w-5 mr-2 text-gray-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
                                         Verifikasi
                                     </button>
                                 </form>
                                 <?php else: ?>
-                                    <span class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full text-gray-500 bg-gray-100 italic">
-                                        Belum
-                                    </span>
+                                    <span class="text-xs font-bold text-gray-300 uppercase italic tracking-widest">Belum</span>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
-                </li>
+                </div>
                 <?php endforeach; ?>
-            </ul>
+            </div>
         </div>
-
+    </div>
     <?php endif; ?>
 
 </main>
@@ -239,13 +306,15 @@ function submitVerify(status) {
         closeVerifyModal();
     }
 }
-</script>
 
-<script>
-    function filterList(status) {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const listContainer = document.querySelector('ul[role="list"]');
-        const items = Array.from(document.querySelectorAll('.schedule-item'));
+let currentActiveJam = <?= json_encode($activeJam) ?>;
+
+function filterList(status) {
+    const searchInput = document.getElementById('searchInput');
+    const search = searchInput.value.toLowerCase();
+    const listContainer = document.getElementById('tanqih-list');
+    const items = Array.from(document.querySelectorAll('.schedule-item'));
+    const isSearching = search.length > 0;
         
         // Sorting Logic
         if (status === 'verified') {
@@ -260,49 +329,122 @@ function submitVerify(status) {
         
         items.forEach(item => listContainer.appendChild(item));
 
-        let countPending = 0;
-        let countVerified = 0;
-
         document.querySelectorAll('button[id^="tab-"]').forEach(btn => {
-            btn.className = 'flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all';
+            btn.className = 'flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all';
         });
         
         const activeBtn = document.getElementById('tab-' + status);
         if(activeBtn) {
-            activeBtn.className = 'flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md shadow-sm bg-white text-gray-900 transition-all';
+            activeBtn.className = 'flex-1 sm:flex-none px-4 py-1.5 text-xs font-bold rounded-lg shadow-sm bg-white text-gray-900 transition-all';
         }
 
         items.forEach(item => {
             const name = item.getAttribute('data-name');
             const itemStatus = item.getAttribute('data-status');
+            const itemHour = item.getAttribute('data-hour');
             
-            if (itemStatus === 'pending') countPending++;
-            if (itemStatus === 'verified') countVerified++;
-
             let matchesSearch = name.includes(search);
             let matchesStatus = (status === 'all') || (itemStatus === status);
+            let matchesHour = isSearching || (itemHour == currentActiveJam);
 
-            if (matchesSearch && matchesStatus) {
+            if (matchesSearch && matchesStatus && matchesHour) {
                 item.style.display = '';
+                if (itemStatus === 'pending') countPending++;
+                if (itemStatus === 'verified') countVerified++;
+                
+                // Show Jam Badge if searching
+                const jamBadge = item.querySelector('.jam-badge');
+                if (jamBadge) {
+                    if (isSearching) jamBadge.classList.remove('hidden');
+                    else jamBadge.classList.add('hidden');
+                }
             } else {
                 item.style.display = 'none';
             }
         });
+        
+        updateStats();
+    }
 
-        document.getElementById('count-pending').textContent = countPending;
-        document.getElementById('count-verified').textContent = countVerified;
+    function updateStats() {
+        const items = Array.from(document.querySelectorAll('.schedule-item'));
+        const searchInput = document.getElementById('searchInput');
+        const search = searchInput.value.toLowerCase();
+        const isSearching = search.length > 0;
+        const currentStatusTab = Array.from(document.querySelectorAll('button[id^="tab-"]')).find(b => b.classList.contains('bg-white'))?.id.replace('tab-', '') || 'all';
+
+        // 1. Update Sidebar Badges (Global Jam Stats - Not filtered by search)
+        const jamStats = {};
+        for(let j=1; j<=7; j++) jamStats[j] = { total: 0, verified: 0, pending: 0 };
+        
+        items.forEach(item => {
+            const h = item.getAttribute('data-hour');
+            const s = item.getAttribute('data-status');
+            if (jamStats[h]) {
+                jamStats[h].total++;
+                if (s === 'verified') jamStats[h].verified++;
+                else jamStats[h].pending++;
+            }
+        });
+
+        for(let j=1; j<=7; j++) {
+            const sidebarBtn = document.querySelector(`a[href*="jam=${j}"]`);
+            if (sidebarBtn) {
+                const badge = sidebarBtn.querySelector('.inline-flex');
+                const pendingText = sidebarBtn.querySelector('.text-red-500');
+                const numBadge = sidebarBtn.querySelector('.w-8.h-8');
+                
+                if (badge) badge.textContent = `${jamStats[j].verified}/${jamStats[j].total}`;
+                
+                if (pendingText) {
+                    if (jamStats[j].pending > 0) {
+                        pendingText.textContent = `${jamStats[j].pending} belum`;
+                        pendingText.style.display = '';
+                    } else {
+                        pendingText.style.display = 'none';
+                    }
+                }
+
+                // Update badge color based on completion
+                if (badge) {
+                    const isComplete = jamStats[j].total > 0 && jamStats[j].verified === jamStats[j].total;
+                    if (isComplete) {
+                        badge.className = 'inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 bg-green-100 text-green-700';
+                    } else if (jamStats[j].verified > 0) {
+                        badge.className = 'inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 bg-yellow-100 text-yellow-700';
+                    } else {
+                        badge.className = 'inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 bg-gray-100 text-gray-400';
+                    }
+                }
+            }
+        }
+
+        // 2. Update Header Tabs (Context Stats - Current Jam/Search)
+        let visiblePending = 0;
+        let visibleVerified = 0;
+        
+        items.forEach(item => {
+            const name = item.getAttribute('data-name');
+            const itemStatus = item.getAttribute('data-status');
+            const itemHour = item.getAttribute('data-hour');
+            
+            let matchesSearch = name.includes(search);
+            let matchesHour = isSearching || (itemHour == currentActiveJam);
+
+            if (matchesSearch && matchesHour) {
+                if (itemStatus === 'pending') visiblePending++;
+                if (itemStatus === 'verified') visibleVerified++;
+            }
+        });
+
+        const elPending = document.getElementById('count-pending');
+        const elVerified = document.getElementById('count-verified');
+        if (elPending) elPending.textContent = visiblePending;
+        if (elVerified) elVerified.textContent = visibleVerified;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const items = document.querySelectorAll('.schedule-item');
-        let p = 0, v = 0;
-        items.forEach(i => {
-            if(i.getAttribute('data-status') === 'pending') p++;
-            else v++;
-        });
-        document.getElementById('count-pending').textContent = p;
-        document.getElementById('count-verified').textContent = v;
-
+        updateStats();
         filterList('pending');
 
         document.getElementById('searchInput').addEventListener('input', () => {
@@ -311,6 +453,16 @@ function submitVerify(status) {
             if (document.getElementById('tab-verified').classList.contains('bg-white')) activeTab = 'verified';
             filterList(activeTab);
         });
+
+        // Auto-scroll active tab into view on mobile
+        const activeTab = document.getElementById('active-jam-tab');
+        if (activeTab && window.innerWidth < 768) {
+            activeTab.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest', 
+                inline: 'center' 
+            });
+        }
     });
 
     async function verifyAsync(form) {
@@ -327,28 +479,52 @@ function submitVerify(status) {
                 body: formData
             });
 
-            const result = await response.json();
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                console.error('Non-JSON Response:', text);
+                alert('Server Error: Respon tidak valid. ' + (text.substring(0, 100)));
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+                return;
+            }
 
             if (result.success) {
                 const newStatus = result.action === 'verify' ? 'verified' : 'pending';
-                const containerLi = form.closest('li');
+                const container = form.closest('.schedule-item');
                 
-                containerLi.setAttribute('data-status', newStatus);
+                container.setAttribute('data-status', newStatus);
 
-                const actionContainer = form.closest('div'); 
+                // Target the specific action area, not the whole card row
+                const actionContainer = form.closest('.flex.items-center.gap-3');
                 
                 if (result.action === 'verify') {
                     const isJustified = result.data.status === 'justified';
                     const colorClass = isJustified ? 'text-yellow-700 bg-yellow-100 font-semibold' : 'text-green-700 bg-green-100';
                     const iconColor = isJustified ? 'text-yellow-500' : 'text-green-500';
-                    const text = isJustified ? 'Justifikasi' : 'Sudah';
+                    const labelText = isJustified ? 'Justifikasi' : 'Sudah';
 
-                    const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+                    // Update Badge in the first column
+                    const statusBadgeArea = container.querySelector('.flex.items-center.gap-2.mb-1');
+                    if (statusBadgeArea) {
+                        const existingBadge = statusBadgeArea.querySelector('.inline-flex');
+                        if (existingBadge) existingBadge.remove();
+                        statusBadgeArea.insertAdjacentHTML('beforeend', `
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${colorClass}">
+                                <i class="ri-checkbox-circle-fill mr-1"></i> ${labelText}
+                            </span>
+                        `);
+                    }
+
+                    const csrfTokenInput = document.querySelector('input[name="csrf_token"]');
+                    const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
 
                     const newHtml = `
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500">Oleh ${result.data.verifier_name}</p>
-                        <p class="text-xs text-gray-400">${result.data.timestamp}</p>
+                    <div class="hidden sm:block text-right">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Oleh ${result.data.verifier_name}</p>
+                        <p class="text-xs text-gray-500">${result.data.timestamp}</p>
                     </div>
                     <form action="<?= url('/tanqih/verify') ?>" method="POST">
                         <input type="hidden" name="csrf_token" value="${csrfToken}">
@@ -358,24 +534,63 @@ function submitVerify(status) {
                         <input type="hidden" name="pengajar_id" value="${formData.get('pengajar_id')}">
                         <input type="hidden" name="action" value="unverify">
                         <input type="hidden" name="ajax" value="1">
-                        <button type="button" onclick="verifyAsync(this.form)" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full ${colorClass} hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors" title="Batalkan Verifikasi?">
-                             <svg class="mr-1.5 h-2 w-2 ${iconColor}" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
-                             ${text}
+                        <button type="button" onclick="verifyAsync(this.form)" class="w-10 h-10 rounded-xl bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm" title="Batalkan Verifikasi?">
+                             <i class="ri-close-line text-xl"></i>
                         </button>
                     </form>
                     `;
                     actionContainer.innerHTML = newHtml;
+                    
+                    // Update main bg
+                    container.classList.remove('border-gray-100');
+                    container.classList.add('border-green-100', 'bg-green-50/10');
+
+                    // AUTO-SWITCH logic
+                    const searchInput = document.getElementById('searchInput');
+                    const isSearching = searchInput.value.length > 0;
+                    
+                    if (isSearching) {
+                        // Clear search and switch to that hour
+                        searchInput.value = '';
+                        currentActiveJam = result.data.hour;
+                        
+                        // Update Sidebar UI
+                        document.querySelectorAll('nav a').forEach(a => {
+                            const jamId = a.href.split('jam=')[1];
+                            if (jamId == currentActiveJam) {
+                                a.classList.add('bg-indigo-50', 'text-indigo-700', 'font-semibold', 'shadow-sm', 'ring-1', 'ring-indigo-100');
+                                a.classList.remove('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900');
+                                a.id = 'active-jam-tab';
+                                
+                                // Update sidebar number badge
+                                const numBadge = a.querySelector('.w-8.h-8');
+                                if (numBadge) numBadge.className = 'w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs bg-indigo-600 text-white shadow-indigo-200 shadow-lg';
+                                
+                                // Scroll it into view
+                                if (window.innerWidth < 768) {
+                                    a.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                }
+                            } else {
+                                a.classList.remove('bg-indigo-50', 'text-indigo-700', 'font-semibold', 'shadow-sm', 'ring-1', 'ring-indigo-100');
+                                a.classList.add('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900');
+                                a.id = '';
+                                
+                                const numBadge = a.querySelector('.w-8.h-8');
+                                if (numBadge) numBadge.className = 'w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs bg-gray-100 text-gray-400 group-hover:bg-gray-200';
+                            }
+                        });
+                    }
                     
                 } else {
                     location.reload(); 
                     return;
                 }
 
-                let activeTab = 'all';
-                if (document.getElementById('tab-pending').classList.contains('bg-white')) activeTab = 'pending';
-                if (document.getElementById('tab-verified').classList.contains('bg-white')) activeTab = 'verified';
+                let activeTabStatus = 'all';
+                if (document.getElementById('tab-pending').classList.contains('bg-white')) activeTabStatus = 'pending';
+                if (document.getElementById('tab-verified').classList.contains('bg-white')) activeTabStatus = 'verified';
                 
-                filterList(activeTab);
+                filterList(activeTabStatus);
 
             } else {
                 alert(result.message || 'Gagal memproses.');
@@ -385,7 +600,7 @@ function submitVerify(status) {
 
         } catch (e) {
             console.error(e);
-            alert('Terjadi kesalahan jaringan.');
+            alert('Terjadi kesalahan koneksi ke server.');
             submitBtn.innerHTML = originalContent;
             submitBtn.disabled = false;
         }

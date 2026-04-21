@@ -40,16 +40,13 @@ class TanqihModel extends Model {
     }
 
     /**
-     * Get aggregated report data using DB queries instead of legacy JSON
+     * Get aggregated report data
      */
-    public function getReportStats($startDate, $endDate) {
-        // 1. Fetch all schedules relevant to the period
-        // Since schedule is weekly, we need to map dates to days.
-        // But 'schedules' table is static weekly.
-        // We'll iterate days in PHP and count expected slots.
+    public function getReportStats($startDate, $endDate, $academicYearId = null) {
+        $ayId = $academicYearId ?? $this->academic_year_id;
         
-        $schedules = $this->getAllSchedules(); // Helper to get all schedule rows
-        $verifications = $this->getVerificationsInRange($startDate, $endDate);
+        $schedules = $this->getAllSchedules($ayId);
+        $verifications = $this->getVerificationsInRange($startDate, $endDate, $ayId);
         
         $report = [];
         $globalStats = [
@@ -74,7 +71,6 @@ class TanqihModel extends Model {
             $daySchedules = $schedules[$dayNameVideo] ?? [];
 
             foreach ($daySchedules as $slot) {
-                // $slot: teacher_id, etc.
                 $pid = $slot['teacher_id'];
                 if (!$pid) continue;
 
@@ -124,14 +120,13 @@ class TanqihModel extends Model {
         return ['report' => $report, 'globalStats' => $globalStats];
     }
 
-    private function getAllSchedules() {
-        // Return structured as [Day => [Rows]]
+    private function getAllSchedules($academicYearId) {
         $sql = "SELECT s.*, u.nama as teacher_nama 
                 FROM schedules s 
                 LEFT JOIN users u ON s.teacher_id = u.id
                 WHERE s.academic_year_id = ?";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$this->academic_year_id]);
+        $stmt->execute([$academicYearId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $grouped = [];
@@ -141,10 +136,9 @@ class TanqihModel extends Model {
         return $grouped;
     }
 
-    private function getVerificationsInRange($startDate, $endDate) {
-        // Return keyed by Date|Kelas|Hour
+    private function getVerificationsInRange($startDate, $endDate, $academicYearId) {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE (date BETWEEN ? AND ?) AND academic_year_id = ?");
-        $stmt->execute([$startDate, $endDate, $this->academic_year_id]);
+        $stmt->execute([$startDate, $endDate, $academicYearId]);
         
         $data = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

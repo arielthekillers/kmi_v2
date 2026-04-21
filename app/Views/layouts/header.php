@@ -155,6 +155,12 @@
                                         <i class="ri-edit-2-line text-gray-400"></i> Koreksi Ujian
                                     </a>
 
+                                    <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                                        <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                            <i class="ri-group-line text-gray-400"></i> Panitia Ujian
+                                        </a>
+                                    <?php endif; ?>
+
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pusat Laporan</div>
                                     <a href="<?= url('/tanqih/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-file-list-3-line text-gray-400"></i> Laporan Tanqih
@@ -295,6 +301,11 @@
                     <a href="<?= url('/grades') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-edit-2-line mr-2"></i>Koreksi Ujian
                     </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                        <a href="<?= url('/grades/panitia') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-group-line mr-2"></i>Panitia Ujian
+                        </a>
+                    <?php endif; ?>
                     <a href="<?= url('/tanqih/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 border-t mt-1">
                         <i class="ri-file-list-3-line mr-2"></i>Laporan Tanqih
                     </a>

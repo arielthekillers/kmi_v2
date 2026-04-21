@@ -17,6 +17,10 @@ class GradeController extends Controller {
         $kelasModel = new KelasModel();
         $subjectModel = new SubjectModel();
         $teacherModel = new TeacherModel();
+        $ayModel = new \App\Models\AcademicYearModel();
+
+        // Academic Years list for filter
+        $academicYears = $ayModel->getAll();
 
         // Data for Filters (Active Year Only)
         $kelas = $kelasModel->findAllActive();
@@ -41,8 +45,14 @@ class GradeController extends Controller {
         }
         usort($pengajar, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
 
+        // Active Session Context
+        $activeSession = $gradeModel->getActiveSession($this->currentYear['id']);
+        $allSessions = $gradeModel->getSessions($this->currentYear['id']);
+
         // Filter Params
         $filters = [
+            'academic_year_id' => $this->currentYear['id'],
+            'exam_session_id' => ($activeSession['id'] ?? ''),
             'kelas' => $_GET['kelas'] ?? '',
             'pelajaran' => $_GET['pelajaran'] ?? '',
             'pengajar' => $_GET['pengajar'] ?? '',
@@ -73,11 +83,19 @@ class GradeController extends Controller {
             else $stats['belum']++;
         }
 
+        // Teaching Assignments Map for dynamic 'Add Koreksi'
+        $scheduleModel = new \App\Models\ScheduleModel();
+        $teachingMap = $scheduleModel->getAllAssignments($this->currentYear['id']);
+
         $this->view('grades/index', [
             'exams' => $exams,
             'kelas' => $kelas,
             'pelajaran' => $allSubjects,
             'pengajar' => $pengajar,
+            'teachingMap' => $teachingMap,
+            'academicYears' => $academicYears,
+            'allSessions' => $allSessions,
+            'activeSession' => $activeSession,
             'filters' => $filters,
             'stats' => $stats
         ]);
@@ -130,16 +148,19 @@ class GradeController extends Controller {
         // Actually legacy nilai.php didn't check teacher ownership explicitly in the snippet I saw, 
         // but let's allow it for now as per legacy.
 
-        $students = $model->getGrades($id, $exam['kelas_id']);
+        $students = $model->getGrades($id, $exam['kelas_id'], $exam['academic_year_id']);
         
         // Natural Sorting for Students
         usort($students, function ($a, $b) {
             return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
         });
 
+        $isPanitia = auth_is_panitia($exam['exam_session_id'] ?? null);
+
         $this->view('grades/edit', [
             'exam' => $exam,
-            'students' => $students
+            'students' => $students,
+            'isPanitia' => $isPanitia
         ]);
     }
 
@@ -157,25 +178,33 @@ class GradeController extends Controller {
         if (!$exam) redirect('/grades');
 
         $userRole = auth_get_role();
+        $isPanitia = auth_is_panitia($exam['exam_session_id']);
+        $isAdmin = ($userRole === 'admin');
+        $sessionOpen = (isset($exam['session_is_open']) && $exam['session_is_open'] == 1);
+
+        // Teacher Restriction: Cannot update if session is closed
+        if (!$isAdmin && !$isPanitia && !$sessionOpen) {
+            add_flash('Sesi input nilai untuk ujian ini sedang ditutup oleh Panitia.', 'error');
+            redirect('/grades/edit?id=' . $id);
+        }
+
         $newStatus = $exam['status'] ?? 'proses';
         $skorMaksPost = $_POST['skor_maks'] ?? null;
+        $studentIds = $_POST['student_id'] ?? [];
+        $noBayanats = $_POST['no_bayanat'] ?? [];
+        $action = $_POST['action'] ?? 'save';
 
-        if ($userRole === 'admin') {
-            // Admin only updates skor_maks configuration
+        if ($isAdmin || $isPanitia) {
+            // Admin updates skor_maks and no_bayanat mapping
             if ($skorMaksPost !== null && is_numeric($skorMaksPost)) {
                 $exam['skor_maks'] = (float)$skorMaksPost;
             }
-            $studentIds = [];
-            $skors = [];
+            $skors = []; // Admin doesn't update scores normally, Model will handle recalculation if empty
             $action = 'save';
         } else {
             // Examiner updates student scores
-            $studentIds = $_POST['student_id'] ?? [];
             $skors = $_POST['skor'] ?? [];
-            $action = $_POST['action'] ?? 'save';
-            // Use current skor_maks from database for examiners, ignore any POST attempt
-            // $exam['skor_maks'] remains from getExamById
-
+            
             $allFilled = true;
             foreach ($skors as $s) {
                 if (trim($s) === '') {
@@ -197,12 +226,12 @@ class GradeController extends Controller {
         }
 
         try {
-            $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus);
+            $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats);
             if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
                 add_flash('Koreksi selesai.', 'success');
                 redirect('/grades');
             } else {
-                $msg = ($userRole === 'admin') ? 'Konfigurasi skor berhasil diupdate.' : 'Draft nilai tersimpan.';
+                $msg = ($userRole === 'admin') ? 'Konfigurasi & Bayanat berhasil diupdate.' : 'Draft nilai tersimpan.';
                 add_flash($msg, 'success');
                 redirect('/grades/edit?id=' . $id);
             }

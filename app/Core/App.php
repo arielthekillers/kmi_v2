@@ -76,6 +76,11 @@ class App
         $this->router->post('/grades/update', ['App\Controllers\GradeController', 'update']);
         $this->router->get('/grades/delete', ['App\Controllers\GradeController', 'delete']);
         $this->router->post('/grades/unlock', ['App\Controllers\GradeController', 'unlock']);
+        
+        // Panitia Ujian Routes
+        $this->router->get('/grades/panitia', ['App\Controllers\PanitiaController', 'index']);
+        $this->router->post('/grades/panitia/session/status', ['App\Controllers\PanitiaController', 'updateSessionStatus']);
+        $this->router->post('/grades/panitia/committee/update', ['App\Controllers\PanitiaController', 'updateCommittee']);
 
         // Piket Routes
         $this->router->get('/piket/office', ['App\Controllers\PiketController', 'indexOffice']);

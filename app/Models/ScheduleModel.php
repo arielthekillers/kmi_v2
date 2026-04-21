@@ -65,4 +65,32 @@ class ScheduleModel extends Model {
             throw $e;
         }
     }
+
+    public function getAllAssignments($academicYearId) {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT 
+                s.kelas_id, 
+                s.subject_id, 
+                sub.nama as subject_name,
+                s.teacher_id, 
+                u.nama as teacher_name
+            FROM schedules s
+            JOIN subjects sub ON s.subject_id = sub.id
+            JOIN users u ON s.teacher_id = u.id
+            WHERE s.academic_year_id = ?
+            ORDER BY sub.nama ASC
+        ");
+        $stmt->execute([$academicYearId]);
+        
+        $map = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $map[$row['kelas_id']][] = [
+                'subject_id' => $row['subject_id'],
+                'subject_name' => $row['subject_name'],
+                'teacher_id' => $row['teacher_id'],
+                'teacher_name' => $row['teacher_name']
+            ];
+        }
+        return $map;
+    }
 }

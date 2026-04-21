@@ -40,9 +40,23 @@ class TanqihController extends Controller {
         $dayNameEnglish = date('D', $timestamp);
         $dayNameVideo = $dayMap[$dayNameEnglish] ?? '';
 
-        // Fetch active academic year
-        $year = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
-        $yearId = $year ? (int)$year['id'] : 0;
+        // Fetch active academic year using helper
+        $yearId = get_active_academic_year_id();
+
+        // Determine current active jam Ke-X based on settings
+        $settingModel = new \App\Models\SettingModel();
+        $hoursConfig = $settingModel->getTvHours();
+        $currentTime = date('H:i');
+        $currentDetectedHour = null;
+
+        foreach ($hoursConfig as $row) {
+            if ($row['type'] === 'jam') {
+                if ($currentTime >= $row['start'] && $currentTime <= $row['end']) {
+                    $currentDetectedHour = $row['value'];
+                    break;
+                }
+            }
+        }
 
         // Query borrowed from asistensi.php
         $sql = "SELECT s.*, 
@@ -109,7 +123,8 @@ class TanqihController extends Controller {
             'dayName' => $dayNameEnglish,
             'isPiketToday' => $isPiketToday,
             'canVerify' => $canVerify,
-            'dailySchedule' => $dailySchedule
+            'dailySchedule' => $dailySchedule,
+            'currentDetectedHour' => $currentDetectedHour
         ]);
     }
 
@@ -173,7 +188,8 @@ class TanqihController extends Controller {
                     $responseData['data'] = [
                         'verifier_name' => auth_get_display_name() ?? 'Ahlan',
                         'timestamp' => date('H:i'),
-                        'status' => $status
+                        'status' => $status,
+                        'hour' => $hour
                     ];
                 }
                 echo json_encode($responseData);
@@ -193,8 +209,9 @@ class TanqihController extends Controller {
         
         $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('last saturday'));
         $endDate = $_GET['end'] ?? date('Y-m-d', strtotime('next thursday'));
+        $ayId = $_GET['academic_year_id'] ?? get_active_academic_year_id();
 
-        $data = $this->tanqihModel->getReportStats($startDate, $endDate);
+        $data = $this->tanqihModel->getReportStats($startDate, $endDate, $ayId);
         
         // Access Control: Non-admins only see their own report
         $userRole = auth_get_role();

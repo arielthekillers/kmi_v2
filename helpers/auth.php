@@ -463,3 +463,42 @@ if (!function_exists('require_admin')) {
         }
     }
 }
+
+if (!function_exists('auth_is_panitia')) {
+    /**
+     * Check if user is a committee member for a specific session or any active session
+     */
+    function auth_is_panitia($sessionId = null) {
+        $role = auth_get_role();
+        if ($role === 'admin') return true;
+        
+        $userId = auth_get_user_id();
+        if (!$userId) return false;
+
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            if ($sessionId) {
+                $stmt = $db->prepare("SELECT id FROM exam_committees WHERE user_id = ? AND exam_session_id = ?");
+                $stmt->execute([$userId, $sessionId]);
+            } else {
+                // Check if panitia for CURRENT active session
+                $stmt = $db->prepare("SELECT ec.id FROM exam_committees ec 
+                                     JOIN exam_sessions es ON ec.exam_session_id = es.id 
+                                     WHERE ec.user_id = ? AND es.is_active = 1");
+                $stmt->execute([$userId]);
+            }
+            return (bool) $stmt->fetch();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('auth_can_manage_grades')) {
+    /**
+     * Higher level check for Grade module administration
+     */
+    function auth_can_manage_grades($sessionId = null) {
+        return auth_get_role() === 'admin' || auth_is_panitia($sessionId);
+    }
+}
