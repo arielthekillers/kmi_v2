@@ -17,7 +17,10 @@ class SettingsController extends Controller {
     public function tvShowcaseBgm() {
         require_admin();
 
-        // Check if a BGM file already exists
+        $settingModel = new SettingModel();
+        $bgmYoutube = $settingModel->get('tv_showcase_bgm_youtube', '');
+
+        // Check if a BGM file already exists (fallback)
         $bgmPath = __DIR__ . '/../../uploads/bgm.mp3';
         $bgmExists = file_exists($bgmPath);
         $bgmSize   = $bgmExists ? round(filesize($bgmPath) / 1024 / 1024, 2) . ' MB' : null;
@@ -25,10 +28,29 @@ class SettingsController extends Controller {
 
         $this->view('settings/tvshowcase_bgm', [
             'title'       => 'Settings - TV BGM',
+            'bgmYoutube'  => $bgmYoutube,
             'bgmExists'   => $bgmExists,
             'bgmSize'     => $bgmSize,
             'bgmMtime'    => $bgmMtime
         ]);
+    }
+
+    public function updateYoutubeBgm() {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/settings/tv/bgm');
+        }
+
+        csrf_validate_token();
+
+        $youtubeUrl = $_POST['youtube_url'] ?? '';
+        
+        $settingModel = new SettingModel();
+        $settingModel->set('tv_showcase_bgm_youtube', trim($youtubeUrl));
+
+        add_flash('YouTube BGM berhasil diperbarui!', 'success');
+        $this->redirect('/settings/tv/bgm');
     }
 
     public function tvShowcaseHours() {

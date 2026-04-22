@@ -10,12 +10,8 @@
         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
             <form method="GET" class="flex flex-col md:flex-row gap-4 items-end">
                 <div class="w-full md:w-auto">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Tanggal Mulai</label>
-                    <input type="date" name="start" value="<?= htmlspecialchars($filter['start']) ?>" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
-                </div>
-                <div class="w-full md:w-auto">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Tanggal Akhir</label>
-                    <input type="date" name="end" value="<?= htmlspecialchars($filter['end']) ?>" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Tanggal</label>
+                    <input type="date" name="date" value="<?= htmlspecialchars($filter['date']) ?>" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
                 </div>
                 <div class="w-full md:w-1/4">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Kelas</label>
@@ -25,6 +21,19 @@
                             <option value="<?= $kls['id'] ?>" <?= $filter['kelas_id'] == $kls['id'] ? 'selected' : '' ?>>
                                 Kelas <?= htmlspecialchars($kls['tingkat']) ?>-<?= htmlspecialchars($kls['abjad']) ?>
                             </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="w-full md:w-1/6">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Jam</label>
+                    <select name="jam" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border">
+                        <option value="">-- Semua --</option>
+                        <?php foreach ($hoursConfig as $h): ?>
+                            <?php if ($h['type'] === 'jam'): ?>
+                                <option value="<?= $h['value'] ?>" <?= $filter['jam'] == $h['value'] ? 'selected' : '' ?>>
+                                    Jam <?= htmlspecialchars($h['value']) ?>
+                                </option>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </select>
                 </div>

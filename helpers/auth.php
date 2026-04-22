@@ -350,7 +350,7 @@ if (!function_exists('auth_is_piket_keliling_today')) {
      * @param string|null $date Specific date to check, or null for today
      * @return bool
      */
-    function auth_is_piket_keliling_today($date = null)
+    function auth_is_piket_keliling_today($date = null, $hour = null)
     {
         $role = auth_get_role();
         if ($role === 'admin') return true; 
@@ -367,12 +367,23 @@ if (!function_exists('auth_is_piket_keliling_today')) {
         $dayNameEnglish = date('D', $timestamp);
         $dayName = $dayMap[$dayNameEnglish] ?? '';
 
-        // Use Database instead of JSON
         try {
             $db = \App\Core\Database::getInstance()->getConnection();
             $yearId = get_active_academic_year_id();
-            $stmt = $db->prepare("SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'keliling' AND academic_year_id = ?");
-            $stmt->execute([$userId, $dayName, $yearId]);
+            
+            // If specific hour provided, check session
+            $sql = "SELECT id FROM piket_schedule WHERE user_id = ? AND day = ? AND type = 'keliling' AND academic_year_id = ?";
+            $params = [$userId, $dayName, $yearId];
+
+            if ($hour !== null) {
+                $session = get_piket_session_from_hour($hour);
+                if ($session === null) return false; // Out of mapped hours
+                $sql .= " AND session = ?";
+                $params[] = $session;
+            }
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return (bool) $stmt->fetch();
         } catch (\Exception $e) {
             return false;

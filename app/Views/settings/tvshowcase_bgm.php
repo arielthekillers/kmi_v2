@@ -79,14 +79,45 @@ $limitLow       = $effectiveMaxMB < 20;
             <!-- ── Background Music ────────────────────────────── -->
             <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Link YouTube BGM</h3>
+                        <p class="text-xs text-gray-500">Gunakan audio dari video YouTube untuk musik latar.</p>
+                    </div>
+                </div>
+                <div class="px-6 py-5 border-b border-gray-100">
+                    <form action="<?= url('/settings/tv/bgm-youtube') ?>" method="POST">
+                        <?= csrf_token_field() ?>
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wider">URL Video YouTube</label>
+                                <input type="text" name="youtube_url" value="<?= htmlspecialchars($bgmYoutube) ?>" 
+                                       placeholder="https://www.youtube.com/watch?v=..."
+                                       class="block w-full border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border">
+                            </div>
+                            <div class="self-end">
+                                <button type="submit" class="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                                    Simpan Link
+                                </button>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-[10px] text-gray-400">Jika link YouTube diisi, maka file audio (.mp3) di bawah akan diabaikan.</p>
+                    </form>
+                </div>
+
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                         <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-900">Background Music (BGM)</h3>
-                        <p class="text-xs text-gray-500">Audio yang diputar saat TV Showcase aktif.</p>
+                        <h3 class="text-sm font-semibold text-gray-900">Fallback: File Audio BGM</h3>
+                        <p class="text-xs text-gray-500">File audio cadangan jika link YouTube tidak diisi.</p>
                     </div>
                 </div>
                 <div class="px-6 py-5">

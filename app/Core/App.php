@@ -41,6 +41,7 @@ class App
         $this->router->get('/settings/tv/bgm', ['App\Controllers\SettingsController', 'tvShowcaseBgm']);
         $this->router->get('/settings/tv/hours', ['App\Controllers\SettingsController', 'tvShowcaseHours']);
         $this->router->get('/settings/tv/quotes', ['App\Controllers\SettingsController', 'tvShowcaseQuotes']);
+        $this->router->post('/settings/tv/bgm-youtube', ['App\Controllers\SettingsController', 'updateYoutubeBgm']);
         $this->router->post('/settings/upload-audio', ['App\Controllers\SettingsController', 'uploadAudio']);
         $this->router->post('/settings/update-hours', ['App\Controllers\SettingsController', 'updateHours']);
         $this->router->post('/settings/update-quotes', ['App\Controllers\SettingsController', 'updateQuotes']);
@@ -56,9 +57,6 @@ class App
         $this->router->get('/teachers/delete', ['App\Controllers\TeacherController', 'delete']);
         $this->router->post('/teachers/reset-password', ['App\Controllers\TeacherController', 'resetPassword']);
 
-        // Classes Routes
-        $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);
-        $this->router->post('/classes/store', ['App\Controllers\KelasController', 'store']);
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);
         $this->router->get('/classes/detail', ['App\Controllers\KelasController', 'detail']);
@@ -120,6 +118,26 @@ class App
 
     public function run()
     {
-        echo $this->router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+        try {
+            echo $this->router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+        } catch (\Throwable $e) {
+            if (defined('APP_ENV') && APP_ENV === 'development') {
+                echo "<h1>App Error</h1>";
+                echo "<p><strong>Message:</strong> " . $e->getMessage() . "</p>";
+                echo "<p><strong>File:</strong> " . $e->getFile() . " on line " . $e->getLine() . "</p>";
+                echo "<pre>" . $e->getTraceAsString() . "</pre>";
+            } else {
+                error_log("App Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+                http_response_code(500);
+                // Try to include error view if exists
+                $errorView = __DIR__ . '/../Views/errors/500.php';
+                if (file_exists($errorView)) {
+                    include $errorView;
+                } else {
+                    echo "<h1>500 Internal Server Error</h1>";
+                    echo "<p>Something went wrong. Please try again later.</p>";
+                }
+            }
+        }
     }
 }

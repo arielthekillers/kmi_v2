@@ -1,8 +1,0 @@
-<?php
-require_once 'app/Core/Db.php';
-$db = \App\Core\Db::getInstance();
-$stmt = $db->query("DESCRIBE exams");
-print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
-
-$stmt2 = $db->query("DESCRIBE grades");
-print_r($stmt2->fetchAll(PDO::FETCH_ASSOC));

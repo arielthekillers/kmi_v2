@@ -143,7 +143,7 @@ class AttendanceModel extends Model {
         ]);
     }
     
-    public function getReportStats($startDate, $endDate, $classId = null, $teacherId = null) {
+    public function getReportStats($startDate, $endDate, $classId = null, $teacherId = null, $hour = null) {
         $params = [$startDate, $endDate];
         $sql = "SELECT al.*, 
                        k.tingkat, k.abjad,
@@ -164,6 +164,11 @@ class AttendanceModel extends Model {
             $sql .= " AND (al.teacher_id = ? OR al.substitute_teacher_id = ?)";
             $params[] = $teacherId;
             $params[] = $teacherId;
+        }
+
+        if ($hour) {
+            $sql .= " AND al.hour = ?";
+            $params[] = $hour;
         }
 
         $sql .= " ORDER BY al.date DESC, k.tingkat ASC, k.abjad ASC, al.hour ASC";

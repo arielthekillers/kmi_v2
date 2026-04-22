@@ -88,3 +88,18 @@ if (!function_exists('get_active_academic_year_id')) {
         }
     }
 }
+if (!function_exists('get_piket_session_from_hour')) {
+    /**
+     * Maps lesson hour (1-7) to picket session (1-4).
+     * @param int|string $hour The lesson hour
+     * @return int|null The session ID or null if not mapped
+     */
+    function get_piket_session_from_hour($hour) {
+        $hour = (int)$hour;
+        if ($hour >= 1 && $hour <= 2) return 1;
+        if ($hour >= 3 && $hour <= 4) return 2;
+        if ($hour >= 5 && $hour <= 6) return 3;
+        if ($hour >= 7) return 4;
+        return null;
+    }
+}

@@ -663,8 +663,15 @@
 
     <!-- Audio Player -->
     <audio id="bgm" loop>
+        <?php if (file_exists(__DIR__ . '/../../uploads/bgm.mp3')): ?>
         <source src="<?= url('/uploads/bgm.mp3') ?>" type="audio/mpeg">
+        <?php endif; ?>
     </audio>
+
+    <!-- YouTube Player Container (Hidden) -->
+    <div id="youtube-player-container" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="youtube-player"></div>
+    </div>
 
     <!-- Music Control -->
     <button id="music-toggle" onclick="toggleMusic()"
@@ -701,12 +708,69 @@
             stats: null,
             latest: [],
             piket: { syeikh: [], keliling: [] },
-            hours_config: []
+            hours_config: [],
+            bgm_youtube: ''
         };
 
         let slideInterval = null;
         let sidebarWidgetIndex = 1; // Start with Syeikh Diwan (skip stats at 0)
         let sidebarInterval = null;
+        let ytPlayer = null;
+        let ytReady = false;
+        let ytRequestedPlay = false;
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function extractYoutubeId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        window.onYouTubeIframeAPIReady = function() {
+            ytReady = true;
+            // In case data came in before API was ready
+            if (appData.bgm_youtube) {
+                const ytId = extractYoutubeId(appData.bgm_youtube);
+                if (ytId) initYoutubePlayer(ytId);
+            }
+        }
+
+        function initYoutubePlayer(videoId) {
+            if (!ytReady || !videoId || ytPlayer) return;
+            
+            ytPlayer = new YT.Player('youtube-player', {
+                height: '1',
+                width: '1',
+                videoId: videoId,
+                host: 'https://www.youtube.com',
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': videoId,
+                    'mute': 0,
+                    'enablejsapi': 1,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': (event) => {
+                         console.log("YouTube Player is ready");
+                         if (ytRequestedPlay) {
+                             toggleMusic(true);
+                         }
+                    },
+                    'onStateChange': (event) => {
+                        // Handle loop manually if needed, or other state syncs
+                    }
+                }
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             initClock();
@@ -783,6 +847,16 @@
             }
 
             return null; // Outside class hours
+        }
+
+        function getCurrentPiketSession(activeHour) {
+            if (!activeHour) return 1; // Default to Sesi 1 if no KBM
+            const hour = parseInt(activeHour);
+            if (hour >= 1 && hour <= 2) return 1;
+            if (hour >= 3 && hour <= 4) return 2;
+            if (hour >= 5 && hour <= 6) return 3;
+            if (hour >= 7) return 4;
+            return 1;
         }
 
         function processSlides(scheduleData) {
@@ -966,6 +1040,7 @@
                 appData.schedule = data.schedule_by_hour;
                 appData.piket = data.piket || { syeikh: [], keliling: [] };
                 appData.hours_config = data.hours_config || [];
+                appData.bgm_youtube = data.bgm_youtube || '';
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;
@@ -978,6 +1053,11 @@
 
                 if (!appData.initLoaded) {
                     appData.initLoaded = true;
+                    // Initialize YouTube if specified
+                    if (appData.bgm_youtube) {
+                        const ytId = extractYoutubeId(appData.bgm_youtube);
+                        if (ytId) initYoutubePlayer(ytId);
+                    }
                     onDataReady();
                 }
 
@@ -1452,7 +1532,13 @@
                 // --- PIKET KELILING VIEW ---
                 container.className = "card-gradient-3 rounded-3xl p-6 flex flex-col flex-1 relative transition-all duration-500 overflow-hidden shadow-2xl shadow-emerald-500/20";
 
-                const list = (appData.piket?.keliling || []).map(item => renderItem(item, 'border-teal-500')).join('');
+                const activeHour = getCurrentHourBlock();
+                const currentSession = getCurrentPiketSession(activeHour);
+                const sessionLabel = currentSession <= 3 ? `Sesi ${currentSession}` : `Sesi ${currentSession} (Jam 7)`;
+                
+                // appData.piket.keliling is now [session => [users]]
+                const sessionPiket = appData.piket?.keliling?.[currentSession] || [];
+                const list = sessionPiket.map(item => renderItem(item, 'border-teal-500')).join('');
 
                 html = `
                     <!-- Decorative Animations (Solid/High Visibility) -->
@@ -1464,7 +1550,10 @@
                             <span class="p-2 bg-teal-500/20 rounded-xl">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </span>
-                            <h3 class="text-xl font-bold text-white tracking-wide">Piket Keliling</h3>
+                            <div>
+                                <h3 class="text-xl font-bold text-white tracking-wide">Piket Keliling</h3>
+                                <p class="text-[10px] text-emerald-100 font-bold uppercase tracking-widest">${sessionLabel}</p>
+                            </div>
                         </div>
                         <div class="flex-1 overflow-y-auto px-1 no-scrollbar">
                              <div class="flex flex-col">
@@ -1697,7 +1786,37 @@
             const iconPause = document.getElementById('icon-pause');
             const textSpan = btn.querySelector('span');
 
-            if (!bgm) return;
+            if (forcePlay) ytRequestedPlay = true;
+
+            // Handle YouTube Player if available
+            if (ytPlayer && ytPlayer.playVideo && typeof ytPlayer.getPlayerState === 'function') {
+                const state = ytPlayer.getPlayerState();
+                const isPaused = state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED || state === YT.PlayerState.UNSTARTED || state === -1;
+
+                if (forcePlay || isPaused) {
+                    ytPlayer.setVolume(50);
+                    ytPlayer.playVideo();
+                    iconPlay.classList.add('hidden');
+                    iconPause.classList.remove('hidden');
+                    btn.classList.add('bg-indigo-600', 'text-white', 'shadow-indigo-500/50');
+                    btn.classList.remove('bg-white/80', 'text-indigo-600');
+                    textSpan.textContent = 'Pause Music';
+                } else {
+                    ytPlayer.pauseVideo();
+                    iconPlay.classList.remove('hidden');
+                    iconPause.classList.add('hidden');
+                    btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-indigo-500/50');
+                    btn.classList.add('bg-white/80', 'text-indigo-600');
+                    textSpan.textContent = 'Play Music';
+                }
+                return;
+            }
+
+            // Fallback to local audio
+            if (!bgm || !bgm.querySelector('source')) {
+                // If no local audio and no youtube, maybe show error or hide button
+                return;
+            }
 
             if (forcePlay || bgm.paused) {
                 try {

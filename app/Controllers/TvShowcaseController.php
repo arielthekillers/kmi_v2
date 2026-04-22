@@ -190,10 +190,13 @@ class TvShowcaseController extends Controller {
         $piketRaw = $piketStmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($piketRaw as $p) {
+            $profile = \App\Controllers\get_teacher_profile_tv($p['user_id'], $pdo);
             if ($p['type'] === 'syeikh') {
-                $piketSyeikh[] = \App\Controllers\get_teacher_profile_tv($p['user_id'], $pdo);
+                $piketSyeikh[] = $profile;
             } else {
-                $piketKeliling[] = \App\Controllers\get_teacher_profile_tv($p['user_id'], $pdo);
+                $sess = $p['session'] ?? 1;
+                if (!isset($piketKeliling[$sess])) $piketKeliling[$sess] = [];
+                $piketKeliling[$sess][] = $profile;
             }
         }
 
@@ -209,6 +212,7 @@ class TvShowcaseController extends Controller {
                 'keliling' => $piketKeliling
             ],
             'hours_config' => (new \App\Models\SettingModel())->getTvHours(),
+            'bgm_youtube' => (new \App\Models\SettingModel())->get('tv_showcase_bgm_youtube', ''),
             'quotes' => (new \App\Models\SettingModel())->get('tv_showcase_quotes', [
                 "Pancajiwa Pondok: Keikhlasan, Kesederhanaan, Berdikari, Ukhuwah Islamiyah, dan Kebebasan.",
                 "Motto Pondok: Berbudi tinggi, Berbadan sehat, Berpengetahuan luas, dan Berpikiran bebas.",
