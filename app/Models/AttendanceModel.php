@@ -144,7 +144,7 @@ class AttendanceModel extends Model {
     }
     
     public function getReportStats($startDate, $endDate, $classId = null, $teacherId = null, $hour = null) {
-        $params = [$startDate, $endDate];
+        $params = [$startDate, $endDate, $this->academic_year_id];
         $sql = "SELECT al.*, 
                        k.tingkat, k.abjad,
                        u.nama as teacher_nama,
@@ -155,25 +155,24 @@ class AttendanceModel extends Model {
                 LEFT JOIN users subst ON al.substitute_teacher_id = subst.id
                 WHERE al.date BETWEEN ? AND ? AND al.academic_year_id = ?";
         
-        if ($classId) {
+        if ($classId !== '' && $classId !== null) {
             $sql .= " AND al.kelas_id = ?";
             $params[] = $classId;
         }
 
-        if ($teacherId) {
+        if ($teacherId !== '' && $teacherId !== null) {
             $sql .= " AND (al.teacher_id = ? OR al.substitute_teacher_id = ?)";
             $params[] = $teacherId;
             $params[] = $teacherId;
         }
 
-        if ($hour) {
+        if ($hour !== '' && $hour !== null) {
             $sql .= " AND al.hour = ?";
             $params[] = $hour;
         }
 
         $sql .= " ORDER BY al.date DESC, k.tingkat ASC, k.abjad ASC, al.hour ASC";
 
-        $params[] = $this->academic_year_id;
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
