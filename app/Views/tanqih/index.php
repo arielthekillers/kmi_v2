@@ -349,8 +349,6 @@ function filterList(status) {
 
             if (matchesSearch && matchesStatus && matchesHour) {
                 item.style.display = '';
-                if (itemStatus === 'pending') countPending++;
-                if (itemStatus === 'verified') countVerified++;
                 
                 // Show Jam Badge if searching
                 const jamBadge = item.querySelector('.jam-badge');
