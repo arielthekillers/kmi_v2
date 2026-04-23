@@ -122,6 +122,8 @@ class AttendanceController extends Controller {
         $db = \App\Core\Database::getInstance()->getConnection();
         $yearId = get_active_academic_year_id();
 
+        require_once __DIR__ . '/../../helpers/profile_helper.php';
+
         $logs = $this->attendanceModel->getReportStats($date, $date, $kelasId, $pengajarId, $jam);
         
         // Fetch All Classes for Active Year

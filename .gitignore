@@ -12,3 +12,4 @@ kmi_v2.zip
 v1/
 .env.example
 uploads.zip
+*.sqlite

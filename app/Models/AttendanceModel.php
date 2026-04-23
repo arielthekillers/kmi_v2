@@ -148,11 +148,17 @@ class AttendanceModel extends Model {
         $sql = "SELECT al.*, 
                        k.tingkat, k.abjad,
                        u.nama as teacher_nama,
-                       subst.nama as subst_nama
+                       subst.nama as subst_nama,
+                       p.nama as petugas_nama,
+                       tp_u.profile_picture as teacher_pic,
+                       tp_p.profile_picture as petugas_pic
                 FROM {$this->table} al
                 JOIN kelas k ON al.kelas_id = k.id
                 LEFT JOIN users u ON al.teacher_id = u.id
                 LEFT JOIN users subst ON al.substitute_teacher_id = subst.id
+                LEFT JOIN users p ON al.petugas_id = p.id
+                LEFT JOIN teacher_profiles tp_u ON u.id = tp_u.user_id
+                LEFT JOIN teacher_profiles tp_p ON p.id = tp_p.user_id
                 WHERE al.date BETWEEN ? AND ? AND al.academic_year_id = ?";
         
         if ($classId !== '' && $classId !== null) {

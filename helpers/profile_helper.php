@@ -89,14 +89,20 @@ SVG;
  * @param string $teacherName Teacher name (fallback if no ID)
  * @return string URL to profile picture or avatar
  */
-function get_profile_picture_url($teacherId, $teacherName = '') {
-    // 1. Check Database first
-    $teacher = get_teacher_biodata($teacherId);
-    if ($teacher && !empty($teacher['profile_picture'])) {
+function get_profile_picture_url($teacherId, $teacherName = '', $prefetchedPath = null) {
+    // 1. Use Prefetched path if available (Efficiency!)
+    $path = $prefetchedPath;
+    
+    // 2. Check Database only if no prefetched path provided
+    if ($path === null && $teacherId) {
+        $teacher = get_teacher_biodata($teacherId);
+        $path = $teacher['profile_picture'] ?? null;
+    }
+
+    if (!empty($path)) {
         // Ensure path is relative to web root if stored absolute or with prefix
-        // DB stores "data/profile_pictures/..."
-        if (file_exists(__DIR__ . '/../' . $teacher['profile_picture'])) {
-             return $teacher['profile_picture'] . '?t=' . time();
+        if (file_exists(__DIR__ . '/../' . $path)) {
+             return $path . '?t=' . time();
         }
     }
 

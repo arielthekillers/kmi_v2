@@ -92,12 +92,13 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mapel</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pengajar</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Petugas</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         <?php if (empty($logs)): ?>
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-gray-500 text-sm">
+                                <td colspan="7" class="px-6 py-12 text-center text-gray-500 text-sm">
                                     Tidak ada data absensi untuk filter ini.
                                 </td>
                             </tr>
@@ -117,7 +118,14 @@
                                     <?= htmlspecialchars($r['mapel_name']) ?>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-700">
-                                    <?= htmlspecialchars($r['teacher_nama'] ?? 'Unknown') ?>
+                                    <div class="flex items-center">
+                                        <img src="<?= url(get_profile_picture_url($r['teacher_id'], $r['teacher_nama'] ?? 'Unknown', $r['teacher_pic'] ?? null)) ?>" 
+                                             alt="Avatar" 
+                                             class="h-7 w-7 rounded-full mr-2.5 object-cover ring-2 ring-white shadow-sm">
+                                        <span class="truncate max-w-[150px]">
+                                            <?= htmlspecialchars($r['teacher_nama'] ?? 'Unknown') ?>
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm">
                                     <?php if ($r['status'] === 'hadir'): ?>
@@ -130,7 +138,7 @@
                                                 Terlambat (<?= htmlspecialchars($r['jam_datang']) ?>)
                                             </span>
                                         <?php endif; ?>
-                                    <?php elseif ($r['status'] === 'tidak_hadir'): ?>
+                                    <?php elseif ($r['status'] === 'tidak_hadir' || $r['status'] === 'alpha'): ?>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                             Tidak Hadir
                                         </span>
@@ -139,6 +147,16 @@
                                             Diganti: <?= htmlspecialchars($r['subst_nama'] ?? '-') ?>
                                         </span>
                                     <?php endif; ?>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                    <div class="flex items-center">
+                                        <img src="<?= url(get_profile_picture_url($r['petugas_id'], $r['petugas_nama'] ?? 'Unknown', $r['petugas_pic'] ?? null)) ?>" 
+                                             alt="Avatar" 
+                                             class="h-7 w-7 rounded-full mr-2.5 object-cover ring-2 ring-white shadow-sm">
+                                        <span class="font-medium text-gray-900 truncate max-w-[150px]">
+                                            <?= htmlspecialchars($r['petugas_nama'] ?? 'Unknown') ?>
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
