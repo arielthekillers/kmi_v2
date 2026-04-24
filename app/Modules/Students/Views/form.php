@@ -1,6 +1,6 @@
 <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6 flex items-center gap-4">
-        <a href="<?= url('/students') ?>" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors">
+        <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . $page) ?>" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors">
             <i class="ri-arrow-left-line text-xl"></i>
         </a>
         <div>
@@ -13,6 +13,9 @@
         <?php if (isset($student['id'])): ?>
             <input type="hidden" name="id" value="<?= $student['id'] ?>">
         <?php endif; ?>
+        <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+        <input type="hidden" name="selected_kelas" value="<?= htmlspecialchars($selected_kelas) ?>">
+        <input type="hidden" name="page" value="<?= htmlspecialchars($page) ?>">
 
         <!-- Section 1: Identitas Dasar -->
         <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-6">
@@ -205,7 +208,7 @@
         <?php endif; ?>
 
         <div class="pt-5 border-t border-gray-200 flex justify-end gap-3">
-            <a href="<?= url('/students') ?>" class="bg-white py-2.5 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . $page) ?>" class="bg-white py-2.5 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 Batal
             </a>
             <button type="submit" class="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-lg text-sm font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-all">

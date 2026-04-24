@@ -67,6 +67,9 @@ class StudentController extends Controller {
             'kelas' => $kelas,
             'student' => null,
             'action' => url('/students/store'),
+            'q' => $_GET['q'] ?? '',
+            'selected_kelas' => $_GET['kelas_id'] ?? '',
+            'page' => $_GET['page'] ?? 1,
             'user' => $_SESSION['nama'] ?? 'User',
             'role' => $_SESSION['role'] ?? 'user'
         ];
@@ -95,6 +98,9 @@ class StudentController extends Controller {
             'kelas' => $kelas,
             'student' => $student,
             'action' => url("/students/update"),
+            'q' => $_GET['q'] ?? '',
+            'selected_kelas' => $_GET['kelas_id'] ?? '',
+            'page' => $_GET['page'] ?? 1,
             'user' => $_SESSION['nama'] ?? 'User',
             'role' => $_SESSION['role'] ?? 'user'
         ];
@@ -108,14 +114,19 @@ class StudentController extends Controller {
         require_admin();
         $data = $_POST;
         
+        $q = $_POST['q'] ?? '';
+        $kelas_id = $_POST['selected_kelas'] ?? '';
+        $page = $_POST['page'] ?? 1;
+        unset($data['q'], $data['selected_kelas'], $data['page']);
+
         $model = new Student();
         try {
             $model->create($data);
             add_flash('Data santri berhasil ditambahkan.', 'success');
-            $this->redirect('/students');
+            $this->redirect("/students?q=" . urlencode($q) . "&kelas_id=$kelas_id&page=$page");
         } catch (\Exception $e) {
             add_flash('Gagal menambah santri: ' . $e->getMessage(), 'error');
-            $this->redirect('/students/create');
+            $this->redirect("/students/create?q=" . urlencode($q) . "&kelas_id=$kelas_id&page=$page");
         }
     }
 
@@ -124,14 +135,19 @@ class StudentController extends Controller {
         $id = $_POST['id'] ?? null;
         $data = $_POST;
         
+        $q = $_POST['q'] ?? '';
+        $kelas_id = $_POST['selected_kelas'] ?? '';
+        $page = $_POST['page'] ?? 1;
+        unset($data['q'], $data['selected_kelas'], $data['page']);
+
         $model = new Student();
         try {
             $model->update($id, $data);
             add_flash('Data santri berhasil diperbarui.', 'success');
-            $this->redirect('/students');
+            $this->redirect("/students?q=" . urlencode($q) . "&kelas_id=$kelas_id&page=$page");
         } catch (\Exception $e) {
             add_flash('Gagal memperbarui santri: ' . $e->getMessage(), 'error');
-            $this->redirect("/students/edit?id=$id");
+            $this->redirect("/students/edit?id=$id&q=" . urlencode($q) . "&kelas_id=$kelas_id&page=$page");
         }
     }
 
