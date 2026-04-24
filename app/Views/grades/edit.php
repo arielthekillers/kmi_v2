@@ -37,7 +37,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 <form method="post" action="<?= url('/grades/update') ?>" id="gradeForm">
     <?= csrf_token_field() ?>
     <input type="hidden" name="id" value="<?= $id ?>">
-
+    <input type="hidden" id="nilai_maks" value="<?= $js_nilai_maks ?>">
+    <input type="hidden" id="nilai_min" value="<?= $js_nilai_min ?>">
 
     <!-- Header Section -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
@@ -150,15 +151,31 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             <table class="min-w-full divide-y divide-gray-100 table-fixed md:table-auto">
                 <thead class="hidden md:table-header-group">
                     <tr class="bg-white">
-                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24">No. Bayanat</th>
+                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(0, true)">
+                            <div class="flex items-center gap-1">
+                                No. Bayanat
+                                <i class="ri-sort-asc"></i>
+                            </div>
+                        </th>
+
                         <?php if ($isAdminOrPanitia): ?>
-                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama Lengkap</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(1)">
+                                <div class="flex items-center gap-1">
+                                    Nama Lengkap
+                                    <i class="ri-sort-asc"></i>
+                                </div>
+                            </th>
                         <?php endif; ?>
                         <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-40">Skor Peserta</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-24">Nilai</th>
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-24 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(<?= $isAdminOrPanitia ? 3 : 2 ?>, true)">
+                            <div class="flex items-center justify-center gap-1">
+                                Nilai
+                                <i class="ri-sort-asc"></i>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-50 block md:table-row-group">
+                <tbody id="studentTableBody" class="divide-y divide-gray-50 block md:table-row-group">
                     <?php foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-indigo-50/30 transition-colors group flex flex-col md:table-row border-b md:border-b-0 border-gray-50 last:border-0 p-4 md:p-0">
                             <!-- No Bayanat -->
@@ -191,27 +208,32 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </td>
                             <?php endif; ?>
                             
-                            <!-- Input & Output Container for Mobile -->
-                            <td class="md:px-6 md:py-5 flex items-center gap-3 md:table-cell">
-                                <div class="flex-1 md:w-full">
-                                    <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-2">Input Skor</label>
-                                    <input type="text" name="skor[]" value="<?= is_numeric($row['skor']) ? (float)$row['skor'] : $row['skor'] ?>"
-                                        <?= !$canEditScores ? 'disabled' : '' ?>
-                                        inputmode="decimal"
-                                        oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this);"
-                                        class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-gray-900 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:border-transparent"
-                                        placeholder="<?= !$canEditScores ? '-' : '...' ?>">
-                                </div>
-                                
-                                <!-- Result beside input on mobile -->
-                                <div class="flex flex-col items-center justify-center w-20 md:hidden bg-gray-50 rounded-2xl p-2 border border-gray-100">
-                                    <label class="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-1">Nilai</label>
-                                    <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
-                                        class="nilai-output-mobile bg-transparent text-indigo-600 font-black text-xl w-full text-center p-0 border-none pointer-events-none">
+                            <!-- Input & Result Container -->
+                            <td class="md:px-6 md:py-5 md:table-cell">
+                                <div class="grid grid-cols-2 gap-3 md:flex md:items-center">
+                                    <!-- Input Skor -->
+                                    <div class="flex flex-col">
+                                        <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Input Skor</label>
+                                        <input type="text" name="skor[]" value="<?= is_numeric($row['skor']) ? (float)$row['skor'] : $row['skor'] ?>"
+                                            <?= !$canEditScores ? 'disabled' : '' ?>
+                                            inputmode="decimal"
+                                            oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this);"
+                                            class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-gray-900 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:border-transparent"
+                                            placeholder="<?= !$canEditScores ? '-' : '...' ?>">
+                                    </div>
+                                    
+                                    <!-- Nilai Result -->
+                                    <div class="flex flex-col md:hidden">
+                                        <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nilai</label>
+                                        <div class="w-full h-12 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center">
+                                            <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
+                                                class="nilai-output-mobile bg-transparent text-indigo-600 font-black text-xl w-full text-center p-0 border-none pointer-events-none">
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
 
-                            <!-- Hidden Nilai Column on Mobile (redundant with the one above) but keep for JS desktop compatibility -->
+                            <!-- Desktop Nilai Column -->
                             <td class="px-6 py-5 hidden md:table-cell">
                                 <div class="flex flex-col items-center justify-center">
                                     <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
@@ -242,12 +264,6 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
     </div>
 
     <!-- Floating Action Toolbar -->
-    <?php 
-    // Button Logic:
-    // 1. If Finished: No buttons (must Unlock from index)
-    // 2. If Admin/Panitia: "Update Konfigurasi" (Skor Maks)
-    // 3. If Examiner: "Simpan Draft" & "Selesai Diperiksa"
-    ?>
     <?php if (!$isFinished): ?>
     <div class="fixed bottom-0 inset-x-0 pb-8 px-6 pointer-events-none z-50">
         <div class="max-w-4xl mx-auto pointer-events-auto flex items-center justify-between p-4 bg-white/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl ring-1 ring-black/5">
@@ -271,11 +287,6 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                         <i class="ri-settings-3-line text-lg"></i>
                         Update Konfigurasi & Bayanat
                     </button>
-                    <?php if (!$isExaminer): ?>
-                        <div class="hidden md:flex items-center px-4 py-2 bg-gray-100 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                             Nilai Santri Read-Only
-                        </div>
-                    <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ($isExaminer && $sessionOpen): ?>
@@ -439,6 +450,60 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         }
     };
 
+    let sortDirections = {};
+
+    window.sortTable = function(colIndex, isNumeric = false) {
+        const tbody = document.getElementById('studentTableBody');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const direction = sortDirections[colIndex] === 'asc' ? 'desc' : 'asc';
+        sortDirections[colIndex] = direction;
+
+        // Reset icons
+        document.querySelectorAll('thead th i').forEach(icon => {
+            icon.className = 'ri-sort-asc';
+            icon.parentElement.parentElement.classList.remove('text-indigo-600');
+        });
+
+        // Set active icon
+        const activeHeader = document.querySelectorAll('thead th')[colIndex];
+        if (activeHeader) {
+            const activeIcon = activeHeader.querySelector('i');
+            if (activeIcon) activeIcon.className = direction === 'asc' ? 'ri-sort-asc' : 'ri-sort-desc';
+            activeHeader.classList.add('text-indigo-600');
+        }
+
+        rows.sort((a, b) => {
+            let aVal, bVal;
+
+            if (colIndex === 0) {
+                const aInput = a.querySelector('input[name="no_bayanat[]"]');
+                aVal = aInput ? aInput.value : (a.querySelector('span.text-lg') ? a.querySelector('span.text-lg').textContent.trim() : '');
+                const bInput = b.querySelector('input[name="no_bayanat[]"]');
+                bVal = bInput ? bInput.value : (b.querySelector('span.text-lg') ? b.querySelector('span.text-lg').textContent.trim() : '');
+            } else if (colIndex === 1) {
+                const aName = a.querySelector('.text-sm.font-bold');
+                const bName = b.querySelector('.text-sm.font-bold');
+                aVal = aName ? aName.textContent.trim() : '';
+                bVal = bName ? bName.textContent.trim() : '';
+            } else {
+                const aOut = a.querySelector('.nilai-output') || a.querySelector('.nilai-output-mobile');
+                const bOut = b.querySelector('.nilai-output') || b.querySelector('.nilai-output-mobile');
+                aVal = aOut ? aOut.value : '0';
+                bVal = bOut ? bOut.value : '0';
+            }
+
+            if (isNumeric) {
+                aVal = parseFloat(aVal) || 0;
+                bVal = parseFloat(bVal) || 0;
+                return direction === 'asc' ? aVal - bVal : bVal - aVal;
+            } else {
+                return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            }
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+    };
 </script>
 
 <?php renderFooter(); ?>
