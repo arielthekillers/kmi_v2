@@ -16,11 +16,11 @@ if (!function_exists('url')) {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
         $host = $_SERVER['HTTP_HOST'];
         
-        // Assuming the app is in a subdirectory (e.g. /kmi)
-        // We need to find the root of the "kmi" folder relative to document root
-        // If we are in /kmi/public/index.php, script_name is /kmi/public/index.php
-        // If we are in /kmi/index.php, script_name is /kmi/index.php
-        
+        // If path is a full URL, return it as is
+        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) {
+            return $path;
+        }
+
         $scriptName = $_SERVER['SCRIPT_NAME'];
         $baseDir = dirname($scriptName);
         
@@ -32,15 +32,27 @@ if (!function_exists('url')) {
         // Clean backslashes on Windows
         $baseDir = str_replace('\\', '/', $baseDir);
         
-        // Ensure leading slash
-        if (substr($baseDir, 0, 1) !== '/') {
+        // Ensure leading slash if not root
+        if ($baseDir !== '/' && substr($baseDir, 0, 1) !== '/' && $baseDir !== '.') {
             $baseDir = '/' . $baseDir;
         }
         
         // Remove trailing slash
         $baseDir = rtrim($baseDir, '/');
         
-        // Clean input path
+        // Check if path already starts with baseDir (to avoid double prepending like /kmi/kmi)
+        // We check against the path with a leading slash for a robust match
+        $pathWithSlash = '/' . ltrim($path, '/');
+        if ($baseDir !== '' && strpos($pathWithSlash, $baseDir . '/') === 0) {
+            return $protocol . "://" . $host . $pathWithSlash;
+        }
+        
+        // Exact match for baseDir
+        if ($baseDir !== '' && $pathWithSlash === $baseDir) {
+            return $protocol . "://" . $host . $baseDir . '/';
+        }
+
+        // Clean input path for normal relative usage
         $path = ltrim($path, '/');
         
         return $protocol . "://" . $host . $baseDir . '/' . $path;

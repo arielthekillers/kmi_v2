@@ -201,8 +201,21 @@ if (!function_exists('require_login')) {
     {
         auth_start_session();
         if (empty($_SESSION['user'])) {
-            // store requested page to return later (optional)
-            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            // Get baseDir to strip from REQUEST_URI
+            $scriptName = $_SERVER['SCRIPT_NAME'];
+            $baseDir = dirname($scriptName);
+            if (basename($baseDir) === 'public') $baseDir = dirname($baseDir);
+            $baseDir = str_replace('\\', '/', $baseDir);
+            $baseDir = rtrim($baseDir, '/');
+
+            $uri = $_SERVER['REQUEST_URI'];
+            
+            // Strip baseDir from URI if it's there
+            if ($baseDir !== '' && strpos($uri, $baseDir) === 0) {
+                $uri = substr($uri, strlen($baseDir));
+            }
+            
+            $_SESSION['redirect_after_login'] = $uri;
             header('Location: ' . url('/login'));
             exit;
         }
