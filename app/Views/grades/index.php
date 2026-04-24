@@ -177,7 +177,7 @@ $isAdmin = (auth_get_role() === 'admin');
                 </select>
             </div>
             <!-- Pengajar -->
-            <?php if (auth_get_role() === 'admin'): ?>
+            <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
             <div>
                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pemeriksa</label>
                 <select name="pengajar" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">

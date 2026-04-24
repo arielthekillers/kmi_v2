@@ -202,8 +202,8 @@ if (!function_exists('require_login')) {
         auth_start_session();
         if (empty($_SESSION['user'])) {
             // store requested page to return later (optional)
-            $_SESSION['redirect_after_login'] = basename($_SERVER['PHP_SELF']);
-            header('Location: login.php');
+            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            header('Location: ' . url('/login'));
             exit;
         }
     }
@@ -469,7 +469,7 @@ if (!function_exists('require_admin')) {
     {
         require_login();
         if (auth_get_role() !== 'admin') {
-            header('Location: index.php');
+            header('Location: ' . url('/'));
             exit;
         }
     }

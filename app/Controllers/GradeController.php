@@ -63,7 +63,7 @@ class GradeController extends Controller {
         $userRole = auth_get_role();
         $userId = auth_get_user_id();
 
-        if ($userRole === 'pengajar' && $userId) {
+        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
             $filters['pengajar'] = $userId;
         }
 
@@ -102,7 +102,10 @@ class GradeController extends Controller {
     }
 
     public function create() {
-        require_admin();
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_validate_token();
@@ -242,7 +245,10 @@ class GradeController extends Controller {
     }
 
     public function delete() {
-        require_admin();
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
         $id = $_GET['id'] ?? null;
         if ($id) {
             $model = new GradeModel();
@@ -253,7 +259,10 @@ class GradeController extends Controller {
     }
 
     public function unlock() {
-        require_admin();
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_validate_token();
             $id = $_POST['id'] ?? null;
