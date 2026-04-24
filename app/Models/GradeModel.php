@@ -14,14 +14,14 @@ class GradeModel extends Model {
                        (SELECT COUNT(*) FROM student_enrollments se WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id) as jumlah_murid,
                        sub.nama as mapel_nama,
                        u.nama as pengajar_nama,
-                       es.type as exam_type, es.is_open as session_is_open,
+                       es.type as exam_type, es.is_open as session_is_open, e.has_oral,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count
                 FROM exams e
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
                 LEFT JOIN users u ON e.teacher_id = u.id
                 LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
-                WHERE 1=1";
+                WHERE e.is_deleted = 0";
 
         $params = [];
 
@@ -69,13 +69,13 @@ class GradeModel extends Model {
                    (SELECT COUNT(*) FROM student_enrollments se WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id) as jumlah_murid,
                    sub.nama as mapel_nama, sub.skala, 
                    u.nama as pengajar_nama,
-                   es.type as exam_type, es.is_open as session_is_open
+                   es.type as exam_type, es.is_open as session_is_open, e.has_oral
             FROM exams e
             JOIN kelas k ON e.kelas_id = k.id
             JOIN subjects sub ON e.subject_id = sub.id
             LEFT JOIN users u ON e.teacher_id = u.id
             LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
-            WHERE e.id = ?
+            WHERE e.id = ? AND e.is_deleted = 0
         ");
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -85,7 +85,7 @@ class GradeModel extends Model {
         $ayId = $academicYearId ?: $this->academic_year_id;
         $stmt = $this->db->prepare("
             SELECT s.id as student_id, s.nama, s.nis,
-                   g.no_bayanat, g.score_raw as skor, g.score_final as nilai
+                   g.no_bayanat, g.score_raw as skor, g.score_final as nilai, g.score_oral
             FROM students s
             INNER JOIN student_enrollments se ON s.id = se.student_id
             LEFT JOIN grades g ON s.id = g.student_id AND g.exam_id = ?
@@ -106,8 +106,15 @@ class GradeModel extends Model {
                 throw new \Exception("Tidak ada sesi ujian (UUPT/UPT/dll) yang aktif untuk tahun ajaran ini.");
             }
 
+            // Check for duplicate
+            $stmtCheck = $this->db->prepare("SELECT id FROM exams WHERE subject_id = ? AND kelas_id = ? AND academic_year_id = ? AND exam_session_id = ? AND is_deleted = 0");
+            $stmtCheck->execute([$data['subject_id'], $data['kelas_id'], $this->academic_year_id, $session['id']]);
+            if ($stmtCheck->fetch()) {
+                throw new \Exception("Pelajaran ini sudah ada di daftar koreksi untuk kelas tersebut pada sesi ini.");
+            }
+
             // Insert Exam
-            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, skor_maks, status, academic_year_id, exam_session_id, semester, created_at) VALUES (?, ?, ?, ?, 'belum', ?, ?, ?, NOW())");
+            $stmt = $this->db->prepare("INSERT INTO exams (subject_id, kelas_id, teacher_id, skor_maks, has_oral, status, academic_year_id, exam_session_id, semester, created_at) VALUES (?, ?, ?, ?, ?, 'belum', ?, ?, ?, NOW())");
             
             // Map session type to semester for legacy support
             $semester = in_array($session['type'], ['UUPT', 'UPT']) ? 1 : 2;
@@ -117,6 +124,7 @@ class GradeModel extends Model {
                 $data['kelas_id'], 
                 $data['teacher_id'], 
                 $data['skor_maks'] ?? 100, 
+                $data['has_oral'] ?? 0,
                 $this->academic_year_id, 
                 $session['id'],
                 $semester
@@ -148,7 +156,7 @@ class GradeModel extends Model {
         }
     }
 
-    public function saveGrades($examId, $subjectId, $skor_maks, $skala, $studentIds, $skors, $status = 'proses', $noBayanats = []) {
+    public function saveGrades($examId, $subjectId, $skor_maks, $skala, $studentIds, $skors, $status = 'proses', $noBayanats = [], $data = []) {
         try {
             $this->db->beginTransaction();
 
@@ -163,23 +171,30 @@ class GradeModel extends Model {
             $max_val = (int)$max_val;
             $min_val = (int)$min_val;
 
-            $sql = "INSERT INTO grades (student_id, subject_id, exam_id, score_raw, score_final, no_bayanat, updated_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            $sql = "INSERT INTO grades (student_id, subject_id, exam_id, score_raw, score_final, score_oral, no_bayanat, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON DUPLICATE KEY UPDATE 
                         score_raw = COALESCE(VALUES(score_raw), score_raw), 
                         score_final = COALESCE(VALUES(score_final), score_final),
+                        score_oral = COALESCE(VALUES(score_oral), score_oral),
                         no_bayanat = COALESCE(VALUES(no_bayanat), no_bayanat),
                         updated_at = VALUES(updated_at)";
             $stmt = $this->db->prepare($sql);
 
             // If studentIds is empty (Admin case), fetch all existing grades to recalculate them with new skor_maks
             if (empty($studentIds)) {
-                $stmtGet = $this->db->prepare("SELECT student_id, score_raw FROM grades WHERE exam_id = ?");
+                $stmtGet = $this->db->prepare("SELECT student_id, score_raw, score_oral FROM grades WHERE exam_id = ?");
                 $stmtGet->execute([$examId]);
                 while ($row = $stmtGet->fetch(PDO::FETCH_ASSOC)) {
                     $studentIds[] = $row['student_id'];
                     $skors[] = $row['score_raw'] ?? '';
+                    if (!isset($data['skor_lisan'])) {
+                        // Keep existing oral score if not provided
+                        $skorsLisan[] = $row['score_oral'] ?? null;
+                    }
                 }
+            } else {
+                $skorsLisan = $data['skor_lisan'] ?? [];
             }
 
 
@@ -221,10 +236,13 @@ class GradeModel extends Model {
                 $noBayanat = !empty($noBayanats[$i]) ? (int)$noBayanats[$i] : null;
                 if ($noBayanat !== null && $noBayanat < 1) $noBayanat = null; // Sanity check: must be >= 1
 
-                if ($score_raw_db !== null) {
-                    $stmt->execute([$studentId, $subjectId, $examId, $score_raw_db, $nilai_akhir, $noBayanat]);
+                $skorLisan = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : null;
+                if ($skorLisan === '') $skorLisan = null;
+
+                if ($score_raw_db !== null || $skorLisan !== null) {
+                    $stmt->execute([$studentId, $subjectId, $examId, $score_raw_db, $nilai_akhir, $skorLisan, $noBayanat]);
                 } else {
-                    $stmt->execute([$studentId, $subjectId, $examId, null, null, $noBayanat]);
+                    $stmt->execute([$studentId, $subjectId, $examId, null, null, null, $noBayanat]);
                 }
             }
 
@@ -241,23 +259,10 @@ class GradeModel extends Model {
     }
 
     public function deleteExam($id) {
-        // Delete related grades (or unlink them? hapus_koreksi just deletes exam and ON DELETE CASCADE logic? 
-        // hapus_koreksi.php typically just DELETE FROM exams. 
-        // If no Foreign Key constraint with Cascade, grades become orphans or stay linked.
-        // Let's check hapus_koreksi logic manually.
-        // Assuming simple delete for now, but safer to delete grades first if no FK.
-        // Actually, if we delete the EXAM, the grades should probably be kept but with exam_id=NULL? 
-        // Or deleted? Usually deleted if they belong to that exam.
-        
         $this->db->beginTransaction();
         try {
-            // Unlink grades (set exam_id null) or delete? 
-            // If we delete grades, we lose the data. 
-            // But if we delete the "Koreksi Session", we likely want to remove the grades associated with it 
-            // UNLESS they are the "Final Grade".
-            // Legacy hapus_koreksi.php likely just deletes the exam row.
-            // Let's follow that.
-            $stmt = $this->db->prepare("DELETE FROM exams WHERE id = ?");
+            // Soft delete: just mark as deleted so it can be restored if needed
+            $stmt = $this->db->prepare("UPDATE exams SET is_deleted = 1 WHERE id = ?");
             $stmt->execute([$id]);
             $this->db->commit();
             return true;

@@ -114,14 +114,16 @@ class GradeController extends Controller {
                 'subject_id' => $_POST['id_pelajaran'] ?? null,
                 'kelas_id' => $_POST['id_kelas'] ?? null,
                 'teacher_id' => $_POST['id_pengajar'] ?? null,
-                'skor_maks' => (int)($_POST['skor_maks'] ?? 100)
+                'skor_maks' => (int)($_POST['skor_maks'] ?? 100),
+                'has_oral' => isset($_POST['include_lisan']) ? 1 : 0
             ];
 
             if ($data['subject_id'] && $data['kelas_id'] && $data['teacher_id']) {
                 $model = new GradeModel();
                 try {
-                    $model->createExam($data);
-                    add_flash('Data koreksi berhasil ditambahkan.', 'success');
+                    $examId = $model->createExam($data);
+                    add_flash('Data koreksi berhasil ditambahkan. Silakan lengkapi nomor bayanat.', 'success');
+                    $this->redirect('/grades/edit?id=' . $examId);
                 } catch (\Exception $e) {
                     add_flash('Gagal: ' . $e->getMessage(), 'error');
                 }
@@ -207,6 +209,7 @@ class GradeController extends Controller {
         } else {
             // Examiner updates student scores
             $skors = $_POST['skor'] ?? [];
+            $skorsLisan = $_POST['skor_lisan'] ?? []; // Oral scores are only processed if provided and user has permission
             
             $allFilled = true;
             foreach ($skors as $s) {
@@ -229,7 +232,10 @@ class GradeController extends Controller {
         }
 
         try {
-            $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats);
+            $saveData = [
+                'skor_lisan' => ($isAdmin || $isPanitia) ? ($_POST['skor_lisan'] ?? []) : []
+            ];
+            $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats, $saveData);
             if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
                 add_flash('Koreksi selesai.', 'success');
                 redirect('/grades');

@@ -322,7 +322,7 @@ $isAdmin = (auth_get_role() === 'admin');
                                     <?php endif; ?>
                                     
                                     <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
-                                        <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus data koreksi ini?');" class="text-red-600 hover:text-red-900 p-1">
+                                        <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-600 hover:text-red-900 p-1">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                        </a>
                                     <?php endif; ?>
@@ -388,6 +388,12 @@ $isAdmin = (auth_get_role() === 'admin');
                             <label class="block text-sm font-medium text-gray-700">Skor Tertinggi (Total Poin Soal)</label>
                             <input type="number" name="skor_maks" required value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="include_lisan" id="include_lisan" value="1" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="include_lisan" class="ml-2 block text-sm text-gray-700 font-medium">
+                                Include Ujian Lisan
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -445,6 +451,12 @@ $isAdmin = (auth_get_role() === 'admin');
                 tsPengajar.setValue(assignment.teacher_id);
             }
         }
+    }
+</script>
+
+<script>
+    function confirmDelete(mapel, kelas) {
+        return confirm('PERINGATAN: Anda akan menghapus data koreksi ' + mapel + ' (' + kelas + ').\n\nData yang dihapus akan disembunyikan dan hanya bisa dipulihkan oleh tim IT/Database Admin.\n\nApakah Anda yakin ingin melanjutkan?');
     }
 </script>
 

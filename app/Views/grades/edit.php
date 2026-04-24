@@ -18,6 +18,11 @@ $isReadOnly = $isFinished || (!$isAdminOrPanitia && !$sessionOpen);
 $canEditSkorMaks = $isAdminOrPanitia && !$isFinished;
 $canEditScores = $isExaminer && $sessionOpen && !$isFinished;
 
+// Insight: Honesty & Integrity First.
+// If the user is the designated examiner for this subject, they MUST be blind-folded,
+// even if they hold an Admin or Panitia role. Names are only visible to auditors (Admin/Panitia who are NOT the examiner).
+$showNames = ($isAdminOrPanitia && !$isExaminer);
+
 // Parse Scale for JS
 $skala = $exam['skala'] ?? '80-30';
 list($max_val, $min_val) = explode('-', $skala);
@@ -43,19 +48,24 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
     <!-- Header Section -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
         <div class="bg-indigo-600 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-extrabold text-white tracking-tight leading-none"><?= htmlspecialchars($exam['mapel_nama']) ?></h1>
-                <div class="mt-2 flex flex-wrap items-center gap-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm border border-white/10 uppercase">
-                        Kelas <?= htmlspecialchars($exam['tingkat']) ?>-<?= htmlspecialchars($exam['abjad']) ?>
-                    </span>
-                    <span class="inline-flex items-center text-xs font-medium text-indigo-100 gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10">
-                        <i class="ri-user-star-line"></i>
-                        <?= htmlspecialchars($exam['pengajar_nama'] ?? 'Unknown') ?>
-                    </span>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/50 text-white border border-white/10 uppercase tracking-widest">
-                        <?= htmlspecialchars($exam['exam_type'] ?? '-') ?>
-                    </span>
+            <div class="flex items-center gap-4">
+                <a href="<?= url('/grades') ?>" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all shadow-inner" title="Kembali ke Daftar">
+                    <i class="ri-arrow-left-line text-xl"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-white tracking-tight leading-none"><?= htmlspecialchars($exam['mapel_nama']) ?></h1>
+                    <div class="mt-2 flex flex-wrap items-center gap-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white backdrop-blur-sm border border-white/10 uppercase">
+                            Kelas <?= htmlspecialchars($exam['tingkat']) ?>-<?= htmlspecialchars($exam['abjad']) ?>
+                        </span>
+                        <span class="inline-flex items-center text-xs font-medium text-indigo-100 gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10">
+                            <i class="ri-user-star-line"></i>
+                            <?= htmlspecialchars($exam['pengajar_nama'] ?? 'Unknown') ?>
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/50 text-white border border-white/10 uppercase tracking-widest">
+                            <?= htmlspecialchars($exam['exam_type'] ?? '-') ?>
+                        </span>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -157,8 +167,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 <i class="ri-sort-asc"></i>
                             </div>
                         </th>
-
-                        <?php if ($isAdminOrPanitia): ?>
+                        
+                        <?php if ($showNames): ?>
                             <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(1)">
                                 <div class="flex items-center gap-1">
                                     Nama Lengkap
@@ -173,6 +183,14 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 <i class="ri-sort-asc"></i>
                             </div>
                         </th>
+                        <?php if ($exam['has_oral'] && $isAdminOrPanitia): ?>
+                            <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(<?= $isAdminOrPanitia ? 4 : 3 ?>, true)">
+                                <div class="flex items-center justify-center gap-1">
+                                    Lisan
+                                    <i class="ri-sort-asc"></i>
+                                </div>
+                            </th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody id="studentTableBody" class="divide-y divide-gray-50 block md:table-row-group">
@@ -198,8 +216,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 </div>
                             </td>
                             
-                            <!-- Name (Admin/Panitia Only) -->
-                            <?php if ($isAdminOrPanitia): ?>
+                            <!-- Name (Auditors Only) -->
+                            <?php if ($showNames): ?>
                             <td class="md:px-6 md:py-5 mb-4 md:mb-0">
                                 <div class="text-sm font-bold text-gray-800 tracking-tight leading-tight uppercase md:truncate md:max-w-xs lg:max-w-md">
                                     <?= htmlspecialchars($row['nama']) ?>
@@ -243,6 +261,19 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                     </div>
                                 </div>
                             </td>
+
+                            <!-- Oral Exam Column -->
+                            <?php if ($exam['has_oral'] && $isAdminOrPanitia): ?>
+                            <td class="md:px-6 md:py-5 md:table-cell">
+                                <div class="flex flex-col md:flex-row items-center gap-2">
+                                    <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nilai Lisan</label>
+                                    <input type="text" name="skor_lisan[]" value="<?= htmlspecialchars($row['score_oral'] ?? '') ?>"
+                                        <?= $isFinished ? 'disabled' : '' ?>
+                                        class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-indigo-600 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-50/50 disabled:text-gray-400 disabled:border-transparent"
+                                        placeholder="...">
+                                </div>
+                            </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -309,10 +340,17 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
 <script>
     function validateFinish() {
+        const skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
         const inputs = document.querySelectorAll('input[name="skor[]"]');
         for (let input of inputs) {
-            if (input.value.trim() === '') {
+            const val = input.value.trim();
+            if (val === '') {
                 alert('Gagal: Semua kolom skor harus diisi sebelum menandai selesai.');
+                input.focus();
+                return false;
+            }
+            if (val !== '-' && parseFloat(val) > skorMaks) {
+                alert('Gagal: Ada skor yang melebihi skor maksimal (' + skorMaks + '). Silakan periksa kembali.');
                 input.focus();
                 return false;
             }
@@ -364,7 +402,15 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
         // CASE 3: Invalid Input
         if (isNaN(skor)) {
+            input.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
             return;
+        }
+
+        // Warning if exceeds Max
+        if (skor > skorMaks) {
+            input.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+        } else {
+            input.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
         }
 
         // CASE 4: Score 0 (All Wrong) -> Get Minimum Grade
