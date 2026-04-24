@@ -1,4 +1,6 @@
-<?php renderHeader("Panitia Ujian"); ?>
+<?php renderHeader("Panitia Ujian"); 
+$isAdmin = auth_get_role() === 'admin';
+?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
@@ -65,21 +67,27 @@
                         <div class="flex items-center gap-5">
                             <div class="flex items-center gap-2 <?= !$isActive ? 'opacity-30 pointer-events-none' : '' ?>" title="<?= !$isActive ? 'Hanya bisa dibuka jika sesi AKTIF' : 'Buka/Tutup input nilai' ?>">
                                 <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Input:</span>
-                                <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" id="form-toggle-<?= $session['id'] ?>" class="flex items-center">
-                                    <?= csrf_token_field() ?>
-                                    <input type="hidden" name="id" value="<?= $session['id'] ?>">
-                                    <input type="hidden" name="is_open" value="<?= $isOpen ? '0' : '1' ?>">
-                                    <button type="submit" class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none <?= $isOpen ? 'bg-green-500' : 'bg-gray-200' ?>">
-                                        <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out <?= $isOpen ? 'translate-x-5' : 'translate-x-0' ?>"></span>
-                                    </button>
-                                </form>
+                                <?php if ($isAdmin): ?>
+                                    <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" id="form-toggle-<?= $session['id'] ?>" class="flex items-center">
+                                        <?= csrf_token_field() ?>
+                                        <input type="hidden" name="id" value="<?= $session['id'] ?>">
+                                        <input type="hidden" name="is_open" value="<?= $isOpen ? '0' : '1' ?>">
+                                        <button type="submit" class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none <?= $isOpen ? 'bg-green-500' : 'bg-gray-200' ?>">
+                                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out <?= $isOpen ? 'translate-x-5' : 'translate-x-0' ?>"></span>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold <?= $isOpen ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' ?>">
+                                        <?= $isOpen ? 'TERBUKA' : 'TERTUTUP' ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
 
                             <?php if ($isActive): ?>
                                 <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200">
                                     <i class="ri-flashlight-line mr-1"></i> AKTIF
                                 </span>
-                            <?php else: ?>
+                            <?php elseif ($isAdmin): ?>
                                 <form action="<?= url('/grades/panitia/session/status') ?>" method="POST">
                                     <?= csrf_token_field() ?>
                                     <input type="hidden" name="id" value="<?= $session['id'] ?>">
@@ -88,6 +96,10 @@
                                         Aktifkan
                                     </button>
                                 </form>
+                            <?php else: ?>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-400">
+                                    TIDAK AKTIF
+                                </span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -98,6 +110,7 @@
                         <?= csrf_token_field() ?>
                         <input type="hidden" name="session_id" value="<?= $session['id'] ?>">
                         <div class="flex-1 flex flex-col min-h-0 border border-gray-100 rounded-xl p-3 bg-gray-50/20">
+                        <?php if ($isAdmin): ?>
                         <!-- Add Member Section -->
                         <div class="flex gap-2 mb-3">
                             <div class="flex-1">
@@ -114,6 +127,7 @@
                                 <i class="ri-user-add-line"></i> Tambah
                             </button>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Current Members Table -->
                         <div class="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-white mb-3 shadow-inner" style="max-height: 200px;">
@@ -121,7 +135,9 @@
                                 <thead class="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-sm">
                                     <tr>
                                         <th class="px-3 py-2 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Personil</th>
+                                        <?php if ($isAdmin): ?>
                                         <th class="px-3 py-2 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Hapus</th>
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody id="member-list-<?= $session['id'] ?>" class="divide-y divide-gray-50">
@@ -137,11 +153,13 @@
                                                 <input type="hidden" name="user_ids[]" value="<?= $t['id'] ?>">
                                                 <?= htmlspecialchars($t['nama']) ?>
                                             </td>
+                                            <?php if ($isAdmin): ?>
                                             <td class="px-3 py-1 text-right">
                                                 <button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 p-1 transition-colors">
                                                     <i class="ri-delete-bin-line"></i>
                                                 </button>
                                             </td>
+                                            <?php endif; ?>
                                         </tr>
                                     <?php 
                                         endif; 
@@ -160,11 +178,13 @@
 
                         <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-100 mt-auto shadow-sm">
                             <div class="text-[9px] text-gray-400 font-medium italic">
-                                * Klik simpan setelah update
+                                <?= $isAdmin ? '* Klik simpan setelah update' : 'Mode lihat saja' ?>
                             </div>
+                            <?php if ($isAdmin): ?>
                             <button type="submit" class="inline-flex items-center px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg shadow-md active:scale-95 transition-all">
                                 <i class="ri-save-line mr-1.5"></i> Simpan Daftar
                             </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </form>

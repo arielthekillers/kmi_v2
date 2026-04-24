@@ -53,7 +53,10 @@ class PanitiaController extends Controller {
 
     public function updateSessionStatus() {
         require_login();
-        if (!auth_can_manage_grades()) redirect('/grades');
+        if (auth_get_role() !== 'admin') {
+            add_flash('Hanya Admin yang dapat mengubah status sesi.', 'error');
+            redirect('/grades/panitia');
+        }
         csrf_validate_token();
 
         $id = $_POST['id'] ?? null;
@@ -76,7 +79,10 @@ class PanitiaController extends Controller {
 
     public function updateCommittee() {
         require_login();
-        if (!auth_can_manage_grades()) redirect('/grades');
+        if (auth_get_role() !== 'admin') {
+            add_flash('Hanya Admin yang dapat mengelola panitia.', 'error');
+            redirect('/grades/panitia');
+        }
         csrf_validate_token();
 
         $sessionId = $_POST['session_id'] ?? null;
