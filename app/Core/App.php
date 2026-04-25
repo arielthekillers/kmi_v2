@@ -103,6 +103,9 @@ class App
         $this->router->get('/students/edit', ['App\Modules\Students\Controllers\StudentController', 'edit']);
         $this->router->post('/students/update', ['App\Modules\Students\Controllers\StudentController', 'update']);
         $this->router->get('/students/delete', ['App\Modules\Students\Controllers\StudentController', 'delete']);
+        $this->router->get('/students/trash', ['App\Modules\Students\Controllers\StudentController', 'trash']);
+        $this->router->get('/students/restore', ['App\Modules\Students\Controllers\StudentController', 'restore']);
+        $this->router->get('/students/forceDelete', ['App\Modules\Students\Controllers\StudentController', 'forceDelete']);
         $this->router->get('/students/promote', ['App\Modules\Students\Controllers\StudentController', 'promote']);
         $this->router->post('/students/promote/store', ['App\Modules\Students\Controllers\StudentController', 'processPromotion']);
 

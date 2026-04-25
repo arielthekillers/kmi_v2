@@ -22,6 +22,7 @@ class Student {
                 INNER JOIN student_enrollments se ON s.id = se.student_id
                 LEFT JOIN kelas k ON se.kelas_id = k.id
                 WHERE se.academic_year_id = ? AND se.status = 'Active'
+                AND s.deleted_at IS NULL
                 AND {$filtering['where']}
                 ORDER BY s.nama ASC";
         
@@ -42,6 +43,7 @@ class Student {
                 FROM students s 
                 INNER JOIN student_enrollments se ON s.id = se.student_id
                 WHERE se.academic_year_id = ? AND se.status = 'Active'
+                AND s.deleted_at IS NULL
                 AND {$filtering['where']}";
         $params = array_merge([$this->academic_year_id], $filtering['params']);
         return (int)$this->db->query($sql, $params)->fetchColumn();
@@ -72,13 +74,13 @@ class Student {
             SELECT s.*, se.kelas_id, se.status as enrollment_status 
             FROM students s 
             LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ? AND se.status = 'Active'
-            WHERE s.id = ?
+            WHERE s.id = ? AND s.deleted_at IS NULL
         ", [$this->academic_year_id, $id])->fetch();
     }
 
     public function findByNis($nis, $academic_year_id = null) {
         $yearId = $academic_year_id ?? $this->academic_year_id;
-        return $this->db->query("SELECT * FROM students WHERE nis = ?", [$nis])->fetch();
+        return $this->db->query("SELECT * FROM students WHERE nis = ? AND deleted_at IS NULL", [$nis])->fetch();
     }
 
     public function create($data) {
@@ -167,7 +169,56 @@ class Student {
     }
 
     public function delete($id) {
-        return $this->db->query("DELETE FROM students WHERE id = ? AND academic_year_id = ?", [$id, $this->academic_year_id]);
+        return $this->db->query("UPDATE students SET deleted_at = NOW() WHERE id = ?", [$id]);
+    }
+
+    public function getTrash($filters = [], $limit = null, $offset = 0) {
+        $filtering = $this->applyFilters($filters);
+        
+        $sql = "SELECT s.*, se.kelas_id, k.tingkat, k.abjad 
+                FROM students s 
+                LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                LEFT JOIN kelas k ON se.kelas_id = k.id
+                WHERE s.deleted_at IS NOT NULL
+                AND {$filtering['where']}
+                ORDER BY s.deleted_at DESC";
+        
+        $params = array_merge([$this->academic_year_id], $filtering['params']);
+
+        if ($limit !== null) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = (int)$limit;
+            $params[] = (int)$offset;
+        }
+
+        return $this->db->query($sql, $params)->fetchAll();
+    }
+
+    public function countTrash($filters = []) {
+        $filtering = $this->applyFilters($filters);
+        $sql = "SELECT COUNT(*) FROM students s 
+                WHERE s.deleted_at IS NOT NULL
+                AND {$filtering['where']}";
+        return (int)$this->db->query($sql, $filtering['params'])->fetchColumn();
+    }
+
+    public function restore($id) {
+        return $this->db->query("UPDATE students SET deleted_at = NULL WHERE id = ?", [$id]);
+    }
+
+    public function forceDelete($id) {
+        $this->db->beginTransaction();
+        try {
+            // Delete enrollments first
+            $this->db->query("DELETE FROM student_enrollments WHERE student_id = ?", [$id]);
+            // Delete student
+            $this->db->query("DELETE FROM students WHERE id = ?", [$id]);
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
     
     public function getKelasList() {

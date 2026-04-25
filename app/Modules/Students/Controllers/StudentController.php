@@ -158,11 +158,74 @@ class StudentController extends Controller {
         $model = new Student();
         try {
             $model->delete($id);
-            add_flash('Data santri berhasil dihapus.', 'success');
+            add_flash('Data santri berhasil dipindahkan ke tempat sampah.', 'success');
         } catch (\Exception $e) {
             add_flash('Gagal menghapus santri: ' . $e->getMessage(), 'error');
         }
         $this->redirect('/students');
+    }
+
+    public function trash() {
+        require_admin();
+
+        $page = (int)($_GET['page'] ?? 1);
+        if ($page < 1) $page = 1;
+        
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        
+        $q = $_GET['q'] ?? '';
+        
+        $model = new Student();
+        
+        $filters = ['q' => $q];
+        $students = $model->getTrash($filters, $limit, $offset);
+        $totalItems = $model->countTrash($filters);
+        
+        $totalPages = ceil($totalItems / $limit);
+        
+        $data = [
+            'title' => 'Tempat Sampah Santri',
+            'students' => $students,
+            'q' => $q,
+            'page' => $page,
+            'total_pages' => $totalPages,
+            'total_items' => $totalItems,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('Students/Views/trash', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    public function restore() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        
+        $model = new Student();
+        try {
+            $model->restore($id);
+            add_flash('Data santri berhasil dipulihkan.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal memulihkan santri: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect('/students/trash');
+    }
+
+    public function forceDelete() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        
+        $model = new Student();
+        try {
+            $model->forceDelete($id);
+            add_flash('Data santri berhasil dihapus secara permanen.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal menghapus santri secara permanen: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect('/students/trash');
     }
 
     public function promote() {
