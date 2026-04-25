@@ -155,12 +155,27 @@ class GradeController extends Controller {
 
         $students = $model->getGrades($id, $exam['kelas_id'], $exam['academic_year_id']);
         
-        // Natural Sorting for Students
-        usort($students, function ($a, $b) {
-            return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
-        });
-
         $isPanitia = auth_is_panitia($exam['exam_session_id'] ?? null);
+        $isExaminer = (isset($exam['teacher_id']) && $exam['teacher_id'] == auth_get_user_id());
+
+        // Sorting for Students
+        if ($isExaminer) {
+            // Examiner sorts by bayanat (Requirement 2)
+            // Handle NULL/empty bayanat by putting them at the end
+            usort($students, function ($a, $b) {
+                $aBay = ($a['no_bayanat'] !== null && $a['no_bayanat'] !== '') ? (int)$a['no_bayanat'] : 999999;
+                $bBay = ($b['no_bayanat'] !== null && $b['no_bayanat'] !== '') ? (int)$b['no_bayanat'] : 999999;
+                if ($aBay === $bBay) {
+                    return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
+                }
+                return $aBay <=> $bBay;
+            });
+        } else {
+            // Admin/Panitia/Others sort by name
+            usort($students, function ($a, $b) {
+                return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
+            });
+        }
 
         $this->view('grades/edit', [
             'exam' => $exam,
@@ -199,18 +214,24 @@ class GradeController extends Controller {
         $noBayanats = $_POST['no_bayanat'] ?? [];
         $action = $_POST['action'] ?? 'save';
 
+        $isExaminer = (isset($exam['teacher_id']) && $exam['teacher_id'] == auth_get_user_id());
+
         if ($isAdmin || $isPanitia) {
             // Admin updates skor_maks and no_bayanat mapping
             if ($skorMaksPost !== null && is_numeric($skorMaksPost)) {
                 $exam['skor_maks'] = (float)$skorMaksPost;
             }
-            $skors = []; // Admin doesn't update scores normally, Model will handle recalculation if empty
-            $action = 'save';
-        } else {
-            // Examiner updates student scores
-            $skors = $_POST['skor'] ?? [];
-            $skorsLisan = $_POST['skor_lisan'] ?? []; // Oral scores are only processed if provided and user has permission
-            
+            // Only force 'save' action if not the examiner (who might be clicking 'finish')
+            if (!$isExaminer) {
+                $action = 'save';
+            }
+        }
+
+        // Always process scores if provided (Requirement 3 fix)
+        $skors = $_POST['skor'] ?? [];
+        $skorsLisan = $_POST['skor_lisan'] ?? [];
+        
+        if (!empty($skors)) {
             $allFilled = true;
             foreach ($skors as $s) {
                 if (trim($s) === '') {

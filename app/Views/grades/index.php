@@ -308,15 +308,37 @@ $isAdmin = (auth_get_role() === 'admin');
                                         <?php endif; ?>
                                     <?php else: ?>
                                         <?php 
-                                            $canInput = ($isAdmin || $isPanitia || ($k['session_is_open'] == 1)); 
+                                            $isBayanatComplete = ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
+                                            $isDesignatedExaminer = ($k['teacher_id'] == auth_get_user_id());
+                                            
+                                            // Admin & Panitia ALWAYS can enter (to fill bayanat or scores)
+                                            // Designated Examiner can ONLY enter if bayanat is complete AND session is open
+                                            if ($isAdmin || $isPanitia) {
+                                                $canInput = true;
+                                                $disabledReason = "";
+                                            } elseif ($isDesignatedExaminer) {
+                                                if (!$isBayanatComplete) {
+                                                    $canInput = false;
+                                                    $disabledReason = "Bayanat Belum Lengkap";
+                                                } elseif ($k['session_is_open'] != 1) {
+                                                    $canInput = false;
+                                                    $disabledReason = "Sesi Ditutup";
+                                                } else {
+                                                    $canInput = true;
+                                                    $disabledReason = "";
+                                                }
+                                            } else {
+                                                $canInput = false;
+                                                $disabledReason = "Bukan Pemeriksa";
+                                            }
                                         ?>
                                         <?php if ($canInput): ?>
                                             <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md shadow-sm">
                                                 Input Nilai
                                             </a>
                                         <?php else: ?>
-                                            <span class="text-gray-400 bg-gray-50 px-3 py-1 rounded-md cursor-not-allowed italic text-xs border border-gray-200" title="Sesi ditutup oleh panitia">
-                                                Sesi Ditutup
+                                            <span class="text-gray-400 bg-gray-50 px-3 py-1 rounded-md cursor-not-allowed italic text-xs border border-gray-200" title="<?= $disabledReason ?>">
+                                                <?= $disabledReason ?>
                                             </span>
                                         <?php endif; ?>
                                     <?php endif; ?>

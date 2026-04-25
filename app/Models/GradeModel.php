@@ -15,7 +15,8 @@ class GradeModel extends Model {
                        sub.nama as mapel_nama,
                        u.nama as pengajar_nama,
                        es.type as exam_type, es.is_open as session_is_open, e.has_oral,
-                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count
+                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count,
+                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count
                 FROM exams e
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
@@ -69,7 +70,8 @@ class GradeModel extends Model {
                    (SELECT COUNT(*) FROM student_enrollments se WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id) as jumlah_murid,
                    sub.nama as mapel_nama, sub.skala, 
                    u.nama as pengajar_nama,
-                   es.type as exam_type, es.is_open as session_is_open, e.has_oral
+                   es.type as exam_type, es.is_open as session_is_open, e.has_oral,
+                   (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count
             FROM exams e
             JOIN kelas k ON e.kelas_id = k.id
             JOIN subjects sub ON e.subject_id = sub.id
