@@ -503,7 +503,7 @@
                 class="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
                 <div>
                     <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Santri</div>
-                    <div class="text-3xl font-black text-white">714</div>
+                    <div id="stat-total-santri" class="text-3xl font-black text-white">0</div>
                 </div>
                 <div class="flex justify-end">
                     <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
@@ -1041,6 +1041,7 @@
                 appData.piket = data.piket || { syeikh: [], keliling: [] };
                 appData.hours_config = data.hours_config || [];
                 appData.bgm_youtube = data.bgm_youtube || '';
+                appData.total_santri = data.total_santri || 0;
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;
@@ -1098,10 +1099,12 @@
             const elPelajaran = document.getElementById('stat-pelajaran');
             const elKelas = document.getElementById('stat-kelas');
             const elPengajar = document.getElementById('stat-pengajar');
+            const elTotalSantri = document.getElementById('stat-total-santri');
 
             if (elPelajaran) elPelajaran.textContent = activePelajaran;
             if (elKelas) elKelas.textContent = uniqueKelas.size;
             if (elPengajar) elPengajar.textContent = uniquePengajar.size;
+            if (elTotalSantri) elTotalSantri.textContent = appData.total_santri || 0;
         }
 
         function escapeHtml(text) {

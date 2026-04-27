@@ -21,6 +21,20 @@ class TvShowcaseController extends Controller {
         $db = \App\Core\Database::getInstance();
         $pdo = $db->getConnection();
 
+        // Get total active students (excluding deleted)
+        $yearId = $this->currentYear['id'] ?? null;
+        $totalSantri = 0;
+        if ($yearId) {
+            $countStmt = $pdo->prepare("
+                SELECT COUNT(*) 
+                FROM students s 
+                INNER JOIN student_enrollments se ON s.id = se.student_id 
+                WHERE se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            ");
+            $countStmt->execute([$yearId]);
+            $totalSantri = (int)$countStmt->fetchColumn();
+        }
+
         $selectedDate = date('Y-m-d');
         $dayMap = [
             'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa', 
@@ -206,6 +220,7 @@ class TvShowcaseController extends Controller {
             'day' => $dayNameIndo,
             'schedule_by_hour' => $dailySchedule,
             'stats' => $stats,
+            'total_santri' => $totalSantri,
             'latest_verifications' => $latestVerifications,
             'piket' => [
                 'syeikh' => $piketSyeikh,
