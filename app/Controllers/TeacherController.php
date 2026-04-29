@@ -35,17 +35,23 @@ class TeacherController extends Controller {
         $totalPages = ceil($totalData / $limit);
         $page = max(1, min($page, $totalPages));
 
-        renderHeader("Master Pengajar");
-        $this->view('teachers/index', [
+        $data = [
+            'title' => 'Data Pengajar',
             'displayPengajar' => $displayPengajar,
             'totalData' => $totalData,
             'totalPages' => $totalPages,
             'page' => $page,
             'offset' => $offset,
             'perPage' => $limit,
-            'search' => $search
-        ]);
-        renderFooter();
+            'q' => $search,
+            'is_searching' => !empty($search),
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('teachers/index', $data);
+        $this->view('layouts/footer', $data);
     }
 
     public function store() {
@@ -66,6 +72,20 @@ class TeacherController extends Controller {
             if (empty($hp)) {
                 $username = strtolower(str_replace(' ', '', $nama)) . rand(100, 999);
             }
+        }
+
+        // Check uniqueness of HP/username
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $checkId = $isNew ? 0 : $id;
+            $stmt = $db->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+            $stmt->execute([$username, $checkId]);
+            if ($stmt->fetch()) {
+                add_flash('Nomor HP / Username sudah terdaftar pada pengguna lain.', 'error');
+                $this->redirect('/teachers');
+            }
+        } catch (\Exception $e) {
+            // Ignore and let it be caught during insert/update
         }
         
         $passwordInput = $_POST['password'] ?? '';
@@ -110,6 +130,13 @@ class TeacherController extends Controller {
             add_flash('Gagal menyimpan data pengajar: ' . $e->getMessage(), 'error');
         }
 
+        if (!$isNew && !empty($_POST['redirect_to'])) {
+            $this->redirect($_POST['redirect_to']);
+        } elseif (!$isNew && !empty($_SERVER['HTTP_REFERER'])) {
+            header('Location: ' . $_SERVER['HTTP_REFERER']);
+            exit;
+        }
+
         $this->redirect('/teachers');
     }
 
@@ -119,12 +146,72 @@ class TeacherController extends Controller {
         if (!empty($id)) {
             try {
                 $this->teacherModel->delete($id);
-                add_flash('Data pengajar berhasil dihapus.', 'success');
+                add_flash('Data pengajar berhasil dipindahkan ke tempat sampah.', 'success');
             } catch (\Exception $e) {
                 add_flash('Gagal menghapus data pengajar: ' . $e->getMessage(), 'error');
             }
         }
-        $this->redirect('/teachers');
+        $this->redirect('/teachers/trash');
+    }
+
+    public function trash() {
+        require_admin();
+
+        $search = $_GET['q'] ?? '';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = 20;
+        
+        $offset = ($page - 1) * $limit;
+        $totalData = $this->teacherModel->countTrash($search);
+        $displayPengajar = $this->teacherModel->getTrash($search, $limit, $offset);
+
+        $totalPages = ceil($totalData / $limit);
+        $page = max(1, min($page, max(1, $totalPages)));
+
+        $data = [
+            'title' => 'Tempat Sampah Pengajar',
+            'displayPengajar' => $displayPengajar,
+            'totalData' => $totalData,
+            'totalPages' => $totalPages,
+            'page' => $page,
+            'offset' => $offset,
+            'perPage' => $limit,
+            'q' => $search,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('teachers/trash', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    public function restore() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        if (!empty($id)) {
+            try {
+                $this->teacherModel->restore($id);
+                add_flash('Data pengajar berhasil dipulihkan.', 'success');
+            } catch (\Exception $e) {
+                add_flash('Gagal memulihkan data pengajar: ' . $e->getMessage(), 'error');
+            }
+        }
+        $this->redirect('/teachers/trash');
+    }
+
+    public function forceDelete() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        if (!empty($id)) {
+            try {
+                $this->teacherModel->forceDelete($id);
+                add_flash('Data pengajar berhasil dihapus permanen.', 'success');
+            } catch (\Exception $e) {
+                add_flash('Gagal menghapus data pengajar: ' . $e->getMessage(), 'error');
+            }
+        }
+        $this->redirect('/teachers/trash');
     }
 
     public function resetPassword() {

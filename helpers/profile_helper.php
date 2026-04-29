@@ -195,6 +195,14 @@ function update_teacher_biodata($teacherId, $data) {
             $userUpdates[] = "password = ?";
             $userParams[] = $data['password'];
         }
+        if (isset($data['username']) && !empty($data['username'])) {
+            $userUpdates[] = "username = ?";
+            $userParams[] = $data['username'];
+        }
+        if (isset($data['password_plain'])) {
+            $userUpdates[] = "password_plain = ?";
+            $userParams[] = $data['password_plain'];
+        }
         
         if (!empty($userUpdates)) {
             $userParams[] = $userId;

@@ -16,7 +16,7 @@ class TeacherModel extends Model {
             SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar'
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
             ORDER BY u.nama ASC
         ";
         $stmt = $this->db->query($sql);
@@ -28,7 +28,7 @@ class TeacherModel extends Model {
             SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar' 
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
             AND (u.nama LIKE ? OR tp.phone LIKE ?)
             ORDER BY u.nama ASC
             LIMIT ? OFFSET ?
@@ -48,7 +48,7 @@ class TeacherModel extends Model {
             SELECT COUNT(*) as total
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar'
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
             AND (u.nama LIKE ? OR tp.phone LIKE ?)
         ";
         $stmt = $this->db->prepare($sql);
@@ -88,6 +88,11 @@ class TeacherModel extends Model {
             $fields = ['nama = ?'];
             $params = [$data['nama']];
             
+            if (isset($data['username']) && !empty($data['username'])) {
+                $fields[] = 'username = ?';
+                $params[] = $data['username'];
+            }
+
             // If password changed (not empty)
             if (!empty($data['password'])) {
                 $fields[] = 'password = ?';
@@ -123,8 +128,49 @@ class TeacherModel extends Model {
     }
 
     public function delete($id) {
-        // Cascading delete should handle profile via FK, but let's be safe or rely on FK
-        // Schema has ON DELETE CASCADE for teacher_profiles
+        $stmt = $this->db->prepare("UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    public function getTrash($keyword, $limit, $offset) {
+        $sql = "
+            SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip, u.deleted_at
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NOT NULL
+            AND (u.nama LIKE ? OR tp.phone LIKE ?)
+            ORDER BY u.deleted_at DESC
+            LIMIT ? OFFSET ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $like = "%$keyword%";
+        $stmt->bindValue(1, $like);
+        $stmt->bindValue(2, $like);
+        $stmt->bindValue(3, (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(4, (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countTrash($keyword) {
+        $sql = "
+            SELECT COUNT(*) as total
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NOT NULL
+            AND (u.nama LIKE ? OR tp.phone LIKE ?)
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(["%$keyword%", "%$keyword%"]);
+        return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    }
+
+    public function restore($id) {
+        $stmt = $this->db->prepare("UPDATE users SET deleted_at = NULL WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    public function forceDelete($id) {
         $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
         return $stmt->execute([$id]);
     }

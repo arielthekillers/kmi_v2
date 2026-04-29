@@ -86,7 +86,7 @@ if (!function_exists('find_user_by_username')) {
     {
         // Use Database
         $db = \App\Core\Database::getInstance();
-        $stmt = $db->query("SELECT * FROM users WHERE username = ?", [$username]);
+        $stmt = $db->query("SELECT * FROM users WHERE username = ? AND deleted_at IS NULL", [$username]);
         $user = $stmt->fetch();
         
         if ($user) {
@@ -171,6 +171,7 @@ if (!function_exists('get_current_user')) {
                 return $_SESSION['user'];
             }
             // Unknown username string -> not a valid user
+            unset($_SESSION['user']);
             return null;
         }
 
@@ -186,8 +187,9 @@ if (!function_exists('get_current_user')) {
                         'nama' => $found['nama'] ?? $found['username']
                     ];
                 }
-                // if username not found, but array has nama, return as-is
-                return $u;
+                // if username not found (e.g. deleted), invalidate session
+                unset($_SESSION['user']);
+                return null;
             }
             return $u;
         }
@@ -266,6 +268,7 @@ if (!function_exists('auth_get_current_user')) {
                 ];
                 return $_SESSION['user'];
             }
+            unset($_SESSION['user']);
             return null;
         }
 
@@ -283,7 +286,8 @@ if (!function_exists('auth_get_current_user')) {
                     ];
                     return $_SESSION['user'];
                 }
-                return $u;
+                unset($_SESSION['user']);
+                return null;
             }
             return $u;
         }

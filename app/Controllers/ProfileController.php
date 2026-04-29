@@ -37,12 +37,31 @@ class ProfileController extends Controller {
             $this->redirect('/');
         }
 
+        $hp = trim($_POST['hp'] ?? '');
+        $username = preg_replace('/[^0-9]/', '', $hp);
+
+        // Check uniqueness
+        if (!empty($username)) {
+            try {
+                $db = \App\Core\Database::getInstance()->getConnection();
+                $stmt = $db->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+                $stmt->execute([$username, $teacher['user_id']]);
+                if ($stmt->fetch()) {
+                    add_flash('Nomor HP sudah terdaftar pada pengguna lain.', 'error');
+                    $this->redirect('/profil');
+                }
+            } catch (\Exception $e) {
+                // Ignore and let it be caught during update
+            }
+        }
+
         $profileData = [
             'jenis_kelamin' => trim($_POST['jenis_kelamin'] ?? ''),
             'tempat_lahir' => trim($_POST['tempat_lahir'] ?? ''),
             'tanggal_lahir' => trim($_POST['tanggal_lahir'] ?? ''),
             'nip' => trim($_POST['nik'] ?? ''),
-            'hp' => trim($_POST['hp'] ?? ''),
+            'hp' => $hp,
+            'username' => $username,
             'pendidikan_terakhir' => trim($_POST['pendidikan_terakhir'] ?? ''),
             'tahun_lulus' => trim($_POST['tahun_lulus'] ?? ''),
             'nama_ayah' => trim($_POST['nama_ayah'] ?? ''),
@@ -127,6 +146,10 @@ class ProfileController extends Controller {
         }
 
         if (update_teacher_biodata($teacherId, $profileData)) {
+            // Keep session alive with new username
+            if (!empty($username) && isset($_SESSION['user']) && is_array($_SESSION['user'])) {
+                $_SESSION['user']['username'] = $username;
+            }
             add_flash('Profil berhasil diperbarui!', 'success');
         } else {
             add_flash('Gagal memperbarui profil.', 'error');
