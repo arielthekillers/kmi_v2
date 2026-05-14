@@ -39,7 +39,6 @@ $isAdmin = (auth_get_role() === 'admin');
     </div>
 
     <!-- Instructions (Collapsible) -->
-    <?php if (auth_get_role() === 'pengajar' || auth_get_role() === 'admin'): ?>
     <details class="bg-indigo-50 border border-indigo-100 rounded-lg mb-8 group open:ring-0">
         <summary class="list-none flex items-center gap-2 p-4 cursor-pointer text-indigo-900 font-medium hover:bg-indigo-100/50 transition-colors rounded-lg">
              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,20 +49,52 @@ $isAdmin = (auth_get_role() === 'admin');
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
         </summary>
-        <div class="px-6 pb-6 text-indigo-800 text-sm leading-relaxed border-t border-indigo-100/50 pt-4">
-             <ol class="list-decimal ml-5 space-y-2">
-                <li>Klik tombol <strong>Input Nilai / Lihat Nilai</strong> pada mata pelajaran yang akan dikoreksi.</li>
-                <li>Isi skor yang diraih oleh masing-masing santri sesuai dengan nomor bayanat.</li>
-                <li>Kolom <strong>Skor yang Diraih</strong> tidak boleh dikosongkan.</li>
-                <li>Untuk santri yang tidak mengikuti ujian, isi kolom skor dengan tanda strip (-).</li>
-                <li>Klik <strong>Simpan sebagai Draft</strong> jika masih ingin melanjutkan koreksi di lain waktu, atau klik <strong>Selesai Diperiksa</strong> jika Anda sudah yakin seluruh koreksi telah selesai.</li>
-            </ol>
-            <div class="mt-4 p-3 bg-white/60 rounded border border-indigo-200 text-xs italic">
-                <strong>Note:</strong> Jika dibutuhkan pemeriksaan pada mata pelajaran yang sudah berstatus selesai diperiksa, hubungi admin untuk dibukakan aksesnya.
+        <div class="px-6 pb-6 text-indigo-800 text-sm leading-relaxed border-t border-indigo-100/50 pt-4 space-y-5">
+
+            <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+            <!-- Alur Admin / Panitia -->
+            <div>
+                <p class="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                    <span class="inline-block w-5 h-5 rounded-full bg-indigo-600 text-white text-center leading-5 text-xs">A</span>
+                    Alur Kerja Admin / Panitia
+                </p>
+                <ol class="list-decimal ml-5 space-y-2">
+                    <li>Pastikan <strong>Sesi Ujian</strong> (UUPT/UPT/UUAT/UAT) sudah <strong>diaktifkan</strong> dan <strong>dibuka</strong> melalui menu Panitia Ujian sebelum memulai.</li>
+                    <li>Klik <strong>+ Tambah Koreksi</strong> untuk mendaftarkan mata pelajaran yang akan dikoreksi. Pilih kelas, mata pelajaran, dan pemeriksa (pengajar).</li>
+                    <li>Klik <strong>Input Nilai</strong> pada baris mata pelajaran, lalu isi kolom <strong>Nomor Bayanat</strong> untuk setiap santri. Pemeriksa (pengajar) baru bisa mulai menginput nilai setelah nomor bayanat seluruh santri terisi.</li>
+                    <li>Setelah pemeriksa menyelesaikan koreksi (status <em>Selesai</em>), jika diperlukan koreksi ulang, klik tombol <strong>Buka Akses</strong> untuk mengizinkan pemeriksa mengedit kembali.</li>
+                    <li>Untuk menghapus sementara suatu jadwal koreksi, klik ikon <strong>hapus</strong> (🗑). Data tidak akan hilang permanen dan dapat dipulihkan melalui menu <strong>Tong Sampah</strong>.</li>
+                </ol>
             </div>
+            <?php endif; ?>
+
+            <?php if (auth_get_role() === 'pengajar'): ?>
+            <!-- Alur Pengajar / Pemeriksa -->
+            <div>
+                <p class="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                    <span class="inline-block w-5 h-5 rounded-full bg-green-600 text-white text-center leading-5 text-xs">P</span>
+                    Alur Kerja Pemeriksa (Pengajar)
+                </p>
+                <ol class="list-decimal ml-5 space-y-2">
+                    <li>Tombol <strong>Input Nilai</strong> hanya aktif jika: sesi ujian sedang <em>dibuka</em> oleh Panitia <strong>dan</strong> Nomor Bayanat seluruh santri sudah diisi oleh Admin/Panitia.</li>
+                    <li>Klik <strong>Input Nilai</strong>, lalu isi <strong>Skor yang Diraih</strong> sesuai nomor bayanat masing-masing santri. Daftar santri diurutkan berdasarkan nomor bayanat untuk memudahkan koreksi.</li>
+                    <li>Kolom skor <strong>tidak boleh dikosongkan</strong>. Untuk santri yang tidak mengikuti ujian, isi dengan tanda <strong>strip (-)</strong>.</li>
+                    <li>Klik <strong>Simpan sebagai Draft</strong> untuk menyimpan sementara dan melanjutkan di lain waktu. Status akan menjadi <em>Proses</em>.</li>
+                    <li>Setelah seluruh skor terisi dan sudah diyakini benar, klik <strong>Selesai Diperiksa</strong>. Status akan berubah menjadi <em>Selesai</em> dan akses edit akan terkunci otomatis.</li>
+                </ol>
+            </div>
+            <?php endif; ?>
+
+            <!-- Catatan Umum -->
+            <div class="p-3 bg-white/60 rounded border border-indigo-200 text-xs space-y-1">
+                <p><strong>⚠ Nilai hanya dapat dilihat</strong> oleh Wali Kelas jika status koreksian sudah <em>Selesai</em>.</p>
+                <p><strong>🔓 Buka Akses</strong> hanya tersedia bagi Admin & Panitia untuk membuka kembali koreksi yang sudah berstatus Selesai.</p>
+                <p><strong>🗑 Tong Sampah:</strong> Data yang dihapus dapat dipulihkan (<em>Restore</em>) atau dihapus permanen. Tidak bisa membuat entri baru jika data yang sama masih ada di Tong Sampah — gunakan <em>Restore</em> terlebih dahulu.</p>
+            </div>
+
         </div>
     </details>
-    <?php endif; ?>
+
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
