@@ -173,105 +173,106 @@
 
     <!-- Export Modal -->
     <div id="exportModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="document.getElementById('exportModal').classList.add('hidden')"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <i class="ri-file-excel-2-line text-green-600 text-xl"></i>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                Export Data Santri ke Excel
-                            </h3>
-                            <div class="mt-4">
-                                <form action="<?= url('/students/export') ?>" method="POST" id="exportForm">
-                                    
-                                    <div class="mb-6">
-                                        <label class="block text-sm font-bold text-gray-700 mb-2">1. Pilih Kelas yang ingin di-export</label>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                            <div class="flex items-center">
-                                                <input id="kelas_all" type="checkbox" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllKelas(this)">
-                                                <label for="kelas_all" class="ml-2 block text-sm text-gray-900 font-bold">Semua Kelas</label>
-                                            </div>
-                                            <?php foreach ($kelas as $k): ?>
-                                                <div class="flex items-center">
-                                                    <input id="kelas_<?= $k['id'] ?>" name="export_kelas[]" value="<?= $k['id'] ?>" type="checkbox" class="kelas-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                    <label for="kelas_<?= $k['id'] ?>" class="ml-2 block text-sm text-gray-900">
-                                                        <?= htmlspecialchars($k['tingkat'] . ' ' . $k['abjad']) ?>
-                                                    </label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-2">2. Pilih Data yang ingin di-export</label>
-                                        <?php
-                                            $fields = [
-                                                'nis' => 'NIS',
-                                                'nisn' => 'NISN',
-                                                'nik' => 'NIK',
-                                                'nama' => 'Nama Lengkap',
-                                                'gender' => 'Jenis Kelamin',
-                                                'kelas' => 'Kelas',
-                                                'tempat_lahir' => 'Tempat Lahir',
-                                                'tanggal_lahir' => 'Tanggal Lahir',
-                                                'tahun_masuk' => 'Tahun Masuk',
-                                                'alamat' => 'Alamat Lengkap',
-                                                'provinsi' => 'Provinsi',
-                                                'kabupaten' => 'Kabupaten/Kota',
-                                                'kecamatan' => 'Kecamatan',
-                                                'kelurahan' => 'Kelurahan/Desa',
-                                                'rt_rw' => 'RT/RW',
-                                                'kode_pos' => 'Kode Pos',
-                                                'nama_kk' => 'Nama Kepala Keluarga',
-                                                'nama_wali' => 'Nama Wali',
-                                                'pekerjaan_ayah' => 'Pekerjaan Ayah',
-                                                'no_hp_ayah' => 'No HP Ayah',
-                                                'nama_ibu' => 'Nama Ibu',
-                                                'pekerjaan_ibu' => 'Pekerjaan Ibu',
-                                                'no_hp_ibu' => 'No HP Ibu'
-                                            ];
-                                        ?>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                            <div class="flex items-center">
-                                                <input id="field_all" type="checkbox" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllFields(this)" checked>
-                                                <label for="field_all" class="ml-2 block text-sm text-gray-900 font-bold">Semua Data</label>
-                                            </div>
-                                            <?php foreach ($fields as $key => $label): ?>
-                                                <div class="flex items-center">
-                                                    <input id="field_<?= $key ?>" name="export_fields[]" value="<?= $key ?>" type="checkbox" class="field-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
-                                                    <label for="field_<?= $key ?>" class="ml-2 block text-sm text-gray-900">
-                                                        <?= htmlspecialchars($label) ?>
-                                                    </label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-
-                                </form>
+            <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full max-w-md sm:max-w-3xl mx-auto">
+                <form action="<?= url('/students/export') ?>" method="POST" id="exportForm">
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <i class="ri-file-excel-2-line text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900" id="modal-title">Export Data Santri</h3>
+                                <p class="text-sm text-gray-500">Pilih kelas dan data yang ingin disertakan ke dalam file Excel.</p>
                             </div>
                         </div>
+
+                        <div class="space-y-6 mt-4">
+                            <!-- Bagian 1: Pilih Kelas -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">1. Pilih Kelas</label>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                    <div class="mb-2 pb-2 border-b border-gray-200 flex justify-between items-center">
+                                        <span class="text-xs font-bold text-gray-500 uppercase">Semua Kelas</span>
+                                        <input type="checkbox" id="kelas_all" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllKelas(this)">
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 max-h-48 overflow-y-auto pr-2">
+                                        <?php foreach ($kelas as $k): ?>
+                                            <label class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
+                                                <input id="kelas_<?= $k['id'] ?>" name="export_kelas[]" value="<?= $k['id'] ?>" type="checkbox" class="kelas-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                <span class="ml-2 text-sm text-gray-700"><?= htmlspecialchars($k['tingkat'] . ' ' . $k['abjad']) ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bagian 2: Pilih Data -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">2. Pilih Data</label>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                    <div class="mb-2 pb-2 border-b border-gray-200 flex justify-between items-center">
+                                        <span class="text-xs font-bold text-gray-500 uppercase">Semua Data</span>
+                                        <input type="checkbox" id="field_all" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllFields(this)" checked>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-2 max-h-48 overflow-y-auto pr-2">
+                                        <?php
+                                        $fields = [
+                                            'nis' => 'NIS',
+                                            'nisn' => 'NISN',
+                                            'nik' => 'NIK',
+                                            'nama' => 'Nama Lengkap',
+                                            'gender' => 'Jenis Kelamin',
+                                            'kelas' => 'Kelas',
+                                            'tempat_lahir' => 'Tempat Lahir',
+                                            'tanggal_lahir' => 'Tanggal Lahir',
+                                            'tahun_masuk' => 'Tahun Masuk',
+                                            'alamat' => 'Alamat Lengkap',
+                                            'provinsi' => 'Provinsi',
+                                            'kabupaten' => 'Kabupaten/Kota',
+                                            'kecamatan' => 'Kecamatan',
+                                            'kelurahan' => 'Kelurahan/Desa',
+                                            'rt_rw' => 'RT/RW',
+                                            'kode_pos' => 'Kode Pos',
+                                            'nama_kk' => 'Nama Kepala Keluarga',
+                                            'nama_wali' => 'Nama Wali',
+                                            'pekerjaan_ayah' => 'Pekerjaan Ayah',
+                                            'no_hp_ayah' => 'No HP Ayah',
+                                            'nama_ibu' => 'Nama Ibu',
+                                            'pekerjaan_ibu' => 'Pekerjaan Ibu',
+                                            'no_hp_ibu' => 'No HP Ibu'
+                                        ];
+                                        foreach ($fields as $key => $label): ?>
+                                            <label class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
+                                                <input id="field_<?= $key ?>" name="export_fields[]" value="<?= $key ?>" type="checkbox" class="field-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                                <span class="ml-2 text-sm text-gray-700"><?= htmlspecialchars($label) ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" form="exportForm" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Export Sekarang
-                    </button>
-                    <button type="button" onclick="document.getElementById('exportModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Batal
-                    </button>
-                </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                        <button type="submit" form="exportForm" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:w-auto sm:text-sm">
+                            Export Excel
+                        </button>
+                        <button type="button" onclick="document.getElementById('exportModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
+        // Existing script
         function toggleAllKelas(source) {
             const checkboxes = document.querySelectorAll('.kelas-checkbox');
             checkboxes.forEach(cb => cb.checked = source.checked);
@@ -280,6 +281,37 @@
             const checkboxes = document.querySelectorAll('.field-checkbox');
             checkboxes.forEach(cb => cb.checked = source.checked);
         }
+        
+        // Add listeners to sync the "Select All" state
+        document.addEventListener('DOMContentLoaded', function() {
+            // For Kelas
+            const selectAllKelas = document.getElementById('kelas_all');
+            const kelasCheckboxes = document.querySelectorAll('.kelas-checkbox');
+            kelasCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const allChecked = Array.from(kelasCheckboxes).every(c => c.checked);
+                    const someChecked = Array.from(kelasCheckboxes).some(c => c.checked);
+                    if(selectAllKelas) {
+                        selectAllKelas.checked = allChecked;
+                        selectAllKelas.indeterminate = someChecked && !allChecked;
+                    }
+                });
+            });
+
+            // For Fields
+            const selectAllFields = document.getElementById('field_all');
+            const fieldCheckboxes = document.querySelectorAll('.field-checkbox');
+            fieldCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const allChecked = Array.from(fieldCheckboxes).every(c => c.checked);
+                    const someChecked = Array.from(fieldCheckboxes).some(c => c.checked);
+                    if(selectAllFields) {
+                        selectAllFields.checked = allChecked;
+                        selectAllFields.indeterminate = someChecked && !allChecked;
+                    }
+                });
+            });
+        });
     </script>
 
 </main>
