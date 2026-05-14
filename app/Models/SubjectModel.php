@@ -38,12 +38,17 @@ class SubjectModel extends Model {
     }
 
     public function create($data) {
-        $stmt = $this->db->prepare("INSERT INTO subjects (nama, skala) VALUES (?, ?)");
-        return $stmt->execute([$data['nama'], $data['skala']]);
+        $stmt = $this->db->prepare("INSERT INTO subjects (nama, skala, is_special) VALUES (?, ?, ?)");
+        return $stmt->execute([$data['nama'], $data['skala'], $data['is_special'] ?? 0]);
     }
 
     public function update($id, $data) {
-        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, skala = ? WHERE id = ?");
-        return $stmt->execute([$data['nama'], $data['skala'], $id]);
+        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, skala = ?, is_special = ? WHERE id = ?");
+        return $stmt->execute([$data['nama'], $data['skala'], $data['is_special'] ?? 0, $id]);
+    }
+
+    public function getSpecialSubjects() {
+        $stmt = $this->db->query("SELECT * FROM subjects WHERE is_special = 1 ORDER BY nama ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

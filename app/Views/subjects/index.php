@@ -42,6 +42,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Pelajaran</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rentang Nilai (Max-Min)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                     </tr>
                 </thead>
@@ -59,9 +60,20 @@
                                     <?= htmlspecialchars($p['skala']) ?>
                                 </span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <?php if ($p['is_special']): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                                        <i class="ri-star-fill text-[10px]"></i> Ujian Khusus
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                        Reguler
+                                    </span>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2">
-                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
+                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>, <?= (int)$p['is_special'] ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
                                     <a href="<?= url('/subjects/delete?id=' . $id) ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus data pelajaran ini?')" class="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors" title="Hapus">
@@ -160,6 +172,13 @@
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Pilih rentang nilai konversi.</p>
                         </div>
+                        <div class="flex items-start gap-3 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                            <input type="checkbox" name="is_special" id="inputIsSpecial" value="1" class="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded">
+                            <div>
+                                <label for="inputIsSpecial" class="block text-sm font-medium text-gray-700 cursor-pointer">Pelajaran Ujian Khusus</label>
+                                <p class="text-xs text-gray-500 mt-0.5">Centang jika pelajaran ini tidak masuk jadwal kelas reguler (contoh: Praktek Mengajar, Kemasyarakatan, Pemeriksaan Buku Paket). Pelajaran ini akan dapat dipilih melalui toggle khusus saat membuat Koreksi Ujian.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -180,14 +199,16 @@
         document.getElementById('inputNama').value = '';
         document.getElementById('inputSkala').value = '80-30';
         document.getElementById('inputId').value = '';
+        document.getElementById('inputIsSpecial').checked = false;
         document.getElementById('modalTitle').textContent = 'Tambah Pelajaran';
         toggleModal('addModal');
     }
 
-    function editPelajaran(id, nama, skala) {
+    function editPelajaran(id, nama, skala, isSpecial) {
         document.getElementById('inputNama').value = nama;
         document.getElementById('inputSkala').value = skala;
         document.getElementById('inputId').value = id;
+        document.getElementById('inputIsSpecial').checked = isSpecial == 1;
         document.getElementById('modalTitle').textContent = 'Edit Pelajaran';
         toggleModal('addModal');
     }

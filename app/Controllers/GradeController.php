@@ -87,17 +87,22 @@ class GradeController extends Controller {
         $scheduleModel = new \App\Models\ScheduleModel();
         $teachingMap = $scheduleModel->getAllAssignments($this->currentYear['id']);
 
+        // Special subjects (is_special = 1) for the toggle
+        $subjectModel2 = new \App\Models\SubjectModel();
+        $specialSubjects = $subjectModel2->getSpecialSubjects();
+
         $this->view('grades/index', [
-            'exams' => $exams,
-            'kelas' => $kelas,
-            'pelajaran' => $allSubjects,
-            'pengajar' => $pengajar,
-            'teachingMap' => $teachingMap,
-            'academicYears' => $academicYears,
-            'allSessions' => $allSessions,
-            'activeSession' => $activeSession,
-            'filters' => $filters,
-            'stats' => $stats
+            'exams'          => $exams,
+            'kelas'          => $kelas,
+            'pelajaran'      => $allSubjects,
+            'pengajar'       => $pengajar,
+            'teachingMap'    => $teachingMap,
+            'specialSubjects'=> $specialSubjects,
+            'academicYears'  => $academicYears,
+            'allSessions'    => $allSessions,
+            'activeSession'  => $activeSession,
+            'filters'        => $filters,
+            'stats'          => $stats
         ]);
     }
 

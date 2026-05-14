@@ -444,6 +444,22 @@ $isAdmin = (auth_get_role() === 'admin');
                             <label class="block text-sm font-medium text-gray-700">Skor Tertinggi (Total Poin Soal)</label>
                             <input type="number" name="skor_maks" required value="100" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
+                        <!-- Toggle Pelajaran Khusus -->
+                        <?php if (!empty($specialSubjects)): ?>
+                        <div class="border-t border-gray-100 pt-3">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <div class="relative">
+                                    <input type="checkbox" id="toggle_special" class="sr-only" onchange="onToggleSpecial()">
+                                    <div class="w-10 h-5 bg-gray-200 rounded-full shadow-inner transition-colors" id="toggle_special_track"></div>
+                                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" id="toggle_special_thumb"></div>
+                                </div>
+                                <span class="text-sm font-medium text-purple-700">
+                                    <i class="ri-star-fill text-purple-500 mr-1"></i>Tampilkan Pelajaran Ujian Khusus
+                                </span>
+                            </label>
+                            <p class="text-xs text-gray-400 mt-1 ml-12">Aktifkan untuk memilih pelajaran di luar jadwal (Praktek Mengajar, dll). Pengajar dipilih manual.</p>
+                        </div>
+                        <?php endif; ?>
                         <div class="flex items-center">
                             <input type="checkbox" name="include_lisan" id="include_lisan" value="1" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                             <label for="include_lisan" class="ml-2 block text-sm text-gray-700 font-medium">
@@ -463,32 +479,89 @@ $isAdmin = (auth_get_role() === 'admin');
 
 <script>
     const teachingMap = <?= json_encode($teachingMap) ?>;
+    const specialSubjects = <?= json_encode($specialSubjects ?? []) ?>;
+    let isSpecialMode = false;
+
+    function resetKoreksiForm() {
+        // Reset special toggle
+        isSpecialMode = false;
+        const tog = document.getElementById('toggle_special');
+        if (tog) { tog.checked = false; updateToggleUI(false); }
+
+        // Reset include lisan
+        const lisan = document.getElementById('include_lisan');
+        if (lisan) lisan.checked = false;
+
+        // Reset skor_maks
+        const skorMaks = document.querySelector('#addKoreksiModal input[name="skor_maks"]');
+        if (skorMaks) skorMaks.value = 100;
+
+        // Reset TomSelect fields (kelas, pelajaran, pengajar)
+        setTimeout(() => {
+            const tsKelas = document.getElementById('modal_id_kelas');
+            const tsPelajaran = document.getElementById('modal_id_pelajaran');
+            const tsPengajar = document.getElementById('modal_id_pengajar');
+
+            if (tsKelas && tsKelas.tomselect) {
+                tsKelas.tomselect.clear();
+            }
+            if (tsPelajaran && tsPelajaran.tomselect) {
+                tsPelajaran.tomselect.clear();
+                tsPelajaran.tomselect.clearOptions();
+                tsPelajaran.tomselect.addOption({ value: '', text: 'Pilih Kelas Terlebih Dahulu...' });
+            }
+            if (tsPengajar && tsPengajar.tomselect) {
+                tsPengajar.tomselect.clear();
+            }
+        }, 60);
+    }
 
     function toggleModal(id) {
         document.getElementById(id).classList.toggle('hidden');
         if (!document.getElementById(id).classList.contains('hidden')) {
             setTimeout(initTomSelects, 50);
+            resetKoreksiForm();
+        }
+    }
+
+    function updateToggleUI(active) {
+        const track = document.getElementById('toggle_special_track');
+        const thumb = document.getElementById('toggle_special_thumb');
+        if (!track) return;
+        if (active) {
+            track.classList.remove('bg-gray-200'); track.classList.add('bg-purple-500');
+            thumb.style.transform = 'translateX(20px)';
+        } else {
+            track.classList.remove('bg-purple-500'); track.classList.add('bg-gray-200');
+            thumb.style.transform = 'translateX(0)';
+        }
+    }
+
+    function onToggleSpecial() {
+        isSpecialMode = document.getElementById('toggle_special').checked;
+        updateToggleUI(isSpecialMode);
+        const tsSubject = document.getElementById('modal_id_pelajaran').tomselect;
+        tsSubject.clear();
+        tsSubject.clearOptions();
+        if (isSpecialMode) {
+            specialSubjects.forEach(s => { tsSubject.addOption({ value: s.id, text: s.nama }); });
+            tsSubject.refreshOptions(false);
+        } else {
+            onClassChange();
         }
     }
 
     function onClassChange() {
+        if (isSpecialMode) return;
         const classSelect = document.getElementById('modal_id_kelas');
         const subjectSelect = document.getElementById('modal_id_pelajaran');
         const classId = classSelect.value;
-        
-        // Clear subjects
         const tsSubject = subjectSelect.tomselect;
         tsSubject.clear();
         tsSubject.clearOptions();
-        
         if (classId && teachingMap[classId]) {
             const subjects = teachingMap[classId];
-            subjects.forEach(s => {
-                tsSubject.addOption({
-                    value: s.subject_id,
-                    text: s.subject_name
-                });
-            });
+            subjects.forEach(s => { tsSubject.addOption({ value: s.subject_id, text: s.subject_name }); });
             tsSubject.refreshOptions(false);
         } else {
             tsSubject.addOption({ value: "", text: "Pilih Kelas Terlebih Dahulu..." });
@@ -496,15 +569,14 @@ $isAdmin = (auth_get_role() === 'admin');
     }
 
     function onSubjectChange() {
+        if (isSpecialMode) return; // Pengajar dipilih manual saat mode khusus
         const classId = document.getElementById('modal_id_kelas').value;
         const subjectId = document.getElementById('modal_id_pelajaran').value;
         const pengajarSelect = document.getElementById('modal_id_pengajar');
-        
         if (classId && subjectId && teachingMap[classId]) {
             const assignment = teachingMap[classId].find(s => s.subject_id == subjectId);
             if (assignment && assignment.teacher_id) {
-                const tsPengajar = pengajarSelect.tomselect;
-                tsPengajar.setValue(assignment.teacher_id);
+                pengajarSelect.tomselect.setValue(assignment.teacher_id);
             }
         }
     }
