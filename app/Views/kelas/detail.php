@@ -43,6 +43,18 @@
                     <svg class="w-4 h-4 <?= $tab === 'jadwal' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Jadwal Pelajaran
                 </a>
+
+                <a href="?id=<?= $kelas['id'] ?>&tab=nilai" 
+                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                    <svg class="w-4 h-4 <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Nilai Ujian
+                </a>
+
+                <a href="?id=<?= $kelas['id'] ?>&tab=raport" 
+                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'raport' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                    <svg class="w-4 h-4 <?= $tab === 'raport' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Raport Santri
+                </a>
             </nav>
         </aside>
 
@@ -184,6 +196,109 @@
                     <?php endif; ?>
                 </div>
 
+            <?php elseif ($tab === 'nilai'): ?>
+                <!-- Nilai Ujian Tab -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Rekap Nilai Ujian Kelas
+                        </h3>
+                        <div>
+                            <form action="" method="GET" class="flex items-center">
+                                <input type="hidden" name="id" value="<?= $kelas['id'] ?>">
+                                <input type="hidden" name="tab" value="nilai">
+                                <select name="session_id" onchange="this.form.submit()" class="text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-indigo-500 focus:ring-0 shadow-sm cursor-pointer hover:border-gray-300 transition-colors">
+                                    <option value="">Semua Sesi Ujian</option>
+                                    <?php 
+                                    $typeMap = [
+                                        'UUPT' => 'Ulangan Umum Pertengahan Tahun',
+                                        'UPT' => 'Ujian Pertengahan Tahun',
+                                        'UUAT' => 'Ulangan Umum Akhir Tahun',
+                                        'UAT' => 'Ujian Akhir Tahun'
+                                    ];
+                                    foreach ($sessions as $session): 
+                                        $sessionName = $typeMap[$session['type']] ?? $session['type'];
+                                    ?>
+                                        <option value="<?= $session['id'] ?>" <?= $selected_session_id == $session['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($session['type'] . ' (' . $sessionName . ')') ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50/50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pelajaran</th>
+                                    <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pengajar</th>
+                                    <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Sesi Ujian</th>
+                                    <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">Rata-rata</th>
+                                    <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th class="px-6 py-3 text-right text-[9px] font-bold text-gray-400 uppercase tracking-widest">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100 text-[13px]">
+                                <?php foreach ($exams as $exam): ?>
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-6 py-3.5 font-bold text-gray-900">
+                                        <?= htmlspecialchars($exam['mapel_nama'] ?? 'Unknown') ?>
+                                    </td>
+                                    <td class="px-6 py-3.5 text-gray-600">
+                                        <?= htmlspecialchars($exam['pengajar_nama'] ?? 'Tanpa Pengajar') ?>
+                                    </td>
+                                    <td class="px-6 py-3.5 text-gray-600">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
+                                            <?= htmlspecialchars($exam['exam_type'] ?? '-') ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3.5 text-center font-bold text-indigo-600">
+                                        <?= ($exam['status'] === 'selesai' && $exam['average_score'] !== null) ? number_format($exam['average_score'], 2) : '-' ?>
+                                    </td>
+                                    <td class="px-6 py-3.5 text-center">
+                                        <?php if ($exam['status'] === 'selesai'): ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-green-50 text-green-700 uppercase">Selesai</span>
+                                        <?php elseif ($exam['status'] === 'proses'): ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-blue-700 uppercase">Proses</span>
+                                        <?php else: ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-gray-50 text-gray-600 uppercase">Belum</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-3.5 text-right font-medium">
+                                        <?php if ($exam['status'] === 'selesai'): ?>
+                                            <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=view_nilai&exam_id=' . $exam['id']) ?>" class="text-indigo-600 hover:text-indigo-900 text-xs flex items-center justify-end gap-1">
+                                                <i class="ri-eye-line"></i> Lihat Nilai
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-gray-400 text-xs flex items-center justify-end gap-1 cursor-not-allowed" title="Nilai belum diverifikasi">
+                                                <i class="ri-eye-off-line"></i> Lihat Nilai
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($exams)): ?>
+                                <tr><td colspan="6" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data nilai ujian untuk kelas ini.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            <?php elseif ($tab === 'view_nilai'): ?>
+                <!-- Detail Nilai Ujian Tab -->
+                <?php include __DIR__ . '/view_nilai.php'; ?>
+                
+            <?php elseif ($tab === 'raport'): ?>
+                <!-- Raport Santri (Leger) Tab -->
+                <?php include __DIR__ . '/view_raport.php'; ?>
+                
+            <?php elseif ($tab === 'raport_detail'): ?>
+                <!-- Raport Detail Santri Tab -->
+                <?php include __DIR__ . '/view_raport_detail.php'; ?>
+                
             <?php endif; ?>
 
         </div>
