@@ -301,4 +301,48 @@ class GradeController extends Controller {
         }
         redirect('/grades'); // Or back to where they were?
     }
+
+    public function trash() {
+        require_login();
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
+
+        $model = new GradeModel();
+        $deletedExams = $model->getDeletedExams($this->currentYear['id']);
+        
+        $this->view('grades/trash', [
+            'title' => 'Tong Sampah - Koreksi Ujian',
+            'deletedExams' => $deletedExams
+        ]);
+    }
+
+    public function restore() {
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $model = new GradeModel();
+            $model->restoreExam($id);
+            add_flash('Data koreksi berhasil dikembalikan.', 'success');
+        }
+        $this->redirect('/grades/trash');
+    }
+
+    public function force_delete() {
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $model = new GradeModel();
+            $model->hardDeleteExam($id);
+            add_flash('Data koreksi dihapus permanen beserta nilainya.', 'success');
+        }
+        $this->redirect('/grades/trash');
+    }
 }

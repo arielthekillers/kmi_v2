@@ -77,6 +77,9 @@ class App
         $this->router->get('/grades/edit', ['App\Controllers\GradeController', 'edit']);
         $this->router->post('/grades/update', ['App\Controllers\GradeController', 'update']);
         $this->router->get('/grades/delete', ['App\Controllers\GradeController', 'delete']);
+        $this->router->get('/grades/trash', ['App\Controllers\GradeController', 'trash']);
+        $this->router->get('/grades/restore', ['App\Controllers\GradeController', 'restore']);
+        $this->router->get('/grades/forceDelete', ['App\Controllers\GradeController', 'force_delete']);
         $this->router->post('/grades/unlock', ['App\Controllers\GradeController', 'unlock']);
         
         // Panitia Ujian Routes

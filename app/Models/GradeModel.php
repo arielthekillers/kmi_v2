@@ -109,11 +109,18 @@ class GradeModel extends Model {
                 throw new \Exception("Tidak ada sesi ujian (UUPT/UPT/dll) yang aktif untuk tahun ajaran ini.");
             }
 
-            // Check for duplicate
+            // Check for duplicate (active records)
             $stmtCheck = $this->db->prepare("SELECT id FROM exams WHERE subject_id = ? AND kelas_id = ? AND academic_year_id = ? AND exam_session_id = ? AND is_deleted = 0");
             $stmtCheck->execute([$data['subject_id'], $data['kelas_id'], $this->academic_year_id, $session['id']]);
             if ($stmtCheck->fetch()) {
                 throw new \Exception("Pelajaran ini sudah ada di daftar koreksi untuk kelas tersebut pada sesi ini.");
+            }
+
+            // Check for duplicate in trash (soft-deleted records)
+            $stmtTrash = $this->db->prepare("SELECT id FROM exams WHERE subject_id = ? AND kelas_id = ? AND academic_year_id = ? AND exam_session_id = ? AND is_deleted = 1");
+            $stmtTrash->execute([$data['subject_id'], $data['kelas_id'], $this->academic_year_id, $session['id']]);
+            if ($stmtTrash->fetch()) {
+                throw new \Exception("Koreksi ujian ini sebelumnya telah dihapus dan masih tersimpan di Tong Sampah. Silakan pulihkan (restore) data tersebut daripada membuat entri baru.");
             }
 
             // Insert Exam
@@ -134,22 +141,7 @@ class GradeModel extends Model {
             ]);
             $examId = $this->db->lastInsertId();
 
-            // Link existing grades if any
-            $stmtStudents = $this->db->prepare("
-                SELECT s.id FROM students s 
-                INNER JOIN student_enrollments se ON s.id = se.student_id
-                WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
-            ");
-            $stmtStudents->execute([$data['kelas_id'], $this->academic_year_id]);
-            $studentIds = $stmtStudents->fetchAll(PDO::FETCH_COLUMN);
-
-            if (!empty($studentIds)) {
-                $inQuery = implode(',', array_fill(0, count($studentIds), '?'));
-                $sqlLink = "UPDATE grades SET exam_id = ? WHERE subject_id = ? AND student_id IN ($inQuery)";
-                $params = array_merge([$examId, $data['subject_id']], $studentIds);
-                $stmtLink = $this->db->prepare($sqlLink);
-                $stmtLink->execute($params);
-            }
+            // (The legacy code that hijacked grades here has been intentionally removed to prevent soft-deleted or previous session grades from being stolen into the new exam)
 
             $this->db->commit();
             return $examId;
@@ -267,6 +259,43 @@ class GradeModel extends Model {
             // Soft delete: just mark as deleted so it can be restored if needed
             $stmt = $this->db->prepare("UPDATE exams SET is_deleted = 1 WHERE id = ?");
             $stmt->execute([$id]);
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function getDeletedExams($academicYearId = null) {
+        $ayId = $academicYearId ?: $this->academic_year_id;
+        $sql = "SELECT e.*, 
+                       k.tingkat, k.abjad, 
+                       sub.nama as mapel_nama,
+                       u.nama as pengajar_nama,
+                       es.type as exam_type, es.is_open as session_is_open
+                FROM exams e
+                LEFT JOIN kelas k ON e.kelas_id = k.id
+                LEFT JOIN subjects sub ON e.subject_id = sub.id
+                LEFT JOIN users u ON e.teacher_id = u.id
+                LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
+                WHERE e.is_deleted = 1 AND e.academic_year_id = ?
+                ORDER BY e.updated_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$ayId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function restoreExam($id) {
+        $stmt = $this->db->prepare("UPDATE exams SET is_deleted = 0 WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    public function hardDeleteExam($id) {
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare("DELETE FROM grades WHERE exam_id = ?")->execute([$id]);
+            $this->db->prepare("DELETE FROM exams WHERE id = ?")->execute([$id]);
             $this->db->commit();
             return true;
         } catch (\Exception $e) {
