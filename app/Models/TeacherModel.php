@@ -22,6 +22,29 @@ class TeacherModel extends Model {
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getForExport() {
+        $sql = "
+            SELECT 
+                u.nama,
+                tp.nip,
+                tp.gender,
+                tp.birth_place,
+                tp.birth_date,
+                tp.address,
+                tp.phone as hp,
+                tp.education,
+                tp.year_graduated,
+                tp.father_name,
+                tp.mother_name
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
+            ORDER BY u.nama ASC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     
     public function search($keyword, $limit, $offset) {
         $sql = "

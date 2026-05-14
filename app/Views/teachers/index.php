@@ -16,6 +16,9 @@ unset($_SESSION['reset_result']);
             <a href="<?= url('/teachers/trash') ?>" class="px-4 py-2 border border-red-200 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 flex items-center">
                 <i class="ri-delete-bin-line mr-2"></i> Tempat Sampah
             </a>
+            <button type="button" onclick="toggleModal('exportTeacherModal')" class="px-4 py-2 border border-green-600 text-green-600 rounded-md text-sm font-medium hover:bg-green-50 flex items-center shadow-sm">
+                <i class="ri-file-excel-line mr-2"></i> Export Data
+            </button>
             <button onclick="openAdd()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center shadow-sm">
                 <i class="ri-user-add-line mr-2"></i> Tambah Pengajar
             </button>
@@ -232,6 +235,66 @@ unset($_SESSION['reset_result']);
         </div>
     </div>
 </div>
+<!-- ─── Modal: Export Pengajar ──────────────────────────────────────── -->
+<div id="exportTeacherModal" class="hidden fixed z-50 inset-0 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="toggleModal('exportTeacherModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all w-full max-w-md sm:my-8 sm:align-middle mx-auto">
+            <form action="<?= url('/teachers/export') ?>" method="POST" id="exportTeacherForm">
+                <?= csrf_token_field() ?>
+                <div class="bg-white px-6 pt-6 pb-4">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="ri-file-excel-line text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Export Data Pengajar</h3>
+                            <p class="text-sm text-gray-500">Pilih data yang ingin disertakan ke dalam file Excel.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Data yang ingin di-export</label>
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <div class="mb-2 pb-2 border-b border-gray-200 flex justify-between items-center">
+                                <span class="text-xs font-bold text-gray-500 uppercase">Semua Data</span>
+                                <input type="checkbox" id="selectAllFieldsTeacher" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto pr-2">
+                                <?php 
+                                $exportFields = [
+                                    'nama' => 'Nama Lengkap',
+                                    'nip' => 'NIP',
+                                    'hp' => 'No. HP',
+                                    'gender' => 'Jenis Kelamin',
+                                    'birth_place' => 'Tempat Lahir',
+                                    'birth_date' => 'Tanggal Lahir',
+                                    'address' => 'Alamat',
+                                    'education' => 'Pendidikan',
+                                    'year_graduated' => 'Tahun Lulus',
+                                    'father_name' => 'Nama Ayah',
+                                    'mother_name' => 'Nama Ibu'
+                                ];
+                                foreach ($exportFields as $key => $label): 
+                                ?>
+                                <label class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
+                                    <input name="export_fields[]" value="<?= $key ?>" type="checkbox" class="field-checkbox-teacher h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <span class="ml-2 text-sm text-gray-700"><?= $label ?></span>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:w-auto sm:text-sm">Export Excel</button>
+                    <button type="button" onclick="toggleModal('exportTeacherModal')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- ─── Modal: Hasil Reset Password ─────────────────────────────────── -->
 <?php if ($resetResult): 
@@ -327,5 +390,26 @@ unset($_SESSION['reset_result']);
             window.location.href = '<?= url("/teachers/delete?id=") ?>' + id;
         }
     }
+
+    // Script for select all checkbox in export modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllFields = document.getElementById('selectAllFieldsTeacher');
+        const fieldCheckboxes = document.querySelectorAll('.field-checkbox-teacher');
+
+        if (selectAllFields && fieldCheckboxes.length > 0) {
+            selectAllFields.addEventListener('change', function() {
+                fieldCheckboxes.forEach(cb => cb.checked = this.checked);
+            });
+
+            fieldCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const allChecked = Array.from(fieldCheckboxes).every(c => c.checked);
+                    const someChecked = Array.from(fieldCheckboxes).some(c => c.checked);
+                    selectAllFields.checked = allChecked;
+                    selectAllFields.indeterminate = someChecked && !allChecked;
+                });
+            });
+        }
+    });
 </script>
 </main>

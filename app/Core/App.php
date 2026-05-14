@@ -59,6 +59,7 @@ class App
         $this->router->get('/teachers/restore', ['App\Controllers\TeacherController', 'restore']);
         $this->router->get('/teachers/forceDelete', ['App\Controllers\TeacherController', 'forceDelete']);
         $this->router->post('/teachers/reset-password', ['App\Controllers\TeacherController', 'resetPassword']);
+        $this->router->post('/teachers/export', ['App\Controllers\TeacherController', 'export']);
 
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);

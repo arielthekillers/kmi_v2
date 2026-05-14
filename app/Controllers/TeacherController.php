@@ -275,4 +275,88 @@ class TeacherController extends Controller {
 
         $this->redirect('/teachers');
     }
+
+    public function export() {
+        require_admin();
+
+        $fields = $_POST['export_fields'] ?? [];
+
+        if (empty($fields)) {
+            add_flash('Pilih minimal satu data untuk di-export.', 'error');
+            $this->redirect('/teachers');
+        }
+
+        $teachers = $this->teacherModel->getForExport();
+
+        $allFieldsMap = [
+            'nama' => 'Nama Lengkap',
+            'nip' => 'NIP',
+            'hp' => 'No. HP',
+            'gender' => 'Jenis Kelamin',
+            'birth_place' => 'Tempat Lahir',
+            'birth_date' => 'Tanggal Lahir',
+            'address' => 'Alamat',
+            'education' => 'Pendidikan Terakhir',
+            'year_graduated' => 'Tahun Lulus',
+            'father_name' => 'Nama Ayah',
+            'mother_name' => 'Nama Ibu'
+        ];
+
+        // Filter valid fields
+        $selectedHeaders = [];
+        foreach ($fields as $field) {
+            if (isset($allFieldsMap[$field]) && $field !== 'all') {
+                $selectedHeaders[$field] = $allFieldsMap[$field];
+            }
+        }
+
+        $filename = "Data_Pengajar_" . date('Ymd_His') . ".xls";
+
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $output = fopen('php://output', 'w');
+        
+        $html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        $html .= '<head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"></head>';
+        $html .= '<body>';
+        $html .= '<table border="1">';
+        
+        // Headers
+        $html .= '<tr>';
+        foreach ($selectedHeaders as $label) {
+            $html .= '<th style="background-color: #4CAF50; color: white;">' . htmlspecialchars($label) . '</th>';
+        }
+        $html .= '</tr>';
+
+        // Data
+        foreach ($teachers as $teacher) {
+            $html .= '<tr>';
+            foreach ($selectedHeaders as $key => $label) {
+                $val = '';
+                if ($key === 'gender') {
+                    $val = $teacher['gender'] === 'Laki-laki' ? 'Laki-laki' : ($teacher['gender'] === 'Perempuan' ? 'Perempuan' : '');
+                } else {
+                    $val = $teacher[$key] ?? '';
+                }
+                
+                // Fields that should be treated as text to prevent losing leading zeros or scientific notation
+                $textFields = ['nip', 'hp'];
+                
+                if (in_array($key, $textFields)) {
+                    $html .= '<td style="mso-number-format:\'\@\';">' . htmlspecialchars($val) . '</td>';
+                } else {
+                    $html .= '<td>' . htmlspecialchars($val) . '</td>';
+                }
+            }
+            $html .= '</tr>';
+        }
+        
+        $html .= '</table></body></html>';
+        
+        fwrite($output, $html);
+        fclose($output);
+        exit;
+    }
 }
