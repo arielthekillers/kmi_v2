@@ -111,6 +111,7 @@ class App
         $this->router->get('/students/forceDelete', ['App\Modules\Students\Controllers\StudentController', 'forceDelete']);
         $this->router->get('/students/promote', ['App\Modules\Students\Controllers\StudentController', 'promote']);
         $this->router->post('/students/promote/store', ['App\Modules\Students\Controllers\StudentController', 'processPromotion']);
+        $this->router->post('/students/export', ['App\Modules\Students\Controllers\StudentController', 'export']);
 
         // API regions proxy
         $this->router->get('/api/regions', ['App\Modules\Students\Controllers\StudentController', 'apiRegions']);

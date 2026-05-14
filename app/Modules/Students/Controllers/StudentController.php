@@ -257,6 +257,116 @@ class StudentController extends Controller {
         $this->view('layouts/footer', $data);
     }
 
+    public function export() {
+        require_admin();
+
+        $kelasIds = $_POST['export_kelas'] ?? [];
+        $fields = $_POST['export_fields'] ?? [];
+
+        if (empty($kelasIds)) {
+            add_flash('Pilih minimal satu kelas untuk di-export.', 'error');
+            $this->redirect('/students');
+        }
+        if (empty($fields)) {
+            add_flash('Pilih minimal satu data untuk di-export.', 'error');
+            $this->redirect('/students');
+        }
+
+        $model = new Student();
+        $students = [];
+        
+        foreach ($kelasIds as $kId) {
+            if ($kId === 'all') continue;
+            $studentsInClass = $model->getAll(['kelas_id' => $kId], 10000, 0);
+            $students = array_merge($students, $studentsInClass);
+        }
+
+        $allFieldsMap = [
+            'nis' => 'NIS',
+            'nisn' => 'NISN',
+            'nik' => 'NIK',
+            'nama' => 'Nama Lengkap',
+            'gender' => 'Jenis Kelamin',
+            'kelas' => 'Kelas',
+            'tempat_lahir' => 'Tempat Lahir',
+            'tanggal_lahir' => 'Tanggal Lahir',
+            'tahun_masuk' => 'Tahun Masuk',
+            'alamat' => 'Alamat Lengkap',
+            'provinsi' => 'Provinsi',
+            'kabupaten' => 'Kabupaten/Kota',
+            'kecamatan' => 'Kecamatan',
+            'kelurahan' => 'Kelurahan/Desa',
+            'rt_rw' => 'RT/RW',
+            'kode_pos' => 'Kode Pos',
+            'nama_kk' => 'Nama Kepala Keluarga',
+            'nama_wali' => 'Nama Wali',
+            'pekerjaan_ayah' => 'Pekerjaan Ayah',
+            'no_hp_ayah' => 'No HP Ayah',
+            'nama_ibu' => 'Nama Ibu',
+            'pekerjaan_ibu' => 'Pekerjaan Ibu',
+            'no_hp_ibu' => 'No HP Ibu'
+        ];
+
+        // Filter valid fields
+        $selectedHeaders = [];
+        foreach ($fields as $field) {
+            if (isset($allFieldsMap[$field]) && $field !== 'all') {
+                $selectedHeaders[$field] = $allFieldsMap[$field];
+            }
+        }
+
+        $filename = "Data_Santri_" . date('Ymd_His') . ".xls";
+
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $output = fopen('php://output', 'w');
+        
+        $html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        $html .= '<head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"></head>';
+        $html .= '<body>';
+        $html .= '<table border="1">';
+        
+        // Headers
+        $html .= '<tr>';
+        foreach ($selectedHeaders as $label) {
+            $html .= '<th style="background-color: #4CAF50; color: white;">' . htmlspecialchars($label) . '</th>';
+        }
+        $html .= '</tr>';
+
+        // Data
+        foreach ($students as $student) {
+            $html .= '<tr>';
+            foreach ($selectedHeaders as $key => $label) {
+                $val = '';
+                if ($key === 'kelas') {
+                    $val = ($student['tingkat'] ?? '') . ' ' . ($student['abjad'] ?? '');
+                } else if ($key === 'gender') {
+                    $val = ($student['gender'] === 'L') ? 'Laki-laki' : 'Perempuan';
+                } else {
+                    $val = $student[$key] ?? '';
+                }
+                
+                // Fields that should be treated as text to prevent losing leading zeros or scientific notation
+                $textFields = ['nis', 'nisn', 'nik', 'kode_pos', 'no_hp_ayah', 'no_hp_ibu'];
+                
+                if (in_array($key, $textFields)) {
+                    $html .= '<td style="mso-number-format:\'\@\';">' . htmlspecialchars($val) . '</td>';
+                } else {
+                    $html .= '<td>' . htmlspecialchars($val) . '</td>';
+                }
+            }
+            $html .= '</tr>';
+        }
+        
+        $html .= '</table></body></html>';
+        
+        fwrite($output, $html);
+        fclose($output);
+        exit;
+    }
+
     public function processPromotion() {
         require_admin();
         

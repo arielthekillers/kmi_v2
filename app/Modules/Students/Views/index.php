@@ -12,6 +12,9 @@
             <a href="<?= url('/students/promote') ?>" class="px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md text-sm font-medium hover:bg-indigo-50 flex items-center">
                 <i class="ri-graduation-cap-line mr-2"></i> Promosi Santri
             </a>
+            <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="px-4 py-2 border border-green-600 text-green-600 rounded-md text-sm font-medium hover:bg-green-50 flex items-center shadow-sm">
+                <i class="ri-file-excel-2-line mr-2"></i> Export
+            </button>
             <a href="<?= url('/students/create?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . $page) ?>" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center shadow-sm">
                 <i class="ri-user-add-line mr-2"></i> Tambah Santri
             </a>
@@ -165,6 +168,117 @@
             if (confirm('Apakah Anda yakin ingin menghapus data santri "' + name + '"?\n\nData yang dihapus tidak dapat dikembalikan.')) {
                 window.location.href = '<?= url("/students/delete?id=") ?>' + id;
             }
+        }
+    </script>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="document.getElementById('exportModal').classList.add('hidden')"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="ri-file-excel-2-line text-green-600 text-xl"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Export Data Santri ke Excel
+                            </h3>
+                            <div class="mt-4">
+                                <form action="<?= url('/students/export') ?>" method="POST" id="exportForm">
+                                    
+                                    <div class="mb-6">
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">1. Pilih Kelas yang ingin di-export</label>
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            <div class="flex items-center">
+                                                <input id="kelas_all" type="checkbox" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllKelas(this)">
+                                                <label for="kelas_all" class="ml-2 block text-sm text-gray-900 font-bold">Semua Kelas</label>
+                                            </div>
+                                            <?php foreach ($kelas as $k): ?>
+                                                <div class="flex items-center">
+                                                    <input id="kelas_<?= $k['id'] ?>" name="export_kelas[]" value="<?= $k['id'] ?>" type="checkbox" class="kelas-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                    <label for="kelas_<?= $k['id'] ?>" class="ml-2 block text-sm text-gray-900">
+                                                        <?= htmlspecialchars($k['tingkat'] . ' ' . $k['abjad']) ?>
+                                                    </label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">2. Pilih Data yang ingin di-export</label>
+                                        <?php
+                                            $fields = [
+                                                'nis' => 'NIS',
+                                                'nisn' => 'NISN',
+                                                'nik' => 'NIK',
+                                                'nama' => 'Nama Lengkap',
+                                                'gender' => 'Jenis Kelamin',
+                                                'kelas' => 'Kelas',
+                                                'tempat_lahir' => 'Tempat Lahir',
+                                                'tanggal_lahir' => 'Tanggal Lahir',
+                                                'tahun_masuk' => 'Tahun Masuk',
+                                                'alamat' => 'Alamat Lengkap',
+                                                'provinsi' => 'Provinsi',
+                                                'kabupaten' => 'Kabupaten/Kota',
+                                                'kecamatan' => 'Kecamatan',
+                                                'kelurahan' => 'Kelurahan/Desa',
+                                                'rt_rw' => 'RT/RW',
+                                                'kode_pos' => 'Kode Pos',
+                                                'nama_kk' => 'Nama Kepala Keluarga',
+                                                'nama_wali' => 'Nama Wali',
+                                                'pekerjaan_ayah' => 'Pekerjaan Ayah',
+                                                'no_hp_ayah' => 'No HP Ayah',
+                                                'nama_ibu' => 'Nama Ibu',
+                                                'pekerjaan_ibu' => 'Pekerjaan Ibu',
+                                                'no_hp_ibu' => 'No HP Ibu'
+                                            ];
+                                        ?>
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            <div class="flex items-center">
+                                                <input id="field_all" type="checkbox" value="all" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" onclick="toggleAllFields(this)" checked>
+                                                <label for="field_all" class="ml-2 block text-sm text-gray-900 font-bold">Semua Data</label>
+                                            </div>
+                                            <?php foreach ($fields as $key => $label): ?>
+                                                <div class="flex items-center">
+                                                    <input id="field_<?= $key ?>" name="export_fields[]" value="<?= $key ?>" type="checkbox" class="field-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                                    <label for="field_<?= $key ?>" class="ml-2 block text-sm text-gray-900">
+                                                        <?= htmlspecialchars($label) ?>
+                                                    </label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" form="exportForm" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Export Sekarang
+                    </button>
+                    <button type="button" onclick="document.getElementById('exportModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleAllKelas(source) {
+            const checkboxes = document.querySelectorAll('.kelas-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+        function toggleAllFields(source) {
+            const checkboxes = document.querySelectorAll('.field-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
         }
     </script>
 
