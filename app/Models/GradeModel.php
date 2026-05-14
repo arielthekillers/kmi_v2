@@ -16,7 +16,8 @@ class GradeModel extends Model {
                        u.nama as pengajar_nama,
                        es.type as exam_type, es.is_open as session_is_open, e.has_oral,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count,
-                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count
+                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count,
+                       (SELECT AVG(g.score_final) FROM grades g WHERE g.exam_id = e.id AND g.score_final IS NOT NULL) as average_score
                 FROM exams e
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
@@ -351,5 +352,51 @@ class GradeModel extends Model {
             $this->db->rollBack();
             throw $e;
         }
+    }
+
+    public function getClassLeger($classId, $sessionId, $academicYearId) {
+        // Fetch all exams for this class and session
+        $stmtExams = $this->db->prepare("
+            SELECT e.id as exam_id, sub.nama as subject_name, sub.id as subject_id, e.skor_maks, sub.skala, e.has_oral, e.status
+            FROM exams e
+            JOIN subjects sub ON e.subject_id = sub.id
+            WHERE e.kelas_id = ? AND e.exam_session_id = ? AND e.academic_year_id = ? AND e.is_deleted = 0
+            ORDER BY sub.nama ASC
+        ");
+        $stmtExams->execute([$classId, $sessionId, $academicYearId]);
+        $exams = $stmtExams->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Fetch all students
+        $stmtStudents = $this->db->prepare("
+            SELECT s.id as student_id, s.nama, s.nis
+            FROM students s
+            INNER JOIN student_enrollments se ON s.id = se.student_id
+            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            ORDER BY s.nama ASC
+        ");
+        $stmtStudents->execute([$classId, $academicYearId]);
+        $students = $stmtStudents->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Fetch all grades for these exams
+        $examIds = array_column($exams, 'exam_id');
+        $gradesByStudent = [];
+        if (!empty($examIds)) {
+            $inQuery = implode(',', array_fill(0, count($examIds), '?'));
+            $stmtGrades = $this->db->prepare("
+                SELECT g.student_id, g.exam_id, g.score_raw, g.score_final, g.score_oral, g.no_bayanat
+                FROM grades g
+                WHERE g.exam_id IN ($inQuery)
+            ");
+            $stmtGrades->execute($examIds);
+            while ($row = $stmtGrades->fetch(\PDO::FETCH_ASSOC)) {
+                $gradesByStudent[$row['student_id']][$row['exam_id']] = $row;
+            }
+        }
+
+        return [
+            'exams' => $exams,
+            'students' => $students,
+            'grades' => $gradesByStudent
+        ];
     }
 }
