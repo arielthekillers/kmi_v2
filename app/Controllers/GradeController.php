@@ -49,11 +49,18 @@ class GradeController extends Controller {
         $activeSession = $gradeModel->getActiveSession($this->currentYear['id']);
         $allSessions = $gradeModel->getSessions($this->currentYear['id']);
 
+        // Determine active class by default if none selected
+        $activeKelasId = $_GET['kelas'] ?? '';
+        if (empty($activeKelasId) && !empty($kelas)) {
+            $firstKelas = reset($kelas);
+            $activeKelasId = $firstKelas['id'];
+        }
+
         // Filter Params
         $filters = [
             'academic_year_id' => $this->currentYear['id'],
             'exam_session_id' => ($activeSession['id'] ?? ''),
-            'kelas' => $_GET['kelas'] ?? '',
+            'kelas' => $activeKelasId,
             'pelajaran' => $_GET['pelajaran'] ?? '',
             'pengajar' => $_GET['pengajar'] ?? '',
             'status' => $_GET['status'] ?? ''
@@ -69,19 +76,37 @@ class GradeController extends Controller {
 
         $exams = $gradeModel->getAllExams($filters);
 
-        // Stats
-        $stats = [
-            'total' => count($exams),
-            'selesai' => 0,
-            'proses' => 0,
-            'belum' => 0
+        // Stats and Progress per Class (Academic Session wide)
+        $progressFilters = [
+            'academic_year_id' => $this->currentYear['id'],
+            'exam_session_id' => ($activeSession['id'] ?? '')
         ];
-        foreach ($exams as $e) {
-            $st = $e['status'] ?? 'belum';
-            if ($st === 'selesai') $stats['selesai']++;
-            elseif ($st === 'proses') $stats['proses']++;
-            else $stats['belum']++;
+        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
+            $progressFilters['pengajar'] = $userId;
         }
+        $allExamsForStats = $gradeModel->getAllExams($progressFilters);
+
+        $classProgress = [];
+        foreach ($allExamsForStats as $exam) {
+            $klsId = $exam['kelas_id'];
+            if (!isset($classProgress[$klsId])) {
+                $classProgress[$klsId] = [
+                    'total' => 0,
+                    'selesai' => 0
+                ];
+            }
+            $classProgress[$klsId]['total']++;
+            if (($exam['status'] ?? '') === 'selesai') {
+                $classProgress[$klsId]['selesai']++;
+            }
+        }
+
+        foreach ($kelas as &$k) {
+            $kId = $k['id'];
+            $k['total_exams'] = $classProgress[$kId]['total'] ?? 0;
+            $k['selesai_exams'] = $classProgress[$kId]['selesai'] ?? 0;
+        }
+        unset($k);
 
         // Teaching Assignments Map for dynamic 'Add Koreksi'
         $scheduleModel = new \App\Models\ScheduleModel();
@@ -101,8 +126,7 @@ class GradeController extends Controller {
             'academicYears'  => $academicYears,
             'allSessions'    => $allSessions,
             'activeSession'  => $activeSession,
-            'filters'        => $filters,
-            'stats'          => $stats
+            'filters'        => $filters
         ]);
     }
 
@@ -128,14 +152,18 @@ class GradeController extends Controller {
                 try {
                     $examId = $model->createExam($data);
                     add_flash('Data koreksi berhasil ditambahkan. Silakan lengkapi nomor bayanat.', 'success');
-                    $this->redirect('/grades/edit?id=' . $examId);
+                    $this->redirect('/grades?kelas=' . $data['kelas_id']);
                 } catch (\Exception $e) {
                     add_flash('Gagal: ' . $e->getMessage(), 'error');
                 }
             } else {
                 add_flash('Semua field harus diisi.', 'error');
             }
-            redirect('/grades');
+            if (!empty($data['kelas_id'])) {
+                redirect('/grades?kelas=' . $data['kelas_id']);
+            } else {
+                redirect('/grades');
+            }
         }
     }
 
@@ -264,12 +292,11 @@ class GradeController extends Controller {
             $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats, $saveData);
             if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
                 add_flash('Koreksi selesai.', 'success');
-                redirect('/grades');
             } else {
                 $msg = ($userRole === 'admin') ? 'Konfigurasi & Bayanat berhasil diupdate.' : 'Draft nilai tersimpan.';
                 add_flash($msg, 'success');
-                redirect('/grades/edit?id=' . $id);
             }
+            redirect('/grades?kelas=' . $exam['kelas_id']);
         } catch (\Exception $e) {
             add_flash('Gagal menyimpan: ' . $e->getMessage(), 'error');
             redirect('/grades/edit?id=' . $id);
@@ -282,12 +309,21 @@ class GradeController extends Controller {
             $this->redirect('/grades');
         }
         $id = $_GET['id'] ?? null;
+        $kelasId = null;
         if ($id) {
             $model = new GradeModel();
-            $model->deleteExam($id);
-            add_flash('Data koreksi dihapus.', 'success');
+            $exam = $model->getExamById($id);
+            if ($exam) {
+                $kelasId = $exam['kelas_id'];
+                $model->deleteExam($id);
+                add_flash('Data koreksi dihapus.', 'success');
+            }
         }
-        redirect('/grades');
+        if ($kelasId) {
+            redirect('/grades?kelas=' . $kelasId);
+        } else {
+            redirect('/grades');
+        }
     }
 
     public function unlock() {
@@ -295,16 +331,25 @@ class GradeController extends Controller {
             add_flash('Akses ditolak.', 'error');
             $this->redirect('/grades');
         }
+        $kelasId = null;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_validate_token();
             $id = $_POST['id'] ?? null;
             if ($id) {
                 $model = new GradeModel();
-                $model->unlockExam($id);
-                add_flash('Akes koreksi dibuka kembali.', 'success');
+                $exam = $model->getExamById($id);
+                if ($exam) {
+                    $kelasId = $exam['kelas_id'];
+                    $model->unlockExam($id);
+                    add_flash('Akes koreksi dibuka kembali.', 'success');
+                }
             }
         }
-        redirect('/grades'); // Or back to where they were?
+        if ($kelasId) {
+            redirect('/grades?kelas=' . $kelasId);
+        } else {
+            redirect('/grades');
+        }
     }
 
     public function trash() {
