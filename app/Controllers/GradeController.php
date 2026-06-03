@@ -144,7 +144,7 @@ class GradeController extends Controller {
                 'kelas_id' => $_POST['id_kelas'] ?? null,
                 'teacher_id' => $_POST['id_pengajar'] ?? null,
                 'skor_maks' => (int)($_POST['skor_maks'] ?? 100),
-                'has_oral' => isset($_POST['include_lisan']) ? 1 : 0
+                'has_oral' => (int)($_POST['has_oral'] ?? 0)
             ];
 
             if ($data['subject_id'] && $data['kelas_id'] && $data['teacher_id']) {
@@ -264,31 +264,71 @@ class GradeController extends Controller {
         $skors = $_POST['skor'] ?? [];
         $skorsLisan = $_POST['skor_lisan'] ?? [];
         
-        if (!empty($skors)) {
-            $allFilled = true;
-            foreach ($skors as $s) {
-                if (trim($s) === '') {
-                    $allFilled = false;
-                    break;
-                }
-            }
-
-            if ($action === 'finish') {
-                if (!$allFilled) {
-                    add_flash('Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.', 'error');
-                    $newStatus = 'proses';
-                } else {
-                    $newStatus = 'selesai';
-                }
+        $examType = (int)($exam['has_oral'] ?? 0);
+        $allFilled = true;
+        
+        if ($examType == 0) {
+            // Tulis only: check $skors
+            if (empty($skors)) {
+                $allFilled = false;
             } else {
-                $newStatus = 'proses';
+                foreach ($skors as $s) {
+                    if (trim($s) === '') {
+                        $allFilled = false;
+                        break;
+                    }
+                }
             }
+        } elseif ($examType == 2) {
+            // Lisan only: check $skorsLisan
+            if (empty($skorsLisan)) {
+                $allFilled = false;
+            } else {
+                foreach ($skorsLisan as $s) {
+                    if (trim($s) === '') {
+                        $allFilled = false;
+                        break;
+                    }
+                }
+            }
+        } elseif ($examType == 1) {
+            // Tulis & Lisan: check both
+            if (empty($skors) || empty($skorsLisan)) {
+                $allFilled = false;
+            } else {
+                for ($i = 0; $i < count($studentIds); $i++) {
+                    $sVal = isset($skors[$i]) ? trim($skors[$i]) : '';
+                    $oVal = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : '';
+                    if ($sVal === '' || $oVal === '') {
+                        $allFilled = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($action === 'finish') {
+            if (!$allFilled) {
+                add_flash('Gagal menyelesaikan: Masih ada nilai kosong. Disimpan sebagai draft.', 'error');
+                $newStatus = 'proses';
+            } else {
+                $newStatus = 'selesai';
+            }
+        } else {
+            $newStatus = 'proses';
         }
 
         try {
             $saveData = [
-                'skor_lisan' => ($isAdmin || $isPanitia) ? ($_POST['skor_lisan'] ?? []) : []
+                'skor_lisan' => ($isAdmin || $isPanitia || $isExaminer) ? ($skorsLisan) : [],
+                'nilai' => $_POST['nilai'] ?? []
             ];
+            if ($isAdmin || $isPanitia) {
+                $hasOralPost = $_POST['has_oral'] ?? null;
+                if ($hasOralPost !== null) {
+                    $saveData['has_oral'] = (int)$hasOralPost;
+                }
+            }
             $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats, $saveData);
             if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
                 add_flash('Koreksi selesai.', 'success');

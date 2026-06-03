@@ -86,9 +86,27 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         </div>
 
         <!-- Dashboard Bar -->
-        <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-gray-50/50">
+        <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-gray-100 bg-gray-50/50">
+            <!-- Jenis Koreksi Select -->
+            <div class="p-5 flex flex-col justify-between gap-3">
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jenis Koreksi</p>
+                    <p class="text-xs text-gray-500 mt-0.5 font-medium">Tipe kalkulasi ujian</p>
+                </div>
+                <div class="relative">
+                    <select name="has_oral" id="has_oral_select" 
+                        <?= !$canEditSkorMaks ? 'disabled' : '' ?>
+                        onchange="updateConfig()"
+                        class="w-full font-black text-sm text-indigo-600 bg-white border border-gray-200 focus:border-indigo-500 rounded-xl p-1.5 shadow-inner transition-all <?= !$canEditSkorMaks ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-200' ?>">
+                        <option value="0" <?= $exam['has_oral'] == 0 ? 'selected' : '' ?>>Tulis</option>
+                        <option value="1" <?= $exam['has_oral'] == 1 ? 'selected' : '' ?>>Tulis & Lisan</option>
+                        <option value="2" <?= $exam['has_oral'] == 2 ? 'selected' : '' ?>>Lisan</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Skor Maks Input -->
-            <div class="p-6 flex items-center justify-between">
+            <div id="skor_maks_container" class="p-5 flex flex-col justify-between gap-3 <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                 <div>
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Skor Maks (Soal)</p>
                     <p class="text-xs text-gray-500 mt-0.5 font-medium">Total bobot poin soal</p>
@@ -97,26 +115,26 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                     <input type="number" name="skor_maks" id="skor_maks_input" value="<?= (float)$skor_maks ?>" 
                         <?= !$canEditSkorMaks ? 'disabled' : '' ?>
                         oninput="updateConfig()"
-                        class="w-24 text-right pr-3 pl-3 font-black text-2xl text-indigo-600 bg-white border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-inner transition-all <?= !$canEditSkorMaks ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-200' ?>">
+                        class="w-full text-right pr-3 pl-3 font-black text-xl text-indigo-600 bg-white border border-gray-200 focus:border-indigo-500 rounded-xl shadow-inner transition-all <?= !$canEditSkorMaks ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-200' ?>">
                 </div>
             </div>
 
             <!-- Nilai Maks Info -->
-            <div class="p-6 flex items-center justify-between">
+            <div id="nilai_maks_container" class="p-5 flex flex-col justify-between gap-3 <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                 <div>
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Target Nilai (Max)</p>
                     <p class="text-xs text-gray-500 mt-0.5 font-medium">Skala tertinggi rapor</p>
                 </div>
-                <p class="text-3xl font-black text-gray-900"><?= $max_val ?></p>
+                <p class="text-3xl font-black text-gray-900 mt-1"><?= $max_val ?></p>
             </div>
 
             <!-- Nilai Min Info -->
-            <div class="p-6 flex items-center justify-between">
+            <div id="nilai_min_container" class="p-5 flex flex-col justify-between gap-3 <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                 <div>
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Base Nilai (Min)</p>
                     <p class="text-xs text-gray-500 mt-0.5 font-medium">Skala terendah rapor</p>
                 </div>
-                <p class="text-3xl font-black text-red-500"><?= $min_val ?></p>
+                <p class="text-3xl font-black text-red-500 mt-1"><?= $min_val ?></p>
             </div>
         </div>
     </div>
@@ -161,7 +179,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             <table class="min-w-full divide-y divide-gray-100 table-fixed md:table-auto">
                 <thead class="hidden md:table-header-group">
                     <tr class="bg-white">
-                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(0, true)">
+                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat" onclick="sortTable(this, true)">
                             <div class="flex items-center gap-1">
                                 No. Bayanat
                                 <i class="ri-sort-asc"></i>
@@ -169,35 +187,35 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                         </th>
                         
                         <?php if ($showNames): ?>
-                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(1)">
+                            <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors col-nama" onclick="sortTable(this)">
                                 <div class="flex items-center gap-1">
                                     Nama Lengkap
                                     <i class="ri-sort-asc"></i>
                                 </div>
                             </th>
                         <?php endif; ?>
-                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-40">Skor Peserta</th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-24 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(<?= $isAdminOrPanitia ? 3 : 2 ?>, true)">
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">
                             <div class="flex items-center justify-center gap-1">
-                                Nilai
+                                <span id="header_lisan_label"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Lisan' ?></span>
                                 <i class="ri-sort-asc"></i>
                             </div>
                         </th>
-                        <?php if ($exam['has_oral'] && $isAdminOrPanitia): ?>
-                            <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors" onclick="sortTable(<?= $isAdminOrPanitia ? 4 : 3 ?>, true)">
-                                <div class="flex items-center justify-center gap-1">
-                                    Lisan
-                                    <i class="ri-sort-asc"></i>
-                                </div>
-                            </th>
-                        <?php endif; ?>
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-40 col-tulis <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">Skor Tulis</th>
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-24 cursor-pointer hover:text-indigo-600 transition-colors col-nilai <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
+                            <div class="flex items-center justify-center gap-1">
+                                <span id="header_nilai_label"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></span>
+                                <i class="ri-sort-asc"></i>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="studentTableBody" class="divide-y divide-gray-50 block md:table-row-group">
-                    <?php foreach ($students as $i => $row): ?>
+                    <?php 
+                    $canEditOral = ($isExaminer && $sessionOpen && !$isFinished) || ($isAdminOrPanitia && !$isFinished);
+                    foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-indigo-50/30 transition-colors group flex flex-col md:table-row border-b md:border-b-0 border-gray-50 last:border-0 p-4 md:p-0">
                             <!-- No Bayanat -->
-                            <td class="md:px-6 md:py-5 whitespace-nowrap text-[11px] mb-1 md:mb-0">
+                            <td class="md:px-6 md:py-5 whitespace-nowrap text-[11px] mb-1 md:mb-0 col-bayanat">
                                 <div class="flex items-center gap-2">
                                     <span class="md:hidden not-italic text-[9px] font-black text-gray-400 uppercase tracking-tighter mr-1">No. Bayanat</span>
                                     <input type="hidden" name="student_id[]" value="<?= $row['student_id'] ?>">
@@ -218,7 +236,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             
                             <!-- Name (Auditors Only) -->
                             <?php if ($showNames): ?>
-                            <td class="md:px-6 md:py-5 mb-4 md:mb-0">
+                            <td class="md:px-6 md:py-5 mb-4 md:mb-0 col-nama">
                                 <div class="text-sm font-bold text-gray-800 tracking-tight leading-tight uppercase md:truncate md:max-w-xs lg:max-w-md">
                                     <?= htmlspecialchars($row['nama']) ?>
                                     <div class="text-[9px] text-gray-400 font-medium tracking-normal lowercase"><?= $row['nis'] ?></div>
@@ -226,25 +244,50 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </td>
                             <?php endif; ?>
                             
+                            <!-- Oral Exam Column -->
+                            <td class="md:px-6 md:py-5 col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : 'md:table-cell' ?>" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">
+                                <div class="grid gap-3 md:flex md:items-center w-full grid-cols-1" id="container_lisan_<?= $i ?>">
+                                    <div class="flex flex-col w-full">
+                                        <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-lisan-mobile">Nilai Lisan</label>
+                                        <input type="text" name="skor_lisan[]" value="<?= htmlspecialchars($row['score_oral'] ?? '') ?>"
+                                            <?= !$canEditOral ? 'disabled' : '' ?>
+                                            oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this.closest('tr'));"
+                                            class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-indigo-600 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-50/50 disabled:text-gray-400 disabled:border-transparent"
+                                            placeholder="...">
+                                    </div>
+                                    
+                                    <!-- Mobile Final Score Output for Lisan Only Mode -->
+                                    <div class="flex flex-col md:hidden w-full col-nilai-lisan-mobile hidden" style="display: none;">
+                                        <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-nilai-mobile">Nilai Lisan</label>
+                                        <div class="w-full h-12 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center">
+                                            <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
+                                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); const row = this.closest('tr'); row.querySelector('input[name=\'nilai[]\']').value = this.value; const dsk = row.querySelector('.nilai-output'); if (dsk) dsk.value = this.value; updateAverage();"
+                                                class="nilai-output-mobile bg-transparent text-indigo-600 font-black text-xl w-full text-center p-0 border-none pointer-events-none">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
                             <!-- Input & Result Container -->
-                            <td class="md:px-6 md:py-5 md:table-cell">
+                            <td class="md:px-6 md:py-5 col-tulis <?= $exam['has_oral'] == 2 ? 'hidden' : 'md:table-cell' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                                 <div class="grid grid-cols-2 gap-3 md:flex md:items-center">
                                     <!-- Input Skor -->
                                     <div class="flex flex-col">
-                                        <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Input Skor</label>
+                                        <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Skor Tulis</label>
                                         <input type="text" name="skor[]" value="<?= is_numeric($row['skor']) ? (float)$row['skor'] : $row['skor'] ?>"
                                             <?= !$canEditScores ? 'disabled' : '' ?>
                                             inputmode="decimal"
-                                            oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this);"
+                                            oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this.closest('tr'));"
                                             class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-gray-900 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:border-transparent"
                                             placeholder="<?= !$canEditScores ? '-' : '...' ?>">
                                     </div>
                                     
                                     <!-- Nilai Result -->
                                     <div class="flex flex-col md:hidden">
-                                        <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nilai</label>
+                                        <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-nilai-tulis-mobile">Nilai Tulis</label>
                                         <div class="w-full h-12 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center">
                                             <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
+                                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); const row = this.closest('tr'); row.querySelector('input[name=\'nilai[]\']').value = this.value; const dsk = row.querySelector('.nilai-output'); if (dsk) dsk.value = this.value; updateAverage();"
                                                 class="nilai-output-mobile bg-transparent text-indigo-600 font-black text-xl w-full text-center p-0 border-none pointer-events-none">
                                         </div>
                                     </div>
@@ -252,28 +295,17 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </td>
 
                             <!-- Desktop Nilai Column -->
-                            <td class="px-6 py-5 hidden md:table-cell">
+                            <td class="px-6 py-5 hidden md:table-cell col-nilai <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                                 <div class="flex flex-col items-center justify-center">
+                                    <input type="hidden" name="nilai[]" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>">
                                     <input type="text" readonly tabindex="-1" value="<?= is_numeric($row['nilai']) ? round($row['nilai']) : '' ?>"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); const row = this.closest('tr'); row.querySelector('input[name=\'nilai[]\']').value = this.value; const mob = row.querySelectorAll('.nilai-output-mobile'); if (mob.length > 0) mob.forEach(m => m.value = this.value); updateAverage();"
                                         class="nilai-output bg-transparent text-gray-900 font-black text-xl w-full text-center p-0 border-none pointer-events-none transition-all group-hover:scale-110 group-hover:text-indigo-600">
                                     <div class="h-1 w-8 bg-gray-100 rounded-full mt-1 overflow-hidden">
                                         <div class="h-full bg-indigo-400 transition-all" style="width: <?= min(100, (is_numeric($row['nilai']) ? round($row['nilai']) : 0)) ?>%"></div>
                                     </div>
                                 </div>
                             </td>
-
-                            <!-- Oral Exam Column -->
-                            <?php if ($exam['has_oral'] && $isAdminOrPanitia): ?>
-                            <td class="md:px-6 md:py-5 md:table-cell">
-                                <div class="flex flex-col md:flex-row items-center gap-2">
-                                    <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nilai Lisan</label>
-                                    <input type="text" name="skor_lisan[]" value="<?= htmlspecialchars($row['score_oral'] ?? '') ?>"
-                                        <?= $isFinished ? 'disabled' : '' ?>
-                                        class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-indigo-600 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-50/50 disabled:text-gray-400 disabled:border-transparent"
-                                        placeholder="...">
-                                </div>
-                            </td>
-                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -341,18 +373,47 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 <script>
     function validateFinish() {
         const skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
-        const inputs = document.querySelectorAll('input[name="skor[]"]');
-        for (let input of inputs) {
-            const val = input.value.trim();
-            if (val === '') {
-                alert('Gagal: Semua kolom skor harus diisi sebelum menandai selesai.');
-                input.focus();
-                return false;
+        const hasOralVal = parseInt(document.getElementById('has_oral_select')?.value ?? '<?= $exam['has_oral'] ?>');
+        
+        if (hasOralVal === 0 || hasOralVal === 1) {
+            const inputs = document.querySelectorAll('input[name="skor[]"]');
+            for (let input of inputs) {
+                const val = input.value.trim();
+                if (val === '') {
+                    alert('Gagal: Semua kolom skor tulis harus diisi sebelum menandai selesai.');
+                    input.focus();
+                    return false;
+                }
+                if (val !== '-' && parseFloat(val) > skorMaks) {
+                    alert('Gagal: Ada skor tulis yang melebihi skor maksimal (' + skorMaks + '). Silakan periksa kembali.');
+                    input.focus();
+                    return false;
+                }
             }
-            if (val !== '-' && parseFloat(val) > skorMaks) {
-                alert('Gagal: Ada skor yang melebihi skor maksimal (' + skorMaks + '). Silakan periksa kembali.');
-                input.focus();
-                return false;
+        }
+        
+        if (hasOralVal === 1 || hasOralVal === 2) {
+            const inputsLisan = document.querySelectorAll('input[name="skor_lisan[]"]');
+            for (let input of inputsLisan) {
+                const val = input.value.trim();
+                if (val === '') {
+                    alert('Gagal: Semua kolom skor lisan harus diisi sebelum menandai selesai.');
+                    input.focus();
+                    return false;
+                }
+                if (hasOralVal === 1) {
+                    if (val !== '-' && parseFloat(val) > skorMaks) {
+                        alert('Gagal: Ada skor lisan yang melebihi skor maksimal (' + skorMaks + '). Silakan periksa kembali.');
+                        input.focus();
+                        return false;
+                    }
+                } else if (hasOralVal === 2) {
+                    if (val !== '-' && (parseFloat(val) < 30 || parseFloat(val) > 80)) {
+                        alert('Gagal: Ada nilai lisan yang di luar range 30-80. Silakan periksa kembali.');
+                        input.focus();
+                        return false;
+                    }
+                }
             }
         }
         return confirm('Apakah Anda yakin ingin menyelesaikan pemeriksaan ini? Status akan menjadi Selesai dan tidak dapat diubah lagi.');
@@ -360,78 +421,250 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
     // Robust real-time calculation logic
     window.updateConfig = function() {
-        const skorMaksInput = document.getElementById('skor_maks_input');
-        if (!skorMaksInput) return;
+        const hasOralSelect = document.getElementById('has_oral_select');
+        const hasOralVal = parseInt(hasOralSelect ? hasOralSelect.value : '<?= $exam['has_oral'] ?>');
+
+        // Dynamically toggle config panels
+        const skorMaksCont = document.getElementById('skor_maks_container');
+        const nilaiMaksCont = document.getElementById('nilai_maks_container');
+        const nilaiMinCont = document.getElementById('nilai_min_container');
+        if (hasOralVal === 2) {
+            if (skorMaksCont) { skorMaksCont.style.display = 'none'; skorMaksCont.classList.add('hidden'); }
+            if (nilaiMaksCont) { nilaiMaksCont.style.display = 'none'; nilaiMaksCont.classList.add('hidden'); }
+            if (nilaiMinCont) { nilaiMinCont.style.display = 'none'; nilaiMinCont.classList.add('hidden'); }
+        } else {
+            if (skorMaksCont) { skorMaksCont.style.display = ''; skorMaksCont.classList.remove('hidden'); }
+            if (nilaiMaksCont) { nilaiMaksCont.style.display = ''; nilaiMaksCont.classList.remove('hidden'); }
+            if (nilaiMinCont) { nilaiMinCont.style.display = ''; nilaiMinCont.classList.remove('hidden'); }
+        }
+
+        // Dynamically toggle column visibility on frontend
+        const colsTulis = document.querySelectorAll('.col-tulis');
+        const colsLisan = document.querySelectorAll('.col-lisan');
+        const colsNilai = document.querySelectorAll('.col-nilai');
         
-        let currentSkorMaks = parseFloat(skorMaksInput.value) || 100;
-        
+        const headerNilaiLabel = document.getElementById('header_nilai_label');
+        const headerLisanLabel = document.getElementById('header_lisan_label');
+
+        const labelLisanMobileList = document.querySelectorAll('.label-lisan-mobile');
+        const colNilaiLisanMobileList = document.querySelectorAll('.col-nilai-lisan-mobile');
+
+        if (hasOralVal === 0) {
+            // Tulis
+            colsTulis.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            colsLisan.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+            colsNilai.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            
+            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Tulis';
+            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+        } else if (hasOralVal === 2) {
+            // Lisan
+            colsTulis.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+            colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            colsNilai.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+            
+            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Lisan';
+            if (headerLisanLabel) headerLisanLabel.textContent = 'Nilai Lisan';
+            
+            labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
+            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+            
+            // Set parents to grid-cols-1
+            document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
+                el.classList.remove('grid-cols-2');
+                el.classList.add('grid-cols-1');
+            });
+        } else if (hasOralVal === 1) {
+            // Tulis & Lisan
+            colsTulis.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            colsNilai.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+            
+            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Tulis';
+            if (headerLisanLabel) headerLisanLabel.textContent = 'Nilai Lisan';
+            
+            labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
+            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+            
+            // Set parents to grid-cols-1
+            document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
+                el.classList.remove('grid-cols-2');
+                el.classList.add('grid-cols-1');
+            });
+        }
+
         // Recalculate all rows
-        document.querySelectorAll('input[name="skor[]"]').forEach(input => {
-            window.calculateRow(input, currentSkorMaks);
+        document.querySelectorAll('#studentTableBody tr').forEach(row => {
+            window.calculateRow(row);
         });
         window.updateAverage();
     };
 
-    window.calculateRow = function(input, overrideSkorMaks = null) {
-        const row = input.closest('tr');
+    window.calculateRow = function(row) {
+        const inputTulis = row.querySelector('input[name="skor[]"]');
+        const inputLisan = row.querySelector('input[name="skor_lisan[]"]');
         const outputs = row.querySelectorAll('.nilai-output, .nilai-output-mobile');
+        const hiddenOutput = row.querySelector('input[name="nilai[]"]');
         const progressBar = row.querySelector('.h-full.bg-indigo-400');
+        
         const nilaiMaks = parseFloat(document.getElementById('nilai_maks').value) || 100;
         const nilaiMin = parseFloat(document.getElementById('nilai_min').value) || 0;
-        const skorMaks = overrideSkorMaks || parseFloat(document.getElementById('skor_maks_input').value) || 100;
+        const skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
+        const hasOralVal = parseInt(document.getElementById('has_oral_select')?.value ?? '<?= $exam['has_oral'] ?>');
+
+        let valTulis = inputTulis ? inputTulis.value.trim() : '';
+        let valLisan = inputLisan ? inputLisan.value.trim() : '';
         
-        let valStr = input.value.trim();
+        let finalNilai = null;
+        let warningMsg = '';
 
-        // CASE 1: Absent (-)
-        if (valStr === '-') {
-            outputs.forEach(o => o.value = '0');
-            if (progressBar) progressBar.style.width = '0%';
-            window.updateAverage();
-            return;
+        if (hasOralVal === 0) {
+            // Tulis Only
+            if (valTulis === '-') {
+                finalNilai = 0;
+            } else if (valTulis === '0' || valTulis === 0 || valTulis === '0.0') {
+                finalNilai = nilaiMin;
+            } else if (valTulis !== '') {
+                let skor = parseFloat(valTulis.replace(',', '.'));
+                if (!isNaN(skor)) {
+                    if (skor < 0) skor = 0;
+                    if (skor > skorMaks) {
+                        inputTulis.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+                    } else {
+                        inputTulis.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                    }
+                    finalNilai = Math.round((skor / skorMaks) * nilaiMaks);
+                    if (finalNilai < nilaiMin) finalNilai = nilaiMin;
+                    if (finalNilai > nilaiMaks) finalNilai = nilaiMaks;
+                }
+            }
+        } else if (hasOralVal === 2) {
+            // Lisan Only
+            if (valLisan === '-') {
+                finalNilai = 0;
+            } else if (valLisan !== '') {
+                let skor = parseFloat(valLisan.replace(',', '.'));
+                if (!isNaN(skor)) {
+                    if (skor < 30 || skor > 80) {
+                        inputLisan.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+                    } else {
+                        inputLisan.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                    }
+                    finalNilai = Math.round(skor);
+                }
+            }
+        } else if (hasOralVal === 1) {
+            // Tulis & Lisan
+            if (valTulis === '-' || valLisan === '-') {
+                finalNilai = 0;
+            } else if (valTulis !== '' && valLisan !== '') {
+                let tRaw = parseFloat(valTulis.replace(',', '.'));
+                let sRaw = parseFloat(valLisan.replace(',', '.'));
+
+                if (!isNaN(tRaw) && !isNaN(sRaw)) {
+                    if (tRaw > skorMaks) {
+                        inputTulis.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+                    } else {
+                        inputTulis.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                    }
+                    if (sRaw > skorMaks) {
+                        inputLisan.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+                    } else {
+                        inputLisan.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                    }
+
+                    // Tahriri scaled score T
+                    let T = Math.round((tRaw / skorMaks) * nilaiMaks);
+                    if (T < nilaiMin) T = nilaiMin;
+                    if (T > nilaiMaks) T = nilaiMaks;
+
+                    // Syafahi scaled score S (normalized if <= 10)
+                    let S = sRaw;
+                    if (S <= 10) {
+                        S = S * 10;
+                    }
+                    if (S < nilaiMin) S = nilaiMin;
+                    if (S > nilaiMaks) S = nilaiMaks;
+
+                    let T10 = T / 10.0;
+                    let S10 = S / 10.0;
+
+                    let diff = Math.abs(T10 - S10);
+                    if (diff >= 5.0) {
+                        warningMsg = 'Selisih Sangat Jauh';
+                        // Enable manual edit for final score
+                        outputs.forEach(o => {
+                            o.removeAttribute('readonly');
+                            o.classList.remove('pointer-events-none');
+                            o.classList.add('border-b-2', 'border-yellow-400', 'bg-yellow-50/50');
+                        });
+                        // Keep current finalNilai if set and valid, otherwise fallback to T
+                        let currentVal = parseFloat(hiddenOutput?.value);
+                        if (isNaN(currentVal) || currentVal < nilaiMin || currentVal > nilaiMaks) {
+                            finalNilai = T;
+                        } else {
+                            finalNilai = currentVal;
+                        }
+                    } else {
+                        // Reset input state to readonly
+                        outputs.forEach(o => {
+                            o.setAttribute('readonly', 'true');
+                            o.classList.add('pointer-events-none');
+                            o.classList.remove('border-b-2', 'border-yellow-400', 'bg-yellow-50/50');
+                        });
+
+                        if (S10 < T10) {
+                            finalNilai = T;
+                        } else {
+                            let avg = (T10 + S10) / 2.0;
+                            let fraction = avg - Math.floor(avg);
+                            let final10;
+                            if (Math.abs(fraction - 0.5) < 0.001) {
+                                if (Math.abs(avg - 5.5) < 0.001) {
+                                    final10 = 6;
+                                } else {
+                                    final10 = Math.floor(avg);
+                                }
+                            } else {
+                                final10 = Math.round(avg);
+                            }
+                            finalNilai = Math.round(final10 * 10);
+                            if (finalNilai < nilaiMin) finalNilai = nilaiMin;
+                            if (finalNilai > nilaiMaks) finalNilai = nilaiMaks;
+                        }
+                    }
+                }
+            }
         }
 
-        // CASE 2: Empty
-        if (valStr === '') {
-            outputs.forEach(o => o.value = '');
-            if (progressBar) progressBar.style.width = '0%';
-            window.updateAverage();
-            return;
-        }
-
-        let skor = parseFloat(valStr.replace(',', '.')); // Robust parsing
-
-        // CASE 3: Invalid Input
-        if (isNaN(skor)) {
-            input.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
-            return;
-        }
-
-        // Warning if exceeds Max
-        if (skor > skorMaks) {
-            input.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+        // Update outputs
+        if (finalNilai !== null) {
+            outputs.forEach(o => {
+                if (o.hasAttribute('readonly') || o.value === '') {
+                    o.value = Math.round(finalNilai);
+                }
+            });
+            if (hiddenOutput) hiddenOutput.value = Math.round(finalNilai);
+            if (progressBar) progressBar.style.width = ((finalNilai / nilaiMaks) * 100) + '%';
         } else {
-            input.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+            outputs.forEach(o => o.value = '');
+            if (hiddenOutput) hiddenOutput.value = '';
+            if (progressBar) progressBar.style.width = '0%';
         }
 
-        // CASE 4: Score 0 (All Wrong) -> Get Minimum Grade
-        if (skor === 0) {
-            outputs.forEach(o => o.value = Math.round(nilaiMin));
-            if (progressBar) progressBar.style.width = ((nilaiMin / nilaiMaks) * 100) + '%';
-            window.updateAverage();
-            return;
+        // Update warning label in row
+        let warnSpan = row.querySelector('.row-warning');
+        if (warningMsg) {
+            if (!warnSpan) {
+                warnSpan = document.createElement('span');
+                warnSpan.className = 'row-warning block text-[9px] font-black text-yellow-600 bg-yellow-50 border border-yellow-100 rounded px-1.5 py-0.5 mt-1 text-center uppercase tracking-tighter w-max mx-auto';
+                const outputContainer = row.querySelector('.nilai-output')?.closest('div');
+                if (outputContainer) outputContainer.appendChild(warnSpan);
+            }
+            warnSpan.textContent = warningMsg;
+        } else {
+            if (warnSpan) warnSpan.remove();
         }
-
-        // CASE 5: Normal Calculation
-        let nilai = Math.round((skor / skorMaks) * nilaiMaks);
-
-        // Clamping
-        if (nilai < nilaiMin) nilai = nilaiMin;
-        if (nilai > nilaiMaks) nilai = nilaiMaks;
-
-        let finalNilai = Math.round(nilai);
-        outputs.forEach(o => o.value = finalNilai);
-        if (progressBar) progressBar.style.width = ((finalNilai / nilaiMaks) * 100) + '%';
-        window.updateAverage();
     };
 
     window.updateAverage = function() {
@@ -498,10 +731,13 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
     let sortDirections = {};
 
-    window.sortTable = function(colIndex, isNumeric = false) {
+    window.sortTable = function(headerElement, isNumeric = false) {
         const tbody = document.getElementById('studentTableBody');
         if (!tbody) return;
         const rows = Array.from(tbody.querySelectorAll('tr'));
+        const ths = Array.from(headerElement.parentElement.children);
+        const colIndex = ths.indexOf(headerElement);
+        
         const direction = sortDirections[colIndex] === 'asc' ? 'desc' : 'asc';
         sortDirections[colIndex] = direction;
 
@@ -512,26 +748,33 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         });
 
         // Set active icon
-        const activeHeader = document.querySelectorAll('thead th')[colIndex];
-        if (activeHeader) {
-            const activeIcon = activeHeader.querySelector('i');
-            if (activeIcon) activeIcon.className = direction === 'asc' ? 'ri-sort-asc' : 'ri-sort-desc';
-            activeHeader.classList.add('text-indigo-600');
-        }
+        const activeIcon = headerElement.querySelector('i');
+        if (activeIcon) activeIcon.className = direction === 'asc' ? 'ri-sort-asc' : 'ri-sort-desc';
+        headerElement.classList.add('text-indigo-600');
 
         rows.sort((a, b) => {
             let aVal, bVal;
 
-            if (colIndex === 0) {
+            if (headerElement.classList.contains('col-bayanat')) {
                 const aInput = a.querySelector('input[name="no_bayanat[]"]');
                 aVal = aInput ? aInput.value : (a.querySelector('span.text-lg') ? a.querySelector('span.text-lg').textContent.trim() : '');
                 const bInput = b.querySelector('input[name="no_bayanat[]"]');
                 bVal = bInput ? bInput.value : (b.querySelector('span.text-lg') ? b.querySelector('span.text-lg').textContent.trim() : '');
-            } else if (colIndex === 1) {
+            } else if (headerElement.classList.contains('col-nama')) {
                 const aName = a.querySelector('.text-sm.font-bold');
                 const bName = b.querySelector('.text-sm.font-bold');
                 aVal = aName ? aName.textContent.trim() : '';
                 bVal = bName ? bName.textContent.trim() : '';
+            } else if (headerElement.classList.contains('col-lisan')) {
+                const aOut = a.querySelector('input[name="skor_lisan[]"]');
+                const bOut = b.querySelector('input[name="skor_lisan[]"]');
+                aVal = aOut ? aOut.value : '0';
+                bVal = bOut ? bOut.value : '0';
+            } else if (headerElement.classList.contains('col-tulis')) {
+                const aOut = a.querySelector('input[name="skor[]"]');
+                const bOut = b.querySelector('input[name="skor[]"]');
+                aVal = aOut ? aOut.value : '0';
+                bVal = bOut ? bOut.value : '0';
             } else {
                 const aOut = a.querySelector('.nilai-output') || a.querySelector('.nilai-output-mobile');
                 const bOut = b.querySelector('.nilai-output') || b.querySelector('.nilai-output-mobile');
@@ -550,6 +793,10 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
         rows.forEach(row => tbody.appendChild(row));
     };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        window.updateConfig();
+    });
 </script>
 
 <?php renderFooter(); ?>

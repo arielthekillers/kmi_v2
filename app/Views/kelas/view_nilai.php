@@ -64,11 +64,13 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">No. Bayanat</th>
                         <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</th>
-                        <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Skor Peserta</th>
-                        <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">Nilai Akhir</th>
-                        <?php if ($exam['has_oral']): ?>
-                            <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Lisan</th>
+                        <?php if ($exam['has_oral'] == 1): ?>
+                            <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Nilai Lisan</th>
                         <?php endif; ?>
+                        <?php if ($exam['has_oral'] != 2): ?>
+                            <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Skor Tulis</th>
+                        <?php endif; ?>
+                        <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100 text-[13px]">
@@ -76,40 +78,42 @@
                         <tr class="hover:bg-gray-50/50 transition-colors">
                             <td class="px-6 py-3.5 whitespace-nowrap">
                                 <span class="font-mono text-gray-600">
-                                    <?= $row['no_bayanat'] ?: '-' ?>
+                                     <?= $row['no_bayanat'] ?: '-' ?>
                                 </span>
                             </td>
                             
                             <td class="px-6 py-3.5">
                                 <div class="font-bold text-gray-900">
-                                    <?= htmlspecialchars($row['nama']) ?>
+                                     <?= htmlspecialchars($row['nama']) ?>
                                 </div>
                                 <div class="text-[10px] text-gray-400 font-mono"><?= htmlspecialchars($row['nis']) ?></div>
                             </td>
                             
-                            <td class="px-6 py-3.5 text-center">
-                                <span class="font-medium text-gray-700">
-                                    <?= htmlspecialchars(is_numeric($row['skor']) ? (float)$row['skor'] : ($row['skor'] ?? '-')) ?>
-                                </span>
-                            </td>
+                            <?php if ($exam['has_oral'] == 1): ?>
+                                <td class="px-6 py-3.5 text-center">
+                                    <span class="font-medium text-gray-700">
+                                        <?= htmlspecialchars($row['score_oral'] ?? '-') ?>
+                                    </span>
+                                </td>
+                            <?php endif; ?>
 
+                            <?php if ($exam['has_oral'] != 2): ?>
+                                <td class="px-6 py-3.5 text-center">
+                                    <span class="font-medium text-gray-700">
+                                        <?= htmlspecialchars(is_numeric($row['skor']) ? (float)$row['skor'] : ($row['skor'] ?? '-')) ?>
+                                    </span>
+                                </td>
+                            <?php endif; ?>
+ 
                             <td class="px-6 py-3.5 text-center">
                                 <span class="font-bold <?= is_numeric($row['nilai']) && $row['nilai'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
                                     <?= is_numeric($row['nilai']) ? round($row['nilai']) : '-' ?>
                                 </span>
                             </td>
-
-                            <?php if ($exam['has_oral']): ?>
-                            <td class="px-6 py-3.5 text-center">
-                                <span class="font-medium text-gray-700">
-                                    <?= htmlspecialchars($row['score_oral'] ?? '-') ?>
-                                </span>
-                            </td>
-                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                     <?php if (empty($students)): ?>
-                        <tr><td colspan="<?= $exam['has_oral'] ? 5 : 4 ?>" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data santri.</td></tr>
+                        <tr><td colspan="<?= ($exam['has_oral'] == 1) ? 5 : (($exam['has_oral'] == 2) ? 3 : 4) ?>" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data santri.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

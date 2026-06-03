@@ -380,11 +380,13 @@ $isAdmin = (auth_get_role() === 'admin');
                             <p class="text-xs text-gray-400 mt-1 ml-12">Aktifkan untuk memilih pelajaran di luar jadwal (Praktek Mengajar, dll). Pengajar dipilih manual.</p>
                         </div>
                         <?php endif; ?>
-                        <div class="flex items-center">
-                            <input type="checkbox" name="include_lisan" id="include_lisan" value="1" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="include_lisan" class="ml-2 block text-sm text-gray-700 font-medium">
-                                Include Ujian Lisan
-                            </label>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Jenis Koreksi</label>
+                            <select name="has_oral" id="modal_has_oral" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-sm">
+                                <option value="0">Tulis</option>
+                                <option value="1">Tulis & Lisan</option>
+                                <option value="2">Lisan</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -408,9 +410,9 @@ $isAdmin = (auth_get_role() === 'admin');
         const tog = document.getElementById('toggle_special');
         if (tog) { tog.checked = false; updateToggleUI(false); }
 
-        // Reset include lisan
-        const lisan = document.getElementById('include_lisan');
-        if (lisan) lisan.checked = false;
+        // Reset has_oral select
+        const hasOralSelect = document.getElementById('modal_has_oral');
+        if (hasOralSelect) hasOralSelect.value = "0";
 
         // Reset skor_maks
         const skorMaks = document.querySelector('#addKoreksiModal input[name="skor_maks"]');

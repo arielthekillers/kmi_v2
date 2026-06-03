@@ -166,27 +166,40 @@ class GradeModel extends Model {
             $max_val = (int)$max_val;
             $min_val = (int)$min_val;
 
+            // Get current or new has_oral setting
+            $stmtExam = $this->db->prepare("SELECT has_oral FROM exams WHERE id = ?");
+            $stmtExam->execute([$examId]);
+            $hasOral = (int)$stmtExam->fetchColumn();
+            if (isset($data['has_oral'])) {
+                $hasOral = (int)$data['has_oral'];
+            }
+
             $sql = "INSERT INTO grades (student_id, subject_id, exam_id, score_raw, score_final, score_oral, no_bayanat, updated_at) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON DUPLICATE KEY UPDATE 
-                        score_raw = COALESCE(VALUES(score_raw), score_raw), 
-                        score_final = COALESCE(VALUES(score_final), score_final),
-                        score_oral = COALESCE(VALUES(score_oral), score_oral),
-                        no_bayanat = COALESCE(VALUES(no_bayanat), no_bayanat),
+                        score_raw = VALUES(score_raw), 
+                        score_final = VALUES(score_final),
+                        score_oral = VALUES(score_oral),
+                        no_bayanat = VALUES(no_bayanat),
                         updated_at = VALUES(updated_at)";
             $stmt = $this->db->prepare($sql);
 
-            // If studentIds is empty (Admin case), fetch all existing grades to recalculate them with new skor_maks
+            // If studentIds is empty (Admin case), fetch all existing grades to recalculate them with new config
+            $submittedNilais = $data['nilai'] ?? [];
             if (empty($studentIds)) {
-                $stmtGet = $this->db->prepare("SELECT student_id, score_raw, score_oral FROM grades WHERE exam_id = ?");
+                $studentIds = [];
+                $skors = [];
+                $skorsLisan = [];
+                $noBayanats = [];
+                $submittedNilais = [];
+                $stmtGet = $this->db->prepare("SELECT student_id, score_raw, score_oral, no_bayanat, score_final FROM grades WHERE exam_id = ?");
                 $stmtGet->execute([$examId]);
                 while ($row = $stmtGet->fetch(PDO::FETCH_ASSOC)) {
                     $studentIds[] = $row['student_id'];
                     $skors[] = $row['score_raw'] ?? '';
-                    if (!isset($data['skor_lisan'])) {
-                        // Keep existing oral score if not provided
-                        $skorsLisan[] = $row['score_oral'] ?? null;
-                    }
+                    $skorsLisan[] = $row['score_oral'] ?? null;
+                    $noBayanats[] = $row['no_bayanat'] ?? '';
+                    $submittedNilais[] = $row['score_final'] ?? null;
                 }
             } else {
                 $skorsLisan = $data['skor_lisan'] ?? [];
@@ -207,32 +220,105 @@ class GradeModel extends Model {
                     $skor_input = isset($rowScore['score_raw']) ? $rowScore['score_raw'] : null;
                 }
                 
+                $skorLisan = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : null;
+                if ($skorLisan === '') $skorLisan = null;
+
                 $nilai_akhir = null;
                 $score_raw_db = null;
 
-                if ($skor_input === '-') {
-                    $nilai_akhir = 0;
-                    $score_raw_db = '-';
-                } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
-                     $nilai_akhir = $min_val;
-                     $score_raw_db = '0';
-                } elseif (is_numeric($skor_input)) {
-                    $skor = (float) $skor_input;
-                    if ($skor < 0) $skor = 0; // Sanity check: no negative scores
-                    $nilai_akhir = round(($skor / $skor_maks) * $max_val);
-                    if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
-                    if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
-                    $score_raw_db = $skor;
-                } else {
-                     $nilai_akhir = null;
-                     $score_raw_db = null;
+                if ($hasOral == 0) {
+                    // Tulis Only
+                    if ($skor_input === '-') {
+                        $nilai_akhir = 0;
+                        $score_raw_db = '-';
+                    } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
+                         $nilai_akhir = $min_val;
+                         $score_raw_db = '0';
+                    } elseif (is_numeric($skor_input)) {
+                        $skor = (float) $skor_input;
+                        if ($skor < 0) $skor = 0;
+                        $nilai_akhir = round(($skor / $skor_maks) * $max_val);
+                        if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
+                        if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
+                        $score_raw_db = $skor;
+                    }
+                } elseif ($hasOral == 2) {
+                    // Lisan Only
+                    if ($skorLisan === '-') {
+                        $nilai_akhir = 0;
+                    } elseif (is_numeric($skorLisan)) {
+                        $skor = (float) $skorLisan;
+                        if ($skor < 30) $skor = 30;
+                        if ($skor > 80) $skor = 80;
+                        $nilai_akhir = round($skor);
+                    }
+                    $score_raw_db = null;
+                } elseif ($hasOral == 1) {
+                    // Tulis & Lisan
+                    if ($skor_input === '-' || $skorLisan === '-') {
+                        $nilai_akhir = 0;
+                        $score_raw_db = ($skor_input === '-') ? '-' : null;
+                    } elseif (is_numeric($skor_input) && is_numeric($skorLisan)) {
+                        $tRaw = (float)$skor_input;
+                        $sRaw = (float)$skorLisan;
+
+                        if ($tRaw < 0) $tRaw = 0;
+                        if ($sRaw < 0) $sRaw = 0;
+
+                        $score_raw_db = $tRaw;
+
+                        // Tahriri scaled score
+                        $T = round(($tRaw / $skor_maks) * $max_val);
+                        if ($T < $min_val) $T = $min_val;
+                        if ($T > $max_val) $T = $max_val;
+
+                        // Syafahi scaled score
+                        $S = $sRaw;
+                        if ($S <= 10) {
+                            $S = $S * 10;
+                        }
+                        if ($S < $min_val) $S = $min_val;
+                        if ($S > $max_val) $S = $max_val;
+
+                        $T10 = $T / 10.0;
+                        $S10 = $S / 10.0;
+
+                        $diff = abs($T10 - $S10);
+                        if ($diff >= 5.0) {
+                            // Kebijaksanaan Guru - use manually submitted final score if valid, otherwise fallback to T
+                            $submittedNilai = isset($submittedNilais[$i]) ? trim($submittedNilais[$i]) : '';
+                            if (is_numeric($submittedNilai)) {
+                                $nilai_akhir = (int)$submittedNilai;
+                                if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
+                                if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
+                            } else {
+                                $nilai_akhir = $T;
+                            }
+                        } else {
+                            if ($S10 < $T10) {
+                                $nilai_akhir = $T;
+                            } else {
+                                $avg = ($T10 + $S10) / 2.0;
+                                $fraction = $avg - floor($avg);
+                                if (abs($fraction - 0.5) < 0.001) {
+                                    if (abs($avg - 5.5) < 0.001) {
+                                        $final10 = 6;
+                                    } else {
+                                        $final10 = floor($avg);
+                                    }
+                                } else {
+                                    $final10 = round($avg);
+                                }
+                                $nilai_akhir = round($final10 * 10);
+                                if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
+                                if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
+                            }
+                        }
+                    }
                 }
 
                 $noBayanat = !empty($noBayanats[$i]) ? (int)$noBayanats[$i] : null;
                 if ($noBayanat !== null && $noBayanat < 1) $noBayanat = null; // Sanity check: must be >= 1
-
-                $skorLisan = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : null;
-                if ($skorLisan === '') $skorLisan = null;
 
                 if ($score_raw_db !== null || $skorLisan !== null) {
                     $stmt->execute([$studentId, $subjectId, $examId, $score_raw_db, $nilai_akhir, $skorLisan, $noBayanat]);
@@ -241,9 +327,14 @@ class GradeModel extends Model {
                 }
             }
 
-            // Update Status and Skor Maks in one go
-            $stmtUpd = $this->db->prepare("UPDATE exams SET status = ?, skor_maks = ? WHERE id = ?");
-            $stmtUpd->execute([$status, $skor_maks, $examId]);
+            // Update Status, Skor Maks, and has_oral in one go
+            if (isset($data['has_oral'])) {
+                $stmtUpd = $this->db->prepare("UPDATE exams SET status = ?, skor_maks = ?, has_oral = ? WHERE id = ?");
+                $stmtUpd->execute([$status, $skor_maks, $hasOral, $examId]);
+            } else {
+                $stmtUpd = $this->db->prepare("UPDATE exams SET status = ?, skor_maks = ? WHERE id = ?");
+                $stmtUpd->execute([$status, $skor_maks, $examId]);
+            }
 
             $this->db->commit();
             return true;
