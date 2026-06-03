@@ -530,3 +530,28 @@ if (!function_exists('auth_can_manage_grades')) {
         return auth_get_role() === 'admin' || auth_is_panitia($sessionId);
     }
 }
+
+if (!function_exists('auth_get_wali_kelas_kelas')) {
+    /**
+     * Get classes where the current user is assigned as the Wali Kelas in the active academic year.
+     * @return array List of classes, each as an associative array with id, tingkat, abjad.
+     */
+    function auth_get_wali_kelas_kelas()
+    {
+        $role = auth_get_role();
+        if ($role !== 'pengajar') return [];
+
+        $userId = auth_get_user_id();
+        if (!$userId) return [];
+
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $yearId = get_active_academic_year_id();
+            $stmt = $db->prepare("SELECT id, tingkat, abjad FROM kelas WHERE teacher_id = ? AND academic_year_id = ? ORDER BY tingkat ASC, abjad ASC");
+            $stmt->execute([$userId, $yearId]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+}

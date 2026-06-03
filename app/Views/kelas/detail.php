@@ -4,8 +4,10 @@
     <div class="mb-8">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <a href="<?= url('/') ?>" class="hover:text-indigo-600">Dashboard</a>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            <a href="<?= url('/classes') ?>" class="hover:text-indigo-600">Data Kelas</a>
+            <?php if (auth_get_role() === 'admin'): ?>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <a href="<?= url('/classes') ?>" class="hover:text-indigo-600">Data Kelas</a>
+            <?php endif; ?>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             <span class="text-indigo-600 font-semibold">Detail Kelas</span>
         </div>
@@ -137,7 +139,11 @@
                                     <td class="px-6 py-3.5 text-gray-400"><?= $index + 1 ?></td>
                                     <td class="px-6 py-3.5 font-mono text-gray-600"><?= htmlspecialchars($s['nis']) ?></td>
                                     <td class="px-6 py-3.5 font-bold text-gray-900">
-                                        <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
+                                        <?php if (auth_get_role() === 'admin'): ?>
+                                            <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($s['nama']) ?>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-3.5">
                                         <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">AKtif</span>

@@ -21,6 +21,26 @@ renderHeader ("Dashboard");
         </div>
     </div>
 
+    <?php 
+    $myClasses = auth_get_wali_kelas_kelas();
+    if (!empty($myClasses)): 
+    ?>
+    <div class="mb-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-md p-6 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold">Selamat Datang, Wali Kelas!</h2>
+            <p class="text-indigo-100 text-sm mt-1">Anda adalah wali kelas untuk kelas berikut pada tahun ajaran ini. Klik untuk melihat detail kelas.</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <?php foreach ($myClasses as $c): ?>
+                <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/10 rounded-xl text-white font-semibold transition-all">
+                    <i class="ri-community-line text-lg"></i>
+                    Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Stats Grid -->
     <!-- Stats Grid Row 1: Syeikh & Keliling -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

@@ -176,6 +176,30 @@
                             <a href="<?= url('/jadwal-saya') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">
                                 <i class="ri-calendar-check-line mr-1"></i> Jadwal Mengajar
                             </a>
+                            <?php 
+                            $myClasses = auth_get_wali_kelas_kelas();
+                            if (!empty($myClasses)): 
+                                if (count($myClasses) === 1): 
+                                    $c = $myClasses[0];
+                            ?>
+                                    <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                        <i class="ri-community-line"></i> Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <div class="relative group">
+                                        <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                            <i class="ri-community-line"></i> Kelas Wali <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </button>
+                                        <div class="absolute left-0 mt-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                            <?php foreach ($myClasses as $c): ?>
+                                                <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                                    Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -312,6 +336,23 @@
                     <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
                     </a>
+                <?php endif; ?>
+
+                <?php if (auth_get_role() === 'pengajar'): ?>
+                    <a href="<?= url('/jadwal-saya') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-calendar-check-line mr-2 text-gray-400"></i>Jadwal Mengajar
+                    </a>
+                    <?php 
+                    $myClasses = auth_get_wali_kelas_kelas();
+                    if (!empty($myClasses)): 
+                    ?>
+                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-t pt-2">Kelas Wali</div>
+                        <?php foreach ($myClasses as $c): ?>
+                            <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                                <i class="ri-community-line mr-2 text-gray-400"></i>Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if (is_logged_in()): 
