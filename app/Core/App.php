@@ -38,10 +38,12 @@ class App
 
         // Settings Routes (admin only)
         $this->router->get('/settings/general', ['App\Controllers\SettingsController', 'general']);
+        $this->router->get('/settings/tv/layout', ['App\Controllers\SettingsController', 'tvShowcaseLayout']);
         $this->router->get('/settings/tv/bgm', ['App\Controllers\SettingsController', 'tvShowcaseBgm']);
         $this->router->get('/settings/tv/hours', ['App\Controllers\SettingsController', 'tvShowcaseHours']);
         $this->router->get('/settings/tv/quotes', ['App\Controllers\SettingsController', 'tvShowcaseQuotes']);
         $this->router->post('/settings/tv/bgm-youtube', ['App\Controllers\SettingsController', 'updateYoutubeBgm']);
+        $this->router->post('/settings/tv/update-mode', ['App\Controllers\SettingsController', 'updateShowcaseMode']);
         $this->router->post('/settings/upload-audio', ['App\Controllers\SettingsController', 'uploadAudio']);
         $this->router->post('/settings/update-hours', ['App\Controllers\SettingsController', 'updateHours']);
         $this->router->post('/settings/update-quotes', ['App\Controllers\SettingsController', 'updateQuotes']);
@@ -94,7 +96,7 @@ class App
         $this->router->get('/piket/roaming', ['App\Controllers\PiketController', 'indexRoaming']);
         $this->router->post('/piket/roaming/update', ['App\Controllers\PiketController', 'updateRoaming']);
 
-        // Tanqih Routes
+        // Page Routes
         $this->router->get('/tanqih', ['App\Controllers\TanqihController', 'index']);
         $this->router->post('/tanqih/verify', ['App\Controllers\TanqihController', 'verify']);
         $this->router->get('/tanqih/report', ['App\Controllers\TanqihController', 'report']);
@@ -127,7 +129,6 @@ class App
         $this->router->post('/academic-years/set-active', ['App\Controllers\AcademicYearController', 'setActive']);
     }
 
-
     public function run()
     {
         try {
@@ -141,7 +142,6 @@ class App
             } else {
                 error_log("App Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
                 http_response_code(500);
-                // Try to include error view if exists
                 $errorView = __DIR__ . '/../Views/errors/500.php';
                 if (file_exists($errorView)) {
                     include $errorView;
