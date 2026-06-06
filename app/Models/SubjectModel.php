@@ -38,13 +38,28 @@ class SubjectModel extends Model {
     }
 
     public function create($data) {
-        $stmt = $this->db->prepare("INSERT INTO subjects (nama, skala, is_special) VALUES (?, ?, ?)");
-        return $stmt->execute([$data['nama'], $data['skala'], $data['is_special'] ?? 0]);
+        $stmt = $this->db->prepare("INSERT INTO subjects (nama, nama_ar, category, urutan, skala, is_special) VALUES (?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([
+            $data['nama'], 
+            $data['nama_ar'] ?? null, 
+            $data['category'] ?? null, 
+            $data['urutan'] ?? 0, 
+            $data['skala'], 
+            $data['is_special'] ?? 0
+        ]);
     }
 
     public function update($id, $data) {
-        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, skala = ?, is_special = ? WHERE id = ?");
-        return $stmt->execute([$data['nama'], $data['skala'], $data['is_special'] ?? 0, $id]);
+        $stmt = $this->db->prepare("UPDATE subjects SET nama = ?, nama_ar = ?, category = ?, urutan = ?, skala = ?, is_special = ? WHERE id = ?");
+        return $stmt->execute([
+            $data['nama'], 
+            $data['nama_ar'] ?? null, 
+            $data['category'] ?? null, 
+            $data['urutan'] ?? 0, 
+            $data['skala'], 
+            $data['is_special'] ?? 0, 
+            $id
+        ]);
     }
 
     public function getSpecialSubjects() {

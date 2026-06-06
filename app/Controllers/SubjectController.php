@@ -68,6 +68,9 @@ class SubjectController extends Controller {
         $id = $_POST['id'] ?? '';
         $data = [
             'nama'       => htmlspecialchars($_POST['nama'] ?? ''),
+            'nama_ar'    => htmlspecialchars($_POST['nama_ar'] ?? ''),
+            'category'   => htmlspecialchars($_POST['category'] ?? ''),
+            'urutan'     => (int)($_POST['urutan'] ?? 0),
             'skala'      => htmlspecialchars($_POST['skala'] ?? '80-30'),
             'is_special' => isset($_POST['is_special']) ? 1 : 0,
         ];
