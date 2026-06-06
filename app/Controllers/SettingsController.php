@@ -14,6 +14,18 @@ class SettingsController extends Controller {
         ]);
     }
 
+    public function tvShowcaseLayout() {
+        require_admin();
+
+        $settingModel = new SettingModel();
+        $showcaseMode = $settingModel->get('tv_showcase_mode', 'normal');
+
+        $this->view('settings/tvshowcase_layout', [
+            'title'       => 'Settings - TV Layout',
+            'showcaseMode'=> $showcaseMode
+        ]);
+    }
+
     public function tvShowcaseBgm() {
         require_admin();
 
@@ -33,6 +45,27 @@ class SettingsController extends Controller {
             'bgmSize'     => $bgmSize,
             'bgmMtime'    => $bgmMtime
         ]);
+    }
+
+    public function updateShowcaseMode() {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/settings/tv/layout');
+        }
+
+        csrf_validate_token();
+
+        $mode = $_POST['tv_showcase_mode'] ?? 'normal';
+        if (!in_array($mode, ['normal', 'exam', 'orientation'])) {
+            $mode = 'normal';
+        }
+
+        $settingModel = new SettingModel();
+        $settingModel->set('tv_showcase_mode', $mode);
+
+        add_flash('Mode Tampilan TV Showcase berhasil diperbarui!', 'success');
+        $this->redirect('/settings/tv/layout');
     }
 
     public function updateYoutubeBgm() {
@@ -70,7 +103,7 @@ class SettingsController extends Controller {
         $quotes = $settingModel->get('tv_showcase_quotes', [
             "Pancajiwa Pondok: Keikhlasan, Kesederhanaan, Berdikari, Ukhuwah Islamiyah, dan Kebebasan.",
             "Motto Pondok: Berbudi tinggi, Berbadan sehat, Berpengetahuan luas, dan Berpikiran bebas.",
-            "إنّ تنفيذ التربية الخلقية والعقلية لا يكفي بمجرد الكلام، بل لا بدّ أن يكون بالقدوة الصالحة...",
+            "إنّ تنفيذ التربية الخلقية والعقلية لا يكفي بمjرد الكلام، بل لا بدّ أن يكون بالقدوة الصالحة...",
             "الوعي مبعث كلّ النجاح",
             "من وعى انتبه",
             "Think globally, act locally!"
