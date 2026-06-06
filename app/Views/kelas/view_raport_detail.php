@@ -31,6 +31,10 @@
             }
             ?>
         </span>
+        <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=raport_arab&student_id=' . $student['student_id'] . '&session_id=' . $selected_session_id) ?>" 
+           class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+            <i class="ri-printer-line text-sm"></i> Cetak Rapor Arab
+        </a>
     </div>
 </div>
 
