@@ -41,19 +41,37 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Pelajaran</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rumpun / Kategori</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Urutan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rentang Nilai (Max-Min)</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <?php foreach ($displayPelajaran as $p): 
+                    <?php 
+                    $catLabels = [
+                        'arabic' => 'Bahasa Arab (اللغة العربية)',
+                        'islamic' => 'Dirasah Islamiyah (العقائد والشرائع)',
+                        'foreign' => 'Bahasa Asing (الأجنبية)',
+                        'general' => 'Umum & Seni (العامة والفنون)'
+                    ];
+                    foreach ($displayPelajaran as $p): 
                         // Note: $p is an array row here. ID is $p['id']
                         $id = $p['id'];
                     ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                <?= htmlspecialchars($p['nama']) ?>
+                                <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($p['nama']) ?></div>
+                                <?php if (!empty($p['nama_ar'])): ?>
+                                    <div class="text-xs text-gray-500 font-semibold mt-0.5" dir="rtl"><?= htmlspecialchars($p['nama_ar']) ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <?= htmlspecialchars($catLabels[$p['category'] ?? ''] ?? 'Belum Diatur') ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <?= (int)($p['urutan'] ?? 0) ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -73,7 +91,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2">
-                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>, <?= (int)$p['is_special'] ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
+                                    <button onclick="editPelajaran('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['nama_ar'] ?? ''), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['category'] ?? ''), ENT_QUOTES) ?>, <?= (int)($p['urutan'] ?? 0) ?>, <?= htmlspecialchars(json_encode($p['skala']), ENT_QUOTES) ?>, <?= (int)$p['is_special'] ?>)" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-md hover:bg-indigo-50 transition-colors" title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
                                     <a href="<?= url('/subjects/delete?id=' . $id) ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus data pelajaran ini?')" class="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors" title="Hapus">
@@ -164,6 +182,24 @@
                             <input type="text" name="nama" id="inputNama" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Nama Pelajaran (Arab)</label>
+                            <input type="text" name="nama_ar" id="inputNamaAr" placeholder="مثال: الإملاء العربي" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-right font-medium" dir="rtl">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Rumpun Bidang Studi</label>
+                            <select name="category" id="inputCategory" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
+                                <option value="">Pilih Rumpun...</option>
+                                <option value="arabic">Bahasa Arab (اللغة العربية)</option>
+                                <option value="islamic">Dirasah Islamiyah (العقائد والشرائع)</option>
+                                <option value="foreign">Bahasa Asing (الأجنبية)</option>
+                                <option value="general">Umum & Seni (العامة والفنون)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Urutan Tampilan</label>
+                            <input type="number" name="urutan" id="inputUrutan" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">Rentang Nilai (Max - Min)</label>
                             <select name="skala" id="inputSkala" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
                                 <option value="80-30">80 - 30 (Standar)</option>
@@ -197,6 +233,9 @@
 
     function openAdd() {
         document.getElementById('inputNama').value = '';
+        document.getElementById('inputNamaAr').value = '';
+        document.getElementById('inputCategory').value = '';
+        document.getElementById('inputUrutan').value = '0';
         document.getElementById('inputSkala').value = '80-30';
         document.getElementById('inputId').value = '';
         document.getElementById('inputIsSpecial').checked = false;
@@ -204,8 +243,11 @@
         toggleModal('addModal');
     }
 
-    function editPelajaran(id, nama, skala, isSpecial) {
+    function editPelajaran(id, nama, namaAr, category, urutan, skala, isSpecial) {
         document.getElementById('inputNama').value = nama;
+        document.getElementById('inputNamaAr').value = namaAr;
+        document.getElementById('inputCategory').value = category;
+        document.getElementById('inputUrutan').value = urutan;
         document.getElementById('inputSkala').value = skala;
         document.getElementById('inputId').value = id;
         document.getElementById('inputIsSpecial').checked = isSpecial == 1;
