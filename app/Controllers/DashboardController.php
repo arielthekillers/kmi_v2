@@ -32,8 +32,13 @@ class DashboardController extends Controller {
         $stats = [
             'pelajaran' => $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
             'kelas' => $pdo->prepare("SELECT COUNT(*) FROM kelas WHERE academic_year_id = ?"),
-            'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar'")->fetchColumn(),
-            'santri' => $pdo->prepare("SELECT COUNT(*) FROM student_enrollments WHERE academic_year_id = ? AND status = 'Active'")
+            'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar' AND deleted_at IS NULL")->fetchColumn(),
+            'santri' => $pdo->prepare("
+                SELECT COUNT(*) 
+                FROM student_enrollments se 
+                INNER JOIN students s ON se.student_id = s.id 
+                WHERE se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            ")
         ];
         
         $stats['kelas']->execute([$yearId]);
