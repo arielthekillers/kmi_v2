@@ -57,6 +57,12 @@
                     <svg class="w-4 h-4 <?= $tab === 'raport' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Raport Santri
                 </a>
+
+                <a href="?id=<?= $kelas['id'] ?>&tab=perilaku" 
+                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'perilaku' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                    <svg class="w-4 h-4 <?= $tab === 'perilaku' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Nilai Perilaku
+                </a>
             </nav>
         </aside>
 
@@ -305,6 +311,18 @@
                 <!-- Raport Detail Santri Tab -->
                 <?php include __DIR__ . '/view_raport_detail.php'; ?>
                 
+            <?php elseif ($tab === 'perilaku'): ?>
+                <!-- Nilai Perilaku Tab -->
+                <?php include __DIR__ . '/view_perilaku.php'; ?>
+
+            <?php elseif ($tab === 'raport_arab'): ?>
+                <!-- Cetak Rapor Arab Tab -->
+                <?php include __DIR__ . '/view_raport_arab.php'; ?>
+
+            <?php elseif ($tab === 'leger'): ?>
+                <!-- Leger Tab -->
+                <?php include __DIR__ . '/view_leger.php'; ?>
+
             <?php endif; ?>
 
         </div>

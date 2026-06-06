@@ -477,11 +477,11 @@ class GradeModel extends Model {
     public function getClassLeger($classId, $sessionId, $academicYearId) {
         // Fetch all exams for this class and session
         $stmtExams = $this->db->prepare("
-            SELECT e.id as exam_id, sub.nama as subject_name, sub.id as subject_id, e.skor_maks, sub.skala, e.has_oral, e.status
+            SELECT e.id as exam_id, sub.nama as subject_name, sub.nama_ar, sub.category, sub.urutan, sub.id as subject_id, e.skor_maks, sub.skala, e.has_oral, e.status
             FROM exams e
             JOIN subjects sub ON e.subject_id = sub.id
             WHERE e.kelas_id = ? AND e.exam_session_id = ? AND e.academic_year_id = ? AND e.is_deleted = 0
-            ORDER BY sub.nama ASC
+            ORDER BY sub.category ASC, sub.urutan ASC, sub.nama ASC
         ");
         $stmtExams->execute([$classId, $sessionId, $academicYearId]);
         $exams = $stmtExams->fetchAll(\PDO::FETCH_ASSOC);

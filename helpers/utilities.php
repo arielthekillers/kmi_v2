@@ -115,3 +115,60 @@ if (!function_exists('get_piket_session_from_hour')) {
         return null;
     }
 }
+
+if (!function_exists('terbilang_arab')) {
+    /**
+     * Converts a number (0-100) to its feminine Arabic words spelling
+     * since grade (الدرجة) is feminine.
+     */
+    function terbilang_arab($score) {
+        $num = (int)round($score);
+        if ($num < 0 || $num > 100) return '';
+        if ($num === 0) return 'صفر';
+        if ($num === 100) return 'مائة';
+        
+        $tens = [
+            10 => 'عشر',
+            20 => 'عشرون',
+            30 => 'ثلاثون',
+            40 => 'أربعون',
+            50 => 'خمسون',
+            60 => 'ستون',
+            70 => 'سبعون',
+            80 => 'ثمانون',
+            90 => 'تسعون'
+        ];
+        
+        $units = [
+            1 => 'واحدة',
+            2 => 'اثنتان',
+            3 => 'ثلاث',
+            4 => 'أربع',
+            5 => 'خمس',
+            6 => 'ست',
+            7 => 'سبع',
+            8 => 'ثمان',
+            9 => 'تسع'
+        ];
+        
+        if ($num < 10) {
+            return $units[$num];
+        }
+        
+        if ($num % 10 === 0) {
+            return $tens[$num];
+        }
+        
+        $unit = $num % 10;
+        $ten = (int)(floor($num / 10) * 10);
+        
+        if ($ten === 10) {
+            if ($unit === 1) return 'إحدى عشرة';
+            if ($unit === 2) return 'اثنتا عشرة';
+            return $units[$unit] . ' عشرة';
+        }
+        
+        return $units[$unit] . ' و' . $tens[$ten];
+    }
+}
+
