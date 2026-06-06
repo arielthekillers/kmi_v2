@@ -18,35 +18,32 @@ class SubjectController extends Controller {
         require_admin();
 
         $search = $_GET['search'] ?? '';
+        $category = $_GET['category'] ?? '';
+        $type = $_GET['type'] ?? '';
+
+        $isSpecial = '';
+        if ($type === 'reguler') {
+            $isSpecial = 0;
+        } elseif ($type === 'special') {
+            $isSpecial = 1;
+        }
+
+        $filters = [
+            'search' => $search,
+            'category' => $category,
+            'is_special' => $isSpecial
+        ];
+
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = 20;
 
-        // Perform search/pagination logic
-        // This logic is moved from view to Controller/Model
-        if (!empty($search)) {
-            $total = $this->subjectModel->countSearch($search);
-            $offset = ($page - 1) * $limit;
-            $displayPelajaran = $this->subjectModel->search($search, $limit, $offset);
-        } else {
-            // For now, if no search, getAll then paginate in PHP OR implemented getAll paginated in Model
-            // Since SubjectModel::getAll returns all, let's paginate in PHP to keep it simple or implement paginate in Model.
-            // Let's implement full pagination in controller using getAll
-            // Actually, better to fetch all and slice array if dataset is small, or use SQL pagination.
-            // Subjects are few (usually < 50), so fetching all is fine.
-            
-            $allSubjects = $this->subjectModel->getAll();
-            
-            // Filter in PHP if needed (though search is handled above)
-            // If empty search, we just paginate all
-            
-            $total = count($allSubjects);
-            $offset = ($page - 1) * $limit;
-            $displayPelajaran = array_slice($allSubjects, $offset, $limit);
-        }
-
+        $total = $this->subjectModel->countFiltered($filters);
         $totalPages = ceil($total / $limit);
-        $page = max(1, min($page, $totalPages));
-        
+        $page = max(1, min($page, $totalPages ?: 1));
+        $offset = ($page - 1) * $limit;
+
+        $displayPelajaran = $this->subjectModel->searchFiltered($filters, $limit, $offset);
+
         // Pass data to view
         renderHeader("Master Pelajaran");
         $this->view('subjects/index', [
@@ -56,7 +53,9 @@ class SubjectController extends Controller {
             'page' => $page,
             'offset' => $offset,
             'limit' => $limit,
-            'search' => $search
+            'search' => $search,
+            'category' => $category,
+            'type' => $type
         ]);
         renderFooter();
     }

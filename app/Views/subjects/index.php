@@ -12,18 +12,41 @@
         </button>
     </div>
 
-    <!-- Stats & Search -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div class="text-gray-600 text-sm">
-            Total: <strong><?= $total ?></strong> pelajaran
+    <!-- Stats & Filters -->
+    <div class="mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="text-gray-700 text-sm">
+            Total: <strong class="text-indigo-600"><?= $total ?></strong> pelajaran
         </div>
-        <form method="GET" class="relative w-full sm:w-64">
-            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari pelajaran..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+        <form method="GET" action="" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+            <!-- Search -->
+            <div class="relative flex-1 sm:w-48">
+                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="Cari nama pelajaran..." class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-xs shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ri-search-line text-gray-400 text-sm"></i>
+                </div>
             </div>
+            
+            <!-- Filter Rumpun -->
+            <select name="category" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700 shadow-sm cursor-pointer">
+                <option value="">Semua Rumpun</option>
+                <option value="arabic" <?= ($category ?? '') === 'arabic' ? 'selected' : '' ?>>Bahasa Arab (اللغة العربية)</option>
+                <option value="islamic" <?= ($category ?? '') === 'islamic' ? 'selected' : '' ?>>Dirasah Islamiyah (العقائد والشرائع)</option>
+                <option value="foreign" <?= ($category ?? '') === 'foreign' ? 'selected' : '' ?>>Bahasa Asing (الأجنبية)</option>
+                <option value="general" <?= ($category ?? '') === 'general' ? 'selected' : '' ?>>Umum & Seni (العامة والفنون)</option>
+            </select>
+            
+            <!-- Filter Tipe -->
+            <select name="type" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700 shadow-sm cursor-pointer">
+                <option value="">Semua Tipe</option>
+                <option value="reguler" <?= ($type ?? '') === 'reguler' ? 'selected' : '' ?>>Reguler</option>
+                <option value="special" <?= ($type ?? '') === 'special' ? 'selected' : '' ?>>Ujian Khusus</option>
+            </select>
+
+            <?php if (!empty($search) || !empty($category) || !empty($type)): ?>
+                <a href="<?= url('/subjects') ?>" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 justify-center py-1 sm:py-0 px-2 rounded hover:bg-red-50 transition-colors">
+                    <i class="ri-close-circle-line"></i> Reset
+                </a>
+            <?php endif; ?>
         </form>
     </div>
 
@@ -124,7 +147,7 @@
             <div>
                 <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&category=<?= urlencode($category) ?>&type=<?= urlencode($type) ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
                             <span class="sr-only">Previous</span>
                             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
@@ -133,13 +156,13 @@
                     <?php endif; ?>
                     
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold <?= $i === $page ? 'bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0' ?>">
+                        <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&category=<?= urlencode($category) ?>&type=<?= urlencode($type) ?>" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold <?= $i === $page ? 'bg-indigo-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>
                     
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&category=<?= urlencode($category) ?>&type=<?= urlencode($type) ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
                             <span class="sr-only">Next</span>
                             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
@@ -152,12 +175,12 @@
         <!-- Mobile Pagination -->
         <div class="flex sm:hidden justify-between w-full">
             <?php if ($page > 1): ?>
-                <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
+                <a href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&category=<?= urlencode($category) ?>&type=<?= urlencode($type) ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
             <?php else: ?>
                 <span></span>
             <?php endif; ?>
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
+                <a href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&category=<?= urlencode($category) ?>&type=<?= urlencode($type) ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
             <?php endif; ?>
         </div>
     </div>
@@ -203,6 +226,7 @@
                             <label class="block text-sm font-medium text-gray-700">Rentang Nilai (Max - Min)</label>
                             <select name="skala" id="inputSkala" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
                                 <option value="80-30">80 - 30 (Standar)</option>
+                                <option value="100-0">100 - 0 (Penuh)</option>
                                 <option value="100-10">100 - 10 (Lebar)</option>
                                 <option value="90-10">90 - 10 (Ketat)</option>
                             </select>

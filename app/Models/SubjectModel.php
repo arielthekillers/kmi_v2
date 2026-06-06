@@ -16,24 +16,58 @@ class SubjectModel extends Model {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
-    public function search($keyword, $limit, $offset) {
-         // Using prepared statements for search
-         $sql = "SELECT * FROM subjects WHERE nama LIKE ? ORDER BY nama ASC LIMIT ? OFFSET ?";
-         // PDO LIMIT/OFFSET needs integers, but binding sometimes tricky. 
-         // Let's use bindParam or cast.
-         $stmt = $this->db->prepare($sql);
-         $like = "%$keyword%";
-         $stmt->bindValue(1, $like);
-         $stmt->bindValue(2, (int)$limit, PDO::PARAM_INT);
-         $stmt->bindValue(3, (int)$offset, PDO::PARAM_INT);
-         $stmt->execute();
-         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    public function searchFiltered($filters, $limit, $offset) {
+        $sql = "SELECT * FROM subjects WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filters['search'])) {
+            $sql .= " AND nama LIKE ?";
+            $params[] = "%" . $filters['search'] . "%";
+        }
+        if (!empty($filters['category'])) {
+            $sql .= " AND category = ?";
+            $params[] = $filters['category'];
+        }
+        if (isset($filters['is_special']) && $filters['is_special'] !== '') {
+            $sql .= " AND is_special = ?";
+            $params[] = $filters['is_special'];
+        }
+        
+        $sql .= " ORDER BY category ASC, urutan ASC, nama ASC LIMIT ? OFFSET ?";
+        
+        $stmt = $this->db->prepare($sql);
+        
+        $idx = 1;
+        foreach ($params as $val) {
+            $stmt->bindValue($idx++, $val);
+        }
+        
+        $stmt->bindValue($idx++, (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue($idx++, (int)$offset, PDO::PARAM_INT);
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function countSearch($keyword) {
-        $sql = "SELECT COUNT(*) as total FROM subjects WHERE nama LIKE ?";
+    public function countFiltered($filters) {
+        $sql = "SELECT COUNT(*) as total FROM subjects WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filters['search'])) {
+            $sql .= " AND nama LIKE ?";
+            $params[] = "%" . $filters['search'] . "%";
+        }
+        if (!empty($filters['category'])) {
+            $sql .= " AND category = ?";
+            $params[] = $filters['category'];
+        }
+        if (isset($filters['is_special']) && $filters['is_special'] !== '') {
+            $sql .= " AND is_special = ?";
+            $params[] = $filters['is_special'];
+        }
+        
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(["%$keyword%"]);
+        $stmt->execute($params);
         return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
 
