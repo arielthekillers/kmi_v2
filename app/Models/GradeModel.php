@@ -16,6 +16,7 @@ class GradeModel extends Model {
                        u.nama as pengajar_nama,
                        es.type as exam_type, es.is_open as session_is_open, e.has_oral,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count,
+                       (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_oral IS NOT NULL)) as graded_oral_count,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count,
                        (SELECT AVG(g.score_final) FROM grades g WHERE g.exam_id = e.id AND g.score_final IS NOT NULL) as average_score
                 FROM exams e

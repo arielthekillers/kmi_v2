@@ -28,6 +28,24 @@ $isAdmin = (auth_get_role() === 'admin');
             border-radius: 10px !important;
             font-size: 13px !important;
         }
+        @keyframes progress-bar-stripes {
+            0% { background-position: 1rem 0; }
+            to { background-position: 0 0; }
+        }
+        .animate-stripes {
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.15) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.15) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 1rem 1rem;
+            animation: progress-bar-stripes 1s linear infinite;
+        }
     </style>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
@@ -226,9 +244,14 @@ $isAdmin = (auth_get_role() === 'admin');
             </div>
 
             <?php if (empty($exams)): ?>
-                <div class="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">Belum ada data koreksi</h3>
-                    <p class="mt-1 text-sm text-gray-500">Mulai dengan menambahkan sesi koreksi baru.</p>
+                <div class="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center p-6">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mb-3 border border-slate-100">
+                        <i class="ri-file-shield-2-line text-xl"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-900">Belum ada data koreksi</h3>
+                    <p class="mt-1 text-xs text-gray-500 max-w-xs leading-relaxed">
+                        <?= !empty(array_filter(array_diff_key($_GET, ['kelas' => '']))) ? 'Tidak ada data koreksi yang cocok dengan filter pencarian Anda.' : 'Mulai dengan menambahkan sesi koreksi baru untuk kelas ini.' ?>
+                    </p>
                 </div>
             <?php else: ?>
                 <div class="hidden md:block bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden mb-8">
@@ -237,7 +260,7 @@ $isAdmin = (auth_get_role() === 'admin');
                         <thead class="bg-gray-50/30">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pelajaran & Detail</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status & Progress</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Progress</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -254,9 +277,13 @@ $isAdmin = (auth_get_role() === 'admin');
                                 // Progress
                                 $totalStudents = (int)($k['jumlah_murid'] ?? 0);
                                 $gradedCount = (int)($k['graded_count'] ?? 0);
+                                $gradedOralCount = (int)($k['graded_oral_count'] ?? 0);
 
                                 $percentage = $totalStudents > 0 ? round(($gradedCount / $totalStudents) * 100) : 0;
+                                $percentageOral = $totalStudents > 0 ? round(($gradedOralCount / $totalStudents) * 100) : 0;
+
                                 $colorClass = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600';
+                                $colorClassOral = $percentageOral >= 100 ? 'bg-green-600' : 'bg-pink-600';
                             ?>
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4">
@@ -288,30 +315,64 @@ $isAdmin = (auth_get_role() === 'admin');
                                                             Tulis
                                                         </span>
                                                     <?php endif; ?>
+                                                    <?php if ($isDone): ?>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-50 border border-green-100 text-green-700 uppercase tracking-wide">
+                                                            Selesai
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-50 border border-yellow-100 text-yellow-700 uppercase tracking-wide">
+                                                            Proses
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="w-full max-w-xs">
-                                            <div class="flex items-center justify-between mb-1 gap-2">
-                                                <span class="text-xs font-bold text-gray-700">
-                                                    <?= $gradedCount ?> / <?= $totalStudents ?>
-                                                    <span class="text-gray-400 font-normal ml-0.5">(<?= $percentage ?>%)</span>
-                                                </span>
-                                                <?php if ($isDone): ?>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
-                                                        Selesai
-                                                    </span>
-                                                <?php else: ?>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                                        Proses
-                                                    </span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                                                <div class="<?= $colorClass ?> h-1.5 rounded-full" style="width: <?= $percentage ?>%"></div>
-                                            </div>
+                                        <div class="w-full max-w-xs min-w-[180px] flex flex-col gap-1.5">
+                                            <?php if ($k['has_oral'] == 0 || $k['has_oral'] == 1): // Tulis Progress bar ?>
+                                                <?php 
+                                                    $tulisBg = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600 animate-stripes';
+                                                ?>
+                                                <div class="relative w-full bg-slate-100 border border-slate-200/60 rounded-lg h-[18px] overflow-hidden flex items-center shadow-inner">
+                                                    <!-- Background Text (Dark on light bg) -->
+                                                    <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-slate-700 tracking-wider">
+                                                        <span class="flex items-center gap-1 select-none"><i class="ri-pencil-line text-slate-500"></i> Tulis</span>
+                                                        <span><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
+                                                    </div>
+                                                    
+                                                    <!-- Filled Progress Bar Fill -->
+                                                    <div class="absolute left-0 top-0 bottom-0 <?= $tulisBg ?> transition-all duration-300" style="width: <?= $percentage ?>%"></div>
+                                                    
+                                                    <!-- Foreground Text (White on filled solid bg) -->
+                                                    <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-white tracking-wider transition-all duration-300" style="clip-path: inset(0 <?= 100 - $percentage ?>% 0 0);">
+                                                        <span class="flex items-center gap-1 select-none"><i class="ri-pencil-line"></i> Tulis</span>
+                                                        <span><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if ($k['has_oral'] == 2 || $k['has_oral'] == 1): // Lisan Progress bar ?>
+                                                <?php 
+                                                    $lisanBg = $percentageOral >= 100 ? 'bg-green-600' : 'bg-pink-600 animate-stripes';
+                                                ?>
+                                                <div class="relative w-full bg-slate-100 border border-slate-200/60 rounded-lg h-[18px] overflow-hidden flex items-center shadow-inner">
+                                                    <!-- Background Text (Dark on light bg) -->
+                                                    <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-slate-700 tracking-wider">
+                                                        <span class="flex items-center gap-1 select-none"><i class="ri-mic-line text-slate-500"></i> Lisan</span>
+                                                        <span><?= $gradedOralCount ?>/<?= $totalStudents ?> (<?= $percentageOral ?>%)</span>
+                                                    </div>
+                                                    
+                                                    <!-- Filled Progress Bar Fill -->
+                                                    <div class="absolute left-0 top-0 bottom-0 <?= $lisanBg ?> transition-all duration-300" style="width: <?= $percentageOral ?>%"></div>
+                                                    
+                                                    <!-- Foreground Text (White on filled solid bg) -->
+                                                    <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-white tracking-wider transition-all duration-300" style="clip-path: inset(0 <?= 100 - $percentageOral ?>% 0 0);">
+                                                        <span class="flex items-center gap-1 select-none"><i class="ri-mic-line"></i> Lisan</span>
+                                                        <span><?= $gradedOralCount ?>/<?= $totalStudents ?> (<?= $percentageOral ?>%)</span>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -367,8 +428,8 @@ $isAdmin = (auth_get_role() === 'admin');
                                             <?php endif; ?>
                                             
                                             <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
-                                                <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors inline-flex items-center justify-center">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors inline-flex items-center justify-center" title="Hapus Koreksi">
+                                                    <i class="ri-delete-bin-line text-[15px]"></i>
                                                 </a>
                                             <?php endif; ?>
                                         </div>
@@ -394,9 +455,13 @@ $isAdmin = (auth_get_role() === 'admin');
                         // Progress
                         $totalStudents = (int)($k['jumlah_murid'] ?? 0);
                         $gradedCount = (int)($k['graded_count'] ?? 0);
+                        $gradedOralCount = (int)($k['graded_oral_count'] ?? 0);
 
                         $percentage = $totalStudents > 0 ? round(($gradedCount / $totalStudents) * 100) : 0;
+                        $percentageOral = $totalStudents > 0 ? round(($gradedOralCount / $totalStudents) * 100) : 0;
+                        
                         $colorClass = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600';
+                        $colorClassOral = $percentageOral >= 100 ? 'bg-green-600' : 'bg-pink-600';
 
                         // Action permissions (same as table)
                         $isBayanatComplete = ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
@@ -456,11 +521,11 @@ $isAdmin = (auth_get_role() === 'admin');
                                     <?php endif; ?>
 
                                     <?php if ($isDone): ?>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-100 text-green-800 border border-green-200 uppercase tracking-wide">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-50 border border-green-100 text-green-700 uppercase tracking-wide">
                                             Selesai
                                         </span>
                                     <?php else: ?>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200 uppercase tracking-wide">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-50 border border-yellow-100 text-yellow-700 uppercase tracking-wide">
                                             Proses
                                         </span>
                                     <?php endif; ?>
@@ -469,14 +534,50 @@ $isAdmin = (auth_get_role() === 'admin');
 
                             <!-- Progress & Actions -->
                             <div class="border-t border-gray-100 pt-3 flex items-center justify-between gap-4">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between text-[11px] text-gray-500 mb-1">
-                                        <span>Progress</span>
-                                        <span class="font-bold text-gray-700"><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
-                                    </div>
-                                    <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                                        <div class="<?= $colorClass ?> h-1.5 rounded-full" style="width: <?= $percentage ?>%"></div>
-                                    </div>
+                                <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+                                    <?php if ($k['has_oral'] == 0 || $k['has_oral'] == 1): // Tulis Progress bar ?>
+                                        <?php 
+                                            $tulisBg = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600 animate-stripes';
+                                        ?>
+                                        <div class="relative w-full bg-slate-100 border border-slate-200/60 rounded-lg h-[18px] overflow-hidden flex items-center shadow-inner">
+                                            <!-- Background Text (Dark on light bg) -->
+                                            <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-slate-700 tracking-wider">
+                                                <span class="flex items-center gap-1 select-none"><i class="ri-pencil-line text-slate-500"></i> Tulis</span>
+                                                <span><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
+                                            </div>
+                                            
+                                            <!-- Filled Progress Bar Fill -->
+                                            <div class="absolute left-0 top-0 bottom-0 <?= $tulisBg ?> transition-all duration-300" style="width: <?= $percentage ?>%"></div>
+                                            
+                                            <!-- Foreground Text (White on filled solid bg) -->
+                                            <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-white tracking-wider transition-all duration-300" style="clip-path: inset(0 <?= 100 - $percentage ?>% 0 0);">
+                                                <span class="flex items-center gap-1 select-none"><i class="ri-pencil-line"></i> Tulis</span>
+                                                <span><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($k['has_oral'] == 2 || $k['has_oral'] == 1): // Lisan Progress bar ?>
+                                        <?php 
+                                            $lisanBg = $percentageOral >= 100 ? 'bg-green-600' : 'bg-pink-600 animate-stripes';
+                                        ?>
+                                        <div class="relative w-full bg-slate-100 border border-slate-200/60 rounded-lg h-[18px] overflow-hidden flex items-center shadow-inner">
+                                            <!-- Background Text (Dark on light bg) -->
+                                            <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-slate-700 tracking-wider">
+                                                <span class="flex items-center gap-1 select-none"><i class="ri-mic-line text-slate-500"></i> Lisan</span>
+                                                <span><?= $gradedOralCount ?>/<?= $totalStudents ?> (<?= $percentageOral ?>%)</span>
+                                            </div>
+                                            
+                                            <!-- Filled Progress Bar Fill -->
+                                            <div class="absolute left-0 top-0 bottom-0 <?= $lisanBg ?> transition-all duration-300" style="width: <?= $percentageOral ?>%"></div>
+                                            
+                                            <!-- Foreground Text (White on filled solid bg) -->
+                                            <div class="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-extrabold text-white tracking-wider transition-all duration-300" style="clip-path: inset(0 <?= 100 - $percentageOral ?>% 0 0);">
+                                                <span class="flex items-center gap-1 select-none"><i class="ri-mic-line"></i> Lisan</span>
+                                                <span><?= $gradedOralCount ?>/<?= $totalStudents ?> (<?= $percentageOral ?>%)</span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="flex items-center gap-1.5 flex-shrink-0">
