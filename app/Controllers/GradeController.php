@@ -63,7 +63,8 @@ class GradeController extends Controller {
             'kelas' => $activeKelasId,
             'pelajaran' => $_GET['pelajaran'] ?? '',
             'pengajar' => $_GET['pengajar'] ?? '',
-            'status' => $_GET['status'] ?? ''
+            'status' => $_GET['status'] ?? '',
+            'has_oral' => $_GET['has_oral'] ?? ''
         ];
 
         // Role Constraints

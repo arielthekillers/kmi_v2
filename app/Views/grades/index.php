@@ -4,6 +4,31 @@ $isAdmin = (auth_get_role() === 'admin');
 ?>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <style>
+        /* Make TomSelect compact for filters */
+        .compact-filters .ts-control {
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            overflow: hidden !important;
+            padding: 0 12px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
+        .compact-filters .ts-wrapper {
+            min-width: 120px;
+        }
+        .compact-filters .ts-control input {
+            font-size: 13px !important;
+        }
+        .compact-filters .ts-dropdown {
+            border-radius: 10px !important;
+            font-size: 13px !important;
+        }
+    </style>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <div class="flex-1 min-w-0">
@@ -19,20 +44,22 @@ $isAdmin = (auth_get_role() === 'admin');
                 Kelola jadwal koreksi dan input nilai untuk tahun ajaran aktif.
             </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 md:gap-2 flex-wrap md:flex-nowrap">
             <?php if (isset($activeSession)): ?>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold <?= $activeSession['is_open'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?> border border-current">
-                    <i class="ri-door-<?= $activeSession['is_open'] ? 'open' : 'closed' ?>-line mr-1"></i>
-                    Sesi <?= $activeSession['type'] ?>: <?= $activeSession['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
+                <span class="inline-flex items-center px-2.5 py-1.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold <?= $activeSession['is_open'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?> border border-current whitespace-nowrap shadow-sm" style="white-space: nowrap;">
+                    <i class="ri-door-<?= $activeSession['is_open'] ? 'open' : 'closed' ?>-line mr-1 text-[11px] md:text-xs"></i>
+                    <span class="hidden sm:inline">Sesi&nbsp;</span><?= $activeSession['type'] ?>: <?= $activeSession['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
                 </span>
             <?php endif; ?>
 
             <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
-                <a href="<?= url('/grades/trash') ?>" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                    <i class="ri-delete-bin-line mr-2"></i> Tong Sampah
+                <a href="<?= url('/grades/trash') ?>" class="inline-flex items-center justify-center px-2.5 py-1.5 md:px-4 md:py-2 border border-gray-300 rounded-xl text-[11px] md:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap shadow-sm" style="white-space: nowrap;" title="Tong Sampah">
+                    <i class="ri-delete-bin-line md:mr-2 text-gray-400"></i>
+                    <span class="hidden md:inline">Tong Sampah</span>
                 </a>
-                <button onclick="toggleModal('addKoreksiModal')" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
-                    + Tambah Koreksi
+                <button onclick="toggleModal('addKoreksiModal')" class="inline-flex items-center justify-center px-2.5 py-1.5 md:px-4 md:py-2 border border-transparent rounded-xl text-[11px] md:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-sm shadow-indigo-100" style="white-space: nowrap;">
+                    <i class="ri-add-line mr-1"></i>
+                    <span class="hidden sm:inline">Tambah&nbsp;</span>Koreksi
                 </button>
             <?php endif; ?>
         </div>
@@ -116,16 +143,35 @@ $isAdmin = (auth_get_role() === 'admin');
 
             <!-- Filters -->
             <?php
-            $gridCols = (auth_get_role() === 'admin' || auth_is_panitia()) ? 'md:grid-cols-4' : 'md:grid-cols-3';
+            $gridCols = (auth_get_role() === 'admin' || auth_is_panitia()) ? 'md:grid-cols-5' : 'md:grid-cols-4';
+            
+            // Check if there are active optional filters to determine panel visibility on mobile
+            $hasActiveFilters = !empty($_GET['pelajaran']) || !empty($_GET['pengajar']) || !empty($_GET['status']) || (isset($_GET['has_oral']) && $_GET['has_oral'] !== '');
+            $filterPanelClass = $hasActiveFilters 
+                ? 'bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-6 compact-filters' 
+                : 'bg-white p-3 rounded-2xl shadow-sm border border-gray-200 mb-6 compact-filters hidden md:block';
+            $toggleText = $hasActiveFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter';
+            $toggleIconClass = $hasActiveFilters ? 'ri-eye-off-line' : 'ri-filter-3-line';
             ?>
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-                <form method="GET" action="<?= url('/grades') ?>" class="grid grid-cols-1 <?= $gridCols ?> gap-4">
+
+            <!-- Toggle Button for Mobile View -->
+            <div class="block md:hidden mb-4">
+                <button onclick="toggleMobileFilters()" class="w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 h-[38px]">
+                    <i id="filter-toggle-icon" class="<?= $toggleIconClass ?> text-indigo-600 text-sm"></i>
+                    <span id="filter-toggle-text"><?= $toggleText ?></span>
+                    <?php if ($hasActiveFilters): ?>
+                        <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                    <?php endif; ?>
+                </button>
+            </div>
+
+            <div id="filter-panel" class="<?= $filterPanelClass ?>">
+                <form method="GET" action="<?= url('/grades') ?>" class="grid grid-cols-1 <?= $gridCols ?> gap-3 items-center">
                     <!-- Hidden Kelas Filter -->
                     <input type="hidden" name="kelas" value="<?= htmlspecialchars($filters['kelas'] ?? '') ?>">
 
                     <!-- Pelajaran -->
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pelajaran</label>
                         <select name="pelajaran" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                             <option value="">Semua Pelajaran</option>
                             <?php foreach ($pelajaran as $p): ?>
@@ -138,7 +184,6 @@ $isAdmin = (auth_get_role() === 'admin');
                     <!-- Pengajar -->
                     <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Pemeriksa</label>
                         <select name="pengajar" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                             <option value="">Semua Pemeriksa</option>
                             <?php foreach ($pengajar as $p): ?>
@@ -151,7 +196,6 @@ $isAdmin = (auth_get_role() === 'admin');
                     <?php endif; ?>
                     <!-- Status -->
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</label>
                         <select name="status" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
                             <option value="">Semua Status</option>
                             <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
@@ -159,13 +203,22 @@ $isAdmin = (auth_get_role() === 'admin');
                             <option value="belum" <?= $filters['status'] === 'belum' ? 'selected' : '' ?>>Belum Diperiksa</option>
                         </select>
                     </div>
+                    <!-- Jenis Koreksi -->
+                    <div>
+                        <select name="has_oral" class="tom-select block w-full border-gray-200 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-xs p-2.5 border bg-gray-50/50">
+                            <option value="">Semua Jenis</option>
+                            <option value="0" <?= (isset($filters['has_oral']) && $filters['has_oral'] === '0') ? 'selected' : '' ?>>Tulis</option>
+                            <option value="1" <?= (isset($filters['has_oral']) && $filters['has_oral'] === '1') ? 'selected' : '' ?>>Tulis & Lisan</option>
+                            <option value="2" <?= (isset($filters['has_oral']) && $filters['has_oral'] === '2') ? 'selected' : '' ?>>Lisan</option>
+                        </select>
+                    </div>
          
                     <!-- Actions -->
-                    <div class="flex gap-2 mt-[27px]">
+                    <div class="flex gap-2">
                         <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 rounded-xl text-xs transition-all shadow-sm shadow-indigo-100 flex items-center justify-center gap-2 h-[38px]">
                             <i class="ri-filter-3-line"></i> Filter
                         </button>
-                        <a href="<?= url('/grades?kelas=' . $filters['kelas']) ?>" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 rounded-xl text-xs transition-all flex items-center justify-center h-[38px]">
+                        <a href="<?= url('/grades?kelas=' . $filters['kelas']) ?>" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 rounded-xl text-xs transition-all flex items-center justify-center h-[38px]">
                             Reset
                         </a>
                     </div>
@@ -178,17 +231,14 @@ $isAdmin = (auth_get_role() === 'admin');
                     <p class="mt-1 text-sm text-gray-500">Mulai dengan menambahkan sesi koreksi baru.</p>
                 </div>
             <?php else: ?>
-                <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden mb-8">
+                <div class="hidden md:block bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden mb-8">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelajaran</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahap</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pemeriksa</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pelajaran & Detail</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status & Progress</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -209,52 +259,72 @@ $isAdmin = (auth_get_role() === 'admin');
                                 $colorClass = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600';
                             ?>
                                 <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php if ($isDone): ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Selesai
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                Proses
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($mapel) ?></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                                            <?= htmlspecialchars($k['exam_type'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap align-middle">
-                                        <div class="w-full max-w-xs">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-xs font-semibold text-gray-700"><?= $gradedCount ?> / <?= $totalStudents ?></span>
-                                                <span class="text-xs font-semibold text-gray-500"><?= $percentage ?>%</span>
-                                            </div>
-                                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                                <div class="<?= $colorClass ?> h-2 rounded-full" style="width: <?= $percentage ?>%"></div>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-sm font-bold text-gray-900 leading-tight"><?= htmlspecialchars($mapel) ?></span>
+                                            <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs text-gray-500">
+                                                <span class="flex items-center gap-1.5 whitespace-nowrap">
+                                                    <img src="<?= url('/avatar?id=' . $k['teacher_id']) ?>" 
+                                                         alt="Avatar" 
+                                                         class="w-5 h-5 rounded-full bg-gray-100 border border-gray-100 flex-shrink-0"
+                                                         onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($guru) ?>&background=F3F4F6&color=1F2937'">
+                                                    <?= htmlspecialchars($guru) ?>
+                                                </span>
+                                                <span class="text-gray-300 select-none">•</span>
+                                                <div class="flex items-center gap-1">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 uppercase tracking-wider border border-slate-200">
+                                                        <?= htmlspecialchars($k['exam_type'] ?? '-') ?>
+                                                    </span>
+                                                    <?php if ($k['has_oral'] == 1): ?>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 uppercase tracking-wide">
+                                                            Tulis & Lisan
+                                                        </span>
+                                                    <?php elseif ($k['has_oral'] == 2): ?>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-50 border border-pink-100 text-pink-700 uppercase tracking-wide">
+                                                            Lisan
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-50 border border-slate-100 text-slate-700 uppercase tracking-wide">
+                                                            Tulis
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-500">
-                                            <?= htmlspecialchars($guru) ?>
+                                    <td class="px-6 py-4">
+                                        <div class="w-full max-w-xs">
+                                            <div class="flex items-center justify-between mb-1 gap-2">
+                                                <span class="text-xs font-bold text-gray-700">
+                                                    <?= $gradedCount ?> / <?= $totalStudents ?>
+                                                    <span class="text-gray-400 font-normal ml-0.5">(<?= $percentage ?>%)</span>
+                                                </span>
+                                                <?php if ($isDone): ?>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
+                                                        Selesai
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                        Proses
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                                <div class="<?= $colorClass ?> h-1.5 rounded-full" style="width: <?= $percentage ?>%"></div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end gap-2">
                                             <?php if ($isDone): ?>
-                                                <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md">
+                                                <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
                                                     Lihat Nilai
                                                 </a>
                                                 <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
                                                     <form action="<?= url('/grades/unlock') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membuka kembali akses edit untuk koreksi ini?');" class="inline">
                                                         <?= csrf_token_field() ?>
                                                         <input type="hidden" name="id" value="<?= $id ?>">
-                                                        <button type="submit" class="text-orange-600 hover:text-orange-900 bg-orange-50 px-3 py-1 rounded-md">
+                                                        <button type="submit" class="text-orange-600 hover:text-orange-900 bg-orange-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
                                                             Buka Akses
                                                         </button>
                                                     </form>
@@ -286,20 +356,20 @@ $isAdmin = (auth_get_role() === 'admin');
                                                     }
                                                 ?>
                                                 <?php if ($canInput): ?>
-                                                    <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md shadow-sm">
+                                                    <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg shadow-sm text-xs font-bold transition-colors">
                                                         Input Nilai
                                                     </a>
                                                 <?php else: ?>
-                                                    <span class="text-gray-400 bg-gray-50 px-3 py-1 rounded-md cursor-not-allowed italic text-xs border border-gray-200" title="<?= $disabledReason ?>">
+                                                    <span class="text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg cursor-not-allowed italic text-[11px] border border-gray-200" title="<?= $disabledReason ?>">
                                                         <?= $disabledReason ?>
                                                     </span>
                                                 <?php endif; ?>
                                             <?php endif; ?>
                                             
                                             <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
-                                                <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-600 hover:text-red-900 p-1">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                               </a>
+                                                <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors inline-flex items-center justify-center">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </a>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -307,7 +377,143 @@ $isAdmin = (auth_get_role() === 'admin');
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile View Cards -->
+                <div class="block md:hidden space-y-4 mb-8">
+                    <?php foreach ($exams as $k): 
+                        $id = $k['id'];
+                        $isAdmin = (auth_get_role() === 'admin');
+                        $isPanitia = auth_is_panitia($k['exam_session_id']);
+                        $mapel = $k['mapel_nama'] ?? 'Unknown';
+                        $klsFull = "Kelas " . ($k['tingkat'] ?? '?') . "-" . ($k['abjad'] ?? '?');
+                        $guru = $k['pengajar_nama'] ?? 'Unknown';
+                        $isDone = ($k['status'] ?? '') === 'selesai';
+
+                        // Progress
+                        $totalStudents = (int)($k['jumlah_murid'] ?? 0);
+                        $gradedCount = (int)($k['graded_count'] ?? 0);
+
+                        $percentage = $totalStudents > 0 ? round(($gradedCount / $totalStudents) * 100) : 0;
+                        $colorClass = $percentage >= 100 ? 'bg-green-600' : 'bg-indigo-600';
+
+                        // Action permissions (same as table)
+                        $isBayanatComplete = ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
+                        $isDesignatedExaminer = ($k['teacher_id'] == auth_get_user_id());
+                        
+                        if ($isAdmin || $isPanitia) {
+                            $canInput = true;
+                            $disabledReason = "";
+                        } elseif ($isDesignatedExaminer) {
+                            if (!$isBayanatComplete) {
+                                $canInput = false;
+                                $disabledReason = "Bayanat Belum Lengkap";
+                            } elseif ($k['session_is_open'] != 1) {
+                                $canInput = false;
+                                $disabledReason = "Sesi Ditutup";
+                            } else {
+                                $canInput = true;
+                                $disabledReason = "";
+                            }
+                        } else {
+                            $canInput = false;
+                            $disabledReason = "Bukan Pemeriksa";
+                        }
+                    ?>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-3">
+                            <!-- Header: Pelajaran, Pengajar & Badges -->
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-sm font-extrabold text-gray-900 truncate"><?= htmlspecialchars($mapel) ?></h4>
+                                    <!-- Teacher Avatar & Name -->
+                                    <div class="flex items-center gap-2 mt-1.5">
+                                        <img src="<?= url('/avatar?id=' . $k['teacher_id']) ?>" 
+                                             alt="Avatar" 
+                                             class="w-5 h-5 rounded-full bg-gray-100 border border-gray-100 flex-shrink-0"
+                                             onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($guru) ?>&background=F3F4F6&color=1F2937'">
+                                        <span class="text-[11px] text-gray-600 font-medium truncate"><?= htmlspecialchars($guru) ?></span>
+                                    </div>
+                                </div>
+
+                                <!-- Badges Group in Top Right -->
+                                <div class="flex items-center gap-1.5 flex-wrap justify-end flex-shrink-0">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 uppercase tracking-wider border border-slate-200">
+                                        <?= htmlspecialchars($k['exam_type'] ?? '-') ?>
+                                    </span>
+                                    <?php if ($k['has_oral'] == 1): ?>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 uppercase tracking-wide">
+                                            Tulis & Lisan
+                                        </span>
+                                    <?php elseif ($k['has_oral'] == 2): ?>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-50 border border-pink-100 text-pink-700 uppercase tracking-wide">
+                                            Lisan
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-50 border border-slate-100 text-slate-700 uppercase tracking-wide">
+                                            Tulis
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if ($isDone): ?>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-100 text-green-800 border border-green-200 uppercase tracking-wide">
+                                            Selesai
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200 uppercase tracking-wide">
+                                            Proses
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- Progress & Actions -->
+                            <div class="border-t border-gray-100 pt-3 flex items-center justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between text-[11px] text-gray-500 mb-1">
+                                        <span>Progress</span>
+                                        <span class="font-bold text-gray-700"><?= $gradedCount ?>/<?= $totalStudents ?> (<?= $percentage ?>%)</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                        <div class="<?= $colorClass ?> h-1.5 rounded-full" style="width: <?= $percentage ?>%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <?php if ($isDone): ?>
+                                        <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                                            Lihat
+                                        </a>
+                                        <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
+                                            <form action="<?= url('/grades/unlock') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membuka kembali akses edit untuk koreksi ini?');" class="inline">
+                                                <?= csrf_token_field() ?>
+                                                <input type="hidden" name="id" value="<?= $id ?>">
+                                                <button type="submit" class="text-orange-600 bg-orange-50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                                                    Buka
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php if ($canInput): ?>
+                                            <a href="<?= url('/grades/edit?id=' . $id) ?>" class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg shadow-sm text-xs font-bold transition-colors">
+                                                Input
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg cursor-not-allowed italic text-[10px] border border-gray-200" title="<?= $disabledReason ?>">
+                                                <?= $disabledReason ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+
+                                    <?php if (auth_can_manage_grades($k['exam_session_id'])): ?>
+                                        <a href="<?= url('/grades/delete?id=' . $id) ?>" onclick="return confirmDelete('<?= htmlspecialchars($mapel) ?>', '<?= htmlspecialchars($klsFull) ?>')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors inline-flex items-center justify-center">
+                                            <i class="ri-delete-bin-line text-sm"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -500,6 +706,24 @@ $isAdmin = (auth_get_role() === 'admin');
             if (assignment && assignment.teacher_id) {
                 pengajarSelect.tomselect.setValue(assignment.teacher_id);
             }
+        }
+    }
+</script>
+
+<script>
+    function toggleMobileFilters() {
+        const panel = document.getElementById('filter-panel');
+        const textSpan = document.getElementById('filter-toggle-text');
+        const iconEl = document.getElementById('filter-toggle-icon');
+        
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            textSpan.textContent = 'Sembunyikan Filter';
+            iconEl.className = 'ri-eye-off-line text-indigo-600 text-sm';
+        } else {
+            panel.classList.add('hidden');
+            textSpan.textContent = 'Tampilkan Filter';
+            iconEl.className = 'ri-filter-3-line text-indigo-600 text-sm';
         }
     }
 </script>

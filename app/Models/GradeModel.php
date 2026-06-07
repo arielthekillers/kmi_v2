@@ -56,6 +56,10 @@ class GradeModel extends Model {
             $sql .= " AND e.status = ?";
             $params[] = $filters['status'];
         }
+        if (isset($filters['has_oral']) && $filters['has_oral'] !== '') {
+            $sql .= " AND e.has_oral = ?";
+            $params[] = (int)$filters['has_oral'];
+        }
 
         $sql .= " ORDER BY e.created_at DESC";
 
