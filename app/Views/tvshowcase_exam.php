@@ -820,7 +820,14 @@
                             statusColor = 'bg-slate-100 text-slate-700 border border-slate-200';
                         }
 
-                        let oralBadge = item.has_oral == 1 ? '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 ml-1.5 uppercase tracking-wide">Tulis & Lisan</span>' : (item.has_oral == 2 ? '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-pink-50 border border-pink-100 text-pink-700 ml-1.5 uppercase tracking-wide">Lisan Only</span>' : '');
+                        let oralBadge = '';
+                        if (item.has_oral == 1) {
+                            oralBadge = '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-indigo-50 border border-indigo-100 text-indigo-700 ml-1.5 uppercase tracking-wide">Tulis & Lisan</span>';
+                        } else if (item.has_oral == 2) {
+                            oralBadge = '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-pink-50 border border-pink-100 text-pink-700 ml-1.5 uppercase tracking-wide">Lisan</span>';
+                        } else {
+                            oralBadge = '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-50 border border-slate-100 text-slate-700 ml-1.5 uppercase tracking-wide">Tulisan</span>';
+                        }
 
                         const p = item.pengajar_profile || { nama_display: item.pengajar, profile_picture: '', badge_text: 'Ust' };
                         const profilePic = p.profile_picture || 'https://ui-avatars.com/api/?name='+encodeURIComponent(p.nama_display)+'&background=F3F4F6&color=1F2937';
