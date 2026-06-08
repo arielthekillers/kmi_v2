@@ -39,6 +39,13 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 ?>
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+    <style>
+        @media (max-width: 767px) {
+            .col-nilai {
+                display: none !important;
+            }
+        }
+    </style>
 <form method="post" action="<?= url('/grades/update') ?>" id="gradeForm" autocomplete="off">
     <?= csrf_token_field() ?>
     <input type="hidden" name="id" value="<?= $id ?>">
