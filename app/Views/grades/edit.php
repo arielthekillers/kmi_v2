@@ -39,7 +39,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 ?>
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-<form method="post" action="<?= url('/grades/update') ?>" id="gradeForm">
+<form method="post" action="<?= url('/grades/update') ?>" id="gradeForm" autocomplete="off">
     <?= csrf_token_field() ?>
     <input type="hidden" name="id" value="<?= $id ?>">
     <input type="hidden" id="nilai_maks" value="<?= $js_nilai_maks ?>">
@@ -227,6 +227,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                             <?= $isFinished ? 'disabled' : '' ?>
                                             class="bayanat-input w-16 h-9 text-center font-black text-indigo-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-0 transition-all">
                                     <?php else: ?>
+                                        <input type="hidden" name="no_bayanat[]" value="<?= $row['no_bayanat'] ?>">
                                         <span class="text-lg font-black text-gray-900 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200 min-w-[3rem] text-center">
                                             <?= $row['no_bayanat'] ?: '??' ?>
                                         </span>
@@ -251,6 +252,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                         <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-lisan-mobile">Nilai Lisan</label>
                                         <input type="text" name="skor_lisan[]" value="<?= htmlspecialchars($row['score_oral'] ?? '') ?>"
                                             <?= !$canEditOral ? 'disabled' : '' ?>
+                                            autocomplete="off"
                                             oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this.closest('tr'));"
                                             class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-indigo-600 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-50/50 disabled:text-gray-400 disabled:border-transparent"
                                             placeholder="...">
@@ -277,8 +279,9 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                         <input type="text" name="skor[]" value="<?= is_numeric($row['skor']) ? (float)$row['skor'] : $row['skor'] ?>"
                                             <?= !$canEditScores ? 'disabled' : '' ?>
                                             inputmode="decimal"
+                                            autocomplete="off"
                                             oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this.closest('tr'));"
-                                            class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-gray-900 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-gray-100/50 disabled:text-gray-400 disabled:border-transparent"
+                                            class="w-full h-12 md:h-11 bg-white border-2 border-gray-100 rounded-2xl px-4 text-center font-black text-gray-900 focus:border-indigo-500 focus:ring-0 transition-all shadow-sm hover:border-gray-200 disabled:bg-100/50 disabled:text-gray-400 disabled:border-transparent"
                                             placeholder="<?= !$canEditScores ? '-' : '...' ?>">
                                     </div>
                                     

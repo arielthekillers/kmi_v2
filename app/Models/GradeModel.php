@@ -228,6 +228,15 @@ class GradeModel extends Model {
                 $skorLisan = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : null;
                 if ($skorLisan === '') $skorLisan = null;
 
+                // If oral score is not provided in current request (e.g. Admin update),
+                // restore existing oral score from DB to prevent overwriting to NULL.
+                if ($skorLisan === null) {
+                    $stmtGetOral = $this->db->prepare("SELECT score_oral FROM grades WHERE exam_id = ? AND student_id = ?");
+                    $stmtGetOral->execute([$examId, $studentId]);
+                    $rowOral = $stmtGetOral->fetch(PDO::FETCH_ASSOC);
+                    $skorLisan = isset($rowOral['score_oral']) ? $rowOral['score_oral'] : null;
+                }
+
                 $nilai_akhir = null;
                 $score_raw_db = null;
 
@@ -322,8 +331,17 @@ class GradeModel extends Model {
                     }
                 }
 
-                $noBayanat = !empty($noBayanats[$i]) ? (int)$noBayanats[$i] : null;
-                if ($noBayanat !== null && $noBayanat < 1) $noBayanat = null; // Sanity check: must be >= 1
+                // If no_bayanat is not provided in the array (e.g. teacher updates grades without bayanat inputs),
+                // fallback to the existing no_bayanat in the DB to prevent overwriting to NULL.
+                if (empty($noBayanats)) {
+                    $stmtGetBayanat = $this->db->prepare("SELECT no_bayanat FROM grades WHERE exam_id = ? AND student_id = ?");
+                    $stmtGetBayanat->execute([$examId, $studentId]);
+                    $valBayanat = $stmtGetBayanat->fetchColumn();
+                    $noBayanat = ($valBayanat !== false && $valBayanat !== null) ? (int)$valBayanat : null;
+                } else {
+                    $noBayanat = !empty($noBayanats[$i]) ? (int)$noBayanats[$i] : null;
+                    if ($noBayanat !== null && $noBayanat < 1) $noBayanat = null; // Sanity check: must be >= 1
+                }
 
                 if ($score_raw_db !== null || $skorLisan !== null) {
                     $stmt->execute([$studentId, $subjectId, $examId, $score_raw_db, $nilai_akhir, $skorLisan, $noBayanat]);
