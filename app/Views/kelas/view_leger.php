@@ -42,6 +42,10 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
 ?>
 
 <style>
+    /* Fix flex child expansion to allow horizontal scroll on desktop */
+    main .flex-1 {
+        min-width: 0;
+    }
     .leger-body {
         color: #000;
         font-size: 11px;
@@ -49,7 +53,11 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
     .leger-table {
         border-collapse: collapse;
         width: 100%;
+        min-width: 1300px;
         border: 2px solid #000;
+    }
+    .print-only {
+        display: none !important;
     }
     .leger-table th, .leger-table td {
         border: 1px solid #000;
@@ -69,11 +77,15 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
         white-space: nowrap;
     }
     .rotated-header {
-        height: 85px;
+        height: 135px;
         white-space: nowrap;
+        vertical-align: bottom;
+        padding-bottom: 5px;
     }
     .rotated-header-container {
-        transform: translate(0px, 0px) rotate(-90deg);
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        display: inline-block;
         width: 25px;
         margin: 0 auto;
         font-weight: bold;
@@ -82,9 +94,29 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
         body {
             background-color: #fff !important;
             margin: 0 !important;
+            padding: 0 !important;
         }
+        /* Hide layout elements */
+        nav,
+        aside,
+        footer,
+        main > div.mb-8,
         .no-print {
             display: none !important;
+        }
+        /* Make content area full width */
+        main {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        main > div.flex, 
+        main > div.flex-col {
+            display: block !important;
+            gap: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .print-area {
             width: 100% !important;
@@ -93,10 +125,35 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
+            overflow: visible !important;
+        }
+        .leger-table {
+            width: 100% !important;
+            min-width: 0 !important;
+            table-layout: auto !important;
+        }
+        .leger-table th, 
+        .leger-table td {
+            padding: 2px 3px !important;
+            font-size: 8px !important;
+        }
+        .leger-table td.student-name {
+            font-size: 9px !important;
+            white-space: nowrap;
+        }
+        .rotated-header {
+            height: 110px !important;
+        }
+        .rotated-header-container {
+            width: 18px !important;
+            font-size: 8px !important;
         }
         @page {
             size: A4 landscape;
-            margin: 0.8cm 0.5cm 0.5cm 0.5cm;
+            margin: 0.5cm;
+        }
+        .print-only {
+            display: flex !important;
         }
     }
 </style>
@@ -245,7 +302,7 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
     </table>
 
     <!-- Signatures -->
-    <div class="mt-8 flex justify-between text-xs font-bold text-center px-8 no-print">
+    <div class="mt-8 flex justify-between text-xs font-bold text-center px-8 print-only">
         <div class="w-1/3">
             <p>&nbsp;</p>
             <div class="h-12"></div>

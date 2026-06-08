@@ -237,13 +237,17 @@ class KelasController extends Controller {
             // To display in the 'المعدلة' (Class Average) column
             $examAverages = [];
             foreach ($leger['exams'] as $exam) {
-                $stmtAvg = $db->prepare("
-                    SELECT AVG(score_final) as average_score 
-                    FROM grades 
-                    WHERE exam_id = ? AND score_final IS NOT NULL
-                ");
-                $stmtAvg->execute([$exam['exam_id']]);
-                $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                if ($exam['status'] === 'selesai') {
+                    $stmtAvg = $db->prepare("
+                        SELECT AVG(score_final) as average_score 
+                        FROM grades 
+                        WHERE exam_id = ? AND score_final IS NOT NULL
+                    ");
+                    $stmtAvg->execute([$exam['exam_id']]);
+                    $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                } else {
+                    $examAverages[$exam['exam_id']] = null;
+                }
             }
 
             $data['student'] = $currentStudent;
@@ -296,13 +300,17 @@ class KelasController extends Controller {
             // Fetch class averages for each exam in this session
             $examAverages = [];
             foreach ($leger['exams'] as $exam) {
-                $stmtAvg = $db->prepare("
-                    SELECT AVG(score_final) as average_score 
-                    FROM grades 
-                    WHERE exam_id = ? AND score_final IS NOT NULL
-                ");
-                $stmtAvg->execute([$exam['exam_id']]);
-                $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                if ($exam['status'] === 'selesai') {
+                    $stmtAvg = $db->prepare("
+                        SELECT AVG(score_final) as average_score 
+                        FROM grades 
+                        WHERE exam_id = ? AND score_final IS NOT NULL
+                    ");
+                    $stmtAvg->execute([$exam['exam_id']]);
+                    $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                } else {
+                    $examAverages[$exam['exam_id']] = null;
+                }
             }
 
             // Calculate student rankings and totals

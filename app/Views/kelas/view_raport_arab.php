@@ -182,9 +182,29 @@ $leftRowsCount = count($leftPanelExams);
         body {
             background-color: #fff !important;
             margin: 0 !important;
+            padding: 0 !important;
         }
+        /* Hide layout elements */
+        nav,
+        aside,
+        footer,
+        main > div.mb-8,
         .no-print {
             display: none !important;
+        }
+        /* Make content area full width */
+        main {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        main > div.flex, 
+        main > div.flex-col {
+            display: block !important;
+            gap: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .print-area {
             width: 100% !important;
@@ -193,6 +213,7 @@ $leftRowsCount = count($leftPanelExams);
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
+            overflow: visible !important;
         }
         @page {
             size: A4 portrait;
