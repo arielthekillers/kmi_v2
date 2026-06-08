@@ -49,33 +49,9 @@ class GradeController extends Controller {
         $activeSession = $gradeModel->getActiveSession($this->currentYear['id']);
         $allSessions = $gradeModel->getSessions($this->currentYear['id']);
 
-        // Determine active class by default if none selected
-        $activeKelasId = $_GET['kelas'] ?? '';
-        if (empty($activeKelasId) && !empty($kelas)) {
-            $firstKelas = reset($kelas);
-            $activeKelasId = $firstKelas['id'];
-        }
-
-        // Filter Params
-        $filters = [
-            'academic_year_id' => $this->currentYear['id'],
-            'exam_session_id' => ($activeSession['id'] ?? ''),
-            'kelas' => $activeKelasId,
-            'pelajaran' => $_GET['pelajaran'] ?? '',
-            'pengajar' => $_GET['pengajar'] ?? '',
-            'status' => $_GET['status'] ?? '',
-            'has_oral' => $_GET['has_oral'] ?? ''
-        ];
-
         // Role Constraints
         $userRole = auth_get_role();
         $userId = auth_get_user_id();
-
-        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
-            $filters['pengajar'] = $userId;
-        }
-
-        $exams = $gradeModel->getAllExams($filters);
 
         // Stats and Progress per Class (Academic Session wide)
         $progressFilters = [
@@ -102,12 +78,42 @@ class GradeController extends Controller {
             }
         }
 
-        foreach ($kelas as &$k) {
+        // Decorate and filter out classes with no exams (0/0 correction)
+        foreach ($kelas as $key => &$k) {
             $kId = $k['id'];
-            $k['total_exams'] = $classProgress[$kId]['total'] ?? 0;
-            $k['selesai_exams'] = $classProgress[$kId]['selesai'] ?? 0;
+            $totalExams = $classProgress[$kId]['total'] ?? 0;
+            if ($totalExams === 0) {
+                unset($kelas[$key]);
+            } else {
+                $k['total_exams'] = $totalExams;
+                $k['selesai_exams'] = $classProgress[$kId]['selesai'] ?? 0;
+            }
         }
         unset($k);
+
+        // Determine active class by default if none selected, using the filtered list
+        $activeKelasId = $_GET['kelas'] ?? '';
+        if (empty($activeKelasId) && !empty($kelas)) {
+            $firstKelas = reset($kelas);
+            $activeKelasId = $firstKelas['id'];
+        }
+
+        // Filter Params
+        $filters = [
+            'academic_year_id' => $this->currentYear['id'],
+            'exam_session_id' => ($activeSession['id'] ?? ''),
+            'kelas' => $activeKelasId,
+            'pelajaran' => $_GET['pelajaran'] ?? '',
+            'pengajar' => $_GET['pengajar'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'has_oral' => $_GET['has_oral'] ?? ''
+        ];
+
+        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
+            $filters['pengajar'] = $userId;
+        }
+
+        $exams = $gradeModel->getAllExams($filters);
 
         // Teaching Assignments Map for dynamic 'Add Koreksi'
         $scheduleModel = new \App\Models\ScheduleModel();
