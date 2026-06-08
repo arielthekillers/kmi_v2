@@ -44,6 +44,23 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             .col-nilai {
                 display: none !important;
             }
+            #studentTableBody tr {
+                display: grid !important;
+                grid-template-columns: 1fr 2fr !important;
+                gap: 0.75rem !important;
+            }
+            .col-nama {
+                grid-column: span 2 !important;
+            }
+            .col-bayanat {
+                grid-column: span 1 !important;
+            }
+            .col-tulis, .col-lisan {
+                grid-column: span 1 !important;
+            }
+            .col-lisan:not(.hidden) ~ .col-tulis {
+                grid-column: span 2 !important;
+            }
         }
     </style>
 <form method="post" action="<?= url('/grades/update') ?>" id="gradeForm" autocomplete="off">
@@ -186,13 +203,6 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             <table class="min-w-full divide-y divide-gray-100 table-fixed md:table-auto">
                 <thead class="hidden md:table-header-group">
                     <tr class="bg-white">
-                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat" onclick="sortTable(this, true)">
-                            <div class="flex items-center gap-1">
-                                No. Bayanat
-                                <i class="ri-sort-asc"></i>
-                            </div>
-                        </th>
-                        
                         <?php if ($showNames): ?>
                             <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors col-nama" onclick="sortTable(this)">
                                 <div class="flex items-center gap-1">
@@ -201,6 +211,13 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 </div>
                             </th>
                         <?php endif; ?>
+
+                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat" onclick="sortTable(this, true)">
+                            <div class="flex items-center gap-1">
+                                No. Bayanat
+                                <i class="ri-sort-asc"></i>
+                            </div>
+                        </th>
                         <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">
                             <div class="flex items-center justify-center gap-1">
                                 <span id="header_lisan_label"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Lisan' ?></span>
@@ -221,10 +238,20 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                     $canEditOral = ($isExaminer && $sessionOpen && !$isFinished) || ($isAdminOrPanitia && !$isFinished);
                     foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-indigo-50/30 transition-colors group flex flex-col md:table-row border-b md:border-b-0 border-gray-50 last:border-0 p-4 md:p-0">
+                            <!-- Name (Auditors Only) -->
+                            <?php if ($showNames): ?>
+                            <td class="md:px-6 md:py-5 col-nama">
+                                <div class="text-sm font-bold text-gray-800 tracking-tight leading-tight uppercase md:truncate md:max-w-xs lg:max-w-md">
+                                    <?= htmlspecialchars($row['nama']) ?>
+                                    <div class="text-[9px] text-gray-400 font-medium tracking-normal lowercase"><?= $row['nis'] ?></div>
+                                </div>
+                            </td>
+                            <?php endif; ?>
+
                             <!-- No Bayanat -->
-                            <td class="md:px-6 md:py-5 whitespace-nowrap text-[11px] mb-1 md:mb-0 col-bayanat">
-                                <div class="flex items-center gap-2">
-                                    <span class="md:hidden not-italic text-[9px] font-black text-gray-400 uppercase tracking-tighter mr-1">No. Bayanat</span>
+                            <td class="md:px-6 md:py-5 col-bayanat">
+                                <div class="flex flex-col">
+                                    <span class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">No. Bayanat</span>
                                     <input type="hidden" name="student_id[]" value="<?= $row['student_id'] ?>">
                                     <?php if ($isAdminOrPanitia): ?>
                                         <input type="number" name="no_bayanat[]" value="<?= $row['no_bayanat'] ?>" 
@@ -232,25 +259,17 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                             min="1"
                                             oninput="if(this.value < 1) this.value = ''; checkDuplicateBayanat();"
                                             <?= $isFinished ? 'disabled' : '' ?>
-                                            class="bayanat-input w-16 h-9 text-center font-black text-indigo-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-0 transition-all">
+                                            class="bayanat-input w-full md:w-16 h-12 md:h-9 text-center font-black text-indigo-600 bg-gray-50 border-2 md:border border-gray-100 md:border-gray-200 rounded-2xl md:rounded-lg focus:border-indigo-500 focus:ring-0 transition-all shadow-sm md:shadow-none">
                                     <?php else: ?>
                                         <input type="hidden" name="no_bayanat[]" value="<?= $row['no_bayanat'] ?>">
-                                        <span class="text-lg font-black text-gray-900 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200 min-w-[3rem] text-center">
-                                            <?= $row['no_bayanat'] ?: '??' ?>
-                                        </span>
+                                        <div class="w-full md:w-16 h-12 md:h-9 bg-gray-50 md:bg-gray-100 rounded-2xl md:rounded-lg border-2 md:border border-gray-100 md:border-gray-200 flex items-center justify-center">
+                                            <span class="text-lg md:text-sm font-black text-gray-900 text-center">
+                                                <?= $row['no_bayanat'] ?: '??' ?>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </td>
-                            
-                            <!-- Name (Auditors Only) -->
-                            <?php if ($showNames): ?>
-                            <td class="md:px-6 md:py-5 mb-4 md:mb-0 col-nama">
-                                <div class="text-sm font-bold text-gray-800 tracking-tight leading-tight uppercase md:truncate md:max-w-xs lg:max-w-md">
-                                    <?= htmlspecialchars($row['nama']) ?>
-                                    <div class="text-[9px] text-gray-400 font-medium tracking-normal lowercase"><?= $row['nis'] ?></div>
-                                </div>
-                            </td>
-                            <?php endif; ?>
                             
                             <!-- Oral Exam Column -->
                             <td class="md:px-6 md:py-5 col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : 'md:table-cell' ?>" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">

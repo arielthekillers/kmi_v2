@@ -62,8 +62,8 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50/50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">No. Bayanat</th>
                         <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</th>
+                        <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">No. Bayanat</th>
                         <?php if ($exam['has_oral'] == 1): ?>
                             <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Nilai Lisan</th>
                         <?php endif; ?>
@@ -76,17 +76,17 @@
                 <tbody class="bg-white divide-y divide-gray-100 text-[13px]">
                     <?php foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-gray-50/50 transition-colors">
-                            <td class="px-6 py-3.5 whitespace-nowrap">
-                                <span class="font-mono text-gray-600">
-                                     <?= $row['no_bayanat'] ?: '-' ?>
-                                </span>
-                            </td>
-                            
                             <td class="px-6 py-3.5">
                                 <div class="font-bold text-gray-900">
                                      <?= htmlspecialchars($row['nama']) ?>
                                 </div>
                                 <div class="text-[10px] text-gray-400 font-mono"><?= htmlspecialchars($row['nis']) ?></div>
+                            </td>
+
+                            <td class="px-6 py-3.5 whitespace-nowrap">
+                                <span class="font-mono text-gray-600">
+                                     <?= $row['no_bayanat'] ?: '-' ?>
+                                </span>
                             </td>
                             
                             <?php if ($exam['has_oral'] == 1): ?>
