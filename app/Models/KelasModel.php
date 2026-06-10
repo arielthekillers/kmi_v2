@@ -25,13 +25,18 @@ class KelasModel extends Model {
 
         $stmt = $this->db->prepare("
             SELECT k.*, 
-                   u.nama as wali_kelas,
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as wali_kelas,
                    (SELECT COUNT(*) 
                     FROM student_enrollments se 
                     JOIN students s ON se.student_id = s.id
                     WHERE se.kelas_id = k.id AND se.status = 'Active' AND s.deleted_at IS NULL) as jumlah_murid
             FROM kelas k
             LEFT JOIN users u ON k.teacher_id = u.id
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE k.academic_year_id = ?
             ORDER BY tingkat ASC, abjad ASC
         ");
@@ -77,9 +82,15 @@ class KelasModel extends Model {
 
     public function find($id) {
         $stmt = $this->db->prepare("
-            SELECT k.*, u.nama as wali_kelas 
+            SELECT k.*, 
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as wali_kelas 
             FROM kelas k 
             LEFT JOIN users u ON k.teacher_id = u.id 
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id 
             WHERE k.id = ?
         ");
         $stmt->execute([$id]);

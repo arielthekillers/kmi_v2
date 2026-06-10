@@ -13,7 +13,11 @@ class GradeModel extends Model {
                        k.tingkat, k.abjad, 
                        (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
                        sub.nama as mapel_nama,
-                       u.nama as pengajar_nama,
+                       CASE 
+                           WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                           WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                           ELSE u.nama
+                       END as pengajar_nama,
                        es.type as exam_type, es.is_open as session_is_open, e.has_oral,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_oral IS NOT NULL)) as graded_oral_count,
@@ -23,6 +27,7 @@ class GradeModel extends Model {
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
                 LEFT JOIN users u ON e.teacher_id = u.id
+                LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                 LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
                 WHERE e.is_deleted = 0";
 
@@ -75,13 +80,18 @@ class GradeModel extends Model {
                    k.tingkat, k.abjad, 
                    (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
                    sub.nama as mapel_nama, sub.skala, 
-                   u.nama as pengajar_nama,
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as pengajar_nama,
                    es.type as exam_type, es.is_open as session_is_open, e.has_oral,
                    (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count
             FROM exams e
             JOIN kelas k ON e.kelas_id = k.id
             JOIN subjects sub ON e.subject_id = sub.id
             LEFT JOIN users u ON e.teacher_id = u.id
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
             WHERE e.id = ? AND e.is_deleted = 0
         ");
@@ -386,12 +396,17 @@ class GradeModel extends Model {
         $sql = "SELECT e.*, 
                        k.tingkat, k.abjad, 
                        sub.nama as mapel_nama,
-                       u.nama as pengajar_nama,
+                       CASE 
+                           WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                           WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                           ELSE u.nama
+                       END as pengajar_nama,
                        es.type as exam_type, es.is_open as session_is_open
                 FROM exams e
                 LEFT JOIN kelas k ON e.kelas_id = k.id
                 LEFT JOIN subjects sub ON e.subject_id = sub.id
                 LEFT JOIN users u ON e.teacher_id = u.id
+                LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                 LEFT JOIN exam_sessions es ON e.exam_session_id = es.id
                 WHERE e.is_deleted = 1 AND e.academic_year_id = ?
                 ORDER BY e.updated_at DESC";

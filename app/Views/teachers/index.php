@@ -133,7 +133,7 @@ unset($_SESSION['reset_result']);
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2 items-center">
-                                    <button onclick="editPengajar('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['hp'] ?? ''), ENT_QUOTES) ?>)"
+                                    <button onclick="editPengajar('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama_raw']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['hp'] ?? ''), ENT_QUOTES) ?>)"
                                              class="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit Data">
                                         <i class="ri-edit-box-line text-lg"></i>
                                     </button>

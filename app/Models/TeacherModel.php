@@ -20,7 +20,14 @@ class TeacherModel extends Model {
     public function getAll($status = 'Active') {
         $statusCond = $this->getStatusCondition($status);
         $sql = "
-            SELECT u.id, u.nama, u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
+            SELECT u.id, 
+                   u.nama as nama_raw,
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as nama,
+                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
@@ -34,7 +41,11 @@ class TeacherModel extends Model {
         $statusCond = $this->getStatusCondition($status);
         $sql = "
             SELECT 
-                u.nama,
+                CASE 
+                    WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                    WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                    ELSE u.nama
+                END as nama,
                 tp.nip,
                 tp.gender,
                 tp.birth_place,
@@ -57,7 +68,14 @@ class TeacherModel extends Model {
     public function search($keyword, $limit, $offset, $status = 'Active') {
         $statusCond = $this->getStatusCondition($status);
         $sql = "
-            SELECT u.id, u.nama, u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
+            SELECT u.id, 
+                   u.nama as nama_raw,
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as nama,
+                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond

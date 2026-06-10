@@ -18,7 +18,18 @@ class KelasController extends Controller {
         require_admin();
         
         $db = \App\Core\Database::getInstance();
-        $teachers = $db->query("SELECT id, nama FROM users WHERE role = 'pengajar' ORDER BY nama ASC")->fetchAll();
+        $teachers = $db->query("
+            SELECT u.id, 
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as nama
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role = 'pengajar' 
+            ORDER BY u.nama ASC
+        ")->fetchAll();
         $groupedKelas = $this->kelasModel->getAllGrouped();
         
         renderHeader("Master Kelas");
