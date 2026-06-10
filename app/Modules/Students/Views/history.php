@@ -82,19 +82,13 @@
                             </button>
                         </form>
 
-                        <form action="<?= url('/students/history/update-status') ?>" method="POST" onsubmit="return confirm('Santri keluar/pindah akan di-nonaktifkan. Lanjutkan?')">
+                        <form action="<?= url('/students/history/update-status') ?>" method="POST" onsubmit="return confirm('Santri keluar/pindah sekolah akan di-nonaktifkan. Lanjutkan?')">
                             <?= csrf_input() ?>
                             <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
-                            <div class="grid grid-cols-2 gap-2">
-                                <button type="submit" name="status" value="Out" 
-                                        class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
-                                    <i class="ri-logout-box-r-line"></i> Keluar
-                                </button>
-                                <button type="submit" name="status" value="Out" 
-                                        class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
-                                    <i class="ri-swap-line"></i> Pindah Sekolah
-                                </button>
-                            </div>
+                            <button type="submit" name="status" value="Out" 
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95">
+                                <i class="ri-logout-box-r-line text-lg"></i> Keluar / Pindah Sekolah
+                            </button>
                         </form>
                     </div>
                 <?php else: ?>
