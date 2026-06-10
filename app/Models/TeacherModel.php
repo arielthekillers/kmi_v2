@@ -8,22 +8,30 @@ use PDO;
 class TeacherModel extends Model {
     protected $table = 'users';
 
-    public function getAll() {
-        // We need name (from users), phone (from profiles), password_plain (from users)
-        // Join users and teacher_profiles
-        // Role = 'pengajar'
+    private function getStatusCondition($status) {
+        if ($status === 'Active') {
+            return "u.is_active = 1";
+        } elseif ($status === 'Inactive') {
+            return "u.is_active = 0";
+        }
+        return "1=1"; // 'All'
+    }
+
+    public function getAll($status = 'Active') {
+        $statusCond = $this->getStatusCondition($status);
         $sql = "
-            SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip
+            SELECT u.id, u.nama, u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
             ORDER BY u.nama ASC
         ";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getForExport() {
+    public function getForExport($status = 'Active') {
+        $statusCond = $this->getStatusCondition($status);
         $sql = "
             SELECT 
                 u.nama,
@@ -39,19 +47,20 @@ class TeacherModel extends Model {
                 tp.mother_name
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
             ORDER BY u.nama ASC
         ";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
-    public function search($keyword, $limit, $offset) {
+    public function search($keyword, $limit, $offset, $status = 'Active') {
+        $statusCond = $this->getStatusCondition($status);
         $sql = "
-            SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip
+            SELECT u.id, u.nama, u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
             AND (u.nama LIKE ? OR tp.phone LIKE ?)
             ORDER BY u.nama ASC
             LIMIT ? OFFSET ?
@@ -66,12 +75,13 @@ class TeacherModel extends Model {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function countSearch($keyword) {
+    public function countSearch($keyword, $status = 'Active') {
+        $statusCond = $this->getStatusCondition($status);
         $sql = "
             SELECT COUNT(*) as total
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
-            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
             AND (u.nama LIKE ? OR tp.phone LIKE ?)
         ";
         $stmt = $this->db->prepare($sql);

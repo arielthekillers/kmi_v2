@@ -25,17 +25,31 @@ class AuthController extends Controller {
         $userModel = new User();
         $user = $userModel->findByUsername($username);
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['nama'] = $user['nama'];
-            $_SESSION['role'] = $user['role'];
-            
-            $this->redirect('/');
-        } else {
-            $_SESSION['error'] = 'Invalid username or password';
-            $this->redirect('/login');
+        if ($user) {
+            if (isset($user['is_active']) && (int)$user['is_active'] !== 1) {
+                $_SESSION['error'] = 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.';
+                $this->redirect('/login');
+                return;
+            }
+            if (!empty($user['deleted_at'])) {
+                $_SESSION['error'] = 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.';
+                $this->redirect('/login');
+                return;
+            }
+
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['nama'] = $user['nama'];
+                $_SESSION['role'] = $user['role'];
+                
+                $this->redirect('/');
+                return;
+            }
         }
+
+        $_SESSION['error'] = 'Invalid username or password';
+        $this->redirect('/login');
     }
 
     public function logout() {

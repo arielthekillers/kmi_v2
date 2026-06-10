@@ -18,22 +18,23 @@ class TeacherController extends Controller {
         require_admin();
 
         $search = $_GET['q'] ?? '';
+        $status = $_GET['status'] ?? 'Active';
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $limit = 20;
 
         if (!empty($search)) {
-            $totalData = $this->teacherModel->countSearch($search);
+            $totalData = $this->teacherModel->countSearch($search, $status);
             $offset = ($page - 1) * $limit;
-            $displayPengajar = $this->teacherModel->search($search, $limit, $offset);
+            $displayPengajar = $this->teacherModel->search($search, $limit, $offset, $status);
         } else {
-            $allTeachers = $this->teacherModel->getAll();
+            $allTeachers = $this->teacherModel->getAll($status);
             $totalData = count($allTeachers);
             $offset = ($page - 1) * $limit;
             $displayPengajar = array_slice($allTeachers, $offset, $limit);
         }
 
         $totalPages = ceil($totalData / $limit);
-        $page = max(1, min($page, $totalPages));
+        $page = max(1, min($page, max(1, $totalPages)));
 
         $data = [
             'title' => 'Data Pengajar',
@@ -44,7 +45,8 @@ class TeacherController extends Controller {
             'offset' => $offset,
             'perPage' => $limit,
             'q' => $search,
-            'is_searching' => !empty($search),
+            'status' => $status,
+            'is_searching' => !empty($search) || isset($_GET['status']),
             'user' => $_SESSION['nama'] ?? 'User',
             'role' => $_SESSION['role'] ?? 'user'
         ];
@@ -145,13 +147,31 @@ class TeacherController extends Controller {
         $id = $_GET['id'] ?? '';
         if (!empty($id)) {
             try {
-                $this->teacherModel->delete($id);
-                add_flash('Data pengajar berhasil dipindahkan ke tempat sampah.', 'success');
+                \App\Modules\Auth\Models\User::updateStatus($id, 0);
+                add_flash('Data pengajar berhasil dinonaktifkan.', 'success');
             } catch (\Exception $e) {
-                add_flash('Gagal menghapus data pengajar: ' . $e->getMessage(), 'error');
+                add_flash('Gagal menonaktifkan data pengajar: ' . $e->getMessage(), 'error');
             }
         }
-        $this->redirect('/teachers/trash');
+        $this->redirect('/teachers?status=Active');
+    }
+
+    public function toggleStatus() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        $status = isset($_GET['status']) ? (int)$_GET['status'] : 0;
+        
+        if ($id !== null) {
+            try {
+                \App\Modules\Auth\Models\User::updateStatus($id, $status);
+                $msg = $status === 1 ? 'Data pengajar berhasil diaktifkan kembali.' : 'Data pengajar berhasil dinonaktifkan.';
+                add_flash($msg, 'success');
+            } catch (\Exception $e) {
+                add_flash('Gagal mengubah status pengajar: ' . $e->getMessage(), 'error');
+            }
+        }
+        
+        $this->redirect('/teachers?status=' . ($status === 1 ? 'Inactive' : 'Active'));
     }
 
     public function trash() {
@@ -286,7 +306,8 @@ class TeacherController extends Controller {
             $this->redirect('/teachers');
         }
 
-        $teachers = $this->teacherModel->getForExport();
+        $status = $_POST['status'] ?? 'Active';
+        $teachers = $this->teacherModel->getForExport($status);
 
         $allFieldsMap = [
             'nama' => 'Nama Lengkap',

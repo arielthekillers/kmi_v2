@@ -26,12 +26,17 @@ class User {
 
     public static function create($data) {
         $db = Database::getInstance();
-        $db->query("INSERT INTO users (username, password, nama, role) VALUES (?, ?, ?, ?)", [
+        $db->query("INSERT INTO users (username, password, nama, role, is_active) VALUES (?, ?, ?, ?, 1)", [
             $data['username'],
             password_hash($data['password'], PASSWORD_DEFAULT),
             $data['nama'],
             $data['role']
         ]);
+    }
+
+    public static function updateStatus($id, $isActive) {
+        $db = Database::getInstance();
+        return $db->query("UPDATE users SET is_active = ? WHERE id = ?", [$isActive, $id]);
     }
 
     public static function delete($id) {

@@ -37,10 +37,18 @@ unset($_SESSION['reset_result']);
                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                 </div>
             </div>
+            <div class="w-48">
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="Active" <?= ($status ?? 'Active') === 'Active' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="Inactive" <?= ($status ?? '') === 'Inactive' ? 'selected' : '' ?>>Tidak Aktif</option>
+                    <option value="All" <?= ($status ?? '') === 'All' ? 'selected' : '' ?>>Semua</option>
+                </select>
+            </div>
             <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center shadow-md">
                 <i class="ri-filter-3-line mr-2"></i> Tampilkan Data
             </button>
-            <?php if (!empty($q)): ?>
+            <?php if (!empty($q) || ($status ?? 'Active') !== 'Active'): ?>
                 <a href="<?= url('/teachers') ?>" class="px-4 py-2 text-gray-500 hover:text-gray-700 text-sm font-medium">
                     Reset
                 </a>
@@ -92,7 +100,18 @@ unset($_SESSION['reset_result']);
                                         <?= mb_strtoupper(mb_substr($p['nama'], 0, 1)) ?>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($p['nama']) ?></div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($p['nama']) ?></div>
+                                            <?php if ((int)($p['is_active'] ?? 1) === 1): ?>
+                                                <span class="px-2 py-0.5 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Aktif
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="px-2 py-0.5 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                    Tidak Aktif
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -115,17 +134,24 @@ unset($_SESSION['reset_result']);
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2 items-center">
                                     <button onclick="editPengajar('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['hp'] ?? ''), ENT_QUOTES) ?>)"
-                                            class="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit Data">
+                                             class="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit Data">
                                         <i class="ri-edit-box-line text-lg"></i>
                                     </button>
                                     <button onclick="openReset('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama']), ENT_QUOTES) ?>)"
-                                            class="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors" title="Reset Password">
+                                             class="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors" title="Reset Password">
                                         <i class="ri-key-2-line text-lg"></i>
                                     </button>
-                                    <button onclick="confirmDelete(<?= $id ?>, '<?= addslashes($p['nama']) ?>')"
-                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Data">
-                                        <i class="ri-delete-bin-line text-lg"></i>
-                                    </button>
+                                    <?php if ((int)($p['is_active'] ?? 1) === 1): ?>
+                                        <button onclick="confirmDeactivate(<?= $id ?>, '<?= addslashes($p['nama']) ?>')"
+                                                 class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Nonaktifkan Pengajar">
+                                            <i class="ri-user-unfollow-line text-lg"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <button onclick="confirmActivate(<?= $id ?>, '<?= addslashes($p['nama']) ?>')"
+                                                 class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Aktifkan Pengajar">
+                                            <i class="ri-checkbox-circle-line text-lg"></i>
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -142,7 +168,7 @@ unset($_SESSION['reset_result']);
                 </div>
                 <div class="flex gap-2">
                     <?php if ($page > 1): ?>
-                        <a href="<?= url('/teachers?q=' . urlencode($q) . '&page=' . ($page - 1)) ?>" 
+                        <a href="<?= url('/teachers?q=' . urlencode($q) . '&status=' . urlencode($status ?? 'Active') . '&page=' . ($page - 1)) ?>" 
                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                             <i class="ri-arrow-left-s-line"></i> Sebelumnya
                         </a>
@@ -151,9 +177,9 @@ unset($_SESSION['reset_result']);
                     <div class="flex items-center px-4 text-sm font-bold text-gray-500">
                         Halaman <?= $page ?> dari <?= $totalPages ?>
                     </div>
-
+ 
                     <?php if ($page < $totalPages): ?>
-                        <a href="<?= url('/teachers?q=' . urlencode($q) . '&page=' . ($page + 1)) ?>" 
+                        <a href="<?= url('/teachers?q=' . urlencode($q) . '&status=' . urlencode($status ?? 'Active') . '&page=' . ($page + 1)) ?>" 
                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                             Selanjutnya <i class="ri-arrow-right-s-line"></i>
                         </a>
@@ -243,6 +269,7 @@ unset($_SESSION['reset_result']);
         <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all w-full max-w-md sm:my-8 sm:align-middle mx-auto">
             <form action="<?= url('/teachers/export') ?>" method="POST" id="exportTeacherForm">
                 <?= csrf_token_field() ?>
+                <input type="hidden" name="status" value="<?= htmlspecialchars($status ?? 'Active') ?>">
                 <div class="bg-white px-6 pt-6 pb-4">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
@@ -385,9 +412,15 @@ unset($_SESSION['reset_result']);
         toggleModal('resetPasswordModal');
     }
 
-    function confirmDelete(id, name) {
-        if (confirm('Apakah Anda yakin ingin menghapus data pengajar "' + name + '"?\n\nData akan dipindahkan ke Tempat Sampah.')) {
-            window.location.href = '<?= url("/teachers/delete?id=") ?>' + id;
+    function confirmDeactivate(id, name) {
+        if (confirm('Apakah Anda yakin ingin menonaktifkan pengajar "' + name + '"?\n\nSetelah dinonaktifkan, pengajar tidak akan bisa login ke aplikasi.')) {
+            window.location.href = '<?= url("/teachers/toggle-status?id=") ?>' + id + '&status=0';
+        }
+    }
+
+    function confirmActivate(id, name) {
+        if (confirm('Apakah Anda yakin ingin mengaktifkan kembali pengajar "' + name + '"?')) {
+            window.location.href = '<?= url("/teachers/toggle-status?id=") ?>' + id + '&status=1';
         }
     }
 
