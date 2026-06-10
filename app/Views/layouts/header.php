@@ -113,6 +113,9 @@
                                     <a href="<?= url('/students') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-user-heart-line text-gray-400"></i> Data Santri
                                     </a>
+                                    <a href="<?= url('/admin/ppsb') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-user-add-line text-gray-400"></i> Penerimaan Baru (PPSB)
+                                    </a>
                                     <a href="<?= url('/subjects') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-book-open-line text-gray-400"></i> Master Pelajaran
                                     </a>
@@ -291,6 +294,9 @@
                     </a>
                     <a href="<?= url('/students') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-user-heart-line mr-2"></i>Data Santri
+                    </a>
+                    <a href="<?= url('/admin/ppsb') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-user-add-line mr-2"></i>Penerimaan Baru (PPSB)
                     </a>
                     <a href="<?= url('/subjects') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-book-open-line mr-2"></i>Master Pelajaran

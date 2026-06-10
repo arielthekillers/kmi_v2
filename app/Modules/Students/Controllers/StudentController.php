@@ -21,16 +21,17 @@ class StudentController extends Controller {
         
         $q = $_GET['q'] ?? '';
         $kelas_id = $_GET['kelas_id'] ?? '';
+        $status = $_GET['status'] ?? 'Active';
         
         $model = new Student();
         $kelas = $model->getKelasList();
         
         $students = [];
         $totalItems = 0;
-        $isSearching = !empty($q) || !empty($kelas_id);
+        $isSearching = !empty($q) || !empty($kelas_id) || $status !== 'Active';
 
         if ($isSearching) {
-            $filters = ['q' => $q, 'kelas_id' => $kelas_id];
+            $filters = ['q' => $q, 'kelas_id' => $kelas_id, 'status' => $status];
             $students = $model->getAll($filters, $limit, $offset);
             $totalItems = $model->countAll($filters);
         }
@@ -43,6 +44,7 @@ class StudentController extends Controller {
             'kelas' => $kelas,
             'q' => $q,
             'selected_kelas' => $kelas_id,
+            'selected_status' => $status,
             'is_searching' => $isSearching,
             'page' => $page,
             'total_pages' => $totalPages,
@@ -92,11 +94,13 @@ class StudentController extends Controller {
         }
 
         $kelas = $model->getKelasList();
+        $history = $model->getHistory($id);
         
         $data = [
             'title' => 'Edit Data Santri',
             'kelas' => $kelas,
             'student' => $student,
+            'history' => $history,
             'action' => url("/students/update"),
             'q' => $_GET['q'] ?? '',
             'selected_kelas' => $_GET['kelas_id'] ?? '',
@@ -437,5 +441,88 @@ class StudentController extends Controller {
             echo json_encode(['data' => [], 'error' => $curlError]);
         }
         exit;
+    }
+
+    /**
+     * View Student Academic History Timeline
+     */
+    public function history() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+
+        $model = new Student();
+        $student = $model->find($id);
+        
+        if (!$student) {
+            add_flash('Data santri tidak ditemukan.', 'error');
+            $this->redirect('/students');
+        }
+
+        $history = $model->getHistory($id);
+        $kelas = $model->getKelasList();
+        
+        $yearModel = new \App\Models\AcademicYearModel();
+        $allYears = $yearModel->getAll();
+
+        $data = [
+            'title' => 'Riwayat Akademik Santri',
+            'student' => $student,
+            'history' => $history,
+            'kelas' => $kelas,
+            'allYears' => $allYears,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'admin'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('Students/Views/history', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    /**
+     * Update Student Enrollment Status (Lulus, Keluar, Pindah)
+     */
+    public function updateStatus() {
+        require_admin();
+        $studentId = $_POST['student_id'] ?? null;
+        $status = $_POST['status'] ?? null;
+
+        if (!$studentId || !in_array($status, ['Graduated', 'Out'])) {
+            add_flash('Data status tidak valid.', 'error');
+            $this->redirect('/students');
+        }
+
+        $model = new Student();
+        try {
+            $model->updateEnrollmentStatus($studentId, $this->currentYear['id'], $status);
+            add_flash("Status akademik santri berhasil diperbarui menjadi '$status'.", 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal memperbarui status akademik: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect("/students/history?id=$studentId");
+    }
+
+    /**
+     * Re-enroll Inactive/Returned Student into a Class
+     */
+    public function reEnroll() {
+        require_admin();
+        $studentId = $_POST['student_id'] ?? null;
+        $kelasId = $_POST['kelas_id'] ?? null;
+        $yearId = $_POST['academic_year_id'] ?? null;
+
+        if (!$studentId || !$kelasId || !$yearId) {
+            add_flash('Data pendaftaran kembali tidak lengkap.', 'error');
+            $this->redirect('/students');
+        }
+
+        $model = new Student();
+        try {
+            $model->reEnroll($studentId, $kelasId, $yearId);
+            add_flash('Santri berhasil didaftarkan masuk kembali ke kelas.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal mendaftarkan kembali santri: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect("/students/history?id=$studentId");
     }
 }

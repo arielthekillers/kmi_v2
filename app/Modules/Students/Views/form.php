@@ -55,13 +55,34 @@
                     <input type="date" name="tanggal_lahir" value="<?= $student['tanggal_lahir'] ?? '' ?>" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Kelas <span class="text-red-500">*</span></label>
-                    <select name="kelas_id" required class="tom-select mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border">
-                        <option value="">Pilih Kelas...</option>
-                        <?php foreach($kelas as $k): ?>
-                            <option value="<?= $k['id'] ?>" <?= ($student['kelas_id'] ?? '') == $k['id'] ? 'selected' : '' ?>><?= $k['tingkat'] . ' ' . $k['abjad'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <?php if (isset($student['id'])): ?>
+                        <label class="block text-sm font-medium text-gray-700">Kelas</label>
+                        <div class="mt-1 flex items-center gap-2">
+                            <span class="px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 font-bold block flex-1">
+                                <?php 
+                                $currentClassName = 'Belum Ada Kelas';
+                                foreach ($kelas as $k) {
+                                    if (($student['kelas_id'] ?? '') == $k['id']) {
+                                        $currentClassName = $k['tingkat'] . ' ' . $k['abjad'];
+                                        break;
+                                    }
+                                }
+                                echo htmlspecialchars($currentClassName);
+                                ?>
+                            </span>
+                            <a href="<?= url('/students/history?id=' . $student['id']) ?>" class="px-4 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1">
+                                <i class="ri-history-line"></i> Kelola Riwayat/Kelas
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <label class="block text-sm font-medium text-gray-700">Kelas <span class="text-red-500">*</span></label>
+                        <select name="kelas_id" required class="tom-select mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border">
+                            <option value="">Pilih Kelas...</option>
+                            <?php foreach($kelas as $k): ?>
+                                <option value="<?= $k['id'] ?>" <?= ($student['kelas_id'] ?? '') == $k['id'] ? 'selected' : '' ?>><?= $k['tingkat'] . ' ' . $k['abjad'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Tahun Masuk</label>

@@ -15,18 +15,66 @@ class Student {
     }
 
     public function getAll($filters = [], $limit = null, $offset = 0) {
-        $filtering = $this->applyFilters($filters);
+        $status = $filters['status'] ?? 'Active';
+        $hasJoin = ($status !== 'Unassigned');
+        $filtering = $this->applyFilters($filters, $hasJoin);
         
-        $sql = "SELECT s.*, se.kelas_id, se.status as enrollment_status, k.tingkat, k.abjad 
-                FROM students s 
-                INNER JOIN student_enrollments se ON s.id = se.student_id
-                LEFT JOIN kelas k ON se.kelas_id = k.id
-                WHERE se.academic_year_id = ? AND se.status = 'Active'
-                AND s.deleted_at IS NULL
-                AND {$filtering['where']}
-                ORDER BY s.nama ASC";
-        
-        $params = array_merge([$this->academic_year_id], $filtering['params']);
+        $sql = "";
+        $params = [];
+
+        if ($status === 'Active') {
+            $sql = "SELECT s.*, se.kelas_id, se.status as enrollment_status, k.tingkat, k.abjad 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    LEFT JOIN kelas k ON se.kelas_id = k.id
+                    WHERE se.academic_year_id = ? AND se.status = 'Active'
+                    AND s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Unassigned') {
+            $sql = "SELECT s.*, NULL as kelas_id, 'Unassigned' as enrollment_status, NULL as tingkat, NULL as abjad 
+                    FROM students s 
+                    WHERE s.deleted_at IS NULL
+                    AND s.id NOT IN (SELECT student_id FROM student_enrollments WHERE academic_year_id = ?)
+                    AND (
+                        NOT EXISTS (SELECT 1 FROM student_enrollments WHERE student_id = s.id)
+                        OR
+                        (SELECT status FROM student_enrollments WHERE student_id = s.id ORDER BY id DESC LIMIT 1) NOT IN ('Graduated', 'Out')
+                    )
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Graduated') {
+            $sql = "SELECT s.*, se.kelas_id, se.status as enrollment_status, k.tingkat, k.abjad 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    LEFT JOIN kelas k ON se.kelas_id = k.id
+                    WHERE se.academic_year_id = ? AND se.status = 'Graduated'
+                    AND s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Out') {
+            $sql = "SELECT s.*, se.kelas_id, se.status as enrollment_status, k.tingkat, k.abjad 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    LEFT JOIN kelas k ON se.kelas_id = k.id
+                    WHERE se.academic_year_id = ? AND se.status = 'Out'
+                    AND s.deleted_at IS NULL
+                    AND s.id NOT IN (SELECT student_id FROM student_enrollments WHERE academic_year_id = ? AND status = 'Active')
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+            $params[] = $this->academic_year_id;
+        } else { // 'All'
+            $sql = "SELECT s.*, se.kelas_id, se.status as enrollment_status, k.tingkat, k.abjad 
+                    FROM students s 
+                    LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                    LEFT JOIN kelas k ON se.kelas_id = k.id
+                    WHERE s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        }
+
+        $params = array_merge($params, $filtering['params']);
+        $sql .= " ORDER BY s.nama ASC";
 
         if ($limit !== null) {
             $sql .= " LIMIT ? OFFSET ?";
@@ -38,24 +86,73 @@ class Student {
     }
 
     public function countAll($filters = []) {
-        $filtering = $this->applyFilters($filters);
-        $sql = "SELECT COUNT(*) 
-                FROM students s 
-                INNER JOIN student_enrollments se ON s.id = se.student_id
-                WHERE se.academic_year_id = ? AND se.status = 'Active'
-                AND s.deleted_at IS NULL
-                AND {$filtering['where']}";
-        $params = array_merge([$this->academic_year_id], $filtering['params']);
+        $status = $filters['status'] ?? 'Active';
+        $hasJoin = ($status !== 'Unassigned');
+        $filtering = $this->applyFilters($filters, $hasJoin);
+        
+        $sql = "";
+        $params = [];
+
+        if ($status === 'Active') {
+            $sql = "SELECT COUNT(*) 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    WHERE se.academic_year_id = ? AND se.status = 'Active'
+                    AND s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Unassigned') {
+            $sql = "SELECT COUNT(*) 
+                    FROM students s 
+                    WHERE s.deleted_at IS NULL
+                    AND s.id NOT IN (SELECT student_id FROM student_enrollments WHERE academic_year_id = ?)
+                    AND (
+                        NOT EXISTS (SELECT 1 FROM student_enrollments WHERE student_id = s.id)
+                        OR
+                        (SELECT status FROM student_enrollments WHERE student_id = s.id ORDER BY id DESC LIMIT 1) NOT IN ('Graduated', 'Out')
+                    )
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Graduated') {
+            $sql = "SELECT COUNT(*) 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    WHERE se.academic_year_id = ? AND se.status = 'Graduated'
+                    AND s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        } elseif ($status === 'Out') {
+            $sql = "SELECT COUNT(*) 
+                    FROM students s 
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    WHERE se.academic_year_id = ? AND se.status = 'Out'
+                    AND s.deleted_at IS NULL
+                    AND s.id NOT IN (SELECT student_id FROM student_enrollments WHERE academic_year_id = ? AND status = 'Active')
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+            $params[] = $this->academic_year_id;
+        } else { // 'All'
+            $sql = "SELECT COUNT(*) 
+                    FROM students s 
+                    LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                    WHERE s.deleted_at IS NULL
+                    AND {$filtering['where']}";
+            $params[] = $this->academic_year_id;
+        }
+
+        $params = array_merge($params, $filtering['params']);
         return (int)$this->db->query($sql, $params)->fetchColumn();
     }
 
-    private function applyFilters($filters) {
+    private function applyFilters($filters, $hasEnrollmentJoin = true) {
         $where = "1=1";
         $params = [];
 
-        if (!empty($filters['kelas_id'])) {
+        if ($hasEnrollmentJoin && !empty($filters['kelas_id'])) {
             $where .= " AND se.kelas_id = ?";
             $params[] = $filters['kelas_id'];
+        } elseif (!$hasEnrollmentJoin && !empty($filters['kelas_id'])) {
+            $where .= " AND 1=0";
         }
 
         if (!empty($filters['q'])) {
@@ -71,11 +168,12 @@ class Student {
 
     public function find($id) {
         return $this->db->query("
-            SELECT s.*, se.kelas_id, se.status as enrollment_status 
+            SELECT s.*, 
+                   (SELECT se.kelas_id FROM student_enrollments se WHERE se.student_id = s.id AND se.academic_year_id = ? ORDER BY se.id DESC LIMIT 1) as kelas_id,
+                   (SELECT se.status FROM student_enrollments se WHERE se.student_id = s.id AND se.academic_year_id = ? ORDER BY se.id DESC LIMIT 1) as enrollment_status
             FROM students s 
-            LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ? AND se.status = 'Active'
             WHERE s.id = ? AND s.deleted_at IS NULL
-        ", [$this->academic_year_id, $id])->fetch();
+        ", [$this->academic_year_id, $this->academic_year_id, $id])->fetch();
     }
 
     public function findByNis($nis, $academic_year_id = null) {
@@ -209,10 +307,91 @@ class Student {
     public function forceDelete($id) {
         $this->db->beginTransaction();
         try {
-            // Delete enrollments first
+            // Update ppsb_registrations linkages to prevent constraint errors
+            $this->db->query("UPDATE ppsb_registrations SET student_id = NULL, status = 'Passed' WHERE student_id = ?", [$id]);
+            
+            // Delete enrollments
             $this->db->query("DELETE FROM student_enrollments WHERE student_id = ?", [$id]);
+            
+            // Delete attendance
+            $this->db->query("DELETE FROM attendance WHERE student_id = ?", [$id]);
+            
+            // Delete grades
+            $this->db->query("DELETE FROM grades WHERE student_id = ?", [$id]);
+            
+            // Delete student behaviors
+            $this->db->query("DELETE FROM student_behaviors WHERE student_id = ?", [$id]);
+            
             // Delete student
             $this->db->query("DELETE FROM students WHERE id = ?", [$id]);
+            
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function beginTransaction() {
+        return $this->db->beginTransaction();
+    }
+
+    public function commit() {
+        return $this->db->commit();
+    }
+
+    public function rollBack() {
+        return $this->db->rollBack();
+    }
+
+    public function generateNextNis($yearName = null) {
+        if (!$yearName) {
+            $year = $this->db->query("SELECT name FROM academic_years WHERE is_active = 1 LIMIT 1")->fetchColumn();
+            $yearName = $year ?: date('Y') . '-' . (date('Y') + 1);
+        }
+        
+        $prefix = '';
+        preg_match_all('/\d+/', $yearName, $matches);
+        if (count($matches[0]) >= 2) {
+            $year1 = $matches[0][0];
+            $year2 = $matches[0][1];
+            $prefix = substr($year1, -2) . substr($year2, -2);
+        } else {
+            $prefix = date('y') . (date('y') + 1);
+        }
+        
+        $stmt = $this->db->query("SELECT nis FROM students WHERE nis LIKE '$prefix.%' ORDER BY CAST(SUBSTRING_INDEX(nis, '.', -1) AS UNSIGNED) DESC LIMIT 1");
+        $maxNis = $stmt->fetchColumn();
+        
+        if ($maxNis) {
+            $parts = explode('.', $maxNis);
+            $seq = (int)end($parts);
+            return $prefix . '.' . str_pad($seq + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            return $prefix . '.1001'; // Default start sequence
+        }
+    }
+
+    public function updateEnrollmentStatus($studentId, $yearId, $status) {
+        return $this->db->query("UPDATE student_enrollments 
+                                 SET status = ?, end_date = CURDATE() 
+                                 WHERE student_id = ? AND academic_year_id = ? AND status = 'Active'",
+                                 [$status, $studentId, $yearId]);
+    }
+
+    public function reEnroll($studentId, $kelasId, $yearId) {
+        $this->db->beginTransaction();
+        try {
+            // Deactivate any currently active enrollments in the target year
+            $this->db->query("UPDATE student_enrollments SET status = 'Moved', end_date = CURDATE() 
+                              WHERE student_id = ? AND academic_year_id = ? AND status = 'Active'",
+                              [$studentId, $yearId]);
+                              
+            // Insert the new active enrollment
+            $this->db->query("INSERT INTO student_enrollments (student_id, academic_year_id, kelas_id, status, start_date) 
+                              VALUES (?, ?, ?, 'Active', CURDATE())", 
+                              [$studentId, $yearId, $kelasId]);
             $this->db->commit();
             return true;
         } catch (\Exception $e) {

@@ -123,6 +123,22 @@ class App
         // API regions proxy
         $this->router->get('/api/regions', ['App\Modules\Students\Controllers\StudentController', 'apiRegions']);
 
+        // Public PPSB Routes
+        $this->router->get('/ppsb/daftar', ['App\Modules\Students\Controllers\PpsbController', 'register']);
+        $this->router->post('/ppsb/store', ['App\Modules\Students\Controllers\PpsbController', 'storePublic']);
+        $this->router->get('/ppsb/success', ['App\Modules\Students\Controllers\PpsbController', 'success']);
+
+        // Admin PPSB Routes
+        $this->router->get('/admin/ppsb', ['App\Modules\Students\Controllers\PpsbController', 'adminIndex']);
+        $this->router->post('/admin/ppsb/status', ['App\Modules\Students\Controllers\PpsbController', 'updateStatus']);
+        $this->router->post('/admin/ppsb/enroll', ['App\Modules\Students\Controllers\PpsbController', 'enroll']);
+        $this->router->get('/admin/ppsb/delete', ['App\Modules\Students\Controllers\PpsbController', 'delete']);
+
+        // Student History & Inactive Management
+        $this->router->get('/students/history', ['App\Modules\Students\Controllers\StudentController', 'history']);
+        $this->router->post('/students/history/update-status', ['App\Modules\Students\Controllers\StudentController', 'updateStatus']);
+        $this->router->post('/students/history/re-enroll', ['App\Modules\Students\Controllers\StudentController', 'reEnroll']);
+
         // Academic Year Routes
         $this->router->get('/academic-years', ['App\Controllers\AcademicYearController', 'index']);
         $this->router->post('/academic-years/store', ['App\Controllers\AcademicYearController', 'store']);

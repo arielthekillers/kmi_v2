@@ -44,6 +44,16 @@
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="w-48">
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="Active" <?= ($selected_status ?? 'Active') === 'Active' ? 'selected' : '' ?>>Aktif (Active)</option>
+                    <option value="Unassigned" <?= ($selected_status ?? '') === 'Unassigned' ? 'selected' : '' ?>>Belum Ada Kelas</option>
+                    <option value="Graduated" <?= ($selected_status ?? '') === 'Graduated' ? 'selected' : '' ?>>Lulus (Graduated)</option>
+                    <option value="Out" <?= ($selected_status ?? '') === 'Out' ? 'selected' : '' ?>>Keluar / Pindah Sekolah</option>
+                    <option value="All" <?= ($selected_status ?? '') === 'All' ? 'selected' : '' ?>>Semua Status</option>
+                </select>
+            </div>
             <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center shadow-md">
                 <i class="ri-filter-3-line mr-2"></i> Tampilkan Data
             </button>
@@ -110,9 +120,27 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full bg-indigo-100 text-indigo-700 uppercase">
-                                <?= htmlspecialchars($s['tingkat'] . ' ' . $s['abjad']) ?>
-                            </span>
+                            <?php if (!empty($s['tingkat'])): ?>
+                                <span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full bg-indigo-100 text-indigo-700 uppercase">
+                                    <?= htmlspecialchars($s['tingkat'] . ' ' . $s['abjad']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full bg-slate-100 text-slate-500 uppercase">
+                                    Belum Diplot
+                                </span>
+                            <?php endif; ?>
+                            <?php if (($selected_status ?? 'Active') !== 'Active'): ?>
+                                <div class="mt-1 text-[9px] font-bold text-indigo-500 uppercase tracking-wider font-mono">
+                                    Status: <?php 
+                                        $lbl = 'Belum Terdaftar';
+                                        if ($s['enrollment_status'] === 'Out') $lbl = 'Keluar / Pindah Sekolah';
+                                        elseif ($s['enrollment_status'] === 'Moved') $lbl = 'Pindah Kelas';
+                                        elseif ($s['enrollment_status'] === 'Graduated') $lbl = 'Lulus';
+                                        elseif ($s['enrollment_status'] === 'Active') $lbl = 'Aktif';
+                                        echo htmlspecialchars($lbl);
+                                    ?>
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-600"><?= htmlspecialchars($s['kabupaten'] ?: '-') ?></div>
@@ -120,6 +148,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end gap-2">
+                                <a href="<?= url('/students/history?id=' . $s['id']) ?>" class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors" title="Riwayat & Transisi">
+                                    <i class="ri-history-line text-lg"></i>
+                                </a>
                                 <a href="<?= url('/students/edit?id=' . $s['id'] . '&q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . $page) ?>" class="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit Data">
                                     <i class="ri-edit-box-line text-lg"></i>
                                 </a>
@@ -141,7 +172,7 @@
                 </div>
                 <div class="flex gap-2">
                     <?php if ($page > 1): ?>
-                        <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . ($page - 1)) ?>" 
+                        <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&status=' . ($selected_status ?? 'Active') . '&page=' . ($page - 1)) ?>" 
                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                             <i class="ri-arrow-left-s-line"></i> Sebelumnya
                         </a>
@@ -150,9 +181,9 @@
                     <div class="flex items-center px-4 text-sm font-bold text-gray-500">
                         Halaman <?= $page ?> dari <?= $total_pages ?>
                     </div>
-
+ 
                     <?php if ($page < $total_pages): ?>
-                        <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&page=' . ($page + 1)) ?>" 
+                        <a href="<?= url('/students?q=' . urlencode($q) . '&kelas_id=' . $selected_kelas . '&status=' . ($selected_status ?? 'Active') . '&page=' . ($page + 1)) ?>" 
                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                             Selanjutnya <i class="ri-arrow-right-s-line"></i>
                         </a>
