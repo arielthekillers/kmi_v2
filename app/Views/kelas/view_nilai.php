@@ -1,3 +1,15 @@
+<?php
+$userRole = auth_get_role();
+$isAdmin = ($userRole === 'admin');
+$isPanitia = auth_is_panitia($exam['exam_session_id'] ?? null);
+$isAdminOrPanitia = ($isAdmin || $isPanitia);
+
+$showOralColumn = ($exam['has_oral'] == 1 && $isAdminOrPanitia);
+$showTulisColumn = ($exam['has_oral'] != 2);
+$showNilaiColumn = ($exam['has_oral'] != 2 || $isAdminOrPanitia);
+
+$totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($showNilaiColumn ? 1 : 0);
+?>
     <!-- Detail Nilai Header & Actions -->
     <div class="mb-6 flex items-center justify-between">
         <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -64,13 +76,15 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</th>
                         <th class="px-6 py-3 text-left text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">No. Bayanat</th>
-                        <?php if ($exam['has_oral'] == 1): ?>
+                        <?php if ($showOralColumn): ?>
                             <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Nilai Lisan</th>
                         <?php endif; ?>
-                        <?php if ($exam['has_oral'] != 2): ?>
+                        <?php if ($showTulisColumn): ?>
                             <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-32">Skor Tulis</th>
                         <?php endif; ?>
-                        <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></th>
+                        <?php if ($showNilaiColumn): ?>
+                            <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100 text-[13px]">
@@ -89,7 +103,7 @@
                                 </span>
                             </td>
                             
-                            <?php if ($exam['has_oral'] == 1): ?>
+                            <?php if ($showOralColumn): ?>
                                 <td class="px-6 py-3.5 text-center">
                                     <span class="font-medium text-gray-700">
                                         <?= htmlspecialchars($row['score_oral'] ?? '-') ?>
@@ -97,7 +111,7 @@
                                 </td>
                             <?php endif; ?>
 
-                            <?php if ($exam['has_oral'] != 2): ?>
+                            <?php if ($showTulisColumn): ?>
                                 <td class="px-6 py-3.5 text-center">
                                     <span class="font-medium text-gray-700">
                                         <?= htmlspecialchars(is_numeric($row['skor']) ? (float)$row['skor'] : ($row['skor'] ?? '-')) ?>
@@ -105,15 +119,17 @@
                                 </td>
                             <?php endif; ?>
  
-                            <td class="px-6 py-3.5 text-center">
-                                <span class="font-bold <?= is_numeric($row['nilai']) && $row['nilai'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
-                                    <?= is_numeric($row['nilai']) ? round($row['nilai']) : '-' ?>
-                                </span>
-                            </td>
+                            <?php if ($showNilaiColumn): ?>
+                                <td class="px-6 py-3.5 text-center">
+                                    <span class="font-bold <?= is_numeric($row['nilai']) && $row['nilai'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
+                                        <?= is_numeric($row['nilai']) ? round($row['nilai']) : '-' ?>
+                                    </span>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                     <?php if (empty($students)): ?>
-                        <tr><td colspan="<?= ($exam['has_oral'] == 1) ? 5 : (($exam['has_oral'] == 2) ? 3 : 4) ?>" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data santri.</td></tr>
+                        <tr><td colspan="<?= $totalCols ?>" class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data santri.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

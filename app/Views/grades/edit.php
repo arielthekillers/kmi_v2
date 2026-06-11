@@ -218,7 +218,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 <i class="ri-sort-asc"></i>
                             </div>
                         </th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'display: none;' : '' ?>">
                             <div class="flex items-center justify-center gap-1">
                                 <span id="header_lisan_label"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Lisan' ?></span>
                                 <i class="ri-sort-asc"></i>
@@ -235,7 +235,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                 </thead>
                 <tbody id="studentTableBody" class="divide-y divide-gray-50 block md:table-row-group">
                     <?php 
-                    $canEditOral = ($isExaminer && $sessionOpen && !$isFinished) || ($isAdminOrPanitia && !$isFinished);
+                    $canEditOral = $isAdminOrPanitia && !$isFinished;
                     foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-indigo-50/30 transition-colors group flex flex-col md:table-row border-b md:border-b-0 border-gray-50 last:border-0 p-4 md:p-0">
                             <!-- Name (Auditors Only) -->
@@ -272,7 +272,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </td>
                             
                             <!-- Oral Exam Column -->
-                            <td class="md:px-6 md:py-5 col-lisan <?= $exam['has_oral'] == 0 ? 'hidden' : 'md:table-cell' ?>" style="<?= $exam['has_oral'] == 0 ? 'display: none;' : '' ?>">
+                            <td class="md:px-6 md:py-5 col-lisan <?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'hidden' : 'md:table-cell' ?>" style="<?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'display: none;' : '' ?>">
                                 <div class="grid gap-3 md:flex md:items-center w-full grid-cols-1" id="container_lisan_<?= $i ?>">
                                     <div class="flex flex-col w-full">
                                         <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-lisan-mobile">Nilai Lisan</label>
@@ -400,6 +400,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 </main>
 
 <script>
+    const isAdminOrPanitia = <?= $isAdminOrPanitia ? 'true' : 'false' ?>;
+
     function validateFinish() {
         const skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
         const hasOralVal = parseInt(document.getElementById('has_oral_select')?.value ?? '<?= $exam['has_oral'] ?>');
@@ -426,8 +428,12 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             for (let input of inputsLisan) {
                 const val = input.value.trim();
                 if (val === '') {
-                    alert('Gagal: Semua kolom skor lisan harus diisi sebelum menandai selesai.');
-                    input.focus();
+                    if (!isAdminOrPanitia) {
+                        alert('Gagal: Nilai lisan belum lengkap. Silakan koordinasi dengan Panitia Ujian untuk melengkapi nilai lisan.');
+                    } else {
+                        alert('Gagal: Semua kolom skor lisan harus diisi sebelum menandai selesai.');
+                        input.focus();
+                    }
                     return false;
                 }
                 if (hasOralVal === 1) {
@@ -478,49 +484,39 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         const labelLisanMobileList = document.querySelectorAll('.label-lisan-mobile');
         const colNilaiLisanMobileList = document.querySelectorAll('.col-nilai-lisan-mobile');
 
-        if (hasOralVal === 0) {
-            // Tulis
-            colsTulis.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+        // Set header text
+        if (headerNilaiLabel) headerNilaiLabel.textContent = (hasOralVal === 2) ? 'Nilai Lisan' : 'Nilai Tulis';
+        if (headerLisanLabel) headerLisanLabel.textContent = 'Nilai Lisan';
+        labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
+        colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+
+        const showLisan = (hasOralVal === 1 || hasOralVal === 2) && isAdminOrPanitia;
+        const showTulis = (hasOralVal === 0 || hasOralVal === 1);
+        const showNilai = (hasOralVal === 0 || hasOralVal === 1);
+
+        if (showLisan) {
+            colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+        } else {
             colsLisan.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-            colsNilai.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
-            
-            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Tulis';
-            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-        } else if (hasOralVal === 2) {
-            // Lisan
-            colsTulis.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-            colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
-            colsNilai.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-            
-            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Lisan';
-            if (headerLisanLabel) headerLisanLabel.textContent = 'Nilai Lisan';
-            
-            labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
-            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-            
-            // Set parents to grid-cols-1
-            document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
-                el.classList.remove('grid-cols-2');
-                el.classList.add('grid-cols-1');
-            });
-        } else if (hasOralVal === 1) {
-            // Tulis & Lisan
-            colsTulis.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
-            colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
-            colsNilai.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
-            
-            if (headerNilaiLabel) headerNilaiLabel.textContent = 'Nilai Tulis';
-            if (headerLisanLabel) headerLisanLabel.textContent = 'Nilai Lisan';
-            
-            labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
-            colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
-            
-            // Set parents to grid-cols-1
-            document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
-                el.classList.remove('grid-cols-2');
-                el.classList.add('grid-cols-1');
-            });
         }
+
+        if (showTulis) {
+            colsTulis.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+        } else {
+            colsTulis.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+        }
+
+        if (showNilai) {
+            colsNilai.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+        } else {
+            colsNilai.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+        }
+
+        // Set parents to grid-cols-1
+        document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
+            el.classList.remove('grid-cols-2');
+            el.classList.add('grid-cols-1');
+        });
 
         // Recalculate all rows
         document.querySelectorAll('#studentTableBody tr').forEach(row => {
