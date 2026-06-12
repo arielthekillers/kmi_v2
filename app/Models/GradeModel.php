@@ -250,94 +250,54 @@ class GradeModel extends Model {
                 $nilai_akhir = null;
                 $score_raw_db = null;
 
+                // ----------------------------------------------------------------
+                // Nilai Tulis = konversi skor tulis ke skala rapor.
+                // Formula: round((skor / skor_maks) * (max_val - min_val) + min_val)
+                // Nilai Lisan disimpan apa adanya (score_oral), TIDAK digabungkan di sini.
+                // Penggabungan tulis+lisan untuk nilai akhir rapor dilakukan di modul rapor.
+                // ----------------------------------------------------------------
+
                 if ($hasOral == 0) {
-                    // Tulis Only
+                    // Tulis Saja: hitung nilai tulis dari skor tulis
                     if ($skor_input === '-') {
-                        $nilai_akhir = 0;
+                        $nilai_akhir = 0;       // Absen
                         $score_raw_db = '-';
                     } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
-                         $nilai_akhir = $min_val;
-                         $score_raw_db = '0';
+                        $nilai_akhir = $min_val; // Salah semua → nilai minimum
+                        $score_raw_db = '0';
                     } elseif (is_numeric($skor_input)) {
                         $skor = (float) $skor_input;
                         if ($skor < 0) $skor = 0;
-                        $nilai_akhir = round(($skor / $skor_maks) * $max_val);
+                        $nilai_akhir = round(($skor / $skor_maks) * ($max_val - $min_val) + $min_val);
                         if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
                         if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
                         $score_raw_db = $skor;
                     }
+
                 } elseif ($hasOral == 2) {
-                    // Lisan Only
-                    if ($skorLisan === '-') {
-                        $nilai_akhir = 0;
-                    } elseif (is_numeric($skorLisan)) {
-                        $skor = (float) $skorLisan;
-                        if ($skor < 30) $skor = 30;
-                        if ($skor > 80) $skor = 80;
-                        $nilai_akhir = round($skor);
-                    }
+                    // Lisan Saja: nilai lisan disimpan apa adanya di score_oral,
+                    // score_final (nilai tulis) tidak berlaku → null.
+                    // Tidak ada konversi di sini; score_oral disimpan langsung.
                     $score_raw_db = null;
+                    $nilai_akhir  = null; // Nilai akhir rapor dihitung di modul rapor
+
                 } elseif ($hasOral == 1) {
-                    // Tulis & Lisan
-                    if ($skor_input === '-' || $skorLisan === '-') {
-                        $nilai_akhir = 0;
-                        $score_raw_db = ($skor_input === '-') ? '-' : null;
-                    } elseif (is_numeric($skor_input) && is_numeric($skorLisan)) {
+                    // Tulis & Lisan: hitung nilai tulis dari skor tulis.
+                    // Nilai lisan tetap disimpan apa adanya di score_oral.
+                    // TIDAK ada penggabungan di sini.
+                    if ($skor_input === '-') {
+                        $nilai_akhir  = 0;   // Absen tulis
+                        $score_raw_db = '-';
+                    } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
+                        $nilai_akhir  = $min_val;
+                        $score_raw_db = '0';
+                    } elseif (is_numeric($skor_input)) {
                         $tRaw = (float)$skor_input;
-                        $sRaw = (float)$skorLisan;
-
                         if ($tRaw < 0) $tRaw = 0;
-                        if ($sRaw < 0) $sRaw = 0;
-
                         $score_raw_db = $tRaw;
-
-                        // Tahriri scaled score
-                        $T = round(($tRaw / $skor_maks) * $max_val);
-                        if ($T < $min_val) $T = $min_val;
-                        if ($T > $max_val) $T = $max_val;
-
-                        // Syafahi scaled score
-                        $S = $sRaw;
-                        if ($S <= 10) {
-                            $S = $S * 10;
-                        }
-                        if ($S < $min_val) $S = $min_val;
-                        if ($S > $max_val) $S = $max_val;
-
-                        $T10 = $T / 10.0;
-                        $S10 = $S / 10.0;
-
-                        $diff = abs($T10 - $S10);
-                        if ($diff >= 5.0) {
-                            // Kebijaksanaan Guru - use manually submitted final score if valid, otherwise fallback to T
-                            $submittedNilai = isset($submittedNilais[$i]) ? trim($submittedNilais[$i]) : '';
-                            if (is_numeric($submittedNilai)) {
-                                $nilai_akhir = (int)$submittedNilai;
-                                if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
-                                if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
-                            } else {
-                                $nilai_akhir = $T;
-                            }
-                        } else {
-                            if ($S10 < $T10) {
-                                $nilai_akhir = $T;
-                            } else {
-                                $avg = ($T10 + $S10) / 2.0;
-                                $fraction = $avg - floor($avg);
-                                if (abs($fraction - 0.5) < 0.001) {
-                                    if (abs($avg - 5.5) < 0.001) {
-                                        $final10 = 6;
-                                    } else {
-                                        $final10 = floor($avg);
-                                    }
-                                } else {
-                                    $final10 = round($avg);
-                                }
-                                $nilai_akhir = round($final10 * 10);
-                                if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
-                                if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
-                            }
-                        }
+                        $nilai_akhir  = round(($tRaw / $skor_maks) * ($max_val - $min_val) + $min_val);
+                        if ($nilai_akhir < $min_val) $nilai_akhir = $min_val;
+                        if ($nilai_akhir > $max_val) $nilai_akhir = $max_val;
                     }
                 }
 

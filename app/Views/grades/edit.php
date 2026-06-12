@@ -538,158 +538,62 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         const hasOralVal = parseInt(document.getElementById('has_oral_select')?.value ?? '<?= $exam['has_oral'] ?>');
 
         let valTulis = inputTulis ? inputTulis.value.trim() : '';
-        let valLisan = inputLisan ? inputLisan.value.trim() : '';
         
-        let finalNilai = null;
-        let warningMsg = '';
+        // ---------------------------------------------------------------
+        // Nilai Tulis = konversi skor tulis ke skala rapor.
+        // Formula: round((skor / skorMaks) * (nilaiMaks - nilaiMin) + nilaiMin)
+        // Nilai Lisan disimpan apa adanya; TIDAK digabungkan di sini.
+        // Penggabungan untuk nilai akhir rapor dilakukan di modul rapor/leger.
+        // ---------------------------------------------------------------
 
-        if (hasOralVal === 0) {
-            // Tulis Only
+        let finalNilai = null; // ini adalah "Nilai Tulis" (score_final)
+
+        if (hasOralVal === 0 || hasOralVal === 1) {
+            // Mode Tulis Saja atau Tulis & Lisan: hitung nilai tulis dari skor tulis
             if (valTulis === '-') {
-                finalNilai = 0;
+                finalNilai = 0; // Absen
             } else if (valTulis === '0' || valTulis === 0 || valTulis === '0.0') {
-                finalNilai = nilaiMin;
+                finalNilai = nilaiMin; // Salah semua → nilai minimum
             } else if (valTulis !== '') {
                 let skor = parseFloat(valTulis.replace(',', '.'));
                 if (!isNaN(skor)) {
                     if (skor < 0) skor = 0;
-                    if (skor > skorMaks) {
-                        inputTulis.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
-                    } else {
-                        inputTulis.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                    // Validasi: skor tidak boleh melebihi skor maks
+                    if (inputTulis) {
+                        if (skor > skorMaks) {
+                            inputTulis.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
+                        } else {
+                            inputTulis.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
+                        }
                     }
-                    finalNilai = Math.round((skor / skorMaks) * nilaiMaks);
+                    // Formula: (skor / skor_maks) × (nilai_maks - nilai_min) + nilai_min
+                    finalNilai = Math.round((skor / skorMaks) * (nilaiMaks - nilaiMin) + nilaiMin);
                     if (finalNilai < nilaiMin) finalNilai = nilaiMin;
                     if (finalNilai > nilaiMaks) finalNilai = nilaiMaks;
                 }
             }
         } else if (hasOralVal === 2) {
-            // Lisan Only
-            if (valLisan === '-') {
-                finalNilai = 0;
-            } else if (valLisan !== '') {
-                let skor = parseFloat(valLisan.replace(',', '.'));
-                if (!isNaN(skor)) {
-                    if (skor < 30 || skor > 80) {
-                        inputLisan.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
-                    } else {
-                        inputLisan.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
-                    }
-                    finalNilai = Math.round(skor);
-                }
-            }
-        } else if (hasOralVal === 1) {
-            // Tulis & Lisan
-            if (valTulis === '-' || valLisan === '-') {
-                finalNilai = 0;
-            } else if (valTulis !== '' && valLisan !== '') {
-                let tRaw = parseFloat(valTulis.replace(',', '.'));
-                let sRaw = parseFloat(valLisan.replace(',', '.'));
-
-                if (!isNaN(tRaw) && !isNaN(sRaw)) {
-                    if (tRaw > skorMaks) {
-                        inputTulis.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
-                    } else {
-                        inputTulis.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
-                    }
-                    if (sRaw > skorMaks) {
-                        inputLisan.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'ring-1', 'ring-red-500');
-                    } else {
-                        inputLisan.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'ring-red-500');
-                    }
-
-                    // Tahriri scaled score T
-                    let T = Math.round((tRaw / skorMaks) * nilaiMaks);
-                    if (T < nilaiMin) T = nilaiMin;
-                    if (T > nilaiMaks) T = nilaiMaks;
-
-                    // Syafahi scaled score S (normalized if <= 10)
-                    let S = sRaw;
-                    if (S <= 10) {
-                        S = S * 10;
-                    }
-                    if (S < nilaiMin) S = nilaiMin;
-                    if (S > nilaiMaks) S = nilaiMaks;
-
-                    let T10 = T / 10.0;
-                    let S10 = S / 10.0;
-
-                    let diff = Math.abs(T10 - S10);
-                    if (diff >= 5.0) {
-                        warningMsg = 'Selisih Sangat Jauh';
-                        // Enable manual edit for final score
-                        outputs.forEach(o => {
-                            o.removeAttribute('readonly');
-                            o.classList.remove('pointer-events-none');
-                            o.classList.add('border-b-2', 'border-yellow-400', 'bg-yellow-50/50');
-                        });
-                        // Keep current finalNilai if set and valid, otherwise fallback to T
-                        let currentVal = parseFloat(hiddenOutput?.value);
-                        if (isNaN(currentVal) || currentVal < nilaiMin || currentVal > nilaiMaks) {
-                            finalNilai = T;
-                        } else {
-                            finalNilai = currentVal;
-                        }
-                    } else {
-                        // Reset input state to readonly
-                        outputs.forEach(o => {
-                            o.setAttribute('readonly', 'true');
-                            o.classList.add('pointer-events-none');
-                            o.classList.remove('border-b-2', 'border-yellow-400', 'bg-yellow-50/50');
-                        });
-
-                        if (S10 < T10) {
-                            finalNilai = T;
-                        } else {
-                            let avg = (T10 + S10) / 2.0;
-                            let fraction = avg - Math.floor(avg);
-                            let final10;
-                            if (Math.abs(fraction - 0.5) < 0.001) {
-                                if (Math.abs(avg - 5.5) < 0.001) {
-                                    final10 = 6;
-                                } else {
-                                    final10 = Math.floor(avg);
-                                }
-                            } else {
-                                final10 = Math.round(avg);
-                            }
-                            finalNilai = Math.round(final10 * 10);
-                            if (finalNilai < nilaiMin) finalNilai = nilaiMin;
-                            if (finalNilai > nilaiMaks) finalNilai = nilaiMaks;
-                        }
-                    }
-                }
-            }
+            // Mode Lisan Saja: tidak ada nilai tulis (score_final = null).
+            // Nilai lisan hanya ditampilkan di kolom lisan, tidak dikonversi di sini.
+            finalNilai = null;
         }
 
-        // Update outputs
+        // Update outputs (kolom "Nilai Tulis")
         if (finalNilai !== null) {
             outputs.forEach(o => {
-                if (o.hasAttribute('readonly') || o.value === '') {
-                    o.value = Math.round(finalNilai);
-                }
+                o.value = Math.round(finalNilai);
             });
             if (hiddenOutput) hiddenOutput.value = Math.round(finalNilai);
-            if (progressBar) progressBar.style.width = ((finalNilai / nilaiMaks) * 100) + '%';
+            if (progressBar) progressBar.style.width = (((finalNilai - nilaiMin) / (nilaiMaks - nilaiMin)) * 100) + '%';
         } else {
             outputs.forEach(o => o.value = '');
             if (hiddenOutput) hiddenOutput.value = '';
             if (progressBar) progressBar.style.width = '0%';
         }
 
-        // Update warning label in row
-        let warnSpan = row.querySelector('.row-warning');
-        if (warningMsg) {
-            if (!warnSpan) {
-                warnSpan = document.createElement('span');
-                warnSpan.className = 'row-warning block text-[9px] font-black text-yellow-600 bg-yellow-50 border border-yellow-100 rounded px-1.5 py-0.5 mt-1 text-center uppercase tracking-tighter w-max mx-auto';
-                const outputContainer = row.querySelector('.nilai-output')?.closest('div');
-                if (outputContainer) outputContainer.appendChild(warnSpan);
-            }
-            warnSpan.textContent = warningMsg;
-        } else {
-            if (warnSpan) warnSpan.remove();
-        }
+        // Hapus warning lama jika ada (sisa dari logika lama)
+        const warnSpan = row.querySelector('.row-warning');
+        if (warnSpan) warnSpan.remove();
     };
 
     window.updateAverage = function() {
