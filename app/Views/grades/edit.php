@@ -431,24 +431,12 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                     if (!isAdminOrPanitia) {
                         alert('Gagal: Nilai lisan belum lengkap. Silakan koordinasi dengan Panitia Ujian untuk melengkapi nilai lisan.');
                     } else {
-                        alert('Gagal: Semua kolom skor lisan harus diisi sebelum menandai selesai.');
+                        alert('Gagal: Semua kolom nilai lisan harus diisi sebelum menandai selesai.');
                         input.focus();
                     }
                     return false;
                 }
-                if (hasOralVal === 1) {
-                    if (val !== '-' && parseFloat(val) > skorMaks) {
-                        alert('Gagal: Ada skor lisan yang melebihi skor maksimal (' + skorMaks + '). Silakan periksa kembali.');
-                        input.focus();
-                        return false;
-                    }
-                } else if (hasOralVal === 2) {
-                    if (val !== '-' && (parseFloat(val) < 30 || parseFloat(val) > 80)) {
-                        alert('Gagal: Ada nilai lisan yang di luar range 30-80. Silakan periksa kembali.');
-                        input.focus();
-                        return false;
-                    }
-                }
+                // Tidak ada batasan nilai min/maks untuk nilai lisan — disimpan apa adanya.
             }
         }
         return confirm('Apakah Anda yakin ingin menyelesaikan pemeriksaan ini? Status akan menjadi Selesai dan tidak dapat diubah lagi.');
