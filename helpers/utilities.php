@@ -172,3 +172,39 @@ if (!function_exists('terbilang_arab')) {
     }
 }
 
+if (!function_exists('log_activity')) {
+    /**
+     * Mencatat aktivitas pengguna ke dalam database.
+     * 
+     * @param string $action Deskripsi tindakan yang dilakukan pengguna
+     */
+    function log_activity($action)
+    {
+        if (!function_exists('auth_get_current_user')) {
+            require_once __DIR__ . '/auth.php';
+        }
+        
+        $user = auth_get_current_user();
+        
+        $userId = $user['id'] ?? null;
+        $username = $user['username'] ?? 'guest';
+        $nama = $user['nama'] ?? 'Guest';
+        $role = $user['role'] ?? 'guest';
+        
+        $page = $_SERVER['REQUEST_URI'] ?? '/';
+        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+        
+        try {
+            $db = \App\Core\Database::getInstance();
+            $db->query(
+                "INSERT INTO activity_logs (user_id, username, nama, role, action, page, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [$userId, $username, $nama, $role, $action, $page, $ipAddress, $userAgent]
+            );
+        } catch (\Exception $e) {
+            error_log("Gagal mencatat log aktifitas: " . $e->getMessage());
+        }
+    }
+}
+
+

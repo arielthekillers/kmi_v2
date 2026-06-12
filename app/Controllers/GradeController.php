@@ -158,6 +158,7 @@ class GradeController extends Controller {
                 $model = new GradeModel();
                 try {
                     $examId = $model->createExam($data);
+                    log_activity("Membuat form koreksi ujian (Pelajaran ID: {$data['subject_id']}, Kelas ID: {$data['kelas_id']})");
                     add_flash('Data koreksi berhasil ditambahkan. Silakan lengkapi nomor bayanat.', 'success');
                     $this->redirect('/grades?kelas=' . $data['kelas_id']);
                 } catch (\Exception $e) {
@@ -336,6 +337,8 @@ class GradeController extends Controller {
                 }
             }
             $model->saveGrades($id, $exam['subject_id'], $exam['skor_maks'], $exam['skala'] ?? '80-30', $studentIds, $skors, $newStatus, $noBayanats, $saveData);
+            $logMsg = ($newStatus === 'selesai') ? "Menyelesaikan koreksi ujian (ID: {$id}, Pelajaran ID: {$exam['subject_id']}, Kelas ID: {$exam['kelas_id']})" : "Menyimpan draf nilai ujian (ID: {$id}, Pelajaran ID: {$exam['subject_id']}, Kelas ID: {$exam['kelas_id']})";
+            log_activity($logMsg);
             if ($userRole !== 'admin' && $action === 'finish' && $allFilled) {
                 add_flash('Koreksi selesai.', 'success');
             } else {
@@ -362,6 +365,7 @@ class GradeController extends Controller {
             if ($exam) {
                 $kelasId = $exam['kelas_id'];
                 $model->deleteExam($id);
+                log_activity("Menghapus data koreksi ujian ke tong sampah (ID: {$id}, Pelajaran ID: {$exam['subject_id']}, Kelas ID: {$exam['kelas_id']})");
                 add_flash('Data koreksi dihapus.', 'success');
             }
         }
@@ -387,6 +391,7 @@ class GradeController extends Controller {
                 if ($exam) {
                     $kelasId = $exam['kelas_id'];
                     $model->unlockExam($id);
+                    log_activity("Membuka kembali akses koreksi ujian (ID: {$id}, Pelajaran ID: {$exam['subject_id']}, Kelas ID: {$exam['kelas_id']})");
                     add_flash('Akes koreksi dibuka kembali.', 'success');
                 }
             }
@@ -423,6 +428,7 @@ class GradeController extends Controller {
         if ($id) {
             $model = new GradeModel();
             $model->restoreExam($id);
+            log_activity("Memulihkan data koreksi ujian dari tong sampah (ID: {$id})");
             add_flash('Data koreksi berhasil dikembalikan.', 'success');
         }
         $this->redirect('/grades/trash');
@@ -437,6 +443,7 @@ class GradeController extends Controller {
         if ($id) {
             $model = new GradeModel();
             $model->hardDeleteExam($id);
+            log_activity("Menghapus secara permanen data koreksi ujian beserta nilainya (ID: {$id})");
             add_flash('Data koreksi dihapus permanen beserta nilainya.', 'success');
         }
         $this->redirect('/grades/trash');

@@ -35,6 +35,7 @@ class AuthController extends Controller {
 
         if (login_user($username, $password)) {
             auth_start_session();
+            log_activity("Berhasil login");
             add_flash('Selamat datang kembali! Anda telah berhasil login.', 'success');
             
             $redirect = $_SESSION['redirect_after_login'] ?? '/';
@@ -50,6 +51,7 @@ class AuthController extends Controller {
 
     public function logout() {
         require_once __DIR__ . '/../../helpers/auth.php';
+        log_activity("Melakukan logout");
         logout_user();
         $this->redirect('/login');
     }

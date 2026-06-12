@@ -39,6 +39,7 @@ class App
         // Settings Routes (admin only)
         $this->router->get('/settings/general', ['App\Controllers\SettingsController', 'general']);
         $this->router->get('/settings/tv/layout', ['App\Controllers\SettingsController', 'tvShowcaseLayout']);
+        $this->router->get('/activity-logs', ['App\Controllers\ActivityLogController', 'index']);
         $this->router->get('/settings/tv/bgm', ['App\Controllers\SettingsController', 'tvShowcaseBgm']);
         $this->router->get('/settings/tv/hours', ['App\Controllers\SettingsController', 'tvShowcaseHours']);
         $this->router->get('/settings/tv/quotes', ['App\Controllers\SettingsController', 'tvShowcaseQuotes']);

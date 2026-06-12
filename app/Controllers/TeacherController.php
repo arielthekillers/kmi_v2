@@ -123,9 +123,11 @@ class TeacherController extends Controller {
                 // Check if username exists?
                 // Model handle insert?
                 $this->teacherModel->create($data);
+                log_activity("Menambahkan data pengajar baru: {$nama} (Username: {$username})");
                 add_flash('Data pengajar berhasil ditambahkan.', 'success');
             } else {
                 $this->teacherModel->update($id, $data);
+                log_activity("Memperbarui data pengajar: {$nama} (ID: {$id}, Username: {$username})");
                 add_flash('Data pengajar berhasil diperbarui.', 'success');
             }
         } catch (\Exception $e) {
@@ -148,6 +150,7 @@ class TeacherController extends Controller {
         if (!empty($id)) {
             try {
                 \App\Modules\Auth\Models\User::updateStatus($id, 0);
+                log_activity("Menonaktifkan data pengajar (ID: {$id})");
                 add_flash('Data pengajar berhasil dinonaktifkan.', 'success');
             } catch (\Exception $e) {
                 add_flash('Gagal menonaktifkan data pengajar: ' . $e->getMessage(), 'error');
@@ -164,6 +167,8 @@ class TeacherController extends Controller {
         if ($id !== null) {
             try {
                 \App\Modules\Auth\Models\User::updateStatus($id, $status);
+                $statusText = $status === 1 ? "Mengaktifkan kembali" : "Menonaktifkan";
+                log_activity("{$statusText} data pengajar (ID: {$id})");
                 $msg = $status === 1 ? 'Data pengajar berhasil diaktifkan kembali.' : 'Data pengajar berhasil dinonaktifkan.';
                 add_flash($msg, 'success');
             } catch (\Exception $e) {
@@ -212,6 +217,7 @@ class TeacherController extends Controller {
         if (!empty($id)) {
             try {
                 $this->teacherModel->restore($id);
+                log_activity("Memulihkan data pengajar dari tempat sampah (ID: {$id})");
                 add_flash('Data pengajar berhasil dipulihkan.', 'success');
             } catch (\Exception $e) {
                 add_flash('Gagal memulihkan data pengajar: ' . $e->getMessage(), 'error');
@@ -226,6 +232,7 @@ class TeacherController extends Controller {
         if (!empty($id)) {
             try {
                 $this->teacherModel->forceDelete($id);
+                log_activity("Menghapus secara permanen data pengajar (ID: {$id})");
                 add_flash('Data pengajar berhasil dihapus permanen.', 'success');
             } catch (\Exception $e) {
                 add_flash('Gagal menghapus data pengajar: ' . $e->getMessage(), 'error');
@@ -265,6 +272,7 @@ class TeacherController extends Controller {
             // Save new hashed + plain password
             $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
             $upd->execute([$hashedPassword, $newPassword, $id]);
+            log_activity("Mereset password pengajar: {$teacher['nama']} (ID: {$id})");
 
             // Build WA link
             $hp = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
@@ -332,6 +340,7 @@ class TeacherController extends Controller {
         }
 
         $filename = "Data_Pengajar_" . date('Ymd_His') . ".xls";
+        log_activity("Mengekspor data pengajar ke Excel (Status filter: {$status})");
 
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
