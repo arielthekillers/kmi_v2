@@ -327,7 +327,7 @@ class GradeController extends Controller {
         }
         try {
             $saveData = [
-                'skor_lisan' => ($isAdmin || $isPanitia) ? ($skorsLisan) : [],
+                'skor_lisan' => ($isAdmin || $isPanitia || $isExaminer) ? ($skorsLisan) : [],
                 'nilai' => $_POST['nilai'] ?? []
             ];
             if ($isAdmin || $isPanitia) {

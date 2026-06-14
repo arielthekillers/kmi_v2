@@ -7,6 +7,7 @@ $isAdmin = ($userRole === 'admin');
 $isPanitia = $isPanitia ?? false;
 $isAdminOrPanitia = ($isAdmin || $isPanitia);
 $isExaminer = (isset($exam['teacher_id']) && $exam['teacher_id'] == $userId);
+$canEditOralScore = ($isAdminOrPanitia || $isExaminer);
 $isFinished = ($exam['status'] === 'selesai');
 $sessionOpen = (isset($exam['session_is_open']) && $exam['session_is_open'] == 1);
 
@@ -218,7 +219,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 <i class="ri-sort-asc"></i>
                             </div>
                         </th>
-                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'display: none;' : '' ?>">
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-32 cursor-pointer hover:text-indigo-600 transition-colors col-lisan <?= ($exam['has_oral'] == 0 || !$canEditOralScore) ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= ($exam['has_oral'] == 0 || !$canEditOralScore) ? 'display: none;' : '' ?>">
                             <div class="flex items-center justify-center gap-1">
                                 <span id="header_lisan_label"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Lisan' ?></span>
                                 <i class="ri-sort-asc"></i>
@@ -235,7 +236,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                 </thead>
                 <tbody id="studentTableBody" class="divide-y divide-gray-50 block md:table-row-group">
                     <?php 
-                    $canEditOral = $isAdminOrPanitia && !$isFinished;
+                    $canEditOral = $canEditOralScore && !$isFinished;
                     foreach ($students as $i => $row): ?>
                         <tr class="hover:bg-indigo-50/30 transition-colors group flex flex-col md:table-row border-b md:border-b-0 border-gray-50 last:border-0 p-4 md:p-0">
                             <!-- Name (Auditors Only) -->
@@ -272,7 +273,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </td>
                             
                             <!-- Oral Exam Column -->
-                            <td class="md:px-6 md:py-5 col-lisan <?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'hidden' : 'md:table-cell' ?>" style="<?= ($exam['has_oral'] == 0 || !$isAdminOrPanitia) ? 'display: none;' : '' ?>">
+                            <td class="md:px-6 md:py-5 col-lisan <?= ($exam['has_oral'] == 0 || !$canEditOralScore) ? 'hidden' : 'md:table-cell' ?>" style="<?= ($exam['has_oral'] == 0 || !$canEditOralScore) ? 'display: none;' : '' ?>">
                                 <div class="grid gap-3 md:flex md:items-center w-full grid-cols-1" id="container_lisan_<?= $i ?>">
                                     <div class="flex flex-col w-full">
                                         <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-lisan-mobile">Nilai Lisan</label>
@@ -428,12 +429,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             for (let input of inputsLisan) {
                 const val = input.value.trim();
                 if (val === '') {
-                    if (!isAdminOrPanitia) {
-                        alert('Gagal: Nilai lisan belum lengkap. Silakan koordinasi dengan Panitia Ujian untuk melengkapi nilai lisan.');
-                    } else {
-                        alert('Gagal: Semua kolom nilai lisan harus diisi sebelum menandai selesai.');
-                        input.focus();
-                    }
+                    alert('Gagal: Semua kolom nilai lisan harus diisi sebelum menandai selesai.');
+                    input.focus();
                     return false;
                 }
                 // Tidak ada batasan nilai min/maks untuk nilai lisan — disimpan apa adanya.
@@ -478,7 +475,8 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
         colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
 
-        const showLisan = (hasOralVal === 1 || hasOralVal === 2) && isAdminOrPanitia;
+        const isExaminer = <?= $isExaminer ? 'true' : 'false' ?>;
+        const showLisan = (hasOralVal === 1 || hasOralVal === 2) && (isAdminOrPanitia || isExaminer);
         const showTulis = (hasOralVal === 0 || hasOralVal === 1);
         const showNilai = (hasOralVal === 0 || hasOralVal === 1);
 
