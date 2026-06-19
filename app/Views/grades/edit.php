@@ -7,7 +7,7 @@ $isAdmin = ($userRole === 'admin');
 $isPanitia = $isPanitia ?? false;
 $isAdminOrPanitia = ($isAdmin || $isPanitia);
 $isExaminer = (isset($exam['teacher_id']) && $exam['teacher_id'] == $userId);
-$canEditOralScore = ($isAdminOrPanitia || $isExaminer);
+$canEditOralScore = $isAdminOrPanitia;
 $isFinished = ($exam['status'] === 'selesai');
 $sessionOpen = (isset($exam['session_is_open']) && $exam['session_is_open'] == 1);
 
@@ -277,7 +277,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                                 <div class="grid gap-3 md:flex md:items-center w-full grid-cols-1" id="container_lisan_<?= $i ?>">
                                     <div class="flex flex-col w-full">
                                         <label class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1 label-lisan-mobile">Nilai Lisan</label>
-                                        <input type="text" name="skor_lisan[]" value="<?= htmlspecialchars($row['score_oral'] ?? '') ?>"
+                                        <input type="text" name="skor_lisan[]" value="<?= $canEditOralScore ? htmlspecialchars($row['score_oral'] ?? '') : '' ?>"
                                             <?= !$canEditOral ? 'disabled' : '' ?>
                                             autocomplete="off"
                                             oninput="this.value = this.value.replace(/[^0-9.\-]/g, ''); if(parseFloat(this.value) < 0) this.value = '0'; calculateRow(this.closest('tr'));"
@@ -424,7 +424,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             }
         }
         
-        if (hasOralVal === 1 || hasOralVal === 2) {
+        if ((hasOralVal === 1 || hasOralVal === 2) && isAdminOrPanitia) {
             const inputsLisan = document.querySelectorAll('input[name="skor_lisan[]"]');
             for (let input of inputsLisan) {
                 const val = input.value.trim();
@@ -475,8 +475,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         labelLisanMobileList.forEach(el => el.textContent = 'Nilai Lisan');
         colNilaiLisanMobileList.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
 
-        const isExaminer = <?= $isExaminer ? 'true' : 'false' ?>;
-        const showLisan = (hasOralVal === 1 || hasOralVal === 2) && (isAdminOrPanitia || isExaminer);
+        const showLisan = (hasOralVal === 1 || hasOralVal === 2) && isAdminOrPanitia;
         const showTulis = (hasOralVal === 0 || hasOralVal === 1);
         const showNilai = (hasOralVal === 0 || hasOralVal === 1);
 

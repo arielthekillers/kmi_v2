@@ -274,6 +274,7 @@ class GradeController extends Controller {
         
         $examType = (int)($exam['has_oral'] ?? 0);
         $allFilled = true;
+        $validateOral = ($isAdmin || $isPanitia);
         
         if ($examType == 0) {
             // Tulis only: check $skors
@@ -288,28 +289,44 @@ class GradeController extends Controller {
                 }
             }
         } elseif ($examType == 2) {
-            // Lisan only: check $skorsLisan
-            if (empty($skorsLisan)) {
-                $allFilled = false;
-            } else {
-                foreach ($skorsLisan as $s) {
-                    if (trim($s) === '') {
-                        $allFilled = false;
-                        break;
+            // Lisan only: check $skorsLisan (only if user is allowed to edit/see oral scores)
+            if ($validateOral) {
+                if (empty($skorsLisan)) {
+                    $allFilled = false;
+                } else {
+                    foreach ($skorsLisan as $s) {
+                        if (trim($s) === '') {
+                            $allFilled = false;
+                            break;
+                        }
                     }
                 }
             }
         } elseif ($examType == 1) {
-            // Tulis & Lisan: check both
-            if (empty($skors) || empty($skorsLisan)) {
-                $allFilled = false;
+            // Tulis & Lisan: check both if admin/panitia, otherwise check only tulis
+            if ($validateOral) {
+                if (empty($skors) || empty($skorsLisan)) {
+                    $allFilled = false;
+                } else {
+                    for ($i = 0; $i < count($studentIds); $i++) {
+                        $sVal = isset($skors[$i]) ? trim($skors[$i]) : '';
+                        $oVal = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : '';
+                        if ($sVal === '' || $oVal === '') {
+                            $allFilled = false;
+                            break;
+                        }
+                    }
+                }
             } else {
-                for ($i = 0; $i < count($studentIds); $i++) {
-                    $sVal = isset($skors[$i]) ? trim($skors[$i]) : '';
-                    $oVal = isset($skorsLisan[$i]) ? trim($skorsLisan[$i]) : '';
-                    if ($sVal === '' || $oVal === '') {
-                        $allFilled = false;
-                        break;
+                // Only validate tulis
+                if (empty($skors)) {
+                    $allFilled = false;
+                } else {
+                    foreach ($skors as $s) {
+                        if (trim($s) === '') {
+                            $allFilled = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -327,7 +344,7 @@ class GradeController extends Controller {
         }
         try {
             $saveData = [
-                'skor_lisan' => ($isAdmin || $isPanitia || $isExaminer) ? ($skorsLisan) : [],
+                'skor_lisan' => ($isAdmin || $isPanitia) ? ($skorsLisan) : [],
                 'nilai' => $_POST['nilai'] ?? []
             ];
             if ($isAdmin || $isPanitia) {
