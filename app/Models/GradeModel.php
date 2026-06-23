@@ -499,6 +499,11 @@ class GradeModel extends Model {
         $examIds = array_column($exams, 'exam_id');
         $gradesByStudent = [];
         if (!empty($examIds)) {
+            $examsById = [];
+            foreach ($exams as $exam) {
+                $examsById[$exam['exam_id']] = $exam;
+            }
+
             $inQuery = implode(',', array_fill(0, count($examIds), '?'));
             $stmtGrades = $this->db->prepare("
                 SELECT g.student_id, g.exam_id, g.score_raw, g.score_final, g.score_oral, g.no_bayanat
@@ -507,7 +512,14 @@ class GradeModel extends Model {
             ");
             $stmtGrades->execute($examIds);
             while ($row = $stmtGrades->fetch(\PDO::FETCH_ASSOC)) {
-                $gradesByStudent[$row['student_id']][$row['exam_id']] = $row;
+                $examId = $row['exam_id'];
+                $exam = $examsById[$examId] ?? null;
+                $hasOral = $exam ? (int)$exam['has_oral'] : 0;
+                
+                // Calculate dynamic merged grade
+                $row['score_final'] = calculate_merged_grade($row['score_final'], $row['score_oral'], $hasOral);
+                
+                $gradesByStudent[$row['student_id']][$examId] = $row;
             }
         }
 

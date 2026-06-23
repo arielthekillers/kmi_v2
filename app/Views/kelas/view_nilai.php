@@ -7,8 +7,9 @@ $isAdminOrPanitia = ($isAdmin || $isPanitia);
 $showOralColumn = ($exam['has_oral'] == 1 && $isAdminOrPanitia);
 $showTulisColumn = ($exam['has_oral'] != 2);
 $showNilaiColumn = ($exam['has_oral'] != 2 || $isAdminOrPanitia);
+$showFinalColumn = ($exam['has_oral'] == 1);
 
-$totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($showNilaiColumn ? 1 : 0);
+$totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($showNilaiColumn ? 1 : 0) + ($showFinalColumn ? 1 : 0);
 ?>
     <!-- Detail Nilai Header & Actions -->
     <div class="mb-6 flex items-center justify-between">
@@ -56,8 +57,8 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
                         $totalNilai = 0;
                         $countNilai = 0;
                         foreach ($students as $row) {
-                            if (is_numeric($row['nilai'])) {
-                                $totalNilai += $row['nilai'];
+                            if (is_numeric($row['nilai_akhir'])) {
+                                $totalNilai += $row['nilai_akhir'];
                                 $countNilai++;
                             }
                         }
@@ -84,6 +85,9 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
                         <?php endif; ?>
                         <?php if ($showNilaiColumn): ?>
                             <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></th>
+                        <?php endif; ?>
+                        <?php if ($showFinalColumn): ?>
+                            <th class="px-6 py-3 text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest w-24">Nilai Akhir</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -123,6 +127,14 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
                                 <td class="px-6 py-3.5 text-center">
                                     <span class="font-bold <?= is_numeric($row['nilai']) && $row['nilai'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
                                         <?= is_numeric($row['nilai']) ? round($row['nilai']) : '-' ?>
+                                    </span>
+                                </td>
+                            <?php endif; ?>
+
+                            <?php if ($showFinalColumn): ?>
+                                <td class="px-6 py-3.5 text-center">
+                                    <span class="font-bold <?= is_numeric($row['nilai_akhir']) && $row['nilai_akhir'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
+                                        <?= is_numeric($row['nilai_akhir']) ? round($row['nilai_akhir']) : '-' ?>
                                     </span>
                                 </td>
                             <?php endif; ?>

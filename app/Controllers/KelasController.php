@@ -116,7 +116,25 @@ class KelasController extends Controller {
             
             $data['sessions'] = $sessions;
             $data['selected_session_id'] = $sessionId;
-            $data['exams'] = $gradeModel->getAllExams($filters);
+            
+            $exams = $gradeModel->getAllExams($filters);
+            foreach ($exams as &$exam) {
+                if ($exam['status'] === 'selesai') {
+                    $students = $gradeModel->getGrades($exam['id'], $id, $exam['academic_year_id']);
+                    $total = 0;
+                    $count = 0;
+                    foreach ($students as $row) {
+                        $merged = calculate_merged_grade($row['nilai'], $row['score_oral'], $exam['has_oral']);
+                        if ($merged !== null) {
+                            $total += $merged;
+                            $count++;
+                        }
+                    }
+                    $exam['average_score'] = $count > 0 ? ($total / $count) : 0;
+                }
+            }
+            unset($exam);
+            $data['exams'] = $exams;
         } elseif ($tab === 'view_nilai') {
             $examId = $_GET['exam_id'] ?? null;
             if (!$examId) $this->redirect('/classes/detail?id=' . $id . '&tab=nilai');
@@ -129,6 +147,11 @@ class KelasController extends Controller {
             }
 
             $students = $gradeModel->getGrades($examId, $exam['kelas_id'], $exam['academic_year_id']);
+            foreach ($students as &$studentRow) {
+                $studentRow['nilai_akhir'] = calculate_merged_grade($studentRow['nilai'], $studentRow['score_oral'], $exam['has_oral']);
+            }
+            unset($studentRow);
+
             usort($students, function ($a, $b) {
                 return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
             });
@@ -249,13 +272,17 @@ class KelasController extends Controller {
             $examAverages = [];
             foreach ($leger['exams'] as $exam) {
                 if ($exam['status'] === 'selesai') {
-                    $stmtAvg = $db->prepare("
-                        SELECT AVG(score_final) as average_score 
-                        FROM grades 
-                        WHERE exam_id = ? AND score_final IS NOT NULL
-                    ");
-                    $stmtAvg->execute([$exam['exam_id']]);
-                    $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                    $examId = $exam['exam_id'];
+                    $total = 0;
+                    $count = 0;
+                    foreach ($leger['students'] as $s) {
+                        $grade = $leger['grades'][$s['student_id']][$examId] ?? null;
+                        if ($grade && $grade['score_final'] !== null) {
+                            $total += round($grade['score_final']);
+                            $count++;
+                        }
+                    }
+                    $examAverages[$examId] = $count > 0 ? ($total / $count) : 0;
                 } else {
                     $examAverages[$exam['exam_id']] = null;
                 }
@@ -312,13 +339,17 @@ class KelasController extends Controller {
             $examAverages = [];
             foreach ($leger['exams'] as $exam) {
                 if ($exam['status'] === 'selesai') {
-                    $stmtAvg = $db->prepare("
-                        SELECT AVG(score_final) as average_score 
-                        FROM grades 
-                        WHERE exam_id = ? AND score_final IS NOT NULL
-                    ");
-                    $stmtAvg->execute([$exam['exam_id']]);
-                    $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                    $examId = $exam['exam_id'];
+                    $total = 0;
+                    $count = 0;
+                    foreach ($leger['students'] as $s) {
+                        $grade = $leger['grades'][$s['student_id']][$examId] ?? null;
+                        if ($grade && $grade['score_final'] !== null) {
+                            $total += round($grade['score_final']);
+                            $count++;
+                        }
+                    }
+                    $examAverages[$examId] = $count > 0 ? ($total / $count) : 0;
                 } else {
                     $examAverages[$exam['exam_id']] = null;
                 }
@@ -512,13 +543,17 @@ class KelasController extends Controller {
         $examAverages = [];
         foreach ($leger['exams'] as $exam) {
             if ($exam['status'] === 'selesai') {
-                $stmtAvg = $db->prepare("
-                    SELECT AVG(score_final) as average_score 
-                    FROM grades 
-                    WHERE exam_id = ? AND score_final IS NOT NULL
-                ");
-                $stmtAvg->execute([$exam['exam_id']]);
-                $examAverages[$exam['exam_id']] = $stmtAvg->fetchColumn() ?: 0;
+                $examId = $exam['exam_id'];
+                $total = 0;
+                $count = 0;
+                foreach ($leger['students'] as $s) {
+                    $grade = $leger['grades'][$s['student_id']][$examId] ?? null;
+                    if ($grade && $grade['score_final'] !== null) {
+                        $total += round($grade['score_final']);
+                        $count++;
+                    }
+                }
+                $examAverages[$examId] = $count > 0 ? ($total / $count) : 0;
             } else {
                 $examAverages[$exam['exam_id']] = null;
             }
