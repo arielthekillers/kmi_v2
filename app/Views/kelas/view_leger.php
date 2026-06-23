@@ -38,7 +38,16 @@ $typeMap = [
     'UUAT' => 'Ulangan Umum Akhir Tahun',
     'UAT' => 'Ujian Akhir Tahun'
 ];
-$sessionName = $typeMap[$selected_session_id] ?? '';
+$sessionType = '';
+if (!empty($sessions)) {
+    foreach ($sessions as $s) {
+        if ($s['id'] == $selected_session_id) {
+            $sessionType = $s['type'];
+            break;
+        }
+    }
+}
+$sessionName = $typeMap[$sessionType] ?? '';
 ?>
 
 <style>
@@ -165,20 +174,25 @@ $sessionName = $typeMap[$selected_session_id] ?? '';
             <i class="ri-arrow-left-line"></i> Kembali
         </a>
         <div>
-            <h4 class="text-sm font-bold text-gray-800">Pratinjau Leger Rekap Nilai</h4>
+            <h4 class="text-sm font-bold text-gray-800">Pratinjau Rekap Nilai</h4>
             <p class="text-xs text-gray-400">Kelas <?= htmlspecialchars($kelas['tingkat'] . '-' . $kelas['abjad']) ?> | <?= htmlspecialchars($sessionName) ?></p>
         </div>
     </div>
-    <button onclick="window.print()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
-        <i class="ri-printer-line text-sm"></i> Cetak Leger (PDF)
-    </button>
+    <div class="flex gap-2">
+        <a href="<?= url('/classes/export-leger?id=' . $kelas['id'] . '&session_id=' . $selected_session_id) ?>" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+            <i class="ri-file-excel-line text-sm"></i> Export Excel
+        </a>
+        <button onclick="window.print()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+            <i class="ri-printer-line text-sm"></i> Cetak Rekap Nilai (PDF)
+        </button>
+    </div>
 </div>
 
 <!-- Print Container (Landscape A4 Layout) -->
 <div class="print-area leger-body bg-white p-4 shadow-md rounded-2xl border border-gray-100 mb-12 overflow-x-auto">
     <!-- Header info -->
     <div class="text-center mb-4">
-        <h2 class="text-base font-bold uppercase tracking-wide">LEGER REKAPITULASI NILAI SANTRI</h2>
+        <h2 class="text-base font-bold uppercase tracking-wide">REKAPITULASI NILAI SANTRI</h2>
         <p class="text-xs font-semibold uppercase">KELAS: <?= htmlspecialchars($kelas['tingkat'] . '-' . $kelas['abjad']) ?> | SESI: <?= htmlspecialchars($sessionName) ?> | TAHUN AJARAN: <?= htmlspecialchars($this->currentYear['name'] ?? '') ?></p>
         <p class="text-[10px] text-gray-500 mt-0.5">Wali Kelas: <?= htmlspecialchars($kelas['wali_kelas'] ?? '-') ?></p>
     </div>

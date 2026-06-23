@@ -68,6 +68,7 @@ class App
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);
         $this->router->get('/classes/detail', ['App\Controllers\KelasController', 'detail']);
+        $this->router->get('/classes/export-leger', ['App\Controllers\KelasController', 'exportLeger']);
         $this->router->post('/classes/store', ['App\Controllers\KelasController', 'store']);
         $this->router->get('/classes/delete', ['App\Controllers\KelasController', 'delete']);
         $this->router->post('/classes/save-perilaku', ['App\Controllers\KelasController', 'savePerilaku']);

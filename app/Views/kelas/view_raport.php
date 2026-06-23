@@ -10,7 +10,7 @@
         <?php if (!empty($selected_session_id) && $leger && !empty($leger['students'])): ?>
             <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=leger&session_id=' . $selected_session_id) ?>" 
                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
-                <i class="ri-file-chart-line text-lg"></i> Lihat Leger (Rekap Nilai)
+                <i class="ri-file-chart-line text-lg"></i> Lihat Rekap Nilai
             </a>
         <?php endif; ?>
         <form action="" method="GET" class="flex items-center">
