@@ -775,13 +775,13 @@ class KelasController extends Controller {
         $html .= '  <tr>';
         $html .= '    <td colspan="' . $colSpanLeft . '" style="border: none;">&nbsp;</td>';
         $html .= '    <td colspan="' . $colSpanMiddle . '" style="border: none; text-align: center; font-weight: bold;">Wali Kelas</td>';
-        $html .= '    <td colspan="' . $colSpanRight . '" style="border: none; text-align: center; font-weight: bold;">Direktur KMI</td>';
+        $html .= '    <td colspan="' . $colSpanRight . '" style="border: none; text-align: center; font-weight: bold;">Pimpinan Pondok Pesantren Darussalam Bogor</td>';
         $html .= '  </tr>';
         $html .= '  <tr><td colspan="' . $totalCols . '" style="border: none; height: 50px;">&nbsp;</td></tr>';
         $html .= '  <tr>';
         $html .= '    <td colspan="' . $colSpanLeft . '" style="border: none;">&nbsp;</td>';
         $html .= '    <td colspan="' . $colSpanMiddle . '" style="border: none; text-align: center; font-weight: bold; text-decoration: underline;">' . htmlspecialchars($kelas['wali_kelas'] ?? '') . '</td>';
-        $html .= '    <td colspan="' . $colSpanRight . '" style="border: none; text-align: center; font-weight: bold; text-decoration: underline;">KH. Abu Jihad, M.Pd., S.H.I.</td>';
+        $html .= '    <td colspan="' . $colSpanRight . '" style="border: none; text-align: center; font-weight: bold; text-decoration: underline;">Kiai Muhammad Abu Jihad Lillah, S.H.I., M.Pd.</td>';
         $html .= '  </tr>';
         $html .= '</table>';
 

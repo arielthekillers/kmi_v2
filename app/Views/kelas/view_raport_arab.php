@@ -495,9 +495,9 @@ $leftRowsCount = count($leftPanelExams);
             <p class="border-b border-dashed border-black inline-block px-6"><?= htmlspecialchars($kelas['wali_kelas'] ?? '') ?></p>
         </div>
         <div class="w-1/3">
-            <p>مدير المعهد</p>
+            <p>رئيس معهد دار السلام بوغور</p>
             <div class="h-20"></div>
-            <p class="border-b border-dashed border-black inline-block px-6">كيامي أبو جهاد لله، M.Pd., S.H.I.</p>
+            <p class="border-b border-dashed border-black inline-block px-6">كيامي محمد أبو جهاد لله، S.H.I., M.Pd.</p>
         </div>
     </div>
 </div>

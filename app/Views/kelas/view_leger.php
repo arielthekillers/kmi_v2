@@ -328,9 +328,9 @@ $sessionName = $typeMap[$sessionType] ?? '';
             <p class="border-b border-dashed border-black inline-block px-6"><?= htmlspecialchars($kelas['wali_kelas'] ?? '') ?></p>
         </div>
         <div class="w-1/3">
-            <p>Direktur KMI</p>
+            <p>Pimpinan Pondok Pesantren Darussalam Bogor</p>
             <div class="h-12"></div>
-            <p class="border-b border-dashed border-black inline-block px-6">KH. Abu Jihad, M.Pd., S.H.I.</p>
+            <p class="border-b border-dashed border-black inline-block px-6">Kiai Muhammad Abu Jihad Lillah, S.H.I., M.Pd.</p>
         </div>
     </div>
 </div>
