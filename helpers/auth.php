@@ -84,6 +84,16 @@ if (!function_exists('auth_get_users')) {
 if (!function_exists('find_user_by_username')) {
     function find_user_by_username($username)
     {
+        // Clean and normalize if it's a phone number (numeric and >= 9 digits)
+        $clean = preg_replace('/[^0-9]/', '', $username);
+        if (!empty($clean) && strlen($clean) >= 9) {
+            if (substr($clean, 0, 1) === '0') {
+                $username = '62' . substr($clean, 1);
+            } else {
+                $username = $clean;
+            }
+        }
+
         // Use Database
         $db = \App\Core\Database::getInstance();
         $stmt = $db->query("SELECT * FROM users WHERE username = ? AND deleted_at IS NULL", [$username]);
@@ -116,6 +126,7 @@ if (!function_exists('login_user')) {
                 'username' => $user['username'],
                 'nama' => $user['nama'],
                 'role' => $user['role'],
+                'password_hash' => $user['password'], // store password hash for session verification
                 'legacy_id' => $user['legacy_id'] ?? null
             ];
             return true;
@@ -202,7 +213,7 @@ if (!function_exists('require_login')) {
     function require_login()
     {
         auth_start_session();
-        if (empty($_SESSION['user'])) {
+        if (auth_get_current_user() === null) {
             // Get baseDir to strip from REQUEST_URI
             $scriptName = $_SERVER['SCRIPT_NAME'];
             $baseDir = dirname($scriptName);
@@ -264,6 +275,7 @@ if (!function_exists('auth_get_current_user')) {
                     'username' => $found['username'],
                     'nama' => $found['nama'] ?? $found['username'],
                     'role' => $found['role'] ?? 'admin',
+                    'password_hash' => $found['password'],
                     'id' => $found['id'] ?? null
                 ];
                 return $_SESSION['user'];
@@ -277,11 +289,17 @@ if (!function_exists('auth_get_current_user')) {
             if ($username) {
                 $found = find_user_by_username($username);
                 if ($found) {
-                    // Update session with full details (role/id) so next call is faster
+                    // If session password hash exists, verify it matches database
+                    if (isset($u['password_hash']) && $found['password'] !== $u['password_hash']) {
+                        unset($_SESSION['user']);
+                        return null;
+                    }
+                    // Update session with full details so next call is faster
                     $_SESSION['user'] = [
                         'username' => $found['username'],
                         'nama' => $found['nama'] ?? $found['username'],
                         'role' => $found['role'] ?? 'admin',
+                        'password_hash' => $found['password'],
                         'id' => $found['id'] ?? null
                     ];
                     return $_SESSION['user'];

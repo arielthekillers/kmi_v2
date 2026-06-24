@@ -39,6 +39,9 @@ class ProfileController extends Controller {
 
         $hp = trim($_POST['hp'] ?? '');
         $username = preg_replace('/[^0-9]/', '', $hp);
+        if ($username && substr($username, 0, 1) === '0') {
+            $username = '62' . substr($username, 1);
+        }
 
         // Check uniqueness
         if (!empty($username)) {
@@ -145,12 +148,27 @@ class ProfileController extends Controller {
             $profileData['password_plain'] = $newPassword;
         }
 
+        $isCredentialsChanged = false;
+        $oldHpClean = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
+        if ($oldHpClean && substr($oldHpClean, 0, 1) === '0') {
+            $oldHpClean = '62' . substr($oldHpClean, 1);
+        }
+        if ($username !== $oldHpClean) {
+            $isCredentialsChanged = true;
+        }
+        if (!empty($profileData['password'])) {
+            $isCredentialsChanged = true;
+        }
+
         if (update_teacher_biodata($teacherId, $profileData)) {
-            // Keep session alive with new username
-            if (!empty($username) && isset($_SESSION['user']) && is_array($_SESSION['user'])) {
-                $_SESSION['user']['username'] = $username;
+            if ($isCredentialsChanged) {
+                require_once __DIR__ . '/../../helpers/auth.php';
+                logout_user();
+                add_flash('Profil/Kredensial berhasil diperbarui. Silakan login kembali dengan kredensial baru Anda.', 'success');
+                $this->redirect('/login');
+            } else {
+                add_flash('Profil berhasil diperbarui!', 'success');
             }
-            add_flash('Profil berhasil diperbarui!', 'success');
         } else {
             add_flash('Gagal memperbarui profil.', 'error');
         }

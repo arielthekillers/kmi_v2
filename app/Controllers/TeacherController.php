@@ -67,6 +67,9 @@ class TeacherController extends Controller {
         $hp = htmlspecialchars($_POST['hp'] ?? '');
         // username set to HP for now, clean it
         $username = preg_replace('/[^0-9]/', '', $hp);
+        if ($username && substr($username, 0, 1) === '0') {
+            $username = '62' . substr($username, 1);
+        }
         if (empty($username)) {
             // fallback if no HP, use random or name?
             // Legacy uses HP as username. If empty, maybe error?
@@ -269,29 +272,41 @@ class TeacherController extends Controller {
                 $this->redirect('/teachers');
             }
 
-            // Save new hashed + plain password
-            $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
-            $upd->execute([$hashedPassword, $newPassword, $id]);
+            // Clean and normalize phone number to get new username
+            $hp = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
+            if ($hp && substr($hp, 0, 1) === '0') $hp = '62' . substr($hp, 1);
+
+            // Save new hashed + plain password, and sync username to match current phone number
+            if ($hp) {
+                $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ?, username = ? WHERE id = ?");
+                $upd->execute([$hashedPassword, $newPassword, $hp, $id]);
+            } else {
+                $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
+                $upd->execute([$hashedPassword, $newPassword, $id]);
+            }
             log_activity("Mereset password pengajar: {$teacher['nama']} (ID: {$id})");
 
             // Build WA link
-            $hp = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
-            if ($hp && substr($hp, 0, 1) === '0') $hp = '62' . substr($hp, 1);
+            $hpWa = $hp;
+            if (empty($hpWa)) {
+                $hpWa = preg_replace('/[^0-9]/', '', $teacher['hp'] ?? '');
+                if ($hpWa && substr($hpWa, 0, 1) === '0') $hpWa = '62' . substr($hpWa, 1);
+            }
 
             require_once __DIR__ . '/../../helpers/utilities.php';
             $loginUrl = url('/login');
             $waMsg  = "Assalamu'alaikum Wr. Wb.\n\nBerikut akun antum untuk login di KMI App:\n\n";
-            $waMsg .= "Username: " . ($teacher['hp'] ?? '-') . "\n";
+            $waMsg .= "Username: " . ($hp ?: ($teacher['hp'] ?? '-')) . "\n";
             $waMsg .= "Password: " . $newPassword . "\n\n";
             $waMsg .= "Link Login: " . $loginUrl . "\n\n";
             $waMsg .= "Mohon dijaga kerahasiaannya.\n\nSyukron";
-            $waLink = $hp ? "https://wa.me/{$hp}?text=" . rawurlencode($waMsg) : null;
+            $waLink = $hpWa ? "https://wa.me/{$hpWa}?text=" . rawurlencode($waMsg) : null;
 
             // Session already started by auth helpers — just write to it
             if (session_status() === PHP_SESSION_NONE) session_start();
             $_SESSION['reset_result'] = [
                 'nama'     => $teacher['nama'],
-                'hp'       => $teacher['hp'] ?? '-',
+                'hp'       => $hp ?: ($teacher['hp'] ?? '-'),
                 'password' => $newPassword,
                 'wa_link'  => $waLink
             ];
