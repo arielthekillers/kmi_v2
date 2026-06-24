@@ -213,7 +213,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </th>
                         <?php endif; ?>
 
-                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat" onclick="sortTable(this, true)">
+                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                             <div class="flex items-center gap-1">
                                 No. Bayanat
                                 <i class="ri-sort-asc"></i>
@@ -250,7 +250,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             <?php endif; ?>
 
                             <!-- No Bayanat -->
-                            <td class="md:px-6 md:py-5 col-bayanat">
+                            <td class="md:px-6 md:py-5 col-bayanat <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
                                 <div class="flex flex-col">
                                     <span class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">No. Bayanat</span>
                                     <input type="hidden" name="student_id[]" value="<?= $row['student_id'] ?>">
@@ -382,12 +382,15 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                     </button>
                 <?php endif; ?>
 
-                <?php if ($isExaminer && $sessionOpen): ?>
-                    <button type="submit" name="action" value="save" onclick="return confirm('Simpan hasil koreksi sebagai draft?');" class="flex-1 md:flex-none h-14 px-8 rounded-2xl bg-white border-2 border-gray-100 text-gray-600 font-black text-sm uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2">
+                <?php 
+                $canSaveAndFinish = $isAdminOrPanitia || ($isExaminer && $sessionOpen);
+                if ($canSaveAndFinish): 
+                ?>
+                    <button type="submit" id="saveDraftBtn" name="action" value="save" onclick="return confirm('Simpan hasil koreksi sebagai draft?');" class="flex-1 md:flex-none h-14 px-8 rounded-2xl bg-white border-2 border-gray-100 text-gray-600 font-black text-sm uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i class="ri-save-3-line text-lg"></i>
                         Simpan Draft
                     </button>
-                    <button type="submit" name="action" value="finish" onclick="return validateFinish()" class="flex-[2] md:flex-none h-14 px-10 rounded-2xl bg-green-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-green-200 hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button type="submit" id="finishBtn" name="action" value="finish" onclick="return validateFinish()" class="flex-[2] md:flex-none h-14 px-10 rounded-2xl bg-green-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-green-200 hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i class="ri-checkbox-circle-line text-lg"></i>
                         Selesai Diperiksa
                     </button>
@@ -462,6 +465,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         const colsTulis = document.querySelectorAll('.col-tulis');
         const colsLisan = document.querySelectorAll('.col-lisan');
         const colsNilai = document.querySelectorAll('.col-nilai');
+        const colsBayanat = document.querySelectorAll('.col-bayanat');
         
         const headerNilaiLabel = document.getElementById('header_nilai_label');
         const headerLisanLabel = document.getElementById('header_lisan_label');
@@ -478,6 +482,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         const showLisan = (hasOralVal === 1 || hasOralVal === 2) && isAdminOrPanitia;
         const showTulis = (hasOralVal === 0 || hasOralVal === 1);
         const showNilai = (hasOralVal === 0 || hasOralVal === 1);
+        const showBayanat = (hasOralVal === 0 || hasOralVal === 1);
 
         if (showLisan) {
             colsLisan.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
@@ -497,6 +502,12 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             colsNilai.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
         }
 
+        if (showBayanat) {
+            colsBayanat.forEach(el => { el.style.display = ''; el.classList.remove('hidden'); });
+        } else {
+            colsBayanat.forEach(el => { el.style.display = 'none'; el.classList.add('hidden'); });
+        }
+
         // Set parents to grid-cols-1
         document.querySelectorAll('[id^="container_lisan_"]').forEach(el => {
             el.classList.remove('grid-cols-2');
@@ -508,6 +519,25 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
             window.calculateRow(row);
         });
         window.updateAverage();
+
+        // Dynamically toggle buttons based on selected category and user role
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const finishBtn = document.getElementById('finishBtn');
+
+        if (isAdminOrPanitia) {
+            if (hasOralVal === 2) {
+                // Lisan: show draft/finish, hide config
+                if (saveConfigBtn) { saveConfigBtn.style.display = 'none'; saveConfigBtn.classList.add('hidden'); }
+                if (saveDraftBtn) { saveDraftBtn.style.display = ''; saveDraftBtn.classList.remove('hidden'); }
+                if (finishBtn) { finishBtn.style.display = ''; finishBtn.classList.remove('hidden'); }
+            } else {
+                // Tulis / Tulis & Lisan: show config, hide draft/finish
+                if (saveConfigBtn) { saveConfigBtn.style.display = ''; saveConfigBtn.classList.remove('hidden'); }
+                if (saveDraftBtn) { saveDraftBtn.style.display = 'none'; saveDraftBtn.classList.add('hidden'); }
+                if (finishBtn) { finishBtn.style.display = 'none'; finishBtn.classList.add('hidden'); }
+            }
+        }
     };
 
     window.calculateRow = function(row) {

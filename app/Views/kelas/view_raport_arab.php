@@ -47,31 +47,44 @@ if (!empty($sem1SessionIds)) {
     $inSem1 = implode(',', $sem1SessionIds);
     // Student score
     $stmtG = $db->prepare("
-        SELECT g.score_final 
+        SELECT g.score_final, g.score_oral, e.has_oral
         FROM grades g
         JOIN exams e ON g.exam_id = e.id
-        WHERE g.student_id = ? AND e.exam_session_id IN ($inSem1) AND e.is_deleted = 0 AND e.status = 'selesai' AND g.score_final IS NOT NULL
+        WHERE g.student_id = ? AND e.exam_session_id IN ($inSem1) AND e.is_deleted = 0 AND e.status = 'selesai'
     ");
     $stmtG->execute([$student['student_id']]);
-    $sem1Grades = $stmtG->fetchAll(\PDO::FETCH_COLUMN);
-    foreach ($sem1Grades as $gVal) {
-        $sem1Total += round($gVal);
-        $sem1Count++;
+    $sem1Grades = $stmtG->fetchAll(\PDO::FETCH_ASSOC);
+    foreach ($sem1Grades as $row) {
+        $merged = calculate_merged_grade($row['score_final'], $row['score_oral'], $row['has_oral']);
+        if ($merged !== null) {
+            $sem1Total += round($merged);
+            $sem1Count++;
+        }
     }
 
     // Class average
     $stmtAvg = $db->prepare("
-        SELECT AVG(g.score_final) 
+        SELECT g.score_final, g.score_oral, e.has_oral, e.id as exam_id
         FROM grades g
         JOIN exams e ON g.exam_id = e.id
-        WHERE e.kelas_id = ? AND e.exam_session_id IN ($inSem1) AND e.is_deleted = 0 AND e.status = 'selesai' AND g.score_final IS NOT NULL
-        GROUP BY e.id
+        WHERE e.kelas_id = ? AND e.exam_session_id IN ($inSem1) AND e.is_deleted = 0 AND e.status = 'selesai'
     ");
     $stmtAvg->execute([$kelas['id']]);
-    $sem1ClassAvgs = $stmtAvg->fetchAll(\PDO::FETCH_COLUMN);
-    foreach ($sem1ClassAvgs as $avgVal) {
-        $sem1AvgClassTotal += $avgVal;
-        $sem1AvgClassCount++;
+    $sem1AllGrades = $stmtAvg->fetchAll(\PDO::FETCH_ASSOC);
+    
+    $gradesByExam = [];
+    foreach ($sem1AllGrades as $row) {
+        $merged = calculate_merged_grade($row['score_final'], $row['score_oral'], $row['has_oral']);
+        if ($merged !== null) {
+            $gradesByExam[$row['exam_id']][] = $merged;
+        }
+    }
+    
+    foreach ($gradesByExam as $examId => $scoresList) {
+        if (!empty($scoresList)) {
+            $sem1AvgClassTotal += array_sum($scoresList) / count($scoresList);
+            $sem1AvgClassCount++;
+        }
     }
 }
 
@@ -85,31 +98,44 @@ if (!empty($sem2SessionIds)) {
     $inSem2 = implode(',', $sem2SessionIds);
     // Student score
     $stmtG = $db->prepare("
-        SELECT g.score_final 
+        SELECT g.score_final, g.score_oral, e.has_oral
         FROM grades g
         JOIN exams e ON g.exam_id = e.id
-        WHERE g.student_id = ? AND e.exam_session_id IN ($inSem2) AND e.is_deleted = 0 AND e.status = 'selesai' AND g.score_final IS NOT NULL
+        WHERE g.student_id = ? AND e.exam_session_id IN ($inSem2) AND e.is_deleted = 0 AND e.status = 'selesai'
     ");
     $stmtG->execute([$student['student_id']]);
-    $sem2Grades = $stmtG->fetchAll(\PDO::FETCH_COLUMN);
-    foreach ($sem2Grades as $gVal) {
-        $sem2Total += round($gVal);
-        $sem2Count++;
+    $sem2Grades = $stmtG->fetchAll(\PDO::FETCH_ASSOC);
+    foreach ($sem2Grades as $row) {
+        $merged = calculate_merged_grade($row['score_final'], $row['score_oral'], $row['has_oral']);
+        if ($merged !== null) {
+            $sem2Total += round($merged);
+            $sem2Count++;
+        }
     }
 
     // Class average
     $stmtAvg = $db->prepare("
-        SELECT AVG(g.score_final) 
+        SELECT g.score_final, g.score_oral, e.has_oral, e.id as exam_id
         FROM grades g
         JOIN exams e ON g.exam_id = e.id
-        WHERE e.kelas_id = ? AND e.exam_session_id IN ($inSem2) AND e.is_deleted = 0 AND e.status = 'selesai' AND g.score_final IS NOT NULL
-        GROUP BY e.id
+        WHERE e.kelas_id = ? AND e.exam_session_id IN ($inSem2) AND e.is_deleted = 0 AND e.status = 'selesai'
     ");
     $stmtAvg->execute([$kelas['id']]);
-    $sem2ClassAvgs = $stmtAvg->fetchAll(\PDO::FETCH_COLUMN);
-    foreach ($sem2ClassAvgs as $avgVal) {
-        $sem2AvgClassTotal += $avgVal;
-        $sem2AvgClassCount++;
+    $sem2AllGrades = $stmtAvg->fetchAll(\PDO::FETCH_ASSOC);
+    
+    $gradesByExam = [];
+    foreach ($sem2AllGrades as $row) {
+        $merged = calculate_merged_grade($row['score_final'], $row['score_oral'], $row['has_oral']);
+        if ($merged !== null) {
+            $gradesByExam[$row['exam_id']][] = $merged;
+        }
+    }
+    
+    foreach ($gradesByExam as $examId => $scoresList) {
+        if (!empty($scoresList)) {
+            $sem2AvgClassTotal += array_sum($scoresList) / count($scoresList);
+            $sem2AvgClassCount++;
+        }
     }
 }
 

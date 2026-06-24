@@ -60,6 +60,7 @@ class GradeController extends Controller {
         ];
         if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
             $progressFilters['pengajar'] = $userId;
+            $progressFilters['exclude_oral_only'] = true;
         }
         $allExamsForStats = $gradeModel->getAllExams($progressFilters);
 
@@ -111,6 +112,7 @@ class GradeController extends Controller {
 
         if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
             $filters['pengajar'] = $userId;
+            $filters['exclude_oral_only'] = true;
         }
 
         $exams = $gradeModel->getAllExams($filters);
@@ -189,6 +191,16 @@ class GradeController extends Controller {
             redirect('/grades');
         }
 
+        $userRole = auth_get_role();
+        $isPanitia = auth_is_panitia($exam['exam_session_id'] ?? null);
+        $isAdmin = ($userRole === 'admin');
+        
+        // Block normal teachers from oral-only exams
+        if ($exam['has_oral'] == 2 && !$isAdmin && !$isPanitia) {
+            add_flash('Akses ditolak: Ujian lisan saja hanya dikelola oleh Panitia.', 'error');
+            redirect('/grades');
+        }
+
         // Access Check (Ideally verify teacher ownership if not admin)
         // Legacy didn't strictly block viewing if I recall, but let's be safe.
         // Actually legacy nilai.php didn't check teacher ownership explicitly in the snippet I saw, 
@@ -241,6 +253,13 @@ class GradeController extends Controller {
         $userRole = auth_get_role();
         $isPanitia = auth_is_panitia($exam['exam_session_id']);
         $isAdmin = ($userRole === 'admin');
+        
+        // Block normal teachers from oral-only exams
+        if ($exam['has_oral'] == 2 && !$isAdmin && !$isPanitia) {
+            add_flash('Akses ditolak: Ujian lisan saja hanya dikelola oleh Panitia.', 'error');
+            redirect('/grades');
+        }
+
         $sessionOpen = (isset($exam['session_is_open']) && $exam['session_is_open'] == 1);
 
         // Teacher Restriction: Cannot update if session is closed
@@ -262,8 +281,10 @@ class GradeController extends Controller {
             if ($skorMaksPost !== null && is_numeric($skorMaksPost)) {
                 $exam['skor_maks'] = (float)$skorMaksPost;
             }
-            // Only force 'save' action if not the examiner (who might be clicking 'finish')
-            if (!$isExaminer) {
+            // For Tulis (0) or Tulis & Lisan (1), only the designated examiner can finish it.
+            // If the current user is NOT the examiner, force action to save.
+            $targetHasOral = isset($_POST['has_oral']) ? (int)$_POST['has_oral'] : (int)$exam['has_oral'];
+            if (!$isExaminer && ($targetHasOral == 0 || $targetHasOral == 1)) {
                 $action = 'save';
             }
         }

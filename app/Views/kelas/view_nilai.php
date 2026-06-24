@@ -125,8 +125,11 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
  
                             <?php if ($showNilaiColumn): ?>
                                 <td class="px-6 py-3.5 text-center">
-                                    <span class="font-bold <?= is_numeric($row['nilai']) && $row['nilai'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
-                                        <?= is_numeric($row['nilai']) ? round($row['nilai']) : '-' ?>
+                                    <?php 
+                                        $valDisplay = ($exam['has_oral'] == 2) ? $row['nilai_akhir'] : $row['nilai'];
+                                    ?>
+                                    <span class="font-bold <?= is_numeric($valDisplay) && $valDisplay < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
+                                        <?= is_numeric($valDisplay) ? round($valDisplay) : '-' ?>
                                     </span>
                                 </td>
                             <?php endif; ?>

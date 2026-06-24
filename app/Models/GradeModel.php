@@ -66,6 +66,9 @@ class GradeModel extends Model {
             $sql .= " AND e.has_oral = ?";
             $params[] = (int)$filters['has_oral'];
         }
+        if (!empty($filters['exclude_oral_only'])) {
+            $sql .= " AND e.has_oral != 2";
+        }
 
         $sql .= " ORDER BY e.created_at DESC";
 
