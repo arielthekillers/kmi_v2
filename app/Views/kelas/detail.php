@@ -1,4 +1,14 @@
 <!-- e:\xampp\htdocs\kmi_v2\app\Views\kelas\detail.php -->
+<style>
+    /* Sembunyikan scrollbar untuk navigasi tab horizontal di mobile */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;  /* IE/Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+</style>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Breadcrumb & Header (Settings Style) -->
     <div class="mb-8">
@@ -23,11 +33,12 @@
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Sidebar Navigation (Settings Style) -->
         <aside class="w-full md:w-56 flex-shrink-0">
-            <nav class="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+            <nav class="flex md:flex-col gap-1.5 overflow-x-auto no-scrollbar pb-3 md:pb-0 scroll-smooth">
                 <div class="mt-4 mb-2 px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:block">Utama</div>
                 
                 <a href="?id=<?= $kelas['id'] ?>&tab=overview" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'overview' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                   <?= $tab === 'overview' ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= $tab === 'overview' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
                     <svg class="w-4 h-4 <?= $tab === 'overview' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                     Ringkasan
                 </a>
@@ -35,31 +46,36 @@
                 <div class="mt-4 mb-2 px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:block">Akademik</div>
                 
                 <a href="?id=<?= $kelas['id'] ?>&tab=santri" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'santri' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                   <?= $tab === 'santri' ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= $tab === 'santri' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
                     <svg class="w-4 h-4 <?= $tab === 'santri' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     Daftar Santri
                 </a>
 
                 <a href="?id=<?= $kelas['id'] ?>&tab=jadwal" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'jadwal' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                   <?= $tab === 'jadwal' ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= $tab === 'jadwal' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
                     <svg class="w-4 h-4 <?= $tab === 'jadwal' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Jadwal Pelajaran
                 </a>
 
                 <a href="?id=<?= $kelas['id'] ?>&tab=nilai" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                   <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
                     <svg class="w-4 h-4 <?= ($tab === 'nilai' || $tab === 'view_nilai') ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Nilai Ujian
                 </a>
 
                 <a href="?id=<?= $kelas['id'] ?>&tab=raport" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'raport' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
-                    <svg class="w-4 h-4 <?= $tab === 'raport' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                   <?= ($tab === 'raport' || $tab === 'raport_detail' || $tab === 'leger' || $tab === 'raport_arab') ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= ($tab === 'raport' || $tab === 'raport_detail' || $tab === 'leger' || $tab === 'raport_arab') ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
+                    <svg class="w-4 h-4 <?= ($tab === 'raport' || $tab === 'raport_detail' || $tab === 'leger' || $tab === 'raport_arab') ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Raport Santri
                 </a>
 
                 <a href="?id=<?= $kelas['id'] ?>&tab=perilaku" 
-                   class="whitespace-nowrap flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors <?= $tab === 'perilaku' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-100' ?>">
+                   <?= $tab === 'perilaku' ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= $tab === 'perilaku' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
                     <svg class="w-4 h-4 <?= $tab === 'perilaku' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Nilai Perilaku
                 </a>
@@ -72,24 +88,24 @@
             <?php if ($tab === 'overview'): ?>
                 <!-- Overview Tab -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-6 rounded-2xl border border-indigo-100 shadow-sm transition-all hover:shadow-md">
                         <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <div class="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
                                 <i class="ri-user-star-line text-xl"></i>
                             </div>
                             <div>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Wali Kelas</p>
+                                <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Wali Kelas</p>
                                 <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($kelas['wali_kelas'] ?? 'Belum Ditentukan') ?></p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-6 rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md">
                         <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <div class="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-200">
                                 <i class="ri-map-pin-line text-xl"></i>
                             </div>
                             <div>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Lokasi Kelas</p>
+                                <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Lokasi Kelas</p>
                                 <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($kelas['location'] ?: 'Belum Ditentukan') ?></p>
                             </div>
                         </div>
@@ -122,14 +138,16 @@
             <?php elseif ($tab === 'santri'): ?>
                 <!-- Santri Tab -->
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                         <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                             Daftar Santri Terdaftar
                         </h3>
-                        <span class="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-wider"><?= count($students) ?> Santri</span>
+                        <span class="self-start sm:self-center px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-wider"><?= count($students) ?> Santri</span>
                     </div>
-                    <div class="overflow-x-auto">
+                    
+                    <!-- Desktop View Table -->
+                    <div class="overflow-x-auto hidden md:block">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50/50">
                                 <tr>
@@ -152,7 +170,7 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-3.5">
-                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">AKtif</span>
+                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">Aktif</span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -161,6 +179,35 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile List View -->
+                    <div class="grid grid-cols-1 divide-y divide-gray-100 md:hidden bg-white">
+                        <?php foreach ($students as $index => $s): ?>
+                        <div class="p-4 flex items-center justify-between hover:bg-gray-50/30 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold text-xs flex items-center justify-center">
+                                    <?= $index + 1 ?>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-900 text-sm">
+                                        <?php if (auth_get_role() === 'admin'): ?>
+                                            <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($s['nama']) ?>
+                                        <?php endif; ?>
+                                    </p>
+                                    <p class="text-xs text-gray-500 font-mono mt-0.5">NIS: <?= htmlspecialchars($s['nis']) ?></p>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">Aktif</span>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php if (empty($students)): ?>
+                        <div class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada santri terdaftar di kelas ini.</div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -220,7 +267,7 @@
                             <form action="" method="GET" class="flex items-center">
                                 <input type="hidden" name="id" value="<?= $kelas['id'] ?>">
                                 <input type="hidden" name="tab" value="nilai">
-                                <select name="session_id" onchange="this.form.submit()" class="text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-indigo-500 focus:ring-0 shadow-sm cursor-pointer hover:border-gray-300 transition-colors">
+                                <select name="session_id" onchange="this.form.submit()" class="text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-indigo-500 focus:ring-0 shadow-sm cursor-pointer hover:border-gray-300 transition-colors w-full sm:w-auto">
                                     <option value="">Semua Sesi Ujian</option>
                                     <?php 
                                     $typeMap = [
@@ -240,7 +287,9 @@
                             </form>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+                    
+                    <!-- Desktop View Table -->
+                    <div class="overflow-x-auto hidden md:block">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50/50">
                                 <tr>
@@ -297,7 +346,68 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile List View -->
+                    <div class="grid grid-cols-1 divide-y divide-gray-100 md:hidden bg-white">
+                        <?php foreach ($exams as $exam): ?>
+                        <div class="p-4 flex flex-col gap-3.5 hover:bg-gray-50/30 transition-colors">
+                            <div class="flex justify-between items-start gap-4">
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 text-sm truncate">
+                                        <?= htmlspecialchars($exam['mapel_nama'] ?? 'Unknown') ?>
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                        <i class="ri-user-star-line text-[11px] text-gray-400"></i>
+                                        <span class="truncate"><?= htmlspecialchars($exam['pengajar_nama'] ?? 'Tanpa Pengajar') ?></span>
+                                    </p>
+                                </div>
+                                <span class="shrink-0 px-2 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">
+                                    <?= htmlspecialchars($exam['exam_type'] ?? '-') ?>
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between bg-gray-50/70 p-2.5 rounded-xl border border-gray-100 text-center">
+                                <div>
+                                    <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Rata-rata</div>
+                                    <div class="text-sm font-black text-indigo-600">
+                                        <?= ($exam['status'] === 'selesai' && $exam['average_score'] !== null) ? number_format($exam['average_score'], 2) : '-' ?>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Status</div>
+                                    <div>
+                                        <?php if ($exam['status'] === 'selesai'): ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-green-50 text-green-700 uppercase">Selesai</span>
+                                        <?php elseif ($exam['status'] === 'proses'): ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-blue-700 uppercase">Proses</span>
+                                        <?php else: ?>
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-gray-50 text-gray-600 uppercase">Belum</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Aksi</div>
+                                    <div>
+                                        <?php if ($exam['status'] === 'selesai'): ?>
+                                            <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=view_nilai&exam_id=' . $exam['id']) ?>" class="text-indigo-600 hover:text-indigo-900 font-bold text-xs flex items-center justify-end gap-0.5">
+                                                Detail <i class="ri-arrow-right-s-line text-sm"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-gray-400 text-xs flex items-center justify-end gap-0.5 cursor-not-allowed" title="Nilai belum diverifikasi">
+                                                Locked <i class="ri-lock-line text-[11px]"></i>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php if (empty($exams)): ?>
+                        <div class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data nilai ujian untuk kelas ini.</div>
+                        <?php endif; ?>
+                    </div>
                 </div>
+
 
             <?php elseif ($tab === 'view_nilai'): ?>
                 <!-- Detail Nilai Ujian Tab -->
@@ -328,3 +438,12 @@
         </div>
     </div>
 </main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const activeTab = document.getElementById("active-tab");
+        if (activeTab) {
+            activeTab.scrollIntoView({ behavior: "instant", block: "nearest", inline: "center" });
+        }
+    });
+</script>

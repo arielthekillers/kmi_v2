@@ -168,21 +168,21 @@ $sessionName = $typeMap[$sessionType] ?? '';
 </style>
 
 <!-- Action Header (Hidden in Print) -->
-<div class="no-print mb-6 flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+<div class="no-print mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
     <div class="flex items-center gap-3">
-        <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=raport&session_id=' . $selected_session_id) ?>" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+        <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=raport&session_id=' . $selected_session_id) ?>" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shrink-0">
             <i class="ri-arrow-left-line"></i> Kembali
         </a>
-        <div>
-            <h4 class="text-sm font-bold text-gray-800">Pratinjau Rekap Nilai</h4>
-            <p class="text-xs text-gray-400">Kelas <?= htmlspecialchars($kelas['tingkat'] . '-' . $kelas['abjad']) ?> | <?= htmlspecialchars($sessionName) ?></p>
+        <div class="min-w-0">
+            <h4 class="text-sm font-bold text-gray-800 truncate">Pratinjau Rekap Nilai</h4>
+            <p class="text-xs text-gray-400 truncate">Kelas <?= htmlspecialchars($kelas['tingkat'] . '-' . $kelas['abjad']) ?> | <?= htmlspecialchars($sessionName) ?></p>
         </div>
     </div>
-    <div class="flex gap-2">
-        <a href="<?= url('/classes/export-leger?id=' . $kelas['id'] . '&session_id=' . $selected_session_id) ?>" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+        <a href="<?= url('/classes/export-leger?id=' . $kelas['id'] . '&session_id=' . $selected_session_id) ?>" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
             <i class="ri-file-excel-line text-sm"></i> Export Excel
         </a>
-        <button onclick="window.print()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+        <button onclick="window.print()" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
             <i class="ri-printer-line text-sm"></i> Cetak Rekap Nilai (PDF)
         </button>
     </div>
@@ -190,6 +190,12 @@ $sessionName = $typeMap[$sessionType] ?? '';
 
 <!-- Print Container (Landscape A4 Layout) -->
 <div class="print-area leger-body bg-white p-4 shadow-md rounded-2xl border border-gray-100 mb-12 overflow-x-auto">
+    <!-- Mobile scroll tip -->
+    <div class="block md:hidden no-print mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+        <i class="ri-information-line text-sm mt-0.5 shrink-0"></i>
+        <span><strong>Tip:</strong> Geser tabel ke kanan untuk melihat seluruh kolom nilai. Gunakan mode lansekap pada HP Anda untuk tampilan yang lebih maksimal.</span>
+    </div>
+
     <!-- Header info -->
     <div class="text-center mb-4">
         <h2 class="text-base font-bold uppercase tracking-wide">REKAPITULASI NILAI SANTRI</h2>

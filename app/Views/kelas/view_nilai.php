@@ -12,14 +12,14 @@ $showFinalColumn = ($exam['has_oral'] == 1);
 $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($showNilaiColumn ? 1 : 0) + ($showFinalColumn ? 1 : 0);
 ?>
     <!-- Detail Nilai Header & Actions -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
-            <a href="<?= url('/classes/detail?id=' . $exam['kelas_id'] . '&tab=nilai') ?>" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-gray-600">
+            <a href="<?= url('/classes/detail?id=' . $exam['kelas_id'] . '&tab=nilai') ?>" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-gray-600 shrink-0">
                 <i class="ri-arrow-left-line text-lg"></i>
             </a>
-            Nilai Ujian: <?= htmlspecialchars($exam['mapel_nama']) ?>
+            <span class="truncate">Nilai Ujian: <?= htmlspecialchars($exam['mapel_nama']) ?></span>
         </h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
             <?php if ($exam['status'] === 'selesai'): ?>
                 <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-green-100 text-green-700 uppercase tracking-widest">
                     Verifikasi Selesai
@@ -71,7 +71,8 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Desktop Table View -->
+        <div class="overflow-x-auto hidden md:block">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50/50">
                     <tr>
@@ -148,5 +149,70 @@ $totalCols = 2 + ($showOralColumn ? 1 : 0) + ($showTulisColumn ? 1 : 0) + ($show
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Card List View -->
+        <div class="grid grid-cols-1 divide-y divide-gray-100 md:hidden bg-white">
+            <?php foreach ($students as $row): ?>
+                <div class="p-4 flex flex-col gap-2.5">
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <div class="font-bold text-gray-900 text-sm">
+                                <?= htmlspecialchars($row['nama']) ?>
+                            </div>
+                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">NIS: <?= htmlspecialchars($row['nis']) ?></div>
+                        </div>
+                        <?php if ($row['no_bayanat']): ?>
+                            <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-mono">
+                                Bayanat: <?= htmlspecialchars($row['no_bayanat']) ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2 bg-gray-50/60 p-2.5 rounded-xl border border-gray-100 text-center mt-1">
+                        <?php if ($showOralColumn): ?>
+                            <div>
+                                <div class="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Lisan</div>
+                                <div class="text-xs font-semibold text-gray-700">
+                                    <?= htmlspecialchars($row['score_oral'] ?? '-') ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($showTulisColumn): ?>
+                            <div>
+                                <div class="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Skor Tulis</div>
+                                <div class="text-xs font-semibold text-gray-700">
+                                    <?= htmlspecialchars(is_numeric($row['skor']) ? (float)$row['skor'] : ($row['skor'] ?? '-')) ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($showNilaiColumn): ?>
+                            <div>
+                                <div class="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-0.5"><?= $exam['has_oral'] == 2 ? 'Nilai Lisan' : 'Nilai Tulis' ?></div>
+                                <?php 
+                                    $valDisplay = ($exam['has_oral'] == 2) ? $row['nilai_akhir'] : $row['nilai'];
+                                ?>
+                                <div class="text-xs font-bold <?= is_numeric($valDisplay) && $valDisplay < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
+                                    <?= is_numeric($valDisplay) ? round($valDisplay) : '-' ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($showFinalColumn): ?>
+                        <div class="flex items-center justify-between border-t border-gray-100/70 pt-2.5 mt-1 px-1">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nilai Akhir</span>
+                            <span class="text-sm font-black <?= is_numeric($row['nilai_akhir']) && $row['nilai_akhir'] < $min_val ? 'text-red-500' : 'text-indigo-600' ?>">
+                                <?= is_numeric($row['nilai_akhir']) ? round($row['nilai_akhir']) : '-' ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if (empty($students)): ?>
+                <div class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada data santri.</div>
+            <?php endif; ?>
         </div>
     </div>

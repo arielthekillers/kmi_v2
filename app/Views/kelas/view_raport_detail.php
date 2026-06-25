@@ -73,15 +73,16 @@
 
 <!-- Grades Table -->
 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
             <i class="ri-file-list-3-line text-indigo-500"></i>
             Rincian Nilai Mata Pelajaran
         </h3>
-        <span class="text-xs text-gray-400 italic">*Nilai mata pelajaran ditampilkan jika status koreksian sudah Selesai.</span>
+        <span class="text-xs text-gray-400 italic">*Nilai ditampilkan jika status koreksian sudah Selesai.</span>
     </div>
 
-    <div class="overflow-x-auto">
+    <!-- Desktop View Table -->
+    <div class="overflow-x-auto hidden md:block">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -121,5 +122,54 @@
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile View Cards -->
+    <div class="grid grid-cols-1 divide-y divide-gray-150 md:hidden bg-white">
+        <?php 
+        $count = 1;
+        foreach ($leger['exams'] as $exam): 
+            $grade = $leger['grades'][$student['student_id']][$exam['exam_id']] ?? null;
+            
+            $skala = $exam['skala'] ?? '80-30';
+            list($max_val, $min_val) = explode('-', $skala);
+
+            if ($exam['status'] === 'selesai' && $grade && $grade['score_final'] !== null) {
+                $val = round($grade['score_final']);
+                $isFailing = $val < $min_val;
+                $scoreBg = $isFailing ? 'bg-red-50 text-red-700 border-red-150' : 'bg-indigo-50 text-indigo-700 border-indigo-150';
+                $display = $val;
+            } else {
+                $isFailing = false;
+                $scoreBg = 'bg-gray-50 text-gray-400 border-gray-150';
+                $display = '-';
+            }
+        ?>
+            <div class="p-4 flex items-center justify-between hover:bg-gray-50/20 transition-colors">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-gray-100 text-gray-400 font-mono text-[9px] flex items-center justify-center shrink-0">
+                            <?= $count++ ?>
+                        </span>
+                        <h4 class="font-bold text-gray-800 text-sm truncate">
+                            <?= htmlspecialchars($exam['subject_name']) ?>
+                        </h4>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1 ml-7 flex items-center gap-1">
+                        <span>KKM/Skala:</span>
+                        <span class="font-mono bg-gray-100 px-1 py-0.5 rounded text-gray-600"><?= $min_val ?> - <?= $max_val ?></span>
+                    </p>
+                </div>
+                
+                <div class="shrink-0 text-right">
+                    <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl text-base font-black border <?= $scoreBg ?> shadow-sm">
+                        <?= $display ?>
+                    </span>
+                </div>
+            </div>
+        <?php endforeach; ?>
+        <?php if (empty($leger['exams'])): ?>
+            <div class="px-6 py-12 text-center text-gray-400 italic text-sm">Belum ada jadwal mata pelajaran untuk sesi ini.</div>
+        <?php endif; ?>
     </div>
 </div>

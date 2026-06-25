@@ -1,22 +1,22 @@
 <!-- Detail Nilai Header & Actions -->
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
     <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
             <i class="ri-book-read-line text-lg"></i>
         </div>
         Raport Santri
     </h3>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
         <?php if (!empty($selected_session_id) && $leger && !empty($leger['students'])): ?>
             <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=leger&session_id=' . $selected_session_id) ?>" 
-               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+               class="w-full sm:w-auto justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
                 <i class="ri-file-chart-line text-lg"></i> Lihat Rekap Nilai
             </a>
         <?php endif; ?>
-        <form action="" method="GET" class="flex items-center">
+        <form action="" method="GET" class="flex items-center w-full sm:w-auto">
             <input type="hidden" name="id" value="<?= $kelas['id'] ?>">
             <input type="hidden" name="tab" value="raport">
-            <select name="session_id" onchange="this.form.submit()" class="text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-4 py-2 focus:border-indigo-500 focus:ring-0 shadow-sm cursor-pointer hover:border-gray-300 transition-colors">
+            <select name="session_id" onchange="this.form.submit()" class="w-full sm:w-auto text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-4 py-2 focus:border-indigo-500 focus:ring-0 shadow-sm cursor-pointer hover:border-gray-300 transition-colors">
                 <option value="">Pilih Sesi Ujian...</option>
                 <?php 
                 $typeMap = [
@@ -55,16 +55,48 @@
     </div>
 <?php else: ?>
 
+    <?php 
+    // Precompute averages to avoid duplicated code
+    $studentAverages = [];
+    $classTotalAvg = 0;
+    $classValidStudents = 0;
+
+    foreach ($leger['students'] as $student) {
+        $studentId = $student['student_id'];
+        $studentTotal = 0;
+        $studentCount = 0;
+        
+        foreach ($leger['exams'] as $exam) {
+            if ($exam['status'] === 'selesai') {
+                $grade = $leger['grades'][$studentId][$exam['exam_id']] ?? null;
+                if ($grade && $grade['score_final'] !== null) {
+                    $studentTotal += round($grade['score_final']);
+                    $studentCount++;
+                }
+            }
+        }
+
+        $avg = $studentCount > 0 ? $studentTotal / $studentCount : null;
+        if ($avg !== null) {
+            $classTotalAvg += $avg;
+            $classValidStudents++;
+        }
+        $studentAverages[$studentId] = $avg;
+    }
+    $classAvgValue = $classValidStudents > 0 ? $classTotalAvg / $classValidStudents : null;
+    ?>
+
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6 flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
                 <i class="ri-list-check text-indigo-500"></i>
                 Daftar Nilai Rata-rata Santri
             </h3>
-            <span class="text-xs text-gray-400 italic">*Nilai rata-rata dihitung dari mata pelajaran yang berstatus <strong>Selesai</strong>.</span>
+            <span class="text-xs text-gray-400 italic">*Rata-rata dihitung dari pelajaran berstatus selesai.</span>
         </div>
 
-        <div class="overflow-x-auto w-full">
+        <!-- Desktop View Table -->
+        <div class="overflow-x-auto w-full hidden md:block">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -75,29 +107,8 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100 text-[13px]">
-                    <?php 
-                    $classTotalAvg = 0;
-                    $classValidStudents = 0;
-
-                    foreach ($leger['students'] as $idx => $student): 
-                        $studentTotal = 0;
-                        $studentCount = 0;
-                        
-                        foreach ($leger['exams'] as $exam) {
-                            if ($exam['status'] === 'selesai') {
-                                $grade = $leger['grades'][$student['student_id']][$exam['exam_id']] ?? null;
-                                if ($grade && $grade['score_final'] !== null) {
-                                    $studentTotal += round($grade['score_final']);
-                                    $studentCount++;
-                                }
-                            }
-                        }
-
-                        $avg = $studentCount > 0 ? $studentTotal / $studentCount : null;
-                        if ($avg !== null) {
-                            $classTotalAvg += $avg;
-                            $classValidStudents++;
-                        }
+                    <?php foreach ($leger['students'] as $idx => $student): 
+                        $avg = $studentAverages[$student['student_id']];
                     ?>
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 text-gray-400"><?= $idx + 1 ?></td>
@@ -123,7 +134,7 @@
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-                <?php if ($classValidStudents > 0): ?>
+                <?php if ($classAvgValue !== null): ?>
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
                         <td colspan="2" class="px-6 py-4 text-right text-[10px] font-bold text-gray-500 uppercase tracking-widest">
@@ -131,7 +142,7 @@
                         </td>
                         <td class="px-6 py-4 text-center">
                             <span class="inline-flex items-center justify-center px-3 py-1 rounded-md text-sm font-bold bg-indigo-100 text-indigo-800">
-                                <?= number_format($classTotalAvg / $classValidStudents, 2) ?>
+                                <?= number_format($classAvgValue, 2) ?>
                             </span>
                         </td>
                         <td></td>
@@ -139,6 +150,55 @@
                 </tfoot>
                 <?php endif; ?>
             </table>
+        </div>
+
+        <!-- Mobile Card List View -->
+        <div class="grid grid-cols-1 divide-y divide-gray-100 md:hidden bg-white">
+            <?php foreach ($leger['students'] as $idx => $student): 
+                $avg = $studentAverages[$student['student_id']];
+            ?>
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50/30 transition-colors">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-indigo-50 text-indigo-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                <?= $idx + 1 ?>
+                            </span>
+                            <h4 class="font-bold text-gray-900 text-sm truncate">
+                                <?= htmlspecialchars($student['nama']) ?>
+                            </h4>
+                        </div>
+                        <p class="text-xs text-gray-400 font-mono mt-1 ml-7">NIS: <?= htmlspecialchars($student['nis']) ?></p>
+                        <div class="mt-2.5 ml-7">
+                            <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=raport_detail&session_id=' . $selected_session_id . '&student_id=' . $student['student_id']) ?>" 
+                               class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 text-xs font-bold rounded-lg transition-all">
+                                <i class="ri-file-list-3-line"></i> Detail Rapor
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right shrink-0">
+                        <div class="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Rata-rata</div>
+                        <div class="mt-1">
+                            <?php if ($avg !== null): ?>
+                                <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    <?= number_format($avg, 2) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="text-gray-300 font-medium text-sm">-</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            
+            <?php if ($classAvgValue !== null): ?>
+                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between items-center text-sm font-bold">
+                    <span class="text-[10px] text-gray-400 uppercase tracking-widest">Rata-rata Kelas</span>
+                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-md">
+                        <?= number_format($classAvgValue, 2) ?>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 <?php endif; ?>
