@@ -362,7 +362,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
         <div class="max-w-4xl mx-auto pointer-events-auto flex items-center justify-between p-4 bg-white/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl ring-1 ring-black/5">
             <div class="hidden md:flex flex-col ml-4">
                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                    Role: <?= $isAdminOrPanitia ? 'Panitia Ujian' : ($isExaminer ? 'Pemeriksa' : 'Viewer') ?>
+                    Role: <?= ($isAdminOrPanitia && $isExaminer) ? 'Panitia & Pemeriksa' : ($isAdminOrPanitia ? 'Panitia Ujian' : ($isExaminer ? 'Pemeriksa' : 'Viewer')) ?>
                 </p>
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full <?= $sessionOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500' ?>"></span>
@@ -370,13 +370,13 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                 </div>
             </div>
             
-            <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="grid grid-cols-2 md:flex md:items-center gap-2 md:gap-3 w-full md:w-auto">
                 <?php if ($isAdminOrPanitia): ?>
                     <div id="duplicateWarning" class="hidden flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-red-100 animate-pulse">
                         <i class="ri-error-warning-fill text-lg"></i>
                         Ada Nomor Bayanat Ganda!
                     </div>
-                    <button type="submit" id="saveConfigBtn" name="action" value="save" class="w-full md:w-auto h-14 px-10 rounded-2xl bg-indigo-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button type="submit" id="saveConfigBtn" name="action" value="save" class="col-span-2 md:col-span-auto w-full md:w-auto h-12 md:h-14 px-4 md:px-10 rounded-xl md:rounded-2xl bg-indigo-600 text-white font-black text-xs md:text-sm uppercase tracking-widest shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i class="ri-settings-3-line text-lg"></i>
                         Update Konfigurasi & Bayanat
                     </button>
@@ -386,11 +386,11 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                 $canSaveAndFinish = $isAdminOrPanitia || ($isExaminer && $sessionOpen);
                 if ($canSaveAndFinish): 
                 ?>
-                    <button type="submit" id="saveDraftBtn" name="action" value="save" onclick="return confirm('Simpan hasil koreksi sebagai draft?');" class="flex-1 md:flex-none h-14 px-8 rounded-2xl bg-white border-2 border-gray-100 text-gray-600 font-black text-sm uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button type="submit" id="saveDraftBtn" name="action" value="save" onclick="return confirm('Simpan hasil koreksi sebagai draft?');" class="col-span-1 md:col-span-auto flex-1 md:flex-none w-full md:w-auto h-12 md:h-14 px-4 md:px-8 rounded-xl md:rounded-2xl bg-white border-2 border-gray-100 text-gray-600 font-black text-xs md:text-sm uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i class="ri-save-3-line text-lg"></i>
                         Simpan Draft
                     </button>
-                    <button type="submit" id="finishBtn" name="action" value="finish" onclick="return validateFinish()" class="flex-[2] md:flex-none h-14 px-10 rounded-2xl bg-green-600 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-green-200 hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button type="submit" id="finishBtn" name="action" value="finish" onclick="return validateFinish()" class="col-span-1 md:col-span-auto flex-[2] md:flex-none w-full md:w-auto h-12 md:h-14 px-4 md:px-10 rounded-xl md:rounded-2xl bg-green-600 text-white font-black text-xs md:text-sm uppercase tracking-widest shadow-xl shadow-green-200 hover:bg-green-700 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <i class="ri-checkbox-circle-line text-lg"></i>
                         Selesai Diperiksa
                     </button>
@@ -405,6 +405,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
 
 <script>
     const isAdminOrPanitia = <?= $isAdminOrPanitia ? 'true' : 'false' ?>;
+    const isExaminer = <?= $isExaminer ? 'true' : 'false' ?>;
 
     function validateFinish() {
         const skorMaks = parseFloat(document.getElementById('skor_maks_input').value) || 100;
@@ -532,10 +533,15 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                 if (saveDraftBtn) { saveDraftBtn.style.display = ''; saveDraftBtn.classList.remove('hidden'); }
                 if (finishBtn) { finishBtn.style.display = ''; finishBtn.classList.remove('hidden'); }
             } else {
-                // Tulis / Tulis & Lisan: show config, hide draft/finish
+                // Tulis / Tulis & Lisan: show config, hide draft/finish unless the user is also the examiner
                 if (saveConfigBtn) { saveConfigBtn.style.display = ''; saveConfigBtn.classList.remove('hidden'); }
-                if (saveDraftBtn) { saveDraftBtn.style.display = 'none'; saveDraftBtn.classList.add('hidden'); }
-                if (finishBtn) { finishBtn.style.display = 'none'; finishBtn.classList.add('hidden'); }
+                if (isExaminer) {
+                    if (saveDraftBtn) { saveDraftBtn.style.display = ''; saveDraftBtn.classList.remove('hidden'); }
+                    if (finishBtn) { finishBtn.style.display = ''; finishBtn.classList.remove('hidden'); }
+                } else {
+                    if (saveDraftBtn) { saveDraftBtn.style.display = 'none'; saveDraftBtn.classList.add('hidden'); }
+                    if (finishBtn) { finishBtn.style.display = 'none'; finishBtn.classList.add('hidden'); }
+                }
             }
         }
     };
