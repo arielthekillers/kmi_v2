@@ -263,7 +263,7 @@ class GradeModel extends Model {
                 if ($hasOral == 0) {
                     // Tulis Saja: hitung nilai tulis dari skor tulis
                     if ($skor_input === '-') {
-                        $nilai_akhir = null;       // Absen
+                        $nilai_akhir = 0;       // Absen
                         $score_raw_db = '-';
                     } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
                         $nilai_akhir = $min_val; // Salah semua → nilai minimum
@@ -289,7 +289,7 @@ class GradeModel extends Model {
                     // Nilai lisan tetap disimpan apa adanya di score_oral.
                     // TIDAK ada penggabungan di sini.
                     if ($skor_input === '-') {
-                        $nilai_akhir  = null;   // Absen tulis
+                        $nilai_akhir  = 0;   // Absen tulis
                         $score_raw_db = '-';
                     } elseif ($skor_input === '0' || $skor_input === 0 || $skor_input === '0.0') {
                         $nilai_akhir  = $min_val;

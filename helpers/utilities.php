@@ -217,8 +217,8 @@ if (!function_exists('calculate_merged_grade')) {
      * @return int|null Nilai akhir rapor/leger
      */
     function calculate_merged_grade($tulis, $lisan, $hasOral) {
-        $tVal = ($tulis !== null && $tulis !== '' && $tulis !== '-') ? $tulis : null;
-        $lVal = ($lisan !== null && $lisan !== '' && $lisan !== '-') ? $lisan : null;
+        $tVal = ($tulis !== null && $tulis !== '') ? (($tulis === '-') ? 0 : $tulis) : null;
+        $lVal = ($lisan !== null && $lisan !== '') ? (($lisan === '-') ? 0 : $lisan) : null;
 
         if ($hasOral == 0) {
             return ($tVal !== null) ? (int)round($tVal) : null;
