@@ -217,28 +217,31 @@ if (!function_exists('calculate_merged_grade')) {
      * @return int|null Nilai akhir rapor/leger
      */
     function calculate_merged_grade($tulis, $lisan, $hasOral) {
+        $tVal = ($tulis !== null && $tulis !== '' && $tulis !== '-') ? $tulis : null;
+        $lVal = ($lisan !== null && $lisan !== '' && $lisan !== '-') ? $lisan : null;
+
         if ($hasOral == 0) {
-            return ($tulis !== null && $tulis !== '') ? (int)round($tulis) : null;
+            return ($tVal !== null) ? (int)round($tVal) : null;
         }
         if ($hasOral == 2) {
-            return ($lisan !== null && $lisan !== '') ? (int)round($lisan) : null;
+            return ($lVal !== null) ? (int)round($lVal) : null;
         }
         if ($hasOral == 1) {
-            $hasTulis = ($tulis !== null && $tulis !== '');
-            $hasLisan = ($lisan !== null && $lisan !== '');
+            $hasTulis = ($tVal !== null);
+            $hasLisan = ($lVal !== null);
             
             if ($hasTulis && $hasLisan) {
-                $T = (int)round($tulis);
-                $S = (int)round($lisan);
+                $T = (int)round($tVal);
+                $S = (int)round($lVal);
                 if ($S < $T) {
                     return $T;
                 } else {
                     return (int)ceil(($T + $S) / 2);
                 }
             } elseif ($hasTulis) {
-                return (int)round($tulis);
+                return (int)round($tVal);
             } elseif ($hasLisan) {
-                return (int)round($lisan);
+                return (int)round($lVal);
             }
         }
         return null;
