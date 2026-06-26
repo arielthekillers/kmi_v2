@@ -109,6 +109,15 @@ class App
         $this->router->post('/attendance/store', ['App\Controllers\AttendanceController', 'store']);
         $this->router->get('/attendance/report', ['App\Controllers\AttendanceController', 'report']);
 
+        // Student Attendance Routes (Absensi Santri)
+        $this->router->get('/student-attendance', ['App\Controllers\StudentAttendanceController', 'index']);
+        $this->router->post('/student-attendance/store', ['App\Controllers\StudentAttendanceController', 'store']);
+
+        // PBM Committee Routes (Bagian PBM)
+        $this->router->get('/student-attendance/pbm', ['App\Controllers\StudentAttendanceController', 'pbmIndex']);
+        $this->router->post('/student-attendance/pbm/session/status', ['App\Controllers\StudentAttendanceController', 'updateSessionStatus']);
+        $this->router->post('/student-attendance/pbm/committee/update', ['App\Controllers\StudentAttendanceController', 'updateCommittee']);
+
         // Students Routes (Modul)
         $this->router->get('/students', ['App\Modules\Students\Controllers\StudentController', 'index']);
         $this->router->get('/students/create', ['App\Modules\Students\Controllers\StudentController', 'create']);

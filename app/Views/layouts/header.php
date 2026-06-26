@@ -154,13 +154,23 @@
                                     <a href="<?= url('/tanqih') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-checkbox-circle-line text-gray-400"></i> Tanqih Idad
                                     </a>
-                                    <a href="<?= url('/grades') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                    <a href="<?= url('/grades') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-edit-2-line text-gray-400"></i> Koreksi Ujian
                                     </a>
 
                                     <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
                                         <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
                                             <i class="ri-group-line text-gray-400"></i> Panitia Ujian
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <a href="<?= url('/student-attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                        <i class="ri-user-unfollow-line text-gray-400"></i> Absensi Santri
+                                    </a>
+
+                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                                        <a href="<?= url('/student-attendance/pbm') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                            <i class="ri-group-line text-gray-400"></i> Petugas Absensi
                                         </a>
                                     <?php endif; ?>
 
@@ -338,6 +348,14 @@
                     <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
                         <a href="<?= url('/grades/panitia') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-group-line mr-2"></i>Panitia Ujian
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?= url('/student-attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-user-unfollow-line mr-2"></i>Absensi Santri
+                    </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                        <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-group-line mr-2"></i>Petugas Absensi
                         </a>
                     <?php endif; ?>
                     <a href="<?= url('/tanqih/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 border-t mt-1">

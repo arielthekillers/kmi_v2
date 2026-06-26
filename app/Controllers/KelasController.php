@@ -319,16 +319,28 @@ class KelasController extends Controller {
                 $behaviors[$row['student_id']] = $row;
             }
 
-            // Fetch student attendance logs (aggregate Sakit, Izin, Alpa)
+            // Fetch student attendance logs (aggregate Sakit, Izin, Alpa) for the semester of the selected session
+            $semester = 1;
+            if ($sessionId) {
+                $stmtSession = $db->prepare("SELECT type FROM exam_sessions WHERE id = ?");
+                $stmtSession->execute([$sessionId]);
+                $sessionType = $stmtSession->fetchColumn();
+                if ($sessionType === 'UUAT' || $sessionType === 'UAT') {
+                    $semester = 2;
+                }
+            }
+
             $stmtAtt = $db->prepare("
-                SELECT student_id, 
-                       SUM(CASE WHEN status = 'S' THEN 1 ELSE 0 END) as sakit,
-                       SUM(CASE WHEN status = 'I' THEN 1 ELSE 0 END) as izin,
-                       SUM(CASE WHEN status = 'A' THEN 1 ELSE 0 END) as alpa
-                FROM attendance
-                GROUP BY student_id
+                SELECT sa.student_id, 
+                       SUM(CASE WHEN sa.type = 'sakit' THEN 1 ELSE 0 END) as sakit,
+                       SUM(CASE WHEN sa.type = 'izin' THEN 1 ELSE 0 END) as izin,
+                       SUM(CASE WHEN sa.type = 'alpha' THEN 1 ELSE 0 END) as alpa
+                FROM student_absences sa
+                JOIN attendance_sessions asess ON sa.attendance_session_id = asess.id
+                WHERE asess.academic_year_id = ? AND asess.semester = ? AND sa.kelas_id = ?
+                GROUP BY sa.student_id
             ");
-            $stmtAtt->execute();
+            $stmtAtt->execute([$this->currentYear['id'], $semester, $id]);
             $attendanceList = $stmtAtt->fetchAll(\PDO::FETCH_ASSOC);
             $attendance = [];
             foreach ($attendanceList as $row) {
@@ -523,16 +535,28 @@ class KelasController extends Controller {
             $behaviors[$row['student_id']] = $row;
         }
 
-        // Fetch student attendance logs (aggregate Sakit, Izin, Alpa)
+        // Fetch student attendance logs (aggregate Sakit, Izin, Alpa) for the semester of the selected session
+        $semester = 1;
+        if ($sessionId) {
+            $stmtSession = $db->prepare("SELECT type FROM exam_sessions WHERE id = ?");
+            $stmtSession->execute([$sessionId]);
+            $sessionType = $stmtSession->fetchColumn();
+            if ($sessionType === 'UUAT' || $sessionType === 'UAT') {
+                $semester = 2;
+            }
+        }
+
         $stmtAtt = $db->prepare("
-            SELECT student_id, 
-                   SUM(CASE WHEN status = 'S' THEN 1 ELSE 0 END) as sakit,
-                   SUM(CASE WHEN status = 'I' THEN 1 ELSE 0 END) as izin,
-                   SUM(CASE WHEN status = 'A' THEN 1 ELSE 0 END) as alpa
-            FROM attendance
-            GROUP BY student_id
+            SELECT sa.student_id, 
+                   SUM(CASE WHEN sa.type = 'sakit' THEN 1 ELSE 0 END) as sakit,
+                   SUM(CASE WHEN sa.type = 'izin' THEN 1 ELSE 0 END) as izin,
+                   SUM(CASE WHEN sa.type = 'alpha' THEN 1 ELSE 0 END) as alpa
+            FROM student_absences sa
+            JOIN attendance_sessions asess ON sa.attendance_session_id = asess.id
+            WHERE asess.academic_year_id = ? AND asess.semester = ? AND sa.kelas_id = ?
+            GROUP BY sa.student_id
         ");
-        $stmtAtt->execute();
+        $stmtAtt->execute([$this->currentYear['id'], $semester, $id]);
         $attendanceList = $stmtAtt->fetchAll(\PDO::FETCH_ASSOC);
         $attendance = [];
         foreach ($attendanceList as $row) {

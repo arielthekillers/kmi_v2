@@ -549,6 +549,45 @@ if (!function_exists('auth_can_manage_grades')) {
     }
 }
 
+if (!function_exists('auth_is_pbm')) {
+    /**
+     * Check if user is a PBM committee member for a specific session or any active session
+     */
+    function auth_is_pbm($sessionId = null) {
+        $role = auth_get_role();
+        if ($role === 'admin') return true;
+        
+        $userId = auth_get_user_id();
+        if (!$userId) return false;
+
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            if ($sessionId) {
+                $stmt = $db->prepare("SELECT id FROM attendance_committees WHERE user_id = ? AND attendance_session_id = ?");
+                $stmt->execute([$userId, $sessionId]);
+            } else {
+                // Check if PBM for CURRENT active attendance session
+                $stmt = $db->prepare("SELECT ac.id FROM attendance_committees ac 
+                                     JOIN attendance_sessions asess ON ac.attendance_session_id = asess.id 
+                                     WHERE ac.user_id = ? AND asess.is_active = 1");
+                $stmt->execute([$userId]);
+            }
+            return (bool) $stmt->fetch();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('auth_can_manage_attendance')) {
+    /**
+     * Higher level check for Student Attendance module administration
+     */
+    function auth_can_manage_attendance($sessionId = null) {
+        return auth_get_role() === 'admin' || auth_is_pbm($sessionId);
+    }
+}
+
 if (!function_exists('auth_get_wali_kelas_kelas')) {
     /**
      * Get classes where the current user is assigned as the Wali Kelas in the active academic year.
