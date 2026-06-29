@@ -48,17 +48,34 @@ class DashboardController extends Controller {
         $stats['santri'] = $stats['santri']->fetchColumn();
 
         // 4. Koreksi Stats
-        $koreksiSql = "SELECT COUNT(*) as total, SUM(CASE WHEN status='selesai' THEN 1 ELSE 0 END) as selesaicount FROM exams";
-        if ($role === 'pengajar' && $userId) {
-            $stmt = $pdo->prepare($koreksiSql . " WHERE teacher_id = ?");
-            $stmt->execute([$userId]);
-        } else {
-            $stmt = $pdo->query($koreksiSql);
+        $activeSessionId = 0;
+        if ($yearId) {
+            $sessStmt = $pdo->prepare("SELECT id FROM exam_sessions WHERE academic_year_id = ? AND is_active = 1 LIMIT 1");
+            $sessStmt->execute([$yearId]);
+            $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
+            $activeSessionId = $activeSession ? (int)$activeSession['id'] : 0;
         }
-        $kRes = $stmt->fetch(PDO::FETCH_ASSOC);
-        $totalKoreksi = $kRes['total'] ?? 0;
-        $finishedKoreksi = $kRes['selesaicount'] ?? 0;
-        $correctionPercent = $totalKoreksi > 0 ? round(($finishedKoreksi / $totalKoreksi) * 100) : 0;
+
+        $totalKoreksi = 0;
+        $finishedKoreksi = 0;
+        $correctionPercent = 0;
+
+        if ($activeSessionId > 0) {
+            $koreksiSql = "SELECT COUNT(*) as total, SUM(CASE WHEN status='selesai' THEN 1 ELSE 0 END) as selesaicount 
+                           FROM exams 
+                           WHERE exam_session_id = ? AND is_deleted = 0";
+            if ($role === 'pengajar' && $userId) {
+                $stmt = $pdo->prepare($koreksiSql . " AND teacher_id = ?");
+                $stmt->execute([$activeSessionId, $userId]);
+            } else {
+                $stmt = $pdo->prepare($koreksiSql);
+                $stmt->execute([$activeSessionId]);
+            }
+            $kRes = $stmt->fetch(PDO::FETCH_ASSOC);
+            $totalKoreksi = $kRes['total'] ?? 0;
+            $finishedKoreksi = $kRes['selesaicount'] ?? 0;
+            $correctionPercent = $totalKoreksi > 0 ? round(($finishedKoreksi / $totalKoreksi) * 100) : 0;
+        }
 
         // 5. Attendance Summary (Tanqih)
         // Total Slots Today for this year
