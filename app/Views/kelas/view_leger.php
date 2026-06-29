@@ -48,6 +48,7 @@ if (!empty($sessions)) {
     }
 }
 $sessionName = $typeMap[$sessionType] ?? '';
+$sort = $sort ?? 'alphabet';
 ?>
 
 <style>
@@ -178,8 +179,20 @@ $sessionName = $typeMap[$sessionType] ?? '';
             <p class="text-xs text-gray-400 truncate">Kelas <?= htmlspecialchars($kelas['tingkat'] . '-' . $kelas['abjad']) ?> | <?= htmlspecialchars($sessionName) ?></p>
         </div>
     </div>
-    <div class="flex flex-wrap gap-2 w-full md:w-auto">
-        <a href="<?= url('/classes/export-leger?id=' . $kelas['id'] . '&session_id=' . $selected_session_id) ?>" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
+    <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <!-- Sorting options -->
+        <div class="flex items-center bg-gray-100 border border-gray-200 rounded-lg p-0.5 w-full md:w-auto">
+            <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=leger&session_id=' . $selected_session_id . '&sort=alphabet') ?>" 
+               class="flex-1 md:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1 <?= $sort === 'alphabet' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700' ?>">
+                <i class="ri-sort-asc text-sm"></i> Urut Nama
+            </a>
+            <a href="<?= url('/classes/detail?id=' . $kelas['id'] . '&tab=leger&session_id=' . $selected_session_id . '&sort=ranking') ?>" 
+               class="flex-1 md:flex-initial justify-center px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1 <?= $sort === 'ranking' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700' ?>">
+                <i class="ri-trophy-line text-sm"></i> Urut Ranking
+            </a>
+        </div>
+
+        <a href="<?= url('/classes/export-leger?id=' . $kelas['id'] . '&session_id=' . $selected_session_id . '&sort=' . $sort) ?>" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
             <i class="ri-file-excel-line text-sm"></i> Export Excel
         </a>
         <button onclick="window.print()" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">

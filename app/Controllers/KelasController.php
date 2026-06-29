@@ -410,6 +410,19 @@ class KelasController extends Controller {
                 $prevScore = $scores['total'];
             }
 
+            $sort = $_GET['sort'] ?? 'alphabet';
+            if ($sort === 'ranking') {
+                usort($leger['students'], function ($a, $b) use ($rankings) {
+                    $rankA = $rankings[$a['student_id']] ?? 9999;
+                    $rankB = $rankings[$b['student_id']] ?? 9999;
+                    if ($rankA === $rankB) {
+                        return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
+                    }
+                    return $rankA <=> $rankB;
+                });
+            }
+
+            $data['sort'] = $sort;
             $data['leger'] = $leger;
             $data['behaviors'] = $behaviors;
             $data['attendance'] = $attendance;
@@ -624,6 +637,18 @@ class KelasController extends Controller {
             }
             $rankings[$studentId] = $rank;
             $prevScore = $scores['total'];
+        }
+
+        $sort = $_GET['sort'] ?? 'alphabet';
+        if ($sort === 'ranking') {
+            usort($leger['students'], function ($a, $b) use ($rankings) {
+                $rankA = $rankings[$a['student_id']] ?? 9999;
+                $rankB = $rankings[$b['student_id']] ?? 9999;
+                if ($rankA === $rankB) {
+                    return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
+                }
+                return $rankA <=> $rankB;
+            });
         }
 
         // Calculate subject stats
