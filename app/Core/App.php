@@ -134,6 +134,7 @@ class App
 
         // API regions proxy
         $this->router->get('/api/regions', ['App\Modules\Students\Controllers\StudentController', 'apiRegions']);
+        $this->router->get('/api/kelas', ['App\Modules\Students\Controllers\StudentController', 'apiGetKelas']);
 
         // Public PPSB Routes
         $this->router->get('/ppsb/daftar', ['App\Modules\Students\Controllers\PpsbController', 'register']);
@@ -150,6 +151,7 @@ class App
         $this->router->get('/students/history', ['App\Modules\Students\Controllers\StudentController', 'history']);
         $this->router->post('/students/history/update-status', ['App\Modules\Students\Controllers\StudentController', 'updateStatus']);
         $this->router->post('/students/history/re-enroll', ['App\Modules\Students\Controllers\StudentController', 'reEnroll']);
+        $this->router->post('/students/history/rollback', ['App\Modules\Students\Controllers\StudentController', 'rollbackHistory']);
 
         // Academic Year Routes
         $this->router->get('/academic-years', ['App\Controllers\AcademicYearController', 'index']);
