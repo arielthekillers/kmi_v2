@@ -83,7 +83,7 @@
         </script>
     <?php endif; ?>
 
-    <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+    <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-[999]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center gap-8">
@@ -105,7 +105,7 @@
                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
                                     <i class="ri-database-2-line"></i> Pusat Data <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
-                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Master Data</div>
                                     <a href="<?= url('/teachers') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-user-star-line text-gray-400"></i> Data Pengajar
@@ -146,7 +146,7 @@
                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
                                     <i class="ri-honor-line"></i> Layanan KMI <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
-                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Taklim & Evaluasi</div>
                                     <a href="<?= url('/attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-user-received-2-line text-gray-400"></i> Absensi Pengajar
@@ -203,7 +203,7 @@
                                         <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
                                             <i class="ri-community-line"></i> Kelas Wali <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                         </button>
-                                        <div class="absolute left-0 mt-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-50">
+                                        <div class="absolute left-0 mt-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                             <?php foreach ($myClasses as $c): ?>
                                                 <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                                     Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
@@ -240,7 +240,7 @@
                             </div>
                             <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="user-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                            <div id="user-dropdown-panel" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 origin-top-right" role="menu">
+                            <div id="user-dropdown-panel" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-[999] origin-top-right" role="menu">
                                  <!-- User info header -->
                                  <div class="px-4 py-3 border-b border-gray-100">
                                     <div class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($__display_name) ?></div>
@@ -264,7 +264,7 @@
                                         <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </button>
                                     <!-- Sub-dropdown -->
-                                    <div class="hidden group-hover/settings:block absolute left-full top-0 -ml-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                                    <div class="hidden group-hover/settings:block absolute left-full top-0 -ml-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-[999]">
                                         <a href="<?= url('/settings/general') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                             General
