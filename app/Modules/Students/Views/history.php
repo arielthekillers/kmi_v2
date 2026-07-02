@@ -68,11 +68,26 @@
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
                 <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4">Aksi Transisi Akademik</h3>
                 
-                <?php if ($isActive): ?>
-                    <!-- If Active: Can Graduate, Leave, or Transfer -->
+                <?php if ($isActive): 
+                    $isKelas6 = false;
+                    $activeYearId = null;
+                    $activeKelasId = null;
+                    foreach ($history as $h) {
+                        if ($h['status'] === 'Active') {
+                            if ((int)$h['tingkat'] === 6) {
+                                $isKelas6 = true;
+                            }
+                            $activeYearId = $h['academic_year_id'];
+                            $activeKelasId = $h['kelas_id'];
+                            break;
+                        }
+                    }
+                ?>
+                    <!-- If Active: Can Graduate (only if Kelas 6), Leave, or Transfer -->
                     <div class="space-y-3">
-                        <p class="text-xs text-gray-500 mb-2 leading-relaxed">Pilih salah satu status di bawah untuk memperbarui status santri di tahun ajaran aktif ini.</p>
+                        <p class="text-xs text-gray-500 mb-2 leading-relaxed">Pilih salah satu aksi di bawah untuk memperbarui status santri di tahun ajaran aktif ini.</p>
                         
+                        <?php if ($isKelas6): ?>
                         <form action="<?= url('/students/history/update-status') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin meluluskan santri ini?')">
                             <?= csrf_input() ?>
                             <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
@@ -81,6 +96,7 @@
                                 <i class="ri-graduation-cap-line text-lg"></i> Nyatakan Lulus
                             </button>
                         </form>
+                        <?php endif; ?>
 
                         <form action="<?= url('/students/history/update-status') ?>" method="POST" onsubmit="return confirm('Santri keluar/pindah sekolah akan di-nonaktifkan. Lanjutkan?')">
                             <?= csrf_input() ?>
@@ -90,6 +106,29 @@
                                 <i class="ri-logout-box-r-line text-lg"></i> Keluar / Pindah Sekolah
                             </button>
                         </form>
+                        
+                        <!-- Perpindahan Kelas (Individu) -->
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pindah Kelas (Tahun Ini)</label>
+                            <form action="<?= url('/students/history/re-enroll') ?>" method="POST" class="flex gap-2">
+                                <?= csrf_input() ?>
+                                <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
+                                <input type="hidden" name="academic_year_id" value="<?= htmlspecialchars($activeYearId) ?>">
+                                <select name="kelas_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">-- Pilih Kelas --</option>
+                                    <?php foreach ($kelas as $k): ?>
+                                        <?php if ($k['academic_year_id'] == $activeYearId && $k['id'] != $activeKelasId): ?>
+                                        <option value="<?= $k['id'] ?>">
+                                            Kelas <?= htmlspecialchars($k['tingkat'] . '-' . $k['abjad']) ?>
+                                        </option>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" onclick="return confirm('Pindahkan kelas santri ini?')" class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                    <i class="ri-arrow-right-line"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 <?php else: ?>
                     <!-- If Inactive/Out/Graduated: Can Re-enroll / Masuk Kembali -->
@@ -201,6 +240,15 @@
                                         }
                                         ?>
                                     </span>
+                                    
+                                    <form action="<?= url('/students/history/rollback') ?>" method="POST" class="inline-block mt-2 sm:mt-0 sm:ml-2" onsubmit="return confirm('Apakah Anda yakin ingin menghapus riwayat ini? Status santri akan dikembalikan ke riwayat sebelumnya.')">
+                                        <?= csrf_input() ?>
+                                        <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
+                                        <input type="hidden" name="enrollment_id" value="<?= $h['id'] ?>">
+                                        <button type="submit" class="px-2 py-1 text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 transition-colors" title="Hapus Riwayat & Batalkan Mutasi">
+                                            <i class="ri-delete-bin-line"></i> Hapus
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
 

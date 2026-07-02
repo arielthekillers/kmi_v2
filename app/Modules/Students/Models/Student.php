@@ -400,7 +400,44 @@ class Student {
         }
     }
     
+    public function rollbackEnrollment($enrollmentId) {
+        $enrollment = $this->db->query("SELECT * FROM student_enrollments WHERE id = ?", [$enrollmentId])->fetch();
+        if (!$enrollment) throw new \Exception("Data riwayat tidak ditemukan.");
+        
+        $studentId = $enrollment['student_id'];
+        
+        $this->db->beginTransaction();
+        try {
+            // If the status is Graduated or Out, it was an update to an existing row.
+            // Just restore it back to Active.
+            if (in_array($enrollment['status'], ['Graduated', 'Out'])) {
+                $this->db->query("UPDATE student_enrollments SET status = 'Active', end_date = NULL WHERE id = ?", [$enrollmentId]);
+            } else {
+                // Delete the specified enrollment
+                $this->db->query("DELETE FROM student_enrollments WHERE id = ?", [$enrollmentId]);
+                
+                // Find the most recent enrollment before this one
+                $prev = $this->db->query("SELECT id FROM student_enrollments WHERE student_id = ? ORDER BY id DESC LIMIT 1", [$studentId])->fetch();
+                
+                if ($prev) {
+                    // Restore the previous enrollment to Active
+                    $this->db->query("UPDATE student_enrollments SET status = 'Active', end_date = NULL WHERE id = ?", [$prev['id']]);
+                }
+            }
+            
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+    
     public function getKelasList() {
         return $this->db->query("SELECT * FROM kelas WHERE academic_year_id = ? ORDER BY tingkat ASC, abjad ASC", [$this->academic_year_id])->fetchAll();
+    }
+
+    public function getKelasByYear($yearId) {
+        return $this->db->query("SELECT * FROM kelas WHERE academic_year_id = ? ORDER BY tingkat ASC, abjad ASC", [$yearId])->fetchAll();
     }
 }

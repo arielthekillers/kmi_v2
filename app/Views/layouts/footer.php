@@ -9,8 +9,18 @@
     <script>
         function initTomSelects() {
             document.querySelectorAll('select.ts-control, select.tom-select').forEach((el) => {
-                if (el.tomselect) return; 
-                new TomSelect(el, {create: false, dropdownParent: 'body'});
+                if (el.tomselect) return;
+                new TomSelect(el, {
+                    create: false,
+                    dropdownParent: 'body',
+                    plugins: ['remove_button'],
+                    sortField: { field: "text", direction: "asc" },
+                    onInitialize: function() {
+                        this.wrapper.classList.remove('form-control');
+                        this.wrapper.style.display = 'block';
+                        this.wrapper.classList.remove('border', 'border-gray-300', 'shadow-sm', 'rounded-md', 'p-2');
+                    }
+                });
             });
         }
         document.addEventListener('DOMContentLoaded', initTomSelects);

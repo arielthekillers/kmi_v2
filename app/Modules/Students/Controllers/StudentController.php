@@ -245,6 +245,19 @@ class StudentController extends Controller {
         $students = [];
         if ($sourceKelasId) {
             $students = $model->getAll(['kelas_id' => $sourceKelasId]);
+            foreach ($students as &$s) {
+                $history = $model->getHistory($s['id']);
+                $s['is_promoted'] = false;
+                $s['promoted_to'] = '';
+                
+                if (!empty($history)) {
+                    $latest = $history[0];
+                    if ($latest['academic_year_id'] > $this->currentYear['id']) {
+                        $s['is_promoted'] = true;
+                        $s['promoted_to'] = 'Kelas ' . $latest['tingkat'] . '-' . $latest['abjad'] . ' (' . $latest['year_name'] . ')';
+                    }
+                }
+            }
         }
 
         $data = [
@@ -378,10 +391,16 @@ class StudentController extends Controller {
         $targetKelasId = $_POST['target_kelas_id'] ?? null;
         $targetYearId = $_POST['target_year_id'] ?? null;
         $studentIds = $_POST['student_ids'] ?? [];
+        $mutationType = $_POST['mutation_type'] ?? 'kenaikan';
 
-        if (!$targetKelasId || !$targetYearId || empty($studentIds)) {
-            add_flash('Data promosi tidak lengkap.', 'error');
-            $this->redirect('/students/promote');
+        if (empty($studentIds)) {
+            add_flash('Pilih minimal satu santri.', 'error');
+            $this->redirect('/students/promote?kelas_id=' . $sourceKelasId);
+        }
+
+        if (($mutationType === 'kenaikan' || $mutationType === 'perpindahan') && (!$targetKelasId || !$targetYearId)) {
+            add_flash('Data target mutasi tidak lengkap.', 'error');
+            $this->redirect('/students/promote?kelas_id=' . $sourceKelasId);
         }
 
         $model = new Student();
@@ -389,15 +408,44 @@ class StudentController extends Controller {
 
         foreach ($studentIds as $studentId) {
             try {
-                $model->enroll($studentId, $targetKelasId, $targetYearId);
+                if ($mutationType === 'kenaikan' || $mutationType === 'perpindahan') {
+                    // Prevent backend double mutation for 'kenaikan'
+                    if ($mutationType === 'kenaikan') {
+                        $exists = $model->getHistory($studentId);
+                        $alreadyPromoted = false;
+                        foreach ($exists as $h) {
+                            if ($h['academic_year_id'] == $targetYearId) {
+                                $alreadyPromoted = true;
+                                break;
+                            }
+                        }
+                        if ($alreadyPromoted) continue;
+                    }
+                    
+                    $model->enroll($studentId, $targetKelasId, $targetYearId);
+                } else if ($mutationType === 'kelulusan') {
+                    // Prevent if already graduated
+                    $history = $model->getHistory($studentId);
+                    if (!empty($history) && $history[0]['status'] === 'Graduated') {
+                        continue;
+                    }
+                    
+                    // Graduate them in the current academic year
+                    $model->updateEnrollmentStatus($studentId, $this->currentYear['id'], 'Graduated');
+                }
                 $successCount++;
             } catch (\Exception $e) {
                 // Log error if needed
             }
         }
 
-        add_flash("Berhasil memproses promosi/pindah kelas untuk $successCount santri.", 'success');
-        $this->redirect('/students');
+        $msg = $mutationType === 'kelulusan' ? 'meluluskan' : 'memproses mutasi';
+        if (function_exists('log_activity') && $successCount > 0) {
+            $logAction = $mutationType === 'kelulusan' ? "Meluluskan $successCount santri dari Kelas ID: $sourceKelasId" : "Memutasi/Menaikkan $successCount santri dari Kelas ID: $sourceKelasId ke Kelas ID: $targetKelasId (TA ID: $targetYearId)";
+            log_activity($logAction);
+        }
+        add_flash("Berhasil $msg $successCount santri.", 'success');
+        $this->redirect('/students/promote?kelas_id=' . $sourceKelasId);
     }
 
     public function apiRegions() {
@@ -440,6 +488,19 @@ class StudentController extends Controller {
             error_log("Wilayah.id API Curl Error: " . $curlError);
             echo json_encode(['data' => [], 'error' => $curlError]);
         }
+        exit;
+    }
+
+    public function apiGetKelas() {
+        header('Content-Type: application/json');
+        $yearId = $_GET['year_id'] ?? null;
+        if (!$yearId) {
+            echo json_encode([]);
+            exit;
+        }
+        $model = new Student();
+        $kelas = $model->getKelasByYear($yearId);
+        echo json_encode($kelas);
         exit;
     }
 
@@ -522,6 +583,25 @@ class StudentController extends Controller {
             add_flash('Santri berhasil didaftarkan masuk kembali ke kelas.', 'success');
         } catch (\Exception $e) {
             add_flash('Gagal mendaftarkan kembali santri: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect("/students/history?id=$studentId");
+    }
+    public function rollbackHistory() {
+        require_admin();
+        $enrollmentId = $_POST['enrollment_id'] ?? null;
+        $studentId = $_POST['student_id'] ?? null;
+
+        if (!$enrollmentId || !$studentId) {
+            add_flash('Data tidak valid.', 'error');
+            $this->redirect('/students');
+        }
+
+        $model = new Student();
+        try {
+            $model->rollbackEnrollment($enrollmentId);
+            add_flash('Riwayat mutasi berhasil dihapus dan dibatalkan.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal membatalkan mutasi: ' . $e->getMessage(), 'error');
         }
         $this->redirect("/students/history?id=$studentId");
     }

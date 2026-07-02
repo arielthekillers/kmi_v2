@@ -9,9 +9,7 @@
             <a href="<?= url('/students/trash') ?>" class="px-4 py-2 border border-red-200 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 flex items-center">
                 <i class="ri-delete-bin-line mr-2"></i> Tempat Sampah
             </a>
-            <a href="<?= url('/students/promote') ?>" class="px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md text-sm font-medium hover:bg-indigo-50 flex items-center">
-                <i class="ri-graduation-cap-line mr-2"></i> Promosi Santri
-            </a>
+
             <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="px-4 py-2 border border-green-600 text-green-600 rounded-md text-sm font-medium hover:bg-green-50 flex items-center shadow-sm">
                 <i class="ri-file-excel-2-line mr-2"></i> Export
             </button>
