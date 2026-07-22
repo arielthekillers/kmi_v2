@@ -179,6 +179,10 @@
                                     <a href="<?= url('/piket/roaming') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-walk-line text-gray-400"></i> Jadwal Piket Keliling
                                     </a>
+                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Kalender</div>
+                                    <a href="<?= url('/academic-calendar') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-calendar-event-line text-gray-400"></i> Kalender Akademik
+                                    </a>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -380,6 +384,8 @@
                     </a>
                     <a href="<?= url('/piket/roaming') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-walk-line mr-2"></i>Jadwal Piket Keliling
+                    <a href="<?= url('/academic-calendar') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-calendar-event-line mr-2"></i>Kalender Akademik
                     </a>
                 <?php endif; ?>
 

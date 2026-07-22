@@ -164,6 +164,13 @@ class App
         $this->router->get('/academic-years', ['App\Controllers\AcademicYearController', 'index']);
         $this->router->post('/academic-years/store', ['App\Controllers\AcademicYearController', 'store']);
         $this->router->post('/academic-years/set-active', ['App\Controllers\AcademicYearController', 'setActive']);
+
+        // Academic Calendar Routes
+        $this->router->get('/academic-calendar', ['App\Controllers\AcademicCalendarController', 'index']);
+        $this->router->post('/academic-calendar/store', ['App\Controllers\AcademicCalendarController', 'store']);
+        $this->router->get('/academic-calendar/edit', ['App\Controllers\AcademicCalendarController', 'edit']);
+        $this->router->post('/academic-calendar/update', ['App\Controllers\AcademicCalendarController', 'update']);
+        $this->router->get('/academic-calendar/delete', ['App\Controllers\AcademicCalendarController', 'delete']);
     }
 
     public function run()
