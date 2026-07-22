@@ -11,6 +11,24 @@ class PpsbController extends Controller {
         parent::__construct();
     }
 
+    private function calculateCompleteness($reg) {
+        $fieldsToCheck = [
+            'registration_no', 'nama', 'gender', 'tempat_lahir', 'tanggal_lahir', 
+            'alamat', 'nama_wali', 'no_hp_wali', 'nik', 'nisn', 'provinsi', 
+            'kabupaten', 'kecamatan', 'kelurahan', 'rt_rw', 'kode_pos', 
+            'nama_kk', 'pekerjaan_ayah', 'no_hp_ayah', 'nama_ibu', 'pekerjaan_ibu', 'no_hp_ibu'
+        ];
+        
+        $filled = 0;
+        $total = count($fieldsToCheck);
+        foreach ($fieldsToCheck as $f) {
+            if (!empty($reg[$f]) && $reg[$f] !== '-' && $reg[$f] !== 'null') {
+                $filled++;
+            }
+        }
+        return round(($filled / $total) * 100);
+    }
+
     /**
      * Public Registration Form
      */
@@ -99,28 +117,52 @@ class PpsbController extends Controller {
 
         $q = $_GET['q'] ?? '';
         $status = $_GET['status'] ?? '';
+        $sort = $_GET['sort'] ?? 'created_at';
+        $dir = $_GET['dir'] ?? 'desc';
 
         $model = new PpsbRegistration();
-        $filters = ['q' => $q, 'status' => $status];
+        $filters = ['q' => $q, 'status' => $status, 'sort' => $sort, 'dir' => $dir];
         
         $registrations = $model->getAll($filters, $limit, $offset);
+        
+        foreach ($registrations as &$reg) {
+            $reg['completeness'] = $this->calculateCompleteness($reg);
+        }
+        
         $totalItems = $model->countAll($filters);
         $totalPages = ceil($totalItems / $limit);
 
-        // Need classes list for enrollment modal
+        // Determine next academic year for placement
+        $yearModel = new \App\Models\AcademicYearModel();
+        $allYears = $yearModel->getAll();
+        $nextYear = null;
+        foreach (array_reverse($allYears) as $y) {
+            if ($y['name'] > ($this->currentYear['name'] ?? '')) {
+                $nextYear = $y;
+                break;
+            }
+        }
+        if (!$nextYear) {
+            $nextYear = $this->currentYear; // fallback to current if next doesn't exist
+        }
+
+        // Need classes list for enrollment modal for the next year
         $studentModel = new Student();
-        $kelas = $studentModel->getKelasList();
+        $kelas = $studentModel->getKelasByYear($nextYear['id'] ?? null);
         
         // Suggest next NIS
-        $nextNis = $studentModel->generateNextNis($this->currentYear['name'] ?? null);
+        $nextNis = $studentModel->generateNextNis($nextYear['name'] ?? null);
 
         $data = [
             'title' => 'Master Pendaftaran PPSB',
             'registrations' => $registrations,
             'kelas' => $kelas,
             'nextNis' => $nextNis,
+            'targetYear' => $nextYear,
             'q' => $q,
             'selected_status' => $status,
+            'sort' => $sort,
+            'dir' => $dir,
             'page' => $page,
             'total_pages' => $totalPages,
             'total_items' => $totalItems,
@@ -135,6 +177,146 @@ class PpsbController extends Controller {
         $this->view('layouts/header', $data);
         $this->view('Students/Views/ppsb_admin', $data);
         $this->view('layouts/footer', $data);
+    }
+
+    /**
+     * Admin Statistics Page
+     */
+    public function statistics() {
+        require_admin();
+
+        $model = new PpsbRegistration();
+        $all = $model->getAll([], 100000);
+        
+        $stats = [
+            'total' => count($all),
+            'laki_laki' => 0,
+            'perempuan' => 0,
+            'usia_tertua_l' => null,
+            'usia_termuda_l' => null,
+            'usia_tertua_p' => null,
+            'usia_termuda_p' => null,
+            'completeness_25' => 0,
+            'completeness_50' => 0,
+            'completeness_75' => 0,
+            'completeness_100' => 0,
+            'kabupaten_terbanyak' => []
+        ];
+
+        $today = new \DateTime();
+        $usia_l = [];
+        $usia_p = [];
+        $kabupatenCounts = [];
+
+        foreach ($all as $r) {
+            if ($r['gender'] === 'L') {
+                $stats['laki_laki']++;
+                if (!empty($r['tanggal_lahir'])) {
+                    try { $usia_l[] = $today->diff(new \DateTime($r['tanggal_lahir']))->y; } catch (\Exception $e) {}
+                }
+            } else {
+                $stats['perempuan']++;
+                if (!empty($r['tanggal_lahir'])) {
+                    try { $usia_p[] = $today->diff(new \DateTime($r['tanggal_lahir']))->y; } catch (\Exception $e) {}
+                }
+            }
+
+            $comp = $this->calculateCompleteness($r);
+            if ($comp <= 25) $stats['completeness_25']++;
+            elseif ($comp <= 50) $stats['completeness_50']++;
+            elseif ($comp <= 75) $stats['completeness_75']++;
+            else $stats['completeness_100']++;
+
+            if (!empty($r['kabupaten'])) {
+                $kab = strtoupper(trim($r['kabupaten']));
+                if (!isset($kabupatenCounts[$kab])) $kabupatenCounts[$kab] = 0;
+                $kabupatenCounts[$kab]++;
+            }
+        }
+
+        if (!empty($usia_l)) {
+            $stats['usia_tertua_l'] = max($usia_l);
+            $stats['usia_termuda_l'] = min($usia_l);
+        }
+        if (!empty($usia_p)) {
+            $stats['usia_tertua_p'] = max($usia_p);
+            $stats['usia_termuda_p'] = min($usia_p);
+        }
+
+        arsort($kabupatenCounts);
+        $stats['kabupaten_terbanyak'] = array_slice($kabupatenCounts, 0, 6, true);
+
+        $data = [
+            'title' => 'Statistik Pendaftaran (PPSB)',
+            'stats' => $stats,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'admin',
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('Students/Views/ppsb_statistics', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    /**
+     * Admin Edit Registration
+     */
+    public function edit() {
+        require_admin();
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            add_flash('Data pendaftaran tidak valid.', 'error');
+            $this->redirect('/admin/ppsb');
+        }
+        
+        $model = new PpsbRegistration();
+        $registration = $model->find($id);
+        if (!$registration) {
+            add_flash('Data pendaftaran tidak ditemukan.', 'error');
+            $this->redirect('/admin/ppsb');
+        }
+
+        $data = [
+            'title' => 'Lengkapi Data PPSB',
+            'registration' => $registration,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'admin',
+            'return_url' => $_GET['return'] ?? '/admin/ppsb'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('Students/Views/ppsb_edit', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    /**
+     * Admin Update Registration Data
+     */
+    public function updateData() {
+        require_admin();
+        $id = $_POST['id'] ?? null;
+        $returnUrl = $_POST['return_url'] ?? '/admin/ppsb';
+
+        if (!$id) {
+            add_flash('ID Pendaftaran tidak valid.', 'error');
+            $this->redirect($returnUrl);
+        }
+
+        $data = $_POST;
+        unset($data['id']);
+        unset($data['return_url']);
+        unset($data['csrf_token']);
+
+        $model = new PpsbRegistration();
+        try {
+            $model->update($id, $data);
+            add_flash('Data pendaftaran berhasil diperbarui.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal memperbarui data: ' . $e->getMessage(), 'error');
+        }
+        
+        // redirect is smart enough to handle paths like /admin/ppsb?page=3
+        $this->redirect($returnUrl);
     }
 
     /**
@@ -162,6 +344,40 @@ class PpsbController extends Controller {
     }
 
     /**
+     * Admin Bulk Action (Passed, Failed, Delete, Pending)
+     */
+    public function bulkAction() {
+        require_admin();
+        $action = $_POST['action'] ?? null;
+        $ids = $_POST['selected_ids'] ?? [];
+        $returnUrl = $_POST['return_url'] ?? '/admin/ppsb';
+
+        if (empty($ids) || !$action) {
+            add_flash('Tidak ada data atau aksi yang dipilih.', 'error');
+            $this->redirect($returnUrl);
+        }
+
+        $model = new PpsbRegistration();
+        $success = 0;
+        foreach ($ids as $id) {
+            try {
+                if ($action === 'Delete') {
+                    $model->delete($id);
+                    $success++;
+                } elseif (in_array($action, ['Passed', 'Failed', 'Pending'])) {
+                    $model->update($id, ['status' => $action]);
+                    $success++;
+                }
+            } catch (\Exception $e) {
+                // skip failed updates silently in bulk
+            }
+        }
+
+        add_flash("Berhasil memproses $success data pendaftar.", 'success');
+        $this->redirect($returnUrl);
+    }
+
+    /**
      * Admin Place/Enroll approved registration into Class
      */
     public function enroll() {
@@ -170,10 +386,11 @@ class PpsbController extends Controller {
         $id = $_POST['id'] ?? null;
         $kelasId = $_POST['kelas_id'] ?? null;
         $nis = $_POST['nis'] ?? null;
+        $returnUrl = $_POST['return_url'] ?? '/admin/ppsb';
 
         if (!$id || !$kelasId || !$nis) {
             add_flash('Data penempatan kelas tidak lengkap.', 'error');
-            $this->redirect('/admin/ppsb');
+            $this->redirect($returnUrl);
         }
 
         $model = new PpsbRegistration();
@@ -181,12 +398,12 @@ class PpsbController extends Controller {
 
         if (!$reg) {
             add_flash('Data pendaftar tidak ditemukan.', 'error');
-            $this->redirect('/admin/ppsb');
+            $this->redirect($returnUrl);
         }
 
         if ($reg['status'] !== 'Passed') {
             add_flash('Hanya pendaftar yang LULUS yang dapat ditempatkan di kelas.', 'error');
-            $this->redirect('/admin/ppsb');
+            $this->redirect($returnUrl);
         }
 
         $studentModel = new Student();
@@ -203,14 +420,29 @@ class PpsbController extends Controller {
             // Create Student Record
             $studentData = [
                 'nis' => $nis,
-                'nama' => $reg['nama'],
-                'gender' => $reg['gender'],
-                'tempat_lahir' => $reg['tempat_lahir'],
-                'tanggal_lahir' => $reg['tanggal_lahir'],
-                'nama_wali' => $reg['nama_wali'],
-                'alamat' => $reg['alamat'],
+                'nama' => $reg['nama'] ?? null,
+                'nik' => $reg['nik'] ?? null,
+                'nisn' => $reg['nisn'] ?? null,
+                'gender' => $reg['gender'] ?? null,
+                'tempat_lahir' => $reg['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $reg['tanggal_lahir'] ?? null,
+                'alamat' => $reg['alamat'] ?? null,
+                'rt_rw' => $reg['rt_rw'] ?? null,
+                'kelurahan' => $reg['kelurahan'] ?? null,
+                'kecamatan' => $reg['kecamatan'] ?? null,
+                'kabupaten' => $reg['kabupaten'] ?? null,
+                'provinsi' => $reg['provinsi'] ?? null,
+                'kode_pos' => $reg['kode_pos'] ?? null,
+                'nama_kk' => $reg['nama_kk'] ?? null,
+                'nama_wali' => $reg['nama_wali'] ?? null,
+                'pekerjaan_ayah' => $reg['pekerjaan_ayah'] ?? null,
+                'no_hp_ayah' => $reg['no_hp_ayah'] ?? null,
+                'nama_ibu' => $reg['nama_ibu'] ?? null,
+                'pekerjaan_ibu' => $reg['pekerjaan_ibu'] ?? null,
+                'no_hp_ibu' => $reg['no_hp_ibu'] ?? null,
                 'tahun_masuk' => date('Y'),
-                'kelas_id' => $kelasId // Passed to trigger enroll in Model
+                'kelas_id' => $kelasId, // Passed to trigger enroll in Model
+                'academic_year_id' => $_POST['academic_year_id'] ?? null
             ];
             
             $studentId = $studentModel->create($studentData);
@@ -228,7 +460,46 @@ class PpsbController extends Controller {
             add_flash('Gagal menempatkan kelas: ' . $e->getMessage(), 'error');
         }
 
-        $this->redirect('/admin/ppsb');
+        $this->redirect($returnUrl);
+    }
+
+    /**
+     * Admin Cancel Enrollment
+     */
+    public function cancelEnroll() {
+        require_admin();
+
+        $id = $_POST['id'] ?? null;
+        $returnUrl = $_POST['return_url'] ?? '/admin/ppsb';
+
+        if (!$id) {
+            add_flash('Data tidak ditemukan.', 'error');
+            $this->redirect($returnUrl);
+        }
+
+        $model = new PpsbRegistration();
+        $reg = $model->find($id);
+
+        if (!$reg || $reg['status'] !== 'Enrolled' || empty($reg['student_id'])) {
+            add_flash('Data pendaftar tidak valid atau belum ditempatkan di kelas.', 'error');
+            $this->redirect($returnUrl);
+        }
+
+        try {
+            $studentModel = new Student();
+            $studentModel->delete($reg['student_id']);
+
+            $model->update($id, [
+                'status' => 'Passed',
+                'student_id' => null
+            ]);
+
+            add_flash('Penempatan kelas berhasil dibatalkan. Data santri yang terkait telah dihapus.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal membatalkan penempatan kelas: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($returnUrl);
     }
 
     /**
@@ -245,6 +516,149 @@ class PpsbController extends Controller {
         } catch (\Exception $e) {
             add_flash('Gagal menghapus pendaftaran: ' . $e->getMessage(), 'error');
         }
+        $this->redirect('/admin/ppsb');
+    }
+
+    /**
+     * Import CSV file
+     */
+    public function importCsv() {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
+            $file = $_FILES['csv_file'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                add_flash('Gagal mengunggah file.', 'error');
+                $this->redirect('/admin/ppsb');
+            }
+
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($ext !== 'csv') {
+                add_flash('Format file tidak didukung. Harap unggah file CSV.', 'error');
+                $this->redirect('/admin/ppsb');
+            }
+
+            if (($handle = fopen($file['tmp_name'], "r")) !== FALSE) {
+                // Skip the first 3 rows
+                for ($i = 0; $i < 3; $i++) {
+                    fgetcsv($handle, 10000, ",");
+                }
+
+                // Read the 4th row (Main Header)
+                $header = fgetcsv($handle, 10000, ",");
+                if ($header && count($header) === 1 && strpos($header[0], ';') !== false) {
+                    $header = explode(';', $header[0]);
+                }
+
+                // Validate if it's the correct format by checking key columns
+                if (!$header || 
+                    strtoupper(trim($header[1] ?? '')) !== 'NO. INDUK' || 
+                    strtoupper(trim($header[2] ?? '')) !== 'NAMA' || 
+                    strtoupper(trim($header[11] ?? '')) !== 'HP AYAH/IBU') {
+                    
+                    fclose($handle);
+                    add_flash('Format CSV tidak sesuai! Pastikan Anda mengunggah file hasil export dari Smart System yang benar tanpa mengubah susunan kolom.', 'error');
+                    $this->redirect('/admin/ppsb');
+                    return; // Prevent further execution
+                }
+
+                // Skip the 5th row (Sub-headers like AYAH, IBU)
+                fgetcsv($handle, 10000, ",");
+
+                $ppsbModel = new PpsbRegistration();
+                
+                $inserted = 0;
+                $updated = 0;
+
+                while (($data = fgetcsv($handle, 10000, ",")) !== FALSE) {
+                    if (count($data) === 1 && strpos($data[0], ';') !== false) {
+                        // Fallback to semicolon if Excel exports it that way
+                        $data = explode(';', $data[0]);
+                    }
+
+                    if (empty($data[1]) || trim($data[1]) === '') {
+                        continue;
+                    }
+
+                    $nis = trim($data[1]);
+                    
+                    // Split HP
+                    $hp = trim($data[11] ?? '');
+                    $hpAyah = $hp;
+                    $hpIbu = '';
+                    if (strpos($hp, '/') !== false) {
+                        $parts = explode('/', $hp);
+                        $hpAyah = trim($parts[0]);
+                        $hpIbu = trim($parts[1] ?? '');
+                    } else if (!empty($hp)) {
+                        $hpIbu = $hpAyah; // Jika hanya 1 nomor, isi untuk keduanya
+                    }
+
+                    // Format Date
+                    $tanggalLahir = trim($data[6] ?? '');
+                    if ($tanggalLahir && strpos($tanggalLahir, '-') !== false) {
+                        $dateParts = explode('-', $tanggalLahir);
+                        if (count($dateParts) === 3) {
+                            $tanggalLahir = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+                        }
+                    } else {
+                        $tanggalLahir = null;
+                    }
+
+                    $ppsbData = [
+                        'registration_no' => $nis,
+                        'nama' => trim($data[2] ?? ''),
+                        'nisn' => trim($data[3] ?? '') !== 'null' ? trim($data[3] ?? '') : null,
+                        'nik' => trim($data[4] ?? '') !== '0' ? trim($data[4] ?? '') : null,
+                        'tempat_lahir' => trim($data[5] ?? ''),
+                        'tanggal_lahir' => $tanggalLahir,
+                        'gender' => trim($data[7] ?? '') === 'L' ? 'L' : 'P',
+                        'alamat' => trim($data[12] ?? ''),
+                        'rt_rw' => trim($data[13] ?? '') . '/' . trim($data[14] ?? ''),
+                        'kelurahan' => trim($data[15] ?? ''),
+                        'kecamatan' => trim($data[16] ?? ''),
+                        'kabupaten' => trim($data[17] ?? ''),
+                        'provinsi' => trim($data[18] ?? ''),
+                        'nama_wali' => trim($data[27] ?? ''),
+                        'pekerjaan_ayah' => trim($data[33] ?? ''),
+                        'no_hp_ayah' => $hpAyah,
+                        'nama_ibu' => trim($data[28] ?? ''),
+                        'pekerjaan_ibu' => trim($data[34] ?? ''),
+                        'no_hp_ibu' => $hpIbu,
+                        'no_hp_wali' => $hpAyah ?: $hpIbu, // Fallback
+                        'status' => 'Pending'
+                    ];
+                    
+                    foreach ($ppsbData as $k => $v) {
+                        if ($v === 'null' || $v === 'Invalid date') $ppsbData[$k] = null;
+                    }
+
+                    try {
+                        $existing = $ppsbModel->findByRegNo($nis);
+
+                        if ($existing) {
+                            // Pertahankan status yang lama agar tidak revert ke Pending secara paksa jika sudah Passed/Enrolled
+                            unset($ppsbData['status']);
+                            
+                            $ppsbModel->update($existing['id'], $ppsbData);
+                            $updated++;
+                        } else {
+                            $ppsbModel->create($ppsbData);
+                            $inserted++;
+                        }
+                    } catch (\Exception $e) {
+                        // skip on error
+                    }
+                }
+                fclose($handle);
+
+                add_flash("Import CSV Selesai! $inserted data pendaftar baru ditambahkan, $updated data diperbarui.", 'success');
+            } else {
+                add_flash('Gagal membaca file CSV.', 'error');
+            }
+        }
+        
         $this->redirect('/admin/ppsb');
     }
 }

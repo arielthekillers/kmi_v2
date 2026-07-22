@@ -14,12 +14,25 @@ class PpsbRegistration {
     public function getAll($filters = [], $limit = null, $offset = 0) {
         $filtering = $this->applyFilters($filters);
         
+        $sortField = $filters['sort'] ?? 'created_at';
+        $sortDir = strtoupper($filters['dir'] ?? 'DESC');
+        
+        $allowedSortFields = ['created_at', 'nama', 'registration_no', 'status'];
+        if (!in_array($sortField, $allowedSortFields)) {
+            $sortField = 'created_at';
+        }
+        if ($sortDir !== 'ASC' && $sortDir !== 'DESC') {
+            $sortDir = 'DESC';
+        }
+
+        $orderBy = "p.$sortField $sortDir";
+        
         $sql = "SELECT p.*, s.nis, s.nama as student_name 
                 FROM ppsb_registrations p 
                 LEFT JOIN students s ON p.student_id = s.id
                 WHERE p.deleted_at IS NULL
                 AND {$filtering['where']}
-                ORDER BY p.created_at DESC";
+                ORDER BY $orderBy";
         
         $params = $filtering['params'];
 

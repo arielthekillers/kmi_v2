@@ -8,6 +8,7 @@ use PDOException;
 class Database {
     private static $instance = null;
     private $pdo;
+    private $transactionCount = 0;
 
     private function __construct() {
         $config = require __DIR__ . '/../Config/database.php';
@@ -39,14 +40,27 @@ class Database {
     }
 
     public function beginTransaction() {
-        return $this->pdo->beginTransaction();
+        if ($this->transactionCount == 0) {
+            $this->pdo->beginTransaction();
+        }
+        $this->transactionCount++;
+        return true;
     }
 
     public function commit() {
-        return $this->pdo->commit();
+        if ($this->transactionCount == 0) return false;
+        
+        $this->transactionCount--;
+        if ($this->transactionCount == 0) {
+            return $this->pdo->commit();
+        }
+        return true;
     }
 
     public function rollBack() {
+        if ($this->transactionCount == 0) return false;
+
+        $this->transactionCount = 0;
         return $this->pdo->rollBack();
     }
 }

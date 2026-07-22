@@ -491,6 +491,38 @@ class StudentController extends Controller {
         exit;
     }
 
+    /**
+     * API Proxy for Postal Codes (carikodepos.id)
+     */
+    public function apiPostalCode() {
+        header('Content-Type: application/json');
+        
+        $search = $_GET['search'] ?? '';
+        if (empty($search)) {
+            echo json_encode(['success' => false, 'data' => []]);
+            return;
+        }
+
+        $url = "https://carikodepos.id/api/postal-codes?search=" . urlencode(trim($search)) . "&limit=15";
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // Sometimes SSL verification fails on local XAMPP
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode == 200 && $response) {
+            echo $response;
+        } else {
+            echo json_encode(['success' => false, 'data' => [], 'error' => 'Failed to fetch']);
+        }
+    }
+
     public function apiGetKelas() {
         header('Content-Type: application/json');
         $yearId = $_GET['year_id'] ?? null;

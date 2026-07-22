@@ -134,6 +134,7 @@ class App
 
         // API regions proxy
         $this->router->get('/api/regions', ['App\Modules\Students\Controllers\StudentController', 'apiRegions']);
+        $this->router->get('/api/postal-codes', ['App\Modules\Students\Controllers\StudentController', 'apiPostalCode']);
         $this->router->get('/api/kelas', ['App\Modules\Students\Controllers\StudentController', 'apiGetKelas']);
 
         // Public PPSB Routes
@@ -143,9 +144,15 @@ class App
 
         // Admin PPSB Routes
         $this->router->get('/admin/ppsb', ['App\Modules\Students\Controllers\PpsbController', 'adminIndex']);
+        $this->router->get('/admin/ppsb/statistik', ['App\Modules\Students\Controllers\PpsbController', 'statistics']);
+        $this->router->get('/admin/ppsb/edit', ['App\Modules\Students\Controllers\PpsbController', 'edit']);
+        $this->router->post('/admin/ppsb/update', ['App\Modules\Students\Controllers\PpsbController', 'updateData']);
         $this->router->post('/admin/ppsb/status', ['App\Modules\Students\Controllers\PpsbController', 'updateStatus']);
+        $this->router->post('/admin/ppsb/bulk', ['App\Modules\Students\Controllers\PpsbController', 'bulkAction']);
         $this->router->post('/admin/ppsb/enroll', ['App\Modules\Students\Controllers\PpsbController', 'enroll']);
+        $this->router->post('/admin/ppsb/cancel-enroll', ['App\Modules\Students\Controllers\PpsbController', 'cancelEnroll']);
         $this->router->get('/admin/ppsb/delete', ['App\Modules\Students\Controllers\PpsbController', 'delete']);
+        $this->router->post('/admin/ppsb/import-csv', ['App\Modules\Students\Controllers\PpsbController', 'importCsv']);
 
         // Student History & Inactive Management
         $this->router->get('/students/history', ['App\Modules\Students\Controllers\StudentController', 'history']);
