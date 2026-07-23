@@ -631,15 +631,25 @@ class PpsbController extends Controller {
                     ];
                     
                     foreach ($ppsbData as $k => $v) {
-                        if ($v === 'null' || $v === 'Invalid date') $ppsbData[$k] = null;
+                        if ($v === 'null' || $v === 'Invalid date') {
+                            // Khusus tanggal_lahir harus beneran NULL kalau kosong/invalid
+                            if ($k === 'tanggal_lahir') {
+                                $ppsbData[$k] = null;
+                            } else {
+                                $ppsbData[$k] = '';
+                            }
+                        }
                     }
 
                     try {
-                        $existing = $ppsbModel->findByRegNo($nis);
+                        $existing = $ppsbModel->findByRegNoWithTrashed($nis);
 
                         if ($existing) {
                             // Pertahankan status yang lama agar tidak revert ke Pending secara paksa jika sudah Passed/Enrolled
                             unset($ppsbData['status']);
+                            
+                            // Restore record jika sebelumnya dihapus (soft delete)
+                            $ppsbData['deleted_at'] = null;
                             
                             $ppsbModel->update($existing['id'], $ppsbData);
                             $updated++;

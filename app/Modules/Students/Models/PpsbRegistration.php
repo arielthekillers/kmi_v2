@@ -86,6 +86,10 @@ class PpsbRegistration {
         return $this->db->query("SELECT * FROM ppsb_registrations WHERE registration_no = ? AND deleted_at IS NULL", [$regNo])->fetch();
     }
 
+    public function findByRegNoWithTrashed($regNo) {
+        return $this->db->query("SELECT * FROM ppsb_registrations WHERE registration_no = ?", [$regNo])->fetch();
+    }
+
     public function generateRegNo() {
         $year = date('Y');
         $prefix = "REG-$year-";
