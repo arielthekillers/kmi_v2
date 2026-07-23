@@ -191,7 +191,7 @@
                             <!-- Group 3: Taklim & Evaluasi -->
                             <div class="relative group">
                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                    <i class="ri-honor-line"></i> Taklim & Evaluasi <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <i class="ri-honor-line"></i> Ta'lim & Evaluasi <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kehadiran Harian</div>
@@ -390,7 +390,7 @@
                 <?php endif; ?>
 
                 <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
-                    <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-t pt-2">Taklim & Evaluasi</div>
+                    <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest mt-2 border-t pt-2">Ta'lim & Evaluasi</div>
                     <a href="<?= url('/attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-user-received-2-line mr-2"></i>Absensi Pengajar
                     </a>
