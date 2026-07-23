@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\AcademicCalendarModel;
 use PDO;
 
 class DashboardController extends Controller {
@@ -33,6 +34,7 @@ class DashboardController extends Controller {
             'pelajaran' => $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
             'kelas' => $pdo->prepare("SELECT COUNT(*) FROM kelas WHERE academic_year_id = ?"),
             'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar' AND deleted_at IS NULL")->fetchColumn(),
+            'tahun_ajaran' => $pdo->query("SELECT COUNT(*) FROM academic_years")->fetchColumn(),
             'santri' => $pdo->prepare("
                 SELECT COUNT(*) 
                 FROM student_enrollments se 
@@ -125,6 +127,66 @@ class DashboardController extends Controller {
             elseif ($row['status'] === 'tidak_hadir') $absensiStats['tidak_hadir'] = $row['cnt'];
         }
 
+        // 7b. Student Attendance Stats
+        $activeStudentSessionId = 0;
+        if ($yearId) {
+            $sessStmt = $pdo->prepare("SELECT id FROM attendance_sessions WHERE academic_year_id = ? AND is_active = 1 LIMIT 1");
+            $sessStmt->execute([$yearId]);
+            $activeStudentSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
+            $activeStudentSessionId = $activeStudentSession ? (int)$activeStudentSession['id'] : 0;
+        }
+
+        $studentAbsensiStats = ['sakit' => 0, 'izin' => 0, 'alpha' => 0];
+        if ($activeStudentSessionId > 0) {
+            $sAttStmt = $pdo->prepare("SELECT type, COUNT(*) as cnt FROM student_absences WHERE date = ? AND attendance_session_id = ? GROUP BY type");
+            $sAttStmt->execute([$todayDate, $activeStudentSessionId]);
+            while ($row = $sAttStmt->fetch(PDO::FETCH_ASSOC)) {
+                $type = strtolower($row['type']);
+                if (isset($studentAbsensiStats[$type])) {
+                    $studentAbsensiStats[$type] = $row['cnt'];
+                }
+            }
+        }
+        $totalStudentAbsents = array_sum($studentAbsensiStats);
+        // Assuming $stats['santri'] contains total active students
+        $totalStudents = $stats['santri'] ?? 0;
+        $studentAbsensiStats['hadir'] = max(0, $totalStudents - $totalStudentAbsents);
+        $studentAbsensiStats['tidak_hadir'] = $totalStudentAbsents;
+
+        // 8. Academic Calendar logic
+        $calendarModel = new AcademicCalendarModel();
+        $events = $yearId ? $calendarModel->getByYear($yearId) : [];
+        $selectedMonth = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
+        $selectedYearVal = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYearVal);
+        $firstDayOfMonth = date('w', strtotime("$selectedYearVal-$selectedMonth-01"));
+        $firstDayOffset = ($firstDayOfMonth == 0) ? 6 : $firstDayOfMonth - 1;
+
+        $monthEvents = [];
+        foreach ($events as $event) {
+            $start = strtotime($event['tanggal_mulai']);
+            $end = empty($event['tanggal_selesai']) ? $start : strtotime($event['tanggal_selesai']);
+            $monthStart = strtotime("$selectedYearVal-$selectedMonth-01");
+            $monthEnd = strtotime("$selectedYearVal-$selectedMonth-$daysInMonth 23:59:59");
+            if ($start <= $monthEnd && $end >= $monthStart) {
+                $monthEvents[] = $event;
+            }
+        }
+
+        $kategoriConfig = [
+            'Akademik' => ['bg' => 'bg-blue-100',   'text' => 'text-blue-700',   'dot' => 'bg-blue-500',   'border' => 'border-blue-200'],
+            'Ujian'    => ['bg' => 'bg-red-100',    'text' => 'text-red-700',    'dot' => 'bg-red-500',    'border' => 'border-red-200'],
+            'Kegiatan' => ['bg' => 'bg-green-100',  'text' => 'text-green-700',  'dot' => 'bg-green-500',  'border' => 'border-green-200'],
+            'Libur'    => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-700', 'dot' => 'bg-yellow-500', 'border' => 'border-yellow-200'],
+            'Lainnya'  => ['bg' => 'bg-gray-100',   'text' => 'text-gray-600',   'dot' => 'bg-gray-400',   'border' => 'border-gray-200'],
+        ];
+
+        $bulanId = [
+            '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',    '04' => 'April',
+            '05' => 'Mei',     '06' => 'Juni',     '07' => 'Juli',     '08' => 'Agustus',
+            '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
+        ];
+
         // Pass everything to view
         $this->view('dashboard', [
             'stats' => $stats,
@@ -139,8 +201,16 @@ class DashboardController extends Controller {
             'piketSyeikh' => $piketSyeikhNames,
             'piketKeliling' => $piketKelilingNames,
             'absensiStats' => $absensiStats,
+            'studentAbsensiStats' => $studentAbsensiStats,
             'role' => $role,
-            'userId' => $userId
+            'userId' => $userId,
+            'selectedMonth' => $selectedMonth,
+            'selectedYearVal' => $selectedYearVal,
+            'daysInMonth' => $daysInMonth,
+            'firstDayOffset' => $firstDayOffset,
+            'monthEvents' => $monthEvents,
+            'kategoriConfig' => $kategoriConfig,
+            'bulanId' => $bulanId
         ]);
     }
 }
