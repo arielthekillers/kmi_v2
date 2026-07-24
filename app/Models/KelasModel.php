@@ -33,7 +33,7 @@ class KelasModel extends Model {
                    (SELECT COUNT(*) 
                     FROM student_enrollments se 
                     JOIN students s ON se.student_id = s.id
-                    WHERE se.kelas_id = k.id AND se.status = 'Active' AND s.deleted_at IS NULL) as jumlah_murid
+                    WHERE se.kelas_id = k.id AND se.status IN ('Active', 'Graduated') AND s.deleted_at IS NULL) as jumlah_murid
             FROM kelas k
             LEFT JOIN users u ON k.teacher_id = u.id
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
@@ -103,7 +103,7 @@ class KelasModel extends Model {
             SELECT s.*, se.status as enrollment_status 
             FROM students s 
             INNER JOIN student_enrollments se ON s.id = se.student_id 
-            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status IN ('Active', 'Graduated') AND s.deleted_at IS NULL
             ORDER BY s.nama ASC
         ");
         $stmt->execute([$id, $yearId]);

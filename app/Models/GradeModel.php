@@ -11,7 +11,7 @@ class GradeModel extends Model {
     public function getAllExams($filters = []) {
         $sql = "SELECT e.*, 
                        k.tingkat, k.abjad, 
-                       (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
+                       (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status IN ('Active', 'Graduated') AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
                        sub.nama as mapel_nama,
                        CASE 
                            WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
@@ -81,7 +81,7 @@ class GradeModel extends Model {
         $stmt = $this->db->prepare("
             SELECT e.*, 
                    k.tingkat, k.abjad, 
-                   (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status = 'Active' AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
+                   (SELECT COUNT(*) FROM student_enrollments se JOIN students s ON se.student_id = s.id WHERE se.kelas_id = k.id AND se.status IN ('Active', 'Graduated') AND se.academic_year_id = e.academic_year_id AND s.deleted_at IS NULL) as jumlah_murid,
                    sub.nama as mapel_nama, sub.skala, 
                    CASE 
                        WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
@@ -110,7 +110,7 @@ class GradeModel extends Model {
             FROM students s
             INNER JOIN student_enrollments se ON s.id = se.student_id
             LEFT JOIN grades g ON s.id = g.student_id AND g.exam_id = ?
-            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status IN ('Active', 'Graduated') AND s.deleted_at IS NULL
             ORDER BY CASE WHEN g.no_bayanat IS NULL THEN 1 ELSE 0 END, g.no_bayanat ASC, s.nama ASC
         ");
         $stmt->execute([$examId, $classId, $ayId]);
@@ -492,7 +492,7 @@ class GradeModel extends Model {
             SELECT s.id as student_id, s.nama, s.nis
             FROM students s
             INNER JOIN student_enrollments se ON s.id = se.student_id
-            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+            WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status IN ('Active', 'Graduated') AND s.deleted_at IS NULL
             ORDER BY s.nama ASC
         ");
         $stmtStudents->execute([$classId, $academicYearId]);

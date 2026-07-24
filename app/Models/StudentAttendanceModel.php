@@ -108,7 +108,7 @@ class StudentAttendanceModel extends Model {
                 FROM students s 
                 INNER JOIN student_enrollments se ON s.id = se.student_id
                 LEFT JOIN student_absences sa ON s.id = sa.student_id AND sa.date = ? AND sa.attendance_session_id = ?
-                WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+                WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status IN ('Active', 'Graduated') AND s.deleted_at IS NULL
                 ORDER BY s.nama ASC";
         return $this->query($sql, [$date, $sessionId, $kelasId, $this->academic_year_id])->fetchAll(PDO::FETCH_ASSOC);
     }
