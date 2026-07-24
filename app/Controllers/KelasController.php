@@ -45,11 +45,26 @@ class KelasController extends Controller {
         csrf_validate_token();
 
         $id = $_POST['id'] ?? '';
+        $abjad = htmlspecialchars($_POST['abjad'] ?? '');
+        $gender = 'Pa'; // default
+        $abjadLower = strtolower($abjad);
+        if (strpos($abjadLower, 'pa+pi') !== false || (strpos($abjadLower, 'pa') !== false && strpos($abjadLower, 'pi') !== false)) {
+            $gender = 'Pa+Pi';
+        } elseif (strpos($abjadLower, 'pi') !== false) {
+            $gender = 'Pi';
+        } elseif (strpos($abjadLower, 'pa') !== false) {
+            $gender = 'Pa';
+        } else {
+            // Fallback to submitted gender if any, otherwise default
+            $gender = $_POST['gender'] ?? 'Pa';
+        }
+
         $data = [
             'tingkat' => htmlspecialchars($_POST['tingkat'] ?? ''),
-            'abjad' => htmlspecialchars($_POST['abjad'] ?? ''),
+            'abjad' => $abjad,
             'location' => htmlspecialchars($_POST['location'] ?? ''),
-            'teacher_id' => $_POST['teacher_id'] ?? null
+            'teacher_id' => $_POST['teacher_id'] ?? null,
+            'gender' => $gender
         ];
 
         try {

@@ -59,23 +59,25 @@ class KelasModel extends Model {
     public function create($data) {
         $yearId = $this->getActiveYearId();
 
-        $stmt = $this->db->prepare("INSERT INTO kelas (tingkat, abjad, location, teacher_id, academic_year_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("INSERT INTO kelas (tingkat, abjad, location, teacher_id, academic_year_id, gender) VALUES (?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             $data['tingkat'], 
             $data['abjad'], 
             $data['location'] ?? null, 
             !empty($data['teacher_id']) ? $data['teacher_id'] : null,
-            $yearId
+            $yearId,
+            $data['gender'] ?? 'Pa'
         ]);
     }
 
     public function update($id, $data) {
-        $stmt = $this->db->prepare("UPDATE kelas SET tingkat = ?, abjad = ?, location = ?, teacher_id = ? WHERE id = ?");
+        $stmt = $this->db->prepare("UPDATE kelas SET tingkat = ?, abjad = ?, location = ?, teacher_id = ?, gender = ? WHERE id = ?");
         return $stmt->execute([
             $data['tingkat'], 
             $data['abjad'], 
             $data['location'] ?? null, 
             !empty($data['teacher_id']) ? $data['teacher_id'] : null,
+            $data['gender'] ?? 'Pa',
             $id
         ]);
     }
