@@ -122,7 +122,7 @@
                     <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-8">
                         <div>
                             <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Kelompok Kelas</p>
-                            <p class="text-sm font-semibold text-gray-700"><?= $kelas['gender'] === 'Pa' ? 'Putra' : 'Putri' ?></p>
+                            <p class="text-sm font-semibold text-gray-700"><?= $kelas['gender'] === 'Pa' ? 'Putra' : ($kelas['gender'] === 'Pi' ? 'Putri' : 'Campuran') ?></p>
                         </div>
                         <div>
                             <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Tingkat Pendidikan</p>
