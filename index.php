@@ -33,6 +33,7 @@ if (APP_ENV === 'development') {
 require_once __DIR__ . '/helpers/utilities.php';
 require_once __DIR__ . '/helpers/auth.php';
 require_once __DIR__ . '/helpers/layout.php';
+require_once __DIR__ . '/helpers/whatsapp.php';
 
 // Simple Autoloader
 spl_autoload_register(function ($class) {

@@ -171,6 +171,9 @@ class App
         $this->router->get('/academic-calendar/edit', ['App\Controllers\AcademicCalendarController', 'edit']);
         $this->router->post('/academic-calendar/update', ['App\Controllers\AcademicCalendarController', 'update']);
         $this->router->get('/academic-calendar/delete', ['App\Controllers\AcademicCalendarController', 'delete']);
+
+        // WhatsApp Worker Route
+        $this->router->get('/whatsapp/process', ['App\Controllers\WhatsappWorkerController', 'processQueue']);
     }
 
     public function run()
