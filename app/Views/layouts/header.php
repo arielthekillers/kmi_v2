@@ -325,6 +325,10 @@
                                         </a>
                                     </div>
                                 </div>
+                                <a href="<?= url('/settings/messaging') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                                    <i class="ri-message-3-line text-gray-400"></i>
+                                    Messaging
+                                </a>
                                 <a href="<?= url('/activity-logs') ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
                                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6M9 16h6M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                     Log Aktivitas
@@ -471,6 +475,9 @@
                             <i class="ri-tv-2-line text-gray-400"></i> TV Showcase
                         </a>
                         <div class="border-t border-gray-100 my-1"></div>
+                        <a href="<?= url('/settings/messaging') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <i class="ri-message-3-line text-gray-400"></i> Messaging
+                        </a>
                         <a href="<?= url('/activity-logs') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                             <i class="ri-file-list-2-line text-gray-400"></i> Log Aktivitas
                         </a>

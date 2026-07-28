@@ -11,8 +11,11 @@ class WhatsappWorkerController {
         $db = Database::getInstance();
         $conn = $db->getConnection();
         
+        // 1. Auto-cleanup: Delete sent messages older than 7 days
+        $conn->exec("DELETE FROM whatsapp_queues WHERE status = 'sent' AND sent_at < DATE_SUB(NOW(), INTERVAL 7 DAY)");
+        
         // Fetch up to 20 pending messages
-        $stmt = $conn->query("SELECT id, recipient_number, message FROM whatsapp_queues WHERE status = 'pending' ORDER BY created_at ASC LIMIT 20");
+        $stmt = $conn->query("SELECT id, recipient_number, message, retry_count FROM whatsapp_queues WHERE status = 'pending' ORDER BY created_at ASC LIMIT 20");
         $messages = $stmt->fetchAll();
         
         if (empty($messages)) {
@@ -32,7 +35,19 @@ class WhatsappWorkerController {
         $successCount = 0;
         $failedCount = 0;
         
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'Content-Type: application/json'
+        ]);
+        
+        $msgCount = count($messages);
+        $i = 0;
+
         foreach ($messages as $msg) {
+            $i++;
             $payload = [
                 'phone' => $msg['recipient_number'],
                 'device_key' => $deviceKey,
@@ -41,31 +56,36 @@ class WhatsappWorkerController {
                 'url' => null
             ];
             
-            $ch = curl_init($apiUrl);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Accept: application/json',
-                'Content-Type: application/json'
-            ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
             
-            $status = 'failed';
             if ($httpCode >= 200 && $httpCode < 300) {
                 $status = 'sent';
                 $successCount++;
+                $retryCount = $msg['retry_count'] ?? 0;
             } else {
-                $failedCount++;
+                $retryCount = ($msg['retry_count'] ?? 0) + 1;
+                if ($retryCount >= 3) {
+                    $status = 'failed';
+                    $failedCount++;
+                } else {
+                    $status = 'pending'; // keep it pending to try again
+                }
             }
             
             // Update database
-            $updateStmt = $conn->prepare("UPDATE whatsapp_queues SET status = ?, sent_at = NOW(), response = ? WHERE id = ?");
-            $updateStmt->execute([$status, $response, $msg['id']]);
+            $updateStmt = $conn->prepare("UPDATE whatsapp_queues SET status = ?, sent_at = NOW(), response = ?, retry_count = ? WHERE id = ?");
+            $updateStmt->execute([$status, $response, $retryCount, $msg['id']]);
+
+            // Throttling: 1 second delay between messages
+            if ($i < $msgCount) {
+                sleep(1);
+            }
         }
+        
+        curl_close($ch);
         
         echo "Processed " . count($messages) . " messages. Success: $successCount, Failed: $failedCount\n";
     }

@@ -4,6 +4,8 @@ node_modules/
 Thumbs.db
 *.log
 .env
+# IMPORTANT LOCAL SCRIPT - DO NOT DELETE DURING FILE CLEANUP
+sync_db.php
 uploads/*
 !uploads/.gitkeep
 data/*
@@ -11,7 +13,6 @@ data/*
 kmi_v2.zip
 v1/
 .env.example
-uploads.zip
 *.sqlite
 /app/Storage/cache
 

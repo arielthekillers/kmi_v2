@@ -46,7 +46,7 @@ class TeacherController extends Controller {
             'perPage' => $limit,
             'q' => $search,
             'status' => $status,
-            'is_searching' => !empty($search) || isset($_GET['status']),
+            'is_searching' => true,
             'user' => $_SESSION['nama'] ?? 'User',
             'role' => $_SESSION['role'] ?? 'user'
         ];

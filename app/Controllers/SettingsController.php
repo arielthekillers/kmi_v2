@@ -14,6 +14,37 @@ class SettingsController extends Controller {
         ]);
     }
 
+    public function whatsappApi() {
+        require_admin();
+        $settingModel = new SettingModel();
+        
+        $deviceKey = $settingModel->get('wa_device_key', '');
+        $apiKey = $settingModel->get('wa_api_key', '');
+
+        $this->view('settings/whatsapp_api', [
+            'title' => 'Settings - WhatsApp API',
+            'deviceKey' => $deviceKey,
+            'apiKey' => $apiKey
+        ]);
+    }
+
+    public function updateWhatsappApi() {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/settings/whatsapp');
+        }
+
+        csrf_validate_token();
+
+        $settingModel = new SettingModel();
+        $settingModel->set('wa_device_key', trim($_POST['device_key'] ?? ''));
+        $settingModel->set('wa_api_key', trim($_POST['api_key'] ?? ''));
+
+        add_flash('Konfigurasi WhatsApp API berhasil disimpan!', 'success');
+        $this->redirect('/settings/whatsapp');
+    }
+
     public function tvShowcaseLayout() {
         require_admin();
 

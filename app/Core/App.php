@@ -38,6 +38,19 @@ class App
 
         // Settings Routes (admin only)
         $this->router->get('/settings/general', ['App\Controllers\SettingsController', 'general']);
+        
+        $this->router->get('/settings/whatsapp', ['App\Controllers\SettingsController', 'whatsappApi']);
+        $this->router->post('/settings/whatsapp/update', ['App\Controllers\SettingsController', 'updateWhatsappApi']);
+
+        $this->router->get('/settings/tv/layout', ['App\Controllers\SettingsController', 'tvShowcaseLayout']);
+        $this->router->get('/settings/messaging', ['App\Controllers\MessagingController', 'index']);
+        $this->router->post('/settings/messaging/send', ['App\Controllers\MessagingController', 'sendManualMessage']);
+        $this->router->post('/settings/messaging/delete', ['App\Controllers\MessagingController', 'deleteMessage']);
+        $this->router->post('/settings/messaging/bulk-delete', ['App\Controllers\MessagingController', 'bulkDelete']);
+        $this->router->post('/settings/messaging/bulk-resend', ['App\Controllers\MessagingController', 'bulkResend']);
+        $this->router->get('/api/users/search', ['App\Controllers\MessagingController', 'searchUsers']);
+        $this->router->get('/api/cron/whatsapp', ['App\Controllers\WhatsappWorkerController', 'processQueue']);
+        $this->router->post('/api/db-sync', ['App\Controllers\ApiSyncController', 'handleSync']);
         $this->router->get('/settings/tv/layout', ['App\Controllers\SettingsController', 'tvShowcaseLayout']);
         $this->router->get('/activity-logs', ['App\Controllers\ActivityLogController', 'index']);
         $this->router->get('/settings/tv/bgm', ['App\Controllers\SettingsController', 'tvShowcaseBgm']);
