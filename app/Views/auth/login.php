@@ -18,7 +18,12 @@ unset($_SESSION['flash']);
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-200/40 blur-3xl"></div>
+        <div class="absolute top-[60%] -right-[10%] w-[40%] h-[60%] rounded-full bg-indigo-200/40 blur-3xl"></div>
+    </div>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <div class="flex justify-center mb-4">
@@ -32,8 +37,8 @@ unset($_SESSION['flash']);
         </p>
     </div>
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div class="bg-white/80 backdrop-blur-lg py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-white/50">
             
             <?php if ($flash): ?>
                 <div class="rounded-md bg-red-50 p-4 mb-6">
@@ -60,7 +65,7 @@ unset($_SESSION['flash']);
                         Username
                     </label>
                     <div class="mt-1">
-                        <input id="username" name="username" type="text" autocomplete="username" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input id="username" name="username" type="text" autocomplete="username" required autofocus class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors bg-white/50 focus:bg-white">
                     </div>
                 </div>
 
@@ -68,13 +73,24 @@ unset($_SESSION['flash']);
                     <label for="password" class="block text-sm font-medium text-gray-700">
                         Password
                     </label>
-                    <div class="mt-1">
-                        <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div class="mt-1 relative">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors pr-12 bg-white/50 focus:bg-white">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-indigo-600 focus:outline-none transition-colors">
+                            <!-- Eye Icon -->
+                            <svg id="eyeIcon" class="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <!-- Eye Slash Icon (Hidden by default) -->
+                            <svg id="eyeSlashIcon" class="h-5 w-5 hidden" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                         Masuk
                     </button>
                 </div>
@@ -89,4 +105,22 @@ unset($_SESSION['flash']);
         </p>
     </div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        const eyeIcon = document.querySelector('#eyeIcon');
+        const eyeSlashIcon = document.querySelector('#eyeSlashIcon');
+
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // toggle the icon
+            eyeIcon.classList.toggle('hidden');
+            eyeSlashIcon.classList.toggle('hidden');
+        });
+    });
+</script>
 </html>
