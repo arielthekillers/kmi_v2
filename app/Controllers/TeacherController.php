@@ -302,13 +302,12 @@ class TeacherController extends Controller {
             $waMsg .= "Mohon dijaga kerahasiaannya.\n\nSyukron";
             $waLink = $hpWa ? "https://wa.me/{$hpWa}?text=" . rawurlencode($waMsg) : null;
 
-            // Session already started by auth helpers — just write to it
             if (session_status() === PHP_SESSION_NONE) session_start();
             $_SESSION['reset_result'] = [
                 'nama'     => $teacher['nama'],
                 'hp'       => $hp ?: ($teacher['hp'] ?? '-'),
                 'password' => $newPassword,
-                'wa_link'  => $waLink
+                'wa_msg'   => $waMsg
             ];
 
             add_flash('Password ' . $teacher['nama'] . ' berhasil direset.', 'success');
@@ -403,5 +402,29 @@ class TeacherController extends Controller {
         fwrite($output, $html);
         fclose($output);
         exit;
+    }
+
+    public function shareCredentials() {
+        require_admin();
+        header('Content-Type: application/json');
+        
+        $hp = $_POST['hp'] ?? null;
+        $message = $_POST['message'] ?? null;
+
+        if (!$hp || !$message) {
+            echo json_encode(['success' => false, 'message' => 'Data tidak lengkap']);
+            return;
+        }
+
+        $hpNum = preg_replace('/[^0-9]/', '', $hp);
+        if (substr($hpNum, 0, 1) === '0') $hpNum = '62' . substr($hpNum, 1);
+
+        require_once __DIR__ . '/../../helpers/whatsapp.php';
+        
+        if (queue_whatsapp_message($hpNum, $message, 'System (Credential)')) {
+            echo json_encode(['success' => true, 'message' => 'Pesan kredensial berhasil dimasukkan ke antrean.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal memasukkan pesan ke antrean.']);
+        }
     }
 }

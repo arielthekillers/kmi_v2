@@ -23,11 +23,11 @@ class WhatsappWorkerController {
             return;
         }
         
-        $apiUrl = getenv('RUANGWA_URL') ?: 'https://ruangwa.id/api-app/waba/messages/simple';
-        $deviceKey = getenv('RUANGWA_DEVICE_KEY');
-        $apiKey = getenv('RUANGWA_API_KEY');
+        $apiUrl = getenv('RUANGWA_URL') ?: 'https://app.ruangwa.id/api/send_message';
+        $checkUrl = 'https://app.ruangwa.id/api/check_number';
+        $token = getenv('RUANGWA_TOKEN') ?: getenv('RUANGWA_API_KEY');
         
-        if (empty($deviceKey) || empty($apiKey)) {
+        if (empty($token)) {
             echo "Ruang WA credentials not configured in .env.\n";
             return;
         }
@@ -38,25 +38,47 @@ class WhatsappWorkerController {
         $ch = curl_init($apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept: application/json',
-            'Content-Type: application/json'
-        ]);
         
         $msgCount = count($messages);
         $i = 0;
 
         foreach ($messages as $msg) {
             $i++;
-            $payload = [
-                'phone' => $msg['recipient_number'],
-                'device_key' => $deviceKey,
-                'api_key' => $apiKey,
-                'message' => $msg['message'],
-                'url' => null
+
+            // Check if number is registered on WhatsApp
+            $checkPayload = [
+                'token' => $token,
+                'number' => $msg['recipient_number']
             ];
             
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            $chCheck = curl_init($checkUrl);
+            curl_setopt($chCheck, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($chCheck, CURLOPT_POST, true);
+            curl_setopt($chCheck, CURLOPT_POSTFIELDS, http_build_query($checkPayload));
+            
+            $checkResponseRaw = curl_exec($chCheck);
+            
+            $checkResponse = json_decode($checkResponseRaw, true);
+            
+            if (isset($checkResponse['onwhatsapp']) && $checkResponse['onwhatsapp'] === 'false') {
+                $status = 'inactive';
+                $updateStmt = $conn->prepare("UPDATE whatsapp_queues SET status = ?, sent_at = NOW(), response = ?, retry_count = ? WHERE id = ?");
+                $updateStmt->execute([$status, 'Nomor tidak terdaftar di WhatsApp', $msg['retry_count'] ?? 0, $msg['id']]);
+                
+                // Throttling: 1 second delay between messages
+                if ($i < $msgCount) {
+                    sleep(1);
+                }
+                continue;
+            }
+
+            $payload = [
+                'token' => $token,
+                'number' => $msg['recipient_number'],
+                'message' => $msg['message']
+            ];
+            
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -84,8 +106,6 @@ class WhatsappWorkerController {
                 sleep(1);
             }
         }
-        
-        curl_close($ch);
         
         echo "Processed " . count($messages) . " messages. Success: $successCount, Failed: $failedCount\n";
     }

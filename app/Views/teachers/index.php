@@ -124,11 +124,11 @@ unset($_SESSION['reset_result']);
                                     $msg = "Assalamu'alaikum Wr. Wb.\n\nBerikut akun antum untuk login di KMI App:\n\nUsername: " . $p['hp'] . "\nPassword: " . $p['password_plain'] . "\n\nLink Login: " . $loginUrl . "\n\nMohon dijaga kerahasiaannya.\n\nSyukron";
                                     $waLink = "https://wa.me/$hpNum?text=" . rawurlencode($msg);
                                 ?>
-                                    <a href="<?= $waLink ?>" target="_blank"
+                                    <button onclick="confirmShareCredential('<?= htmlspecialchars(addslashes($p['nama'])) ?>', '<?= htmlspecialchars($hpNum) ?>', '<?= rawurlencode($msg) ?>')"
                                        class="ml-2 inline-flex items-center px-2 py-1 border border-transparent text-[10px] font-bold rounded-full text-green-700 bg-green-100 hover:bg-green-200 uppercase"
-                                       title="Kirim WA">
+                                       title="Kirim via Antrean WA">
                                         <i class="ri-whatsapp-line mr-1"></i> Share
-                                    </a>
+                                    </button>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -355,12 +355,12 @@ unset($_SESSION['reset_result']);
                     </div>
                 </div>
 
-                <?php if ($resetResult['wa_link']): ?>
-                <a href="<?= $resetResult['wa_link'] ?>" target="_blank"
+                <?php if (!empty($resetResult['wa_msg'])): ?>
+                <button onclick="confirmShareCredential('<?= htmlspecialchars(addslashes($resetResult['nama'])) ?>', '<?= htmlspecialchars($rrHp) ?>', '<?= rawurlencode($resetResult['wa_msg']) ?>'); toggleModal('resetResultModal');"
                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors text-sm shadow-sm">
                     <i class="ri-whatsapp-line text-lg"></i>
-                    Kirim via WhatsApp
-                </a>
+                    Kirim via Antrean WA
+                </button>
                 <?php endif; ?>
             </div>
             <div class="px-6 pb-5">
@@ -444,5 +444,64 @@ unset($_SESSION['reset_result']);
             });
         }
     });
+
+    function confirmShareCredential(nama, hp, msgEncoded) {
+        if (!hp) {
+            Swal.fire('Error', 'Nomor HP tidak valid atau kosong.', 'error');
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Kirim Kredensial?',
+            html: `Bagikan kredensial atas nama <strong>${nama}</strong> ke nomor <strong>${hp}</strong>?<br><br><span class="text-sm text-gray-500">Pesan akan dikirim melalui sistem Antrean WhatsApp (Messaging).</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#d1d5db',
+            confirmButtonText: 'Ya, Kirim',
+            cancelButtonText: 'Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('hp', hp);
+                formData.append('message', decodeURIComponent(msgEncoded));
+                
+                const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+                if (csrfToken) {
+                    formData.append('csrf_token', csrfToken);
+                }
+
+                // Tampilkan loading spinner
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Mohon tunggu sebentar',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('<?= url("/teachers/share-credentials") ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Berhasil!', data.message, 'success');
+                    } else {
+                        Swal.fire('Gagal', data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire('Kesalahan Sistem', 'Terjadi kesalahan jaringan saat menghubungi server.', 'error');
+                });
+            }
+        });
+    }
 </script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </main>

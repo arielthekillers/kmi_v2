@@ -49,6 +49,7 @@ class App
         $this->router->post('/settings/messaging/bulk-delete', ['App\Controllers\MessagingController', 'bulkDelete']);
         $this->router->post('/settings/messaging/bulk-resend', ['App\Controllers\MessagingController', 'bulkResend']);
         $this->router->get('/api/users/search', ['App\Controllers\MessagingController', 'searchUsers']);
+        $this->router->post('/api/messaging/status', ['App\Controllers\MessagingController', 'getStatuses']);
         $this->router->get('/api/cron/whatsapp', ['App\Controllers\WhatsappWorkerController', 'processQueue']);
         $this->router->post('/api/db-sync', ['App\Controllers\ApiSyncController', 'handleSync']);
         $this->router->get('/settings/tv/layout', ['App\Controllers\SettingsController', 'tvShowcaseLayout']);
@@ -77,6 +78,7 @@ class App
         $this->router->get('/teachers/forceDelete', ['App\Controllers\TeacherController', 'forceDelete']);
         $this->router->post('/teachers/reset-password', ['App\Controllers\TeacherController', 'resetPassword']);
         $this->router->post('/teachers/export', ['App\Controllers\TeacherController', 'export']);
+        $this->router->post('/teachers/share-credentials', ['App\Controllers\TeacherController', 'shareCredentials']);
 
         // Classes Routes
         $this->router->get('/classes', ['App\Controllers\KelasController', 'index']);

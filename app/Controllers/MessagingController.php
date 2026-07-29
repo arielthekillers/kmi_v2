@@ -205,4 +205,42 @@ class MessagingController
             echo json_encode(['success' => false, 'message' => 'Gagal mengubah status pesan (mungkin pesan sudah berstatus pending)']);
         }
     }
+
+    public function getStatuses()
+    {
+        // Require admin access, but return JSON instead of redirecting
+        if (!is_logged_in() || auth_get_role() !== 'admin') {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            return;
+        }
+
+        $db = Database::getInstance();
+        $ids = $_POST['ids'] ?? [];
+        if (empty($ids) || !is_array($ids)) {
+            echo json_encode(['success' => true, 'data' => []]);
+            return;
+        }
+
+        // Filter valid integers
+        $ids = array_filter($ids, 'is_numeric');
+        if (empty($ids)) {
+            echo json_encode(['success' => true, 'data' => []]);
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->query("SELECT id, status, response FROM whatsapp_queues WHERE id IN ($placeholders)", $ids);
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[$row['id']] = [
+                'status' => $row['status'],
+                'response' => $row['response']
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $data]);
+    }
 }

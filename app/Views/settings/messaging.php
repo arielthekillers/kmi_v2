@@ -42,6 +42,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <option value="pending" <?= (($_GET['status'] ?? '') === 'pending') ? 'selected' : '' ?>>Pending</option>
                         <option value="sent" <?= (($_GET['status'] ?? '') === 'sent') ? 'selected' : '' ?>>Terkirim</option>
                         <option value="failed" <?= (($_GET['status'] ?? '') === 'failed') ? 'selected' : '' ?>>Gagal</option>
+                        <option value="inactive" <?= (($_GET['status'] ?? '') === 'inactive') ? 'selected' : '' ?>>Tidak Aktif</option>
                     </select>
                 </form>
 
@@ -104,7 +105,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     title="<?= htmlspecialchars($msg['message']) ?>">
                                     <?= htmlspecialchars($msg['message']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 status-cell" data-id="<?= $msg['id'] ?>" id="status-cell-<?= $msg['id'] ?>">
                                     <?php if ($msg['status'] === 'pending'): ?>
                                         <span
                                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
@@ -114,7 +115,11 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <?php elseif ($msg['status'] === 'failed'): ?>
                                         <span
                                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
-                                            title="<?= htmlspecialchars($msg['response']) ?>">Gagal</span>
+                                            title="<?= htmlspecialchars($msg['response'] ?? '') ?>">Gagal</span>
+                                    <?php elseif ($msg['status'] === 'inactive'): ?>
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                                            title="<?= htmlspecialchars($msg['response'] ?? 'Nomor tidak terdaftar di WhatsApp') ?>">Tidak Aktif</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -541,6 +546,64 @@ require_once __DIR__ . '/../layouts/header.php';
             }
         });
     }
+
+    // Auto-refresh status via AJAX
+    function startStatusPolling() {
+        setInterval(() => {
+            const statusCells = document.querySelectorAll('.status-cell');
+            const pendingIds = [];
+            statusCells.forEach(cell => {
+                if (cell.innerHTML.includes('Pending')) {
+                    pendingIds.push(cell.getAttribute('data-id'));
+                }
+            });
+
+            if (pendingIds.length === 0) {
+                return;
+            }
+
+            const formData = new FormData();
+            pendingIds.forEach(id => formData.append('ids[]', id));
+            // Include CSRF just in case it's required globally
+            const csrfToken = document.querySelector('input[name="csrf_token"]') ? document.querySelector('input[name="csrf_token"]').value : '';
+            if (csrfToken) {
+                formData.append('csrf_token', csrfToken);
+            }
+
+            fetch('<?= url("/api/messaging/status") ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    for (const [id, info] of Object.entries(data.data)) {
+                        const cell = document.getElementById('status-cell-' + id);
+                        if (cell) {
+                            let newHtml = '';
+                            if (info.status === 'pending') {
+                                newHtml = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>';
+                            } else if (info.status === 'sent') {
+                                newHtml = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Terkirim</span>';
+                            } else if (info.status === 'failed') {
+                                const responseHtml = info.response ? info.response.replace(/"/g, '&quot;') : '';
+                                newHtml = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" title="' + responseHtml + '">Gagal</span>';
+                            } else if (info.status === 'inactive') {
+                                const responseHtml = info.response ? info.response.replace(/"/g, '&quot;') : 'Nomor tidak terdaftar di WhatsApp';
+                                newHtml = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800" title="' + responseHtml + '">Tidak Aktif</span>';
+                            }
+                            if (newHtml && cell.innerHTML.trim() !== newHtml.trim()) {
+                                cell.innerHTML = newHtml;
+                            }
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error('Error polling status:', err));
+        }, 5000);
+    }
+
+    document.addEventListener('DOMContentLoaded', startStatusPolling);
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
