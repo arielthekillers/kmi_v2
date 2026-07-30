@@ -126,7 +126,7 @@ unset($_SESSION['reset_result']);
                                 ?>
                                     <button onclick="confirmShareCredential('<?= htmlspecialchars(addslashes($p['nama'])) ?>', '<?= htmlspecialchars($hpNum) ?>', '<?= rawurlencode($msg) ?>')"
                                        class="ml-2 inline-flex items-center px-2 py-1 border border-transparent text-[10px] font-bold rounded-full text-green-700 bg-green-100 hover:bg-green-200 uppercase"
-                                       title="Kirim via Antrean WA">
+                                       title="Kirim via WhatsApp">
                                         <i class="ri-whatsapp-line mr-1"></i> Share
                                     </button>
                                 <?php endif; ?>
@@ -359,7 +359,7 @@ unset($_SESSION['reset_result']);
                 <button onclick="confirmShareCredential('<?= htmlspecialchars(addslashes($resetResult['nama'])) ?>', '<?= htmlspecialchars($rrHp) ?>', '<?= rawurlencode($resetResult['wa_msg']) ?>'); toggleModal('resetResultModal');"
                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors text-sm shadow-sm">
                     <i class="ri-whatsapp-line text-lg"></i>
-                    Kirim via Antrean WA
+                    Kirim via WhatsApp
                 </button>
                 <?php endif; ?>
             </div>
@@ -453,7 +453,7 @@ unset($_SESSION['reset_result']);
         
         Swal.fire({
             title: 'Kirim Kredensial?',
-            html: `Bagikan kredensial atas nama <strong>${nama}</strong> ke nomor <strong>${hp}</strong>?<br><br><span class="text-sm text-gray-500">Pesan akan dikirim melalui sistem Antrean WhatsApp (Messaging).</span>`,
+            html: `Bagikan kredensial atas nama <strong>${nama}</strong> ke nomor <strong>${hp}</strong>?<br><br><span class="text-sm text-gray-500">Pesan akan diproses melalui sistem WhatsApp (Messaging).</span>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4f46e5',

@@ -25,7 +25,7 @@ require_once __DIR__ . '/../layouts/header.php';
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
             <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Status Antrean Pesan
+                Status Riwayat Log Pesan
             </h3>
             
             <div class="mt-3 sm:mt-0 sm:ml-4 sm:flex sm:items-center">
@@ -86,8 +86,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php if (empty($messages)): ?>
                         <tr>
-                            <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Tidak ada
-                                pesan dalam antrean.</td>
+                            <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Tidak ada riwayat pesan.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($messages as $msg): ?>
@@ -195,6 +194,11 @@ require_once __DIR__ . '/../layouts/header.php';
                             </h3>
                             <div class="mt-4 space-y-4">
 
+                                <?php if (($sendMethod ?? 'direct') === 'direct'): ?>
+                                    <div class="mb-4 p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg border border-yellow-200">
+                                        <i class="ri-information-line mr-1"></i> Saat ini Anda menggunakan mode <b>Direct Send</b>. Pengiriman broadcast dan multi-pengguna dinonaktifkan.
+                                    </div>
+                                <?php else: ?>
                                 <div>
                                     <label class="flex items-center mb-2">
                                         <input type="checkbox" name="everyone" id="everyoneCheck" value="1"
@@ -204,6 +208,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                             (@everyone)</span>
                                     </label>
                                 </div>
+                                <?php endif; ?>
 
                                 <div id="recipientContainer">
                                     <label for="recipients" class="block text-sm font-medium text-gray-700">Penerima
@@ -292,6 +297,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 valueField: 'id',
                 labelField: 'nama',
                 searchField: 'nama',
+                maxItems: <?= ($sendMethod ?? 'direct') === 'direct' ? 1 : 'null' ?>,
                 load: function (query, callback) {
                     if (!query.length) return callback();
                     fetch(`<?= url('/api/users/search?q=') ?>` + encodeURIComponent(query))

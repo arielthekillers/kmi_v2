@@ -20,11 +20,13 @@ class SettingsController extends Controller {
         
         $deviceKey = $settingModel->get('wa_device_key', '');
         $apiKey = $settingModel->get('wa_api_key', '');
+        $sendMethod = $settingModel->get('wa_send_method', 'direct');
 
         $this->view('settings/whatsapp_api', [
             'title' => 'Settings - WhatsApp API',
             'deviceKey' => $deviceKey,
-            'apiKey' => $apiKey
+            'apiKey' => $apiKey,
+            'sendMethod' => $sendMethod
         ]);
     }
 
@@ -40,6 +42,7 @@ class SettingsController extends Controller {
         $settingModel = new SettingModel();
         $settingModel->set('wa_device_key', trim($_POST['device_key'] ?? ''));
         $settingModel->set('wa_api_key', trim($_POST['api_key'] ?? ''));
+        $settingModel->set('wa_send_method', ($_POST['send_method'] ?? '') === 'queue' ? 'queue' : 'direct');
 
         add_flash('Konfigurasi WhatsApp API berhasil disimpan!', 'success');
         $this->redirect('/settings/whatsapp');

@@ -422,9 +422,9 @@ class TeacherController extends Controller {
         require_once __DIR__ . '/../../helpers/whatsapp.php';
         
         if (queue_whatsapp_message($hpNum, $message, 'System (Credential)')) {
-            echo json_encode(['success' => true, 'message' => 'Pesan kredensial berhasil dimasukkan ke antrean.']);
+            echo json_encode(['success' => true, 'message' => 'Pesan kredensial berhasil diproses.']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Gagal memasukkan pesan ke antrean.']);
+            echo json_encode(['success' => false, 'message' => 'Gagal memproses pesan kredensial.']);
         }
     }
 }

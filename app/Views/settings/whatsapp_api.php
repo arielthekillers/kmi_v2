@@ -84,6 +84,22 @@
                             <input type="text" name="api_key" id="api_key" value="<?= htmlspecialchars($apiKey ?? '') ?>" placeholder="Masukkan API Key..." required class="block w-full border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border">
                         </div>
 
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Metode Pengiriman</label>
+                            <div class="flex items-center space-x-6 mt-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="send_method" value="direct" class="form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" <?= ($sendMethod ?? 'direct') === 'direct' ? 'checked' : '' ?>>
+                                    <span class="ml-2 text-sm text-gray-900">Direct Send (Kirim Langsung)</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="send_method" value="queue" class="form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" <?= ($sendMethod ?? '') === 'queue' ? 'checked' : '' ?>>
+                                    <span class="ml-2 text-sm text-gray-900">Queue (Antrean)</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2"><b>Catatan:</b> Jika memilih opsi Queue, jangan lupa menghidupkan dan mematikan scheduling (cron) pada server.</p>
+                        </div>
+
+
                         <div class="pt-2">
                             <button type="submit" class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all whitespace-nowrap">
                                 Simpan Konfigurasi

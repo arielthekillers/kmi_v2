@@ -11,6 +11,9 @@ class MessagingController
         require_admin(); // Secure the settings menu
 
         $db = Database::getInstance();
+        $settingModel = new \App\Models\SettingModel();
+        $sendMethod = $settingModel->get('wa_send_method', 'direct');
+        
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $limit = 50;
         $offset = ($page - 1) * $limit;
@@ -80,6 +83,22 @@ class MessagingController
         $recipients = $_POST['recipients'] ?? []; // Array from Tom Select
         $message = $_POST['message'] ?? '';
         $everyone = $_POST['everyone'] ?? '0';
+
+        $settingModel = new \App\Models\SettingModel();
+        $sendMethod = $settingModel->get('wa_send_method', 'direct');
+
+        if ($sendMethod === 'direct') {
+            if ($everyone === '1') {
+                add_flash("Broadcast ke semua pengguna dinonaktifkan pada mode Direct Send.", "error");
+                header('Location: ' . url('/settings/messaging'));
+                exit;
+            }
+            if (is_array($recipients) && count($recipients) > 1) {
+                add_flash("Pengiriman ke lebih dari 1 orang tidak diizinkan pada mode Direct Send.", "error");
+                header('Location: ' . url('/settings/messaging'));
+                exit;
+            }
+        }
 
         if (empty($message)) {
             add_flash("Isi pesan tidak boleh kosong", "error");
