@@ -23,7 +23,7 @@ class ScheduleController extends Controller {
 
         // Fetch Data for Dropdowns
         // Classes
-        $classes = $kelasModel->findAll();
+        $classes = $kelasModel->findAllActive();
         $kelasData = [];
         foreach ($classes as $c) {
             $kelasData[$c['id']] = $c;
@@ -153,7 +153,7 @@ class ScheduleController extends Controller {
         $subjectModel = new SubjectModel();
         $scheduleModel = new ScheduleModel();
 
-        $classes = $kelasModel->findAll();
+        $classes = $kelasModel->findAllActive();
         $kelasData = [];
         foreach ($classes as $c) {
             $kelasData[$c['id']] = $c;
