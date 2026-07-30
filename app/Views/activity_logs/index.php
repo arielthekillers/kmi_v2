@@ -5,7 +5,10 @@
     <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                <a href="<?= url('/') ?>" class="hover:text-indigo-600">Dashboard</a>
+                <a href="<?= url('/') ?>" class="hover:text-indigo-600">
+                    <span class="hidden sm:inline">Dashboard</span>
+                    <i class="ri-home-4-line sm:hidden text-base"></i>
+                </a>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 <span class="text-indigo-600 font-semibold">Log Aktivitas</span>
             </div>
