@@ -224,9 +224,23 @@ class TanqihController extends Controller {
             }
             $data['report'] = $filteredReport;
             
-            // Recalculate global stats for the filtered view? 
-            // Better to hide global stats or keep context. Legacy usually hides.
-            $data['globalStats'] = null; 
+            // Calculate global stats for the filtered view (teacher's own stats)
+            $stats = [
+                'total_jadwal' => 0,
+                'total_verified' => 0,
+                'total_justified' => 0,
+                'total_belum' => 0
+            ];
+            
+            if (isset($filteredReport[$userId])) {
+                $r = $filteredReport[$userId];
+                $stats['total_jadwal'] = $r['expected'] ?? 0;
+                $stats['total_verified'] = $r['verified_real'] ?? 0;
+                $stats['total_justified'] = $r['justified'] ?? 0;
+                $stats['total_belum'] = max(0, $stats['total_jadwal'] - ($r['verified_all'] ?? 0));
+            }
+            
+            $data['globalStats'] = $stats;
         }
 
         $this->view('tanqih/report', [
