@@ -171,12 +171,25 @@ class ScheduleController extends Controller {
         // getByTeacher() already returns a nested [$day][$hour] => ['mapel'=>..., 'kelas'=>...] array
         $mySchedule = $scheduleModel->getByTeacher($currentUserId);
 
+        // Fetch teaching substitutions
+        $stmt = $scheduleModel->query("
+            SELECT sub.hour, tl.date, k.tingkat, k.abjad, s.nama as subject_name
+            FROM teaching_substitutions sub
+            JOIN teacher_leaves tl ON sub.leave_id = tl.id
+            JOIN kelas k ON sub.kelas_id = k.id
+            JOIN subjects s ON sub.subject_id = s.id
+            WHERE sub.substitute_teacher_id = ? AND tl.status = 'published'
+            AND tl.date >= CURRENT_DATE
+        ", [$currentUserId]);
+        $substitutions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
         $this->view('schedule/my_schedule', [
             'kelasData' => $kelasData,
             'pelajaranData' => $pelajaranData,
             'days' => $days,
             'hours' => $hours,
-            'mySchedule' => $mySchedule
+            'mySchedule' => $mySchedule,
+            'substitutions' => $substitutions
         ]);
     }
 }

@@ -187,6 +187,23 @@ class App
         $this->router->post('/academic-calendar/update', ['App\Controllers\AcademicCalendarController', 'update']);
         $this->router->get('/academic-calendar/delete', ['App\Controllers\AcademicCalendarController', 'delete']);
 
+        // Teacher Leaves (Izin Mengajar)
+        $this->router->get('/leaves', ['App\Controllers\TeacherLeaveController', 'index']);
+        $this->router->post('/leaves/delete', ['App\Controllers\TeacherLeaveController', 'delete']);
+        $this->router->post('/leaves/store', ['App\Controllers\TeacherLeaveController', 'store']);
+        $this->router->post('/leaves/store_ajax', ['App\Controllers\TeacherLeaveController', 'storeAjax']);
+        $this->router->post('/leaves/details', ['App\Controllers\TeacherLeaveController', 'getLeaveDetails']);
+        $this->router->post('/leaves/schedules', ['App\Controllers\TeacherLeaveController', 'getSchedules']);
+        $this->router->post('/leaves/daily_substitutes', ['App\Controllers\TeacherLeaveController', 'getDailySubstitutes']);
+        $this->router->post('/leaves/recommendations', ['App\Controllers\TeacherLeaveController', 'getRecommendations']);
+        $this->router->get('/leaves/print_substitute', ['App\Controllers\TeacherLeaveController', 'printSubstitute']);
+        $this->router->get('/leaves/assistants', ['App\Controllers\TeacherLeaveController', 'assistants']);
+        $this->router->post('/leaves/assistants/store', ['App\Controllers\TeacherLeaveController', 'storeAssistant']);
+        $this->router->post('/leaves/assistants/delete', ['App\Controllers\TeacherLeaveController', 'deleteAssistant']);
+        $this->router->post('/leaves/teacher_subjects', ['App\Controllers\TeacherLeaveController', 'getTeacherSubjects']);
+        $this->router->get('/leaves/statistics', ['App\Controllers\TeacherLeaveController', 'statistics']);
+        $this->router->post('/leaves/statistics/details', ['App\Controllers\TeacherLeaveController', 'statisticsDetails']);
+
         // WhatsApp Worker Route
         $this->router->get('/whatsapp/process', ['App\Controllers\WhatsappWorkerController', 'processQueue']);
     }

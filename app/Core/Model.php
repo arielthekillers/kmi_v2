@@ -20,6 +20,10 @@ abstract class Model {
         $this->academic_year_id = $year ? $year['id'] : null;
     }
 
+    public function getAcademicYearId() {
+        return $this->academic_year_id;
+    }
+
 
     public function findAll() {
         $stmt = $this->db->query("SELECT * FROM {$this->table}");
