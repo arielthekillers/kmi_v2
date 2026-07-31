@@ -27,6 +27,11 @@ class StudentAttendanceController extends Controller {
 
         $activeSession = $this->attendanceModel->getActiveSession($this->currentYear['id']);
         
+        if (!auth_can_manage_attendance($activeSession['id'] ?? null)) {
+            add_flash('Akses ditolak: Hanya petugas absensi (Bagian Pengajaran) yang dapat mengakses halaman ini.', 'error');
+            $this->redirect('/');
+        }
+        
         // Fetch all active classes
         $kelas = $this->kelasModel->findAllActive();
         try {
