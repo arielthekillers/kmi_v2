@@ -13,6 +13,9 @@ class KelasModel extends Model {
         return $year ? (int)$year['id'] : 0;
     }
 
+    /**
+     * @return array[]
+     */
     public function findAllActive() {
         $yearId = $this->getActiveYearId();
         $stmt = $this->db->prepare("SELECT * FROM kelas WHERE academic_year_id = ? ORDER BY tingkat ASC, abjad ASC");
