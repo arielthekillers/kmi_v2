@@ -21,7 +21,7 @@ if ($activeSession && (bool)$activeSession['is_open']) {
                 <?php endif; ?>
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-                Pencatatan ketidakhadiran santri (Alpha, Izin, Sakit) untuk mengurangi beban server.
+                Pencatatan ketidakhadiran santri (Alpha, Izin, Sakit).
             </p>
         </div>
         
