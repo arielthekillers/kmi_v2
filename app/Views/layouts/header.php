@@ -59,9 +59,7 @@
         }
     </style>
 </head>
-
-<body class="bg-slate-50 text-gray-800">
-
+<body class="bg-slate-50 text-gray-800 flex flex-col min-h-screen">
     <?php
     if (session_status() === PHP_SESSION_NONE) session_start();
     $flash = $_SESSION['flash'] ?? null;
