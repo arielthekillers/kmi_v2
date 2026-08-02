@@ -180,7 +180,7 @@ $chartValues = json_encode(array_values($dayCounts));
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                 <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                    <i class="ri-logout-circle-r-line text-red-500"></i> Paling Sering Izin
+                    <i class="ri-logout-circle-r-line text-red-500"></i> Total Hari Izin Terbanyak
                 </h3>
             </div>
             <div class="p-2 flex-1">
@@ -202,7 +202,7 @@ $chartValues = json_encode(array_values($dayCounts));
                                     </div>
                                     <div class="text-right">
                                         <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-red-50 text-red-700 rounded-lg group-hover:bg-red-100">
-                                            <?= $row['leave_count'] ?> kali
+                                            <?= $row['leave_count'] ?> hari
                                         </span>
                                     </div>
                                 </button>

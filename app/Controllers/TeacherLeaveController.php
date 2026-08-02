@@ -19,8 +19,9 @@ class TeacherLeaveController extends Controller {
     private $scheduleModel;
 
     public function __construct() {
-        if (!is_logged_in() || (auth_get_role() !== 'admin' && !auth_is_pbm())) {
-            redirect('/login');
+        require_login();
+        if (auth_get_role() !== 'admin' && !auth_is_pbm()) {
+            $this->redirect('/');
         }
         $this->leaveModel = new TeacherLeaveModel();
         $this->subModel = new TeachingSubstitutionModel();
