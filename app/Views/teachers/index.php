@@ -452,14 +452,37 @@ unset($_SESSION['reset_result']);
         }
         
         Swal.fire({
-            title: 'Kirim Kredensial?',
-            html: `Bagikan kredensial atas nama <strong>${nama}</strong> ke nomor <strong>${hp}</strong>?<br><br><span class="text-sm text-gray-500">Pesan akan diproses melalui sistem WhatsApp (Messaging).</span>`,
-            icon: 'question',
+            html: `
+                <div class="mt-4 text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-green-600 shadow-sm border border-green-200">
+                        <i class="ri-whatsapp-line text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Kirim Kredensial?</h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Bagikan kredensial atas nama <strong class="text-gray-900">${nama}</strong> ke nomor <strong class="text-gray-900">${hp}</strong>?
+                    </p>
+                    <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <p class="text-xs text-indigo-700 flex items-center justify-center gap-1.5">
+                            <i class="ri-information-line"></i> Pilih metode pengiriman WhatsApp
+                        </p>
+                    </div>
+                </div>
+            `,
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
-            cancelButtonColor: '#d1d5db',
-            confirmButtonText: 'Ya, Kirim',
+            showDenyButton: true,
+            customClass: {
+                popup: 'rounded-3xl shadow-2xl border border-gray-100 pb-2 p-0',
+                htmlContainer: '!m-0 p-6',
+                actions: 'flex flex-col-reverse sm:flex-row gap-2 w-full px-6 pb-6 pt-0 mt-0',
+                confirmButton: 'flex-1 inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
+                denyButton: 'flex-1 inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition-all shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-500',
+                cancelButton: 'w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-200'
+            },
+            buttonsStyling: false,
+            confirmButtonText: '<i class="ri-robot-2-line text-lg"></i> WA Auto',
+            denyButtonText: '<i class="ri-smartphone-line text-lg"></i> WA Manual',
             cancelButtonText: 'Batal',
+            showCloseButton: true,
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
@@ -498,6 +521,9 @@ unset($_SESSION['reset_result']);
                     console.error(err);
                     Swal.fire('Kesalahan Sistem', 'Terjadi kesalahan jaringan saat menghubungi server.', 'error');
                 });
+            } else if (result.isDenied) {
+                const waLink = `https://wa.me/${hp}?text=${msgEncoded}`;
+                window.open(waLink, '_blank');
             }
         });
     }
