@@ -265,7 +265,7 @@ class TeacherLeaveController extends Controller {
             $substitutions = [];
             foreach ($schedules as $sch) {
                 // Determine default substitute if an assistant is set
-                $assistantId = $this->assistantModel->getAssistantForSubject($teacherId, $sch['subject_id'], $academicYearId);
+                $assistantId = $this->assistantModel->getAssistantForSubject($teacherId, $sch['subject_id'], $sch['kelas_id'], $academicYearId);
                 
                 if ($assistantId) {
                     // Check if assistant has a regular schedule at this hour
@@ -496,11 +496,25 @@ class TeacherLeaveController extends Controller {
         
         $academicYearId = $this->leaveModel->getAcademicYearId();
         
+        $subjectId = null;
+        $kelasId = null;
+        
+        if (!empty($_POST['subject_id'])) {
+            $parts = explode('|', $_POST['subject_id']);
+            if (count($parts) === 2) {
+                $subjectId = $parts[0];
+                $kelasId = $parts[1];
+            } else {
+                $subjectId = $_POST['subject_id'];
+            }
+        }
+        
         $this->assistantModel->create([
             'academic_year_id' => $academicYearId,
             'teacher_id' => $_POST['teacher_id'],
             'assistant_id' => $_POST['assistant_id'],
-            'subject_id' => $_POST['subject_id'] ?: null
+            'subject_id' => $subjectId,
+            'kelas_id' => $kelasId
         ]);
         
         $_SESSION['flash'] = ['type' => 'success', 'message' => 'Asisten berhasil ditambahkan.'];
@@ -519,15 +533,25 @@ class TeacherLeaveController extends Controller {
         $academicYearId = $this->leaveModel->getAcademicYearId();
         
         $stmt = $this->scheduleModel->query("
-            SELECT DISTINCT sub.id, sub.nama
+            SELECT DISTINCT s.subject_id, s.kelas_id, sub.nama as subject_name, CONCAT(k.tingkat, '-', k.abjad, ' ', k.gender) as kelas_name
             FROM schedules s
             JOIN subjects sub ON s.subject_id = sub.id
+            JOIN kelas k ON s.kelas_id = k.id
             WHERE s.teacher_id = ? AND s.academic_year_id = ?
-            ORDER BY sub.nama ASC
+            ORDER BY sub.nama ASC, k.tingkat ASC, k.abjad ASC, k.gender ASC
         ", [$teacherId, $academicYearId]);
         
-        $subjects = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        echo json_encode($subjects);
+        $assignments = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        $result = [];
+        foreach ($assignments as $a) {
+            $result[] = [
+                'id' => $a['subject_id'] . '|' . $a['kelas_id'],
+                'nama' => $a['subject_name'] . ' - Kelas ' . $a['kelas_name']
+            ];
+        }
+        
+        echo json_encode($result);
         exit;
     }
 

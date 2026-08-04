@@ -33,7 +33,7 @@ $subjects = $subjects ?? [];
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pengajar</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Asisten Pengajar Tetap</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mata Pelajaran</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mata Pelajaran & Kelas</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
@@ -61,13 +61,17 @@ $subjects = $subjects ?? [];
                                     <span class="text-indigo-700"><?= htmlspecialchars($a['assistant_name']) ?></span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    <?php if($a['subject_name']): ?>
+                                    <?php if($a['subject_name'] && $a['kelas_name']): ?>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                            <?= htmlspecialchars($a['subject_name']) ?> - Kelas <?= htmlspecialchars($a['kelas_name']) ?>
+                                        </span>
+                                    <?php elseif($a['subject_name']): ?>
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                                             <?= htmlspecialchars($a['subject_name']) ?>
                                         </span>
                                     <?php else: ?>
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-                                            Semua Pelajaran
+                                            Semua Pelajaran & Kelas
                                         </span>
                                     <?php endif; ?>
                                 </td>
@@ -121,14 +125,14 @@ $subjects = $subjects ?? [];
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Mata Pelajaran <span class="text-gray-400 font-normal text-xs">(Opsional)</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Mata Pelajaran - Kelas <span class="text-gray-400 font-normal text-xs">(Opsional)</span></label>
                     <select name="subject_id" class="tom-select w-full">
-                        <option value="">Semua Mata Pelajaran</option>
+                        <option value="">Semua Mata Pelajaran & Kelas</option>
                         <?php foreach ($subjects as $s): ?>
                             <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nama']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="mt-1.5 text-xs text-gray-500">Kosongkan jika asisten ini dapat menggantikan untuk semua mata pelajaran pengajar tersebut.</p>
+                    <p class="mt-1.5 text-xs text-gray-500">Kosongkan jika asisten ini dapat menggantikan untuk semua mata pelajaran dan kelas pengajar tersebut.</p>
                 </div>
                 
                 <div class="pt-4 mt-6 border-t border-gray-100 flex justify-end gap-3">
@@ -184,7 +188,7 @@ $subjects = $subjects ?? [];
 
                 if (!value) {
                     subjectSelect.clearOptions();
-                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran'});
+                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran & Kelas'});
                     subjectSelect.setValue('');
                     return;
                 }
@@ -206,7 +210,7 @@ $subjects = $subjects ?? [];
                 .then(data => {
                     subjectSelect.clear();
                     subjectSelect.clearOptions();
-                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran'});
+                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran & Kelas'});
                     
                     data.forEach(subject => {
                         subjectSelect.addOption({value: String(subject.id), text: subject.nama});
@@ -219,7 +223,7 @@ $subjects = $subjects ?? [];
                     console.error('Error fetching subjects:', error);
                     subjectSelect.clear();
                     subjectSelect.clearOptions();
-                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran'});
+                    subjectSelect.addOption({value: '', text: 'Semua Mata Pelajaran & Kelas'});
                     subjectSelect.refreshOptions(false);
                     subjectSelect.setValue('');
                 });
