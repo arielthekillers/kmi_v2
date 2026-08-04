@@ -393,6 +393,9 @@
                         <i class="ri-user-unfollow-line mr-2"></i>Absensi Santri
                     </a>
                     <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                        <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
+                        </a>
                         <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-group-line mr-2"></i>Petugas Absensi
                         </a>
