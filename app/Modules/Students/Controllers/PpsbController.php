@@ -540,30 +540,37 @@ class PpsbController extends Controller {
             }
 
             if (($handle = fopen($file['tmp_name'], "r")) !== FALSE) {
-                // Skip the first 3 rows
-                for ($i = 0; $i < 3; $i++) {
-                    fgetcsv($handle, 10000, ",");
-                }
-
-                // Read the 4th row (Main Header)
-                $header = fgetcsv($handle, 10000, ",");
-                if ($header && count($header) === 1 && strpos($header[0], ';') !== false) {
-                    $header = explode(';', $header[0]);
-                }
-
-                // Validate if it's the correct format by checking key columns
-                if (!$header || 
-                    strtoupper(trim($header[1] ?? '')) !== 'NO. INDUK' || 
-                    strtoupper(trim($header[2] ?? '')) !== 'NAMA' || 
-                    strtoupper(trim($header[11] ?? '')) !== 'HP AYAH/IBU') {
+                $headerFound = false;
+                $header = null;
+                
+                // Scan up to 10 rows to find the main header
+                for ($i = 0; $i < 10; $i++) {
+                    $row = fgetcsv($handle, 10000, ",");
+                    if ($row === FALSE) break;
                     
+                    if (count($row) === 1 && strpos($row[0], ';') !== false) {
+                        $row = explode(';', $row[0]);
+                    }
+                    
+                    $col1 = strtoupper(trim($row[1] ?? ''));
+                    $col2 = strtoupper(trim($row[2] ?? ''));
+                    $col11 = strtoupper(trim($row[11] ?? ''));
+                    
+                    if (($col1 === 'NO. INDUK' || $col1 === 'NO. STANBUK') && $col2 === 'NAMA' && $col11 === 'HP AYAH/IBU') {
+                        $headerFound = true;
+                        $header = $row;
+                        break;
+                    }
+                }
+
+                if (!$headerFound) {
                     fclose($handle);
-                    add_flash('Format CSV tidak sesuai! Pastikan Anda mengunggah file hasil export dari Smart System yang benar tanpa mengubah susunan kolom.', 'error');
+                    add_flash('Format CSV tidak sesuai! Pastikan file memiliki kolom NO. INDUK (atau NO. STANBUK), NAMA, dan HP AYAH/IBU pada susunan yang benar.', 'error');
                     $this->redirect('/admin/ppsb');
                     return; // Prevent further execution
                 }
 
-                // Skip the 5th row (Sub-headers like AYAH, IBU)
+                // Skip the sub-header row (e.g., AYAH, IBU)
                 fgetcsv($handle, 10000, ",");
 
                 $ppsbModel = new PpsbRegistration();
@@ -620,11 +627,11 @@ class PpsbController extends Controller {
                         'kecamatan' => trim($data[16] ?? ''),
                         'kabupaten' => trim($data[17] ?? ''),
                         'provinsi' => trim($data[18] ?? ''),
-                        'nama_wali' => trim($data[27] ?? ''),
-                        'pekerjaan_ayah' => trim($data[33] ?? ''),
+                        'nama_wali' => trim($data[22] ?? ''), // NAMA AYAH
+                        'pekerjaan_ayah' => trim($data[28] ?? ''), // PEKERJAAN AYAH
                         'no_hp_ayah' => $hpAyah,
-                        'nama_ibu' => trim($data[28] ?? ''),
-                        'pekerjaan_ibu' => trim($data[34] ?? ''),
+                        'nama_ibu' => trim($data[23] ?? ''), // NAMA IBU
+                        'pekerjaan_ibu' => trim($data[29] ?? ''), // PEKERJAAN IBU
                         'no_hp_ibu' => $hpIbu,
                         'no_hp_wali' => $hpAyah ?: $hpIbu, // Fallback
                         'status' => 'Pending'
