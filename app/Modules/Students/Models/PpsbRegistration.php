@@ -30,7 +30,7 @@ class PpsbRegistration {
         $sql = "SELECT p.*, s.nis, s.nama as student_name 
                 FROM ppsb_registrations p 
                 LEFT JOIN students s ON p.student_id = s.id
-                WHERE p.deleted_at IS NULL
+                WHERE {$filtering['deletedCondition']}
                 AND {$filtering['where']}
                 ORDER BY $orderBy";
         
@@ -48,7 +48,7 @@ class PpsbRegistration {
     public function countAll($filters = []) {
         $filtering = $this->applyFilters($filters);
         $sql = "SELECT COUNT(*) FROM ppsb_registrations p 
-                WHERE p.deleted_at IS NULL
+                WHERE {$filtering['deletedCondition']}
                 AND {$filtering['where']}";
         return (int)$this->db->query($sql, $filtering['params'])->fetchColumn();
     }
@@ -56,10 +56,17 @@ class PpsbRegistration {
     private function applyFilters($filters) {
         $where = "1=1";
         $params = [];
+        $deletedCondition = "p.deleted_at IS NULL";
 
         if (!empty($filters['status'])) {
-            $where .= " AND p.status = ?";
-            $params[] = $filters['status'];
+            if ($filters['status'] === 'Deleted') {
+                $deletedCondition = "p.deleted_at IS NOT NULL";
+            } elseif ($filters['status'] === 'All') {
+                $deletedCondition = "1=1";
+            } else {
+                $where .= " AND p.status = ?";
+                $params[] = $filters['status'];
+            }
         }
 
         if (!empty($filters['q'])) {
@@ -70,7 +77,7 @@ class PpsbRegistration {
             $params[] = $q;
         }
 
-        return ['where' => $where, 'params' => $params];
+        return ['where' => $where, 'params' => $params, 'deletedCondition' => $deletedCondition];
     }
 
     public function find($id) {

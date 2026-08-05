@@ -361,7 +361,10 @@ class PpsbController extends Controller {
         $success = 0;
         foreach ($ids as $id) {
             try {
-                if ($action === 'Delete') {
+                if ($action === 'ForceDelete') {
+                    $model->forceDelete($id);
+                    $success++;
+                } elseif ($action === 'Delete') {
                     $model->delete($id);
                     $success++;
                 } elseif (in_array($action, ['Passed', 'Failed', 'Pending'])) {

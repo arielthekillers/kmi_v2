@@ -97,6 +97,8 @@ function sortIcon($field, $currentSort, $currentDir) {
                     <option value="Passed" <?= $selected_status === 'Passed' ? 'selected' : '' ?>>Passed (Lulus)</option>
                     <option value="Enrolled" <?= $selected_status === 'Enrolled' ? 'selected' : '' ?>>Enrolled (Masuk Kelas)</option>
                     <option value="Failed" <?= $selected_status === 'Failed' ? 'selected' : '' ?>>Failed (Tidak Lulus)</option>
+                    <option value="Deleted" <?= $selected_status === 'Deleted' ? 'selected' : '' ?>>Deleted (Terhapus / Sampah)</option>
+                    <option value="All" <?= $selected_status === 'All' ? 'selected' : '' ?>>Semua Termasuk Terhapus</option>
                 </select>
             </div>
             <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
@@ -127,7 +129,11 @@ function sortIcon($field, $currentSort, $currentDir) {
             <button onclick="confirmBulk('Passed')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-green-700 transition-colors whitespace-nowrap"><i class="ri-check-line mr-1"></i> Luluskan</button>
             <button onclick="confirmBulk('Failed')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-red-700 transition-colors whitespace-nowrap"><i class="ri-close-line mr-1"></i> Gagalkan</button>
             <button onclick="confirmBulk('Pending')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-yellow-700 transition-colors whitespace-nowrap"><i class="ri-refresh-line mr-1"></i> Reset</button>
-            <button onclick="confirmBulk('Delete')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-gray-600 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-gray-700 transition-colors whitespace-nowrap"><i class="ri-delete-bin-line mr-1"></i> Hapus</button>
+            <?php if ($selected_status === 'Deleted'): ?>
+                <button onclick="confirmBulk('ForceDelete')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-red-800 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-red-900 transition-colors whitespace-nowrap"><i class="ri-delete-bin-2-line mr-1"></i> Hapus Permanen</button>
+            <?php else: ?>
+                <button onclick="confirmBulk('Delete')" class="flex-1 md:flex-none justify-center px-3 py-1.5 bg-gray-600 text-white rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-gray-700 transition-colors whitespace-nowrap"><i class="ri-delete-bin-line mr-1"></i> Hapus (Soft)</button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -209,7 +215,11 @@ function sortIcon($field, $currentSort, $currentDir) {
                             <div class="text-xs text-gray-400 font-mono"><?= htmlspecialchars($r['no_hp_wali'] ?? '-') ?></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <?php if ($r['status'] === 'Pending'): ?>
+                            <?php if (!empty($r['deleted_at'])): ?>
+                                <span class="px-2 py-0.5 inline-flex text-[9px] leading-3 font-bold rounded-full bg-gray-100 text-gray-500 uppercase tracking-wider line-through">
+                                    Terhapus
+                                </span>
+                            <?php elseif ($r['status'] === 'Pending'): ?>
                                 <span class="px-2 py-0.5 inline-flex text-[9px] leading-3 font-bold rounded-full bg-yellow-100 text-yellow-800 uppercase tracking-wider">
                                     Pending
                                 </span>
@@ -406,7 +416,8 @@ function sortIcon($field, $currentSort, $currentDir) {
             if (action === 'Passed') actionText = 'Meluluskan';
             else if (action === 'Failed') actionText = 'Menggagalkan';
             else if (action === 'Pending') actionText = 'Reset Pending';
-            else if (action === 'Delete') actionText = 'Menghapus Permanen';
+            else if (action === 'Delete') actionText = 'Menghapus (Soft)';
+            else if (action === 'ForceDelete') actionText = 'Menghapus PERMANEN (Tak Bisa Kembali)';
             
             document.getElementById('bulkConfirmTitle').innerText = 'Konfirmasi ' + actionText;
             
