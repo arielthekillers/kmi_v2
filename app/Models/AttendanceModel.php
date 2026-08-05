@@ -44,6 +44,20 @@ class AttendanceModel extends Model {
             $attendanceLogs[$row['kelas_id'] . '|' . $row['hour']] = $row;
         }
 
+        // 2.5 Fetch approved leaves/substitutions for the date
+        $leaveStmt = $this->db->prepare("
+            SELECT d.kelas_id, d.hour, u.nama as substitute_name
+            FROM teaching_substitutions d
+            JOIN teacher_leaves l ON d.leave_id = l.id
+            LEFT JOIN users u ON d.substitute_teacher_id = u.id
+            WHERE l.date = ? AND l.status = 'published'
+        ");
+        $leaveStmt->execute([$date]);
+        $substitutions = [];
+        while($row = $leaveStmt->fetch(PDO::FETCH_ASSOC)) {
+            $substitutions[$row['kelas_id'] . '|' . $row['hour']] = $row['substitute_name'];
+        }
+
         // 3. Merge
         $dailySchedule = [];
         foreach ($schedulesRaw as $row) {
@@ -90,6 +104,7 @@ class AttendanceModel extends Model {
                 'kelas_name' => "Kelas " . ($row['tingkat'] ?? '?') . "-" . ($row['abjad'] ?? '?'),
                 'mapel_name' => $row['mapel_nama'],
                 'teacher_name' => $row['teacher_nama'],
+                'substitute_name' => $substitutions[$key] ?? null,
                 'absensi' => $attendanceData
             ];
         }

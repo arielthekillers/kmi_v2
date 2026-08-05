@@ -168,12 +168,21 @@
                             <h3 class="text-base font-bold text-gray-900 mb-1 leading-tight line-clamp-2" title="<?= htmlspecialchars($slot['mapel_name']) ?>">
                                 <?= htmlspecialchars($slot['mapel_name']) ?>
                             </h3>
-                            <p class="text-xs text-gray-500 mb-6 flex items-center gap-1.5 font-medium">
+                            <p class="text-xs text-gray-500 <?= !empty($slot['substitute_name']) ? 'mb-2' : 'mb-6' ?> flex items-center gap-1.5 font-medium">
                                 <i class="ri-user-star-line text-gray-400"></i>
-                                <span class="line-clamp-1">
+                                <span class="line-clamp-1 <?= !empty($slot['substitute_name']) ? 'line-through opacity-70' : '' ?>">
                                    <?= htmlspecialchars($slot['teacher_name']) ?>
                                 </span>
                             </p>
+
+                            <?php if (!empty($slot['substitute_name'])): ?>
+                                <p class="text-[11px] text-blue-700 mb-6 flex items-center gap-1.5 font-bold bg-blue-50/80 px-2 py-1 rounded-md w-full border border-blue-100/50">
+                                    <i class="ri-arrow-right-down-line text-blue-500"></i>
+                                    <span class="line-clamp-1" title="<?= htmlspecialchars($slot['substitute_name']) ?>">
+                                       Diganti: <?= htmlspecialchars($slot['substitute_name']) ?>
+                                    </span>
+                                </p>
+                            <?php endif; ?>
 
                             <?php if ($hasRecord): ?>
                                 <div class="mt-2">
