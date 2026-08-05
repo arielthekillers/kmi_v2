@@ -25,7 +25,7 @@ class PiketController extends Controller {
         $allTeachers = $this->teacherModel->findAll();
         $teachers = [];
         foreach ($allTeachers as $t) {
-             if (in_array($t['role'], ['pengajar', 'admin'])) {
+             if (in_array($t['role'], ['pengajar', 'admin']) && $t['is_active'] == 1 && $t['deleted_at'] === null) {
                  $teachers[$t['id']] = $t;
              }
         }
