@@ -61,8 +61,13 @@ class ScheduleController extends Controller {
         $teacherOptions = [];
         foreach ($allTeachers as $t) {
             if (in_array($t['role'], ['pengajar', 'admin'])) {
+                // Keep all in pengajarData for historical display mapping
                 $pengajarData[$t['id']] = $t;
-                $teacherOptions[] = $t;
+                
+                // Only active teachers should appear in dropdowns
+                if (!isset($t['is_active']) || $t['is_active'] == 1) {
+                    $teacherOptions[] = $t;
+                }
             }
         }
         usort($teacherOptions, function($a, $b) {
