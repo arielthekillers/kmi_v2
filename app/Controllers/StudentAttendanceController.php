@@ -131,6 +131,10 @@ class StudentAttendanceController extends Controller {
         $sessions = $this->attendanceModel->getSessions($activeAY['id']);
         $allTeachers = $this->teacherModel->findAll();
         usort($allTeachers, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
+        
+        $activeTeachers = array_filter($allTeachers, function($t) {
+            return (!isset($t['is_active']) || $t['is_active'] == 1);
+        });
 
         // Fetch PBM committee for each session
         foreach ($sessions as &$s) {
@@ -142,7 +146,8 @@ class StudentAttendanceController extends Controller {
         $this->view('student_attendance/pbm', [
             'sessions' => $sessions,
             'activeAY' => $activeAY,
-            'allTeachers' => $allTeachers
+            'allTeachers' => $allTeachers,
+            'activeTeachers' => $activeTeachers
         ]);
     }
 

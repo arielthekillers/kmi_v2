@@ -107,7 +107,7 @@ $isAdmin = auth_get_role() === 'admin';
                             <div class="flex-1">
                                 <select id="add-member-<?= $session['id'] ?>" class="tom-select block w-full" placeholder="Cari nama pengajar...">
                                     <option value="">Pilih Pengajar...</option>
-                                    <?php foreach ($allTeachers as $teacher): ?>
+                                    <?php foreach ($activeTeachers as $teacher): ?>
                                         <option value="<?= $teacher['id'] ?>" data-nama="<?= htmlspecialchars($teacher['nama']) ?>">
                                             <?= htmlspecialchars($teacher['nama']) ?>
                                         </option>
