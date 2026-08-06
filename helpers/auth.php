@@ -612,3 +612,14 @@ if (!function_exists('auth_get_wali_kelas_kelas')) {
         }
     }
 }
+
+if (!function_exists('auth_can_edit_student_in_class')) {
+    /**
+     * Check if user is admin or the teacher (wali kelas) of the specified class.
+     */
+    function auth_can_edit_student_in_class($kelas_teacher_id) {
+        if (auth_get_role() === 'admin') return true;
+        if (auth_get_role() === 'pengajar' && auth_get_user_id() == $kelas_teacher_id) return true;
+        return false;
+    }
+}

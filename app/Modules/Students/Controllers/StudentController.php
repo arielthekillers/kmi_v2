@@ -638,7 +638,7 @@ class StudentController extends Controller {
         $this->redirect("/students/history?id=$studentId");
     }
 
-    private function calculateCompleteness($student) {
+    public static function calculateCompleteness($student) {
         $fieldsToCheck = [
             'nis', 'nama', 'gender', 'tempat_lahir', 'tanggal_lahir', 
             'alamat', 'nama_wali', 'no_hp_wali', 'nik', 'nisn', 'provinsi', 
@@ -698,7 +698,7 @@ class StudentController extends Controller {
                 }
             }
 
-            $comp = $this->calculateCompleteness($r);
+            $comp = self::calculateCompleteness($r);
             if ($comp <= 25) $stats['completeness_25']++;
             elseif ($comp <= 50) $stats['completeness_50']++;
             elseif ($comp <= 75) $stats['completeness_75']++;

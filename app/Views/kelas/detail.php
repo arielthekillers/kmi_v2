@@ -168,12 +168,21 @@
                                     <td class="px-6 py-3.5 font-bold text-gray-900">
                                         <?php if (auth_get_role() === 'admin'): ?>
                                             <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
+                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'])): ?>
+                                            <a href="<?= url('/kelas/edit-student?id=' . $s['id'] . '&kelas_id=' . $kelas['id']) ?>" class="hover:text-indigo-600 transition-colors" title="Edit Data Santri"><?= htmlspecialchars($s['nama']) ?> <i class="ri-edit-line text-gray-400 text-xs ml-1"></i></a>
                                         <?php else: ?>
                                             <?= htmlspecialchars($s['nama']) ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-3.5">
-                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">Aktif</span>
+                                        <div class="flex items-center gap-3">
+                                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">Aktif</span>
+                                            <?php if (isset($s['completeness'])): ?>
+                                                <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden" title="Kelengkapan Data: <?= $s['completeness'] ?>%">
+                                                    <div class="<?= $s['completeness'] >= 75 ? 'bg-emerald-500' : ($s['completeness'] >= 50 ? 'bg-yellow-400' : 'bg-red-500') ?> h-full" style="width: <?= $s['completeness'] ?>%"></div>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -196,6 +205,8 @@
                                     <p class="font-bold text-gray-900 text-sm">
                                         <?php if (auth_get_role() === 'admin'): ?>
                                             <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
+                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'])): ?>
+                                            <a href="<?= url('/kelas/edit-student?id=' . $s['id'] . '&kelas_id=' . $kelas['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?> <i class="ri-edit-line text-gray-400 text-xs"></i></a>
                                         <?php else: ?>
                                             <?= htmlspecialchars($s['nama']) ?>
                                         <?php endif; ?>
@@ -203,8 +214,15 @@
                                     <p class="text-xs text-gray-500 font-mono mt-0.5">NIS: <?= htmlspecialchars($s['nis']) ?></p>
                                 </div>
                             </div>
-                            <div>
+                            <div class="flex flex-col items-end gap-1.5">
                                 <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase">Aktif</span>
+                                <?php if (isset($s['completeness'])): ?>
+                                    <div class="flex items-center gap-1.5" title="Kelengkapan Data: <?= $s['completeness'] ?>%">
+                                        <div class="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="<?= $s['completeness'] >= 75 ? 'bg-emerald-500' : ($s['completeness'] >= 50 ? 'bg-yellow-400' : 'bg-red-500') ?> h-full" style="width: <?= $s['completeness'] ?>%"></div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php endforeach; ?>

@@ -114,7 +114,11 @@ class KelasController extends Controller {
 
         // Fetch Tab-specific data
         if ($tab === 'santri') {
-            $data['students'] = $this->kelasModel->getStudentsWithDetails($id);
+            $students = $this->kelasModel->getStudentsWithDetails($id);
+            foreach ($students as &$s) {
+                $s['completeness'] = \App\Modules\Students\Controllers\StudentController::calculateCompleteness($s);
+            }
+            $data['students'] = $students;
         } elseif ($tab === 'jadwal') {
             $data['schedule'] = $this->kelasModel->getScheduleWithDetails($id);
         } elseif ($tab === 'nilai') {
@@ -906,5 +910,108 @@ class KelasController extends Controller {
         }
         
         $this->redirect('/classes');
+    }
+
+    public function editStudent() {
+        require_login();
+        $id = $_GET['id'] ?? null;
+        $kelas_id = $_GET['kelas_id'] ?? null;
+        if (!$id || !$kelas_id) {
+            $this->redirect('/classes');
+        }
+
+        $kelas = $this->kelasModel->find($kelas_id);
+        if (!$kelas) {
+            $this->redirect('/classes');
+        }
+
+        if (!auth_can_edit_student_in_class($kelas['teacher_id'])) {
+            add_flash('Anda tidak memiliki akses untuk mengedit data santri ini.', 'error');
+            $this->redirect("/classes/detail?id=$kelas_id&tab=santri");
+        }
+
+        $studentModel = new \App\Modules\Students\Models\Student();
+        $student = $studentModel->find($id);
+        if (!$student) {
+            add_flash('Data santri tidak ditemukan.', 'error');
+            $this->redirect("/classes/detail?id=$kelas_id&tab=santri");
+        }
+
+        $data = [
+            'title' => 'Edit Data Santri: ' . htmlspecialchars($student['nama']),
+            'student' => $student,
+            'kelas_id' => $kelas_id,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => auth_get_role()
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('kelas/edit_student', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    public function updateStudent() {
+        require_login();
+        
+        $id = $_POST['id'] ?? null;
+        $kelas_id = $_POST['kelas_id'] ?? null;
+        
+        if (!$id || !$kelas_id) {
+            $this->redirect('/classes');
+        }
+
+        $kelas = $this->kelasModel->find($kelas_id);
+        if (!$kelas || !auth_can_edit_student_in_class($kelas['teacher_id'])) {
+            add_flash('Anda tidak memiliki akses untuk mengedit data santri ini.', 'error');
+            $this->redirect('/classes');
+        }
+
+        $studentModel = new \App\Modules\Students\Models\Student();
+        
+        $updateData = [
+            'nama' => trim($_POST['nama'] ?? ''),
+            'gender' => $_POST['gender'] ?? '',
+            'tempat_lahir' => trim($_POST['tempat_lahir'] ?? ''),
+            'tanggal_lahir' => $_POST['tanggal_lahir'] ?? null,
+            'alamat' => trim($_POST['alamat'] ?? ''),
+            'nama_wali' => trim($_POST['nama_wali'] ?? ''),
+            'no_hp_wali' => trim($_POST['no_hp_wali'] ?? ''),
+            'nik' => trim($_POST['nik'] ?? ''),
+            
+            // Regions
+            'provinsi' => trim($_POST['provinsi'] ?? ''),
+            'prov_id' => trim($_POST['prov_id'] ?? ''),
+            'kabupaten' => trim($_POST['kabupaten'] ?? ''),
+            'kab_id' => trim($_POST['kab_id'] ?? ''),
+            'kecamatan' => trim($_POST['kecamatan'] ?? ''),
+            'kec_id' => trim($_POST['kec_id'] ?? ''),
+            'kelurahan' => trim($_POST['kelurahan'] ?? ''),
+            'desa_id' => trim($_POST['desa_id'] ?? ''),
+            
+            'rt_rw' => trim($_POST['rt_rw'] ?? ''),
+            'kode_pos' => trim($_POST['kode_pos'] ?? ''),
+            
+            'nama_kk' => trim($_POST['nama_kk'] ?? ''),
+            'pekerjaan_ayah' => trim($_POST['pekerjaan_ayah'] ?? ''),
+            'no_hp_ayah' => trim($_POST['no_hp_ayah'] ?? ''),
+            'nama_ibu' => trim($_POST['nama_ibu'] ?? ''),
+            'pekerjaan_ibu' => trim($_POST['pekerjaan_ibu'] ?? ''),
+            'no_hp_ibu' => trim($_POST['no_hp_ibu'] ?? ''),
+        ];
+
+        // Wali Kelas is NOT allowed to edit NIS and NISN. Admin is allowed.
+        if (auth_get_role() === 'admin') {
+            if (isset($_POST['nis'])) $updateData['nis'] = trim($_POST['nis']);
+            if (isset($_POST['nisn'])) $updateData['nisn'] = trim($_POST['nisn']);
+        }
+
+        try {
+            $studentModel->update($id, $updateData);
+            add_flash('Data santri berhasil diperbarui.', 'success');
+        } catch (\Exception $e) {
+            add_flash('Gagal memperbarui data santri: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect("/classes/detail?id=$kelas_id&tab=santri");
     }
 }

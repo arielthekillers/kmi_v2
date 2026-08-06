@@ -87,6 +87,8 @@ class App
         $this->router->post('/classes/store', ['App\Controllers\KelasController', 'store']);
         $this->router->get('/classes/delete', ['App\Controllers\KelasController', 'delete']);
         $this->router->post('/classes/save-perilaku', ['App\Controllers\KelasController', 'savePerilaku']);
+        $this->router->get('/kelas/edit-student', ['App\Controllers\KelasController', 'editStudent']);
+        $this->router->post('/kelas/update-student', ['App\Controllers\KelasController', 'updateStudent']);
 
         // Schedule Routes
         $this->router->get('/schedule', ['App\Controllers\ScheduleController', 'index']);
