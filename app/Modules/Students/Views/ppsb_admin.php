@@ -228,7 +228,7 @@ function sortIcon($field, $currentSort, $currentDir) {
                                     <span class="px-2 py-0.5 inline-flex text-[9px] leading-3 font-bold rounded-full bg-green-100 text-green-800 uppercase tracking-wider">
                                         Lulus Ujian
                                     </span>
-                                    <button onclick="openEnrollModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama'])) ?>', '<?= $r['gender'] ?>')" class="px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-[10px] font-bold border border-indigo-200 transition-colors shadow-sm">
+                                    <button onclick="openEnrollModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama'])) ?>', '<?= $r['gender'] ?>', '<?= htmlspecialchars($r['registration_no']) ?>')" class="px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-[10px] font-bold border border-indigo-200 transition-colors shadow-sm">
                                         <i class="ri-community-line"></i> Set Kelas
                                     </button>
                                 </div>
@@ -464,11 +464,11 @@ function sortIcon($field, $currentSort, $currentDir) {
             form.submit();
         }
 
-        function openEnrollModal(id, name, gender) {
+        function openEnrollModal(id, name, gender, regNo) {
             document.getElementById('enroll_reg_id').value = id;
             document.getElementById('enroll_student_name').value = name;
             document.getElementById('enroll_student_gender').value = (gender === 'L' ? 'Laki-laki' : 'Perempuan');
-            document.getElementById('enroll_nis').value = suggestedNis;
+            document.getElementById('enroll_nis').value = regNo; // Use registration_no from PPSB
             
             document.getElementById('enrollModal').classList.remove('hidden');
         }
