@@ -480,74 +480,67 @@
 
         <!-- Stats Cards Row -->
         <div class="flex gap-2 ml-auto">
-            <!-- Pelajaran Card -->
-            <div
-                class="bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
-                <div>
-                    <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Pelajaran</div>
-                    <div id="stat-pelajaran" class="text-3xl font-black text-white">0</div>
-                </div>
-                <div class="flex justify-end">
-                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                            </path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
             <!-- Total Santri Card -->
-            <div
-                class="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
+            <div class="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
                 <div>
                     <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Santri</div>
                     <div id="stat-total-santri" class="text-3xl font-black text-white">0</div>
                 </div>
                 <div class="flex justify-end">
                     <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kelas Card -->
-            <div
-                class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
-                <div>
-                    <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Kelas</div>
-                    <div id="stat-kelas" class="text-3xl font-black text-white">0</div>
-                </div>
-                <div class="flex justify-end">
-                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
-                            </path>
-                        </svg>
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
                 </div>
             </div>
 
             <!-- Pengajar Card -->
-            <div
-                class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
                 <div>
                     <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Pengajar</div>
                     <div id="stat-pengajar" class="text-3xl font-black text-white">0</div>
                 </div>
                 <div class="flex justify-end">
                     <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                            </path>
-                        </svg>
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kelas Card -->
+            <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
+                <div>
+                    <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Kelas</div>
+                    <div id="stat-kelas" class="text-3xl font-black text-white">0</div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pelajaran Card -->
+            <div class="bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
+                <div>
+                    <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Pelajaran</div>
+                    <div id="stat-pelajaran" class="text-3xl font-black text-white">0</div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pengajar Izin Card -->
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all w-28 h-28 flex flex-col justify-between">
+                <div>
+                    <div class="text-white/80 text-[9px] font-bold uppercase tracking-wider mb-0.5">Pengajar Izin</div>
+                    <div id="stat-pengajar-izin" class="text-3xl font-black text-white">0</div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                 </div>
             </div>
@@ -1041,7 +1034,7 @@
                 appData.piket = data.piket || { syeikh: [], keliling: [] };
                 appData.hours_config = data.hours_config || [];
                 appData.bgm_youtube = data.bgm_youtube || '';
-                appData.total_santri = data.total_santri || 0;
+                appData.master_stats = data.master_stats || null;
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;
@@ -1075,36 +1068,21 @@
         }
 
         function updateStatsCards() {
-            const activeHour = getCurrentHourBlock();
-            let activePelajaran = 0;
-            let uniqueKelas = new Set();
-            let uniquePengajar = new Set();
-
-            if (activeHour && appData.schedule[activeHour]) {
-                const items = appData.schedule[activeHour];
-                activePelajaran = items.length;
-                items.forEach(item => {
-                    if (item.kelas) uniqueKelas.add(item.kelas);
-                    if (item.pengajar) uniquePengajar.add(item.pengajar);
-                });
-            } else {
-                // Fallback to total for the day
-                Object.values(appData.schedule).flat().forEach(item => {
-                    if (item.kelas) uniqueKelas.add(item.kelas);
-                    if (item.pengajar) uniquePengajar.add(item.pengajar);
-                });
-                activePelajaran = Object.values(appData.schedule).flat().length;
-            }
-
-            const elPelajaran = document.getElementById('stat-pelajaran');
-            const elKelas = document.getElementById('stat-kelas');
-            const elPengajar = document.getElementById('stat-pengajar');
             const elTotalSantri = document.getElementById('stat-total-santri');
+            const elPengajar = document.getElementById('stat-pengajar');
+            const elKelas = document.getElementById('stat-kelas');
+            const elPelajaran = document.getElementById('stat-pelajaran');
+            const elPengajarIzin = document.getElementById('stat-pengajar-izin');
 
-            if (elPelajaran) elPelajaran.textContent = activePelajaran;
-            if (elKelas) elKelas.textContent = uniqueKelas.size;
-            if (elPengajar) elPengajar.textContent = uniquePengajar.size;
-            if (elTotalSantri) elTotalSantri.textContent = appData.total_santri || 0;
+            if (appData.master_stats) {
+                if (elTotalSantri) elTotalSantri.textContent = appData.master_stats.santri || 0;
+                if (elPengajar) elPengajar.textContent = appData.master_stats.pengajar || 0;
+                if (elKelas) elKelas.textContent = appData.master_stats.kelas || 0;
+                if (elPelajaran) elPelajaran.textContent = appData.master_stats.pelajaran || 0;
+                if (elPengajarIzin) elPengajarIzin.textContent = appData.master_stats.pengajar_izin || 0;
+            } else {
+                if (elTotalSantri) elTotalSantri.textContent = appData.total_santri || 0;
+            }
         }
 
         function escapeHtml(text) {
@@ -1288,7 +1266,7 @@
                                 ${item.pengajar_profile ? `
                                     <img src="${escapeHtml(item.pengajar_profile.profile_picture)}" 
                                          alt="Photo" 
-                                         class="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                                         class="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0 ${item.is_substitute ? 'opacity-50' : ''}"
                                          onerror="this.src='avatar.php?id=${escapeHtml(item.pengajar_profile.id)}'">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex flex-col justify-center">
@@ -1303,16 +1281,28 @@
                                             </div>
                                             
                                             <!-- Name -->
-                                            <div class="text-sm font-bold text-slate-700 leading-snug truncate">
+                                            <div class="text-sm font-bold text-slate-700 leading-snug truncate ${item.is_substitute ? 'line-through text-slate-400' : ''}">
                                                 ${escapeHtml(item.pengajar_profile.nama_display)}
                                             </div>
+                                            ${item.is_substitute && item.substitute_name ? `
+                                            <div class="text-xs font-bold text-blue-700 mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md truncate inline-flex items-center gap-1">
+                                                <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                                Diganti: ${escapeHtml(item.substitute_name)}
+                                            </div>
+                                            ` : ''}
                                         </div>
                                     </div>
                                 ` : `
                                     <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-bold text-slate-600 leading-snug line-clamp-2" title="${escapeHtml(item.pengajar)}">
+                                        <div class="text-sm font-bold text-slate-600 leading-snug line-clamp-2 ${item.is_substitute ? 'line-through text-slate-400' : ''}" title="${escapeHtml(item.pengajar)}">
                                             ${escapeHtml(item.pengajar)}
                                         </div>
+                                        ${item.is_substitute && item.substitute_name ? `
+                                        <div class="text-xs font-bold text-blue-700 mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md truncate inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                            Diganti: ${escapeHtml(item.substitute_name)}
+                                        </div>
+                                        ` : ''}
                                     </div>
                                 `}
                             </div>

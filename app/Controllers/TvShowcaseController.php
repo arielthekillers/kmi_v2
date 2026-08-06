@@ -77,18 +77,34 @@ class TvShowcaseController extends Controller {
             return $this->apiExamData($pdo);
         }
 
-        // Get total active students (excluding deleted)
         $yearId = $this->currentYear['id'] ?? null;
-        $totalSantri = 0;
+        $selectedDate = date('Y-m-d');
+        
+        $masterStats = [
+            'pelajaran' => $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
+            'kelas' => 0,
+            'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar' AND is_active = 1 AND deleted_at IS NULL")->fetchColumn(),
+            'pengajar_izin' => 0,
+            'santri' => 0
+        ];
+        
         if ($yearId) {
-            $countStmt = $pdo->prepare("
+            $kStmt = $pdo->prepare("SELECT COUNT(*) FROM kelas WHERE academic_year_id = ?");
+            $kStmt->execute([$yearId]);
+            $masterStats['kelas'] = $kStmt->fetchColumn();
+            
+            $iStmt = $pdo->prepare("SELECT COUNT(*) FROM teacher_leaves WHERE date = ? AND academic_year_id = ?");
+            $iStmt->execute([$selectedDate, $yearId]);
+            $masterStats['pengajar_izin'] = $iStmt->fetchColumn();
+            
+            $sStmt = $pdo->prepare("
                 SELECT COUNT(*) 
-                FROM students s 
-                INNER JOIN student_enrollments se ON s.id = se.student_id 
+                FROM student_enrollments se 
+                INNER JOIN students s ON se.student_id = s.id 
                 WHERE se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
             ");
-            $countStmt->execute([$yearId]);
-            $totalSantri = (int)$countStmt->fetchColumn();
+            $sStmt->execute([$yearId]);
+            $masterStats['santri'] = $sStmt->fetchColumn();
         }
 
         $selectedDate = date('Y-m-d');
@@ -107,11 +123,11 @@ class TvShowcaseController extends Controller {
                 JOIN kelas k ON s.kelas_id = k.id
                 JOIN subjects sub ON s.subject_id = sub.id
                 LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE s.day = ?
+                WHERE s.day = ? AND s.academic_year_id = ?
                 ORDER BY s.hour ASC, k.legacy_id ASC";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$dayNameIndo]);
+        $stmt->execute([$dayNameIndo, $yearId]);
         $schedulesRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $attStmt = $pdo->prepare("SELECT * FROM attendance_logs WHERE date = ?");
@@ -168,16 +184,18 @@ class TvShowcaseController extends Controller {
             $scheduleStatus = 'pending';
             $isSubstitute = false;
             $isAbsen = !empty($att);
+            $substituteName = null;
             
             if ($isAbsen) {
                 $rawStatus = $att['status'];
-                if ($rawStatus === 'substitute' || !empty($att['substitute_teacher_id'])) {
+                if ($rawStatus === 'substitute' || $rawStatus === 'diganti' || !empty($att['substitute_teacher_id'])) {
                     $scheduleStatus = 'substitute';
                     $isSubstitute = true;
                     if (!empty($att['substitute_teacher_id'])) {
                         $subProfile = $this->getTeacherProfile($att['substitute_teacher_id'], $pdo);
-                        $pengajarName = $subProfile['nama_display'] . " (Pengganti)";
-                        $teacherId = $att['substitute_teacher_id'];
+                        $substituteName = $subProfile['nama_display'];
+                    } else if (isset($att['subst_nama'])) {
+                        $substituteName = $att['subst_nama'];
                     }
                 } elseif ($rawStatus === 'hadir') {
                     $scheduleStatus = 'verified';
@@ -195,7 +213,8 @@ class TvShowcaseController extends Controller {
                 'pengajar_profile' => $this->getTeacherProfile($teacherId, $pdo),
                 'status' => $scheduleStatus,
                 'verified' => $isAbsen,
-                'is_substitute' => $isSubstitute
+                'is_substitute' => $isSubstitute,
+                'substitute_name' => $substituteName
             ];
         }
 
@@ -211,9 +230,9 @@ class TvShowcaseController extends Controller {
             SELECT ps.*, u.nama, u.id as user_id 
             FROM piket_schedule ps 
             JOIN users u ON ps.user_id = u.id 
-            WHERE ps.day = ?
+            WHERE ps.day = ? AND ps.academic_year_id = ?
         ");
-        $piketStmt->execute([$dayNameIndo]);
+        $piketStmt->execute([$dayNameIndo, $yearId]);
         $piketRaw = $piketStmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($piketRaw as $p) {
@@ -233,7 +252,7 @@ class TvShowcaseController extends Controller {
             'day' => $dayNameIndo,
             'schedule_by_hour' => $dailySchedule,
             'stats' => $stats,
-            'total_santri' => $totalSantri,
+            'master_stats' => $masterStats,
             'latest_verifications' => $latestVerifications,
             'piket' => [
                 'syeikh' => $piketSyeikh,
