@@ -114,6 +114,7 @@ class KelasController extends Controller {
 
         // Fetch Tab-specific data
         if ($tab === 'santri') {
+            require_once __DIR__ . '/../Modules/Students/Controllers/StudentController.php';
             $students = $this->kelasModel->getStudentsWithDetails($id);
             foreach ($students as &$s) {
                 $s['completeness'] = \App\Modules\Students\Controllers\StudentController::calculateCompleteness($s);
