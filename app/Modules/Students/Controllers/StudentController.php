@@ -637,4 +637,118 @@ class StudentController extends Controller {
         }
         $this->redirect("/students/history?id=$studentId");
     }
+
+    private function calculateCompleteness($student) {
+        $fieldsToCheck = [
+            'nis', 'nama', 'gender', 'tempat_lahir', 'tanggal_lahir', 
+            'alamat', 'nama_wali', 'no_hp_wali', 'nik', 'nisn', 'provinsi', 
+            'kabupaten', 'kecamatan', 'kelurahan', 'rt_rw', 'kode_pos', 
+            'nama_kk', 'pekerjaan_ayah', 'no_hp_ayah', 'nama_ibu', 'pekerjaan_ibu', 'no_hp_ibu'
+        ];
+        
+        $filled = 0;
+        $total = count($fieldsToCheck);
+        foreach ($fieldsToCheck as $f) {
+            if (!empty($student[$f]) && $student[$f] !== '-' && $student[$f] !== 'null') {
+                $filled++;
+            }
+        }
+        return round(($filled / $total) * 100);
+    }
+
+    public function statistics() {
+        require_admin();
+
+        $model = new Student();
+        // Ambil semua santri aktif
+        $all = $model->getAll(['status' => 'Active'], 100000);
+        
+        $stats = [
+            'total' => count($all),
+            'laki_laki' => 0,
+            'perempuan' => 0,
+            'usia_tertua_l' => null,
+            'usia_termuda_l' => null,
+            'usia_tertua_p' => null,
+            'usia_termuda_p' => null,
+            'completeness_25' => 0,
+            'completeness_50' => 0,
+            'completeness_75' => 0,
+            'completeness_100' => 0,
+            'kabupaten_terbanyak' => []
+        ];
+
+        $today = new \DateTime();
+        $usia_l = [];
+        $usia_p = [];
+        $kabupatenCounts = [];
+        
+        $kelasCompleteness = [];
+
+        foreach ($all as $r) {
+            if ($r['gender'] === 'L') {
+                $stats['laki_laki']++;
+                if (!empty($r['tanggal_lahir'])) {
+                    try { $usia_l[] = $today->diff(new \DateTime($r['tanggal_lahir']))->y; } catch (\Exception $e) {}
+                }
+            } else {
+                $stats['perempuan']++;
+                if (!empty($r['tanggal_lahir'])) {
+                    try { $usia_p[] = $today->diff(new \DateTime($r['tanggal_lahir']))->y; } catch (\Exception $e) {}
+                }
+            }
+
+            $comp = $this->calculateCompleteness($r);
+            if ($comp <= 25) $stats['completeness_25']++;
+            elseif ($comp <= 50) $stats['completeness_50']++;
+            elseif ($comp <= 75) $stats['completeness_75']++;
+            else $stats['completeness_100']++;
+
+            if (!empty($r['kabupaten'])) {
+                $kab = strtoupper(trim($r['kabupaten']));
+                if (!isset($kabupatenCounts[$kab])) $kabupatenCounts[$kab] = 0;
+                $kabupatenCounts[$kab]++;
+            }
+
+            // Kategori Tingkat Kelas completeness
+            $tingkat = $r['tingkat'] ?? 'Belum Ada Kelas';
+            if (!isset($kelasCompleteness[$tingkat])) {
+                $kelasCompleteness[$tingkat] = [];
+            }
+            $kelasCompleteness[$tingkat][] = $comp;
+        }
+
+        if (!empty($usia_l)) {
+            $stats['usia_tertua_l'] = max($usia_l);
+            $stats['usia_termuda_l'] = min($usia_l);
+        }
+        if (!empty($usia_p)) {
+            $stats['usia_tertua_p'] = max($usia_p);
+            $stats['usia_termuda_p'] = min($usia_p);
+        }
+
+        arsort($kabupatenCounts);
+        $stats['kabupaten_terbanyak'] = array_slice($kabupatenCounts, 0, 6, true);
+
+        // Hitung rata-rata per tingkat
+        $kelas_stats = [];
+        foreach ($kelasCompleteness as $tingkat => $percentages) {
+            $avg = array_sum($percentages) / count($percentages);
+            $kelas_stats[$tingkat] = round($avg);
+        }
+        
+        ksort($kelas_stats);
+        $stats['kelas_completeness'] = $kelas_stats;
+
+        $data = [
+            'title' => 'Statistik Data Santri',
+            'stats' => $stats,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'admin',
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('Students/Views/student_statistics', $data);
+        $this->view('layouts/footer', $data);
+    }
 }

@@ -9,7 +9,9 @@
             <a href="<?= url('/students/trash') ?>" class="px-4 py-2 border border-red-200 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 flex items-center">
                 <i class="ri-delete-bin-line mr-2"></i> Tempat Sampah
             </a>
-
+            <a href="<?= url('/students/statistik') ?>" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm">
+                <i class="ri-bar-chart-2-line mr-2"></i> Statistik
+            </a>
             <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')" class="px-4 py-2 border border-green-600 text-green-600 rounded-md text-sm font-medium hover:bg-green-50 flex items-center shadow-sm">
                 <i class="ri-file-excel-2-line mr-2"></i> Export
             </button>
