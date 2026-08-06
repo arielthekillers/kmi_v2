@@ -102,7 +102,12 @@
                     <textarea name="alamat" rows="2" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border"><?= $student['alamat'] ?? '' ?></textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Provinsi</label>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Provinsi</label>
+                        <?php if(empty($student['prov_id']) && !empty($student['provinsi'])): ?>
+                            <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 rounded font-mono font-bold">Data Lama: <?= htmlspecialchars($student['provinsi']) ?></span>
+                        <?php endif; ?>
+                    </div>
                     <select id="prov_id" name="prov_id" class="tom-select-region mt-1 block w-full border">
                         <option value="">Pilih Provinsi...</option>
                         <?php if(!empty($student['prov_id'])): ?>
@@ -112,7 +117,12 @@
                     <input type="hidden" id="provinsi" name="provinsi" value="<?= $student['provinsi'] ?? '' ?>">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Kabupaten / Kota</label>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Kabupaten / Kota</label>
+                        <?php if(empty($student['kab_id']) && !empty($student['kabupaten'])): ?>
+                            <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 rounded font-mono font-bold">Data Lama: <?= htmlspecialchars($student['kabupaten']) ?></span>
+                        <?php endif; ?>
+                    </div>
                     <select id="kab_id" name="kab_id" class="tom-select-region mt-1 block w-full border">
                         <option value="">Pilih Kabupaten...</option>
                         <?php if(!empty($student['kab_id'])): ?>
@@ -122,7 +132,12 @@
                     <input type="hidden" id="kabupaten" name="kabupaten" value="<?= $student['kabupaten'] ?? '' ?>">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Kecamatan</label>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Kecamatan</label>
+                        <?php if(empty($student['kec_id']) && !empty($student['kecamatan'])): ?>
+                            <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 rounded font-mono font-bold">Data Lama: <?= htmlspecialchars($student['kecamatan']) ?></span>
+                        <?php endif; ?>
+                    </div>
                     <select id="kec_id" name="kec_id" class="tom-select-region mt-1 block w-full border">
                         <option value="">Pilih Kecamatan...</option>
                         <?php if(!empty($student['kec_id'])): ?>
@@ -132,7 +147,12 @@
                     <input type="hidden" id="kecamatan" name="kecamatan" value="<?= $student['kecamatan'] ?? '' ?>">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Kelurahan / Desa</label>
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Kelurahan / Desa</label>
+                        <?php if(empty($student['desa_id']) && !empty($student['kelurahan'])): ?>
+                            <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 rounded font-mono font-bold">Data Lama: <?= htmlspecialchars($student['kelurahan']) ?></span>
+                        <?php endif; ?>
+                    </div>
                     <select id="desa_id" name="desa_id" class="tom-select-region mt-1 block w-full border">
                         <option value="">Pilih Kelurahan...</option>
                         <?php if(!empty($student['desa_id'])): ?>
