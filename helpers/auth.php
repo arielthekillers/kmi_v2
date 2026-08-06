@@ -628,7 +628,7 @@ if (!function_exists('calculate_student_completeness')) {
     function calculate_student_completeness($student) {
         $fieldsToCheck = [
             'nis', 'nama', 'gender', 'tempat_lahir', 'tanggal_lahir', 
-            'alamat', 'nama_wali', 'no_hp_wali', 'nik', 'nisn', 'provinsi', 
+            'alamat', 'nama_wali', 'nik', 'nisn', 'provinsi', 
             'kabupaten', 'kecamatan', 'kelurahan', 'rt_rw', 'kode_pos', 
             'nama_kk', 'pekerjaan_ayah', 'no_hp_ayah', 'nama_ibu', 'pekerjaan_ibu', 'no_hp_ibu'
         ];

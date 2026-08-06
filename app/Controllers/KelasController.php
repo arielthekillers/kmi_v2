@@ -975,7 +975,6 @@ class KelasController extends Controller {
             'tanggal_lahir' => $_POST['tanggal_lahir'] ?? null,
             'alamat' => trim($_POST['alamat'] ?? ''),
             'nama_wali' => trim($_POST['nama_wali'] ?? ''),
-            'no_hp_wali' => trim($_POST['no_hp_wali'] ?? ''),
             'nik' => trim($_POST['nik'] ?? ''),
             
             // Regions
