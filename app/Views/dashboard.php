@@ -47,17 +47,6 @@ renderHeader ("Dashboard");
         <?php if ($role === 'admin'): ?>
         <!-- Kiri: 5 Master Data -->
         <div class="lg:col-span-1 grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:gap-4">
-            <a href="<?= url('/subjects') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
-                <div class="flex items-center justify-between">
-                    <div>
-                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pelajaran</p>
-                       <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['pelajaran'] ?></p>
-                    </div>
-                    <div class="bg-blue-50 p-2.5 rounded-lg text-blue-600 group-hover:bg-blue-100 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                    </div>
-                </div>
-            </a>
             <a href="<?= url('/students') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
                 <div class="flex items-center justify-between">
                     <div>
@@ -65,6 +54,17 @@ renderHeader ("Dashboard");
                        <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['santri'] ?></p>
                     </div>
                     <div class="bg-pink-50 p-2.5 rounded-lg text-pink-600 group-hover:bg-pink-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                </div>
+            </a>
+            <a href="<?= url('/teachers') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
+                <div class="flex items-center justify-between">
+                    <div>
+                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pengajar</p>
+                       <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['pengajar'] ?></p>
+                    </div>
+                    <div class="bg-purple-50 p-2.5 rounded-lg text-purple-600 group-hover:bg-purple-100 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
                 </div>
@@ -80,25 +80,25 @@ renderHeader ("Dashboard");
                     </div>
                 </div>
             </a>
-            <a href="<?= url('/teachers') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
+            <a href="<?= url('/subjects') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
                 <div class="flex items-center justify-between">
                     <div>
-                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pengajar</p>
-                       <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['pengajar'] ?></p>
+                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pelajaran</p>
+                       <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['pelajaran'] ?></p>
                     </div>
-                    <div class="bg-purple-50 p-2.5 rounded-lg text-purple-600 group-hover:bg-purple-100 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <div class="bg-blue-50 p-2.5 rounded-lg text-blue-600 group-hover:bg-blue-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     </div>
                 </div>
             </a>
-            <a href="<?= url('/schedule') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
+            <a href="<?= url('/leaves') ?>" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group flex-1 flex flex-col justify-center">
                  <div class="flex items-center justify-between">
                     <div>
-                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Jadwal</p>
-                       <p class="text-2xl font-bold text-gray-900 mt-1">Total</p>
+                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pengajar Izin</p>
+                       <p class="text-2xl font-bold text-gray-900 mt-1"><?= $stats['pengajar_izin'] ?? 0 ?></p>
                     </div>
-                    <div class="bg-orange-50 p-2.5 rounded-lg text-orange-600 group-hover:bg-orange-100 transition-colors">
-                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <div class="bg-red-50 p-2.5 rounded-lg text-red-600 group-hover:bg-red-100 transition-colors">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                 </div>
             </a>

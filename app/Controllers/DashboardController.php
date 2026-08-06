@@ -33,8 +33,9 @@ class DashboardController extends Controller {
         $stats = [
             'pelajaran' => $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
             'kelas' => $pdo->prepare("SELECT COUNT(*) FROM kelas WHERE academic_year_id = ?"),
-            'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar' AND deleted_at IS NULL")->fetchColumn(),
+            'pengajar' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'pengajar' AND is_active = 1 AND deleted_at IS NULL")->fetchColumn(),
             'tahun_ajaran' => $pdo->query("SELECT COUNT(*) FROM academic_years")->fetchColumn(),
+            'pengajar_izin' => $pdo->prepare("SELECT COUNT(*) FROM teacher_leaves WHERE date = ? AND academic_year_id = ?"),
             'santri' => $pdo->prepare("
                 SELECT COUNT(*) 
                 FROM student_enrollments se 
@@ -45,6 +46,9 @@ class DashboardController extends Controller {
         
         $stats['kelas']->execute([$yearId]);
         $stats['kelas'] = $stats['kelas']->fetchColumn();
+        
+        $stats['pengajar_izin']->execute([$todayDate, $yearId]);
+        $stats['pengajar_izin'] = $stats['pengajar_izin']->fetchColumn();
         
         $stats['santri']->execute([$yearId]);
         $stats['santri'] = $stats['santri']->fetchColumn();
