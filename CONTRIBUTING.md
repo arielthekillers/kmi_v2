@@ -3,9 +3,9 @@
 Terima kasih telah berkontribusi! Untuk menjaga kerapian dan konsistensi riwayat perubahan (*commit history*), kami menggunakan standar penulisan pesan *commit* (berdasarkan *Conventional Commits*).
 
 ## Format Pesan Commit
-Pastikan Anda menggunakan format berikut setiap kali melakukan commit:
+Pastikan Anda menggunakan format berikut setiap kali melakukan commit, dan **pesan commit HARUS ditulis dalam bahasa Inggris (English)**:
 
-`<tipe>(<opsional-cakupan>): <pesan_singkat>`
+`<tipe>(<opsional-cakupan>): <pesan_singkat_dalam_bahasa_inggris>`
 
 ### Daftar Tipe Commit yang Diizinkan:
 * **`feat`** : Fitur baru
