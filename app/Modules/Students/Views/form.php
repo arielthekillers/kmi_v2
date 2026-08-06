@@ -166,8 +166,8 @@
                     <input type="text" name="rt_rw" value="<?= $student['rt_rw'] ?? '' ?>" placeholder="Contoh: 001/002" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Kode Pos</label>
-                    <input type="text" name="kode_pos" value="<?= $student['kode_pos'] ?? '' ?>" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border">
+                    <label class="block text-sm font-medium text-gray-700">Kode Pos <span id="kodepos-loading" class="text-xs text-indigo-500 hidden ml-2"><i class="ri-loader-4-line animate-spin"></i> Mencari...</span></label>
+                    <input type="text" id="kode_pos" name="kode_pos" value="<?= $student['kode_pos'] ?? '' ?>" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border transition-colors">
                 </div>
             </div>
         </div>
@@ -284,6 +284,11 @@
                         if (nameInput && this.options[val]) {
                             nameInput.value = this.options[val].name;
                         }
+
+                        // Auto-fetch Postal Code when Village is selected
+                        if (el.id === 'desa_id' && val && this.options[val]) {
+                            fetchPostalCode(this.options[val].name);
+                        }
                     }
                 });
             });
@@ -292,6 +297,57 @@
                 const flow = ['prov_id', 'kab_id', 'kec_id', 'desa_id'];
                 const idx = flow.indexOf(currentId);
                 return idx < flow.length - 1 ? flow[idx+1] : null;
+            }
+
+            async function fetchPostalCode(villageName) {
+                const kodeposInput = document.getElementById('kode_pos');
+                const loadingIndicator = document.getElementById('kodepos-loading');
+                if (!kodeposInput || !villageName) return;
+
+                const kecamatanName = document.getElementById('kecamatan').value.trim();
+                if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+                console.log("Auto-fetch postal code for village:", villageName, ", kecamatan:", kecamatanName);
+                
+                try {
+                    // Use local proxy to avoid CORS/Mixed-Content blocks
+                    const url = `<?= url('/api/postal-codes') ?>?search=${encodeURIComponent(villageName.trim())}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("API error: " + response.status);
+                    
+                    const result = await response.json();
+                    console.log("Carikodepos API result:", result);
+
+                    if (result.success && result.data && result.data.postalCodes.length > 0) {
+                        let matched = result.data.postalCodes.find(p => 
+                            p.district && p.district.name.trim().toLowerCase() === kecamatanName.toLowerCase()
+                        );
+                        
+                        if (!matched) {
+                            matched = result.data.postalCodes.find(p => 
+                                p.village && p.village.name.trim().toLowerCase() === villageName.trim().toLowerCase()
+                            );
+                        }
+                        
+                        if (!matched && result.data.postalCodes.length > 0) {
+                            matched = result.data.postalCodes[0];
+                        }
+
+                        if (matched && matched.code) {
+                            console.log("Matched postal code:", matched.code);
+                            kodeposInput.value = matched.code;
+                            kodeposInput.classList.add('bg-green-50', 'border-green-400');
+                            setTimeout(() => {
+                                kodeposInput.classList.remove('bg-green-50', 'border-green-400');
+                            }, 2000);
+                        } else {
+                            console.log("No matching postal code found.");
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch postal code:', e);
+                } finally {
+                    if (loadingIndicator) loadingIndicator.classList.add('hidden');
+                }
             }
 
             async function loadRegions(type, parentId = '', selectedValue = '') {
