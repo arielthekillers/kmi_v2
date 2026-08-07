@@ -91,20 +91,49 @@ require_once __DIR__ . '/../layouts/header.php';
                     <?php else: ?>
                         <?php foreach ($messages as $msg): ?>
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-4 py-3 whitespace-nowrap">
                                     <input type="checkbox" value="<?= $msg['id'] ?>" class="rowCheckbox focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" onclick="toggleRowCheckbox()">
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                     #<?= htmlspecialchars($msg['id']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    <?= htmlspecialchars($msg['recipient_number']) ?>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <?php if (!empty($msg['recipient_name'])): ?>
+                                            <div class="flex-shrink-0 h-8 w-8">
+                                                <img class="h-8 w-8 rounded-full object-cover" 
+                                                     src="<?= url('/avatar?id=' . $msg['recipient_user_id']) ?>" 
+                                                     alt="Avatar"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($msg['recipient_name']) ?>&background=F3F4F6&color=1F2937'">
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-gray-900 max-w-[12rem] truncate" title="<?= htmlspecialchars($msg['recipient_name']) ?>">
+                                                    <?= htmlspecialchars($msg['recipient_name']) ?>
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    <?= htmlspecialchars($msg['recipient_number']) ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-gray-200">
+                                                <i class="ri-user-line text-gray-500"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    Tidak Diketahui
+                                                </div>
+                                                <div class="text-xs text-gray-500">
+                                                    <?= htmlspecialchars($msg['recipient_number']) ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate"
+                                <td class="px-4 py-3 text-sm text-gray-500 max-w-[14rem] truncate"
                                     title="<?= htmlspecialchars($msg['message']) ?>">
                                     <?= htmlspecialchars($msg['message']) ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 status-cell" data-id="<?= $msg['id'] ?>" id="status-cell-<?= $msg['id'] ?>">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 status-cell" data-id="<?= $msg['id'] ?>" id="status-cell-<?= $msg['id'] ?>">
                                     <?php if ($msg['status'] === 'pending'): ?>
                                         <span
                                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
@@ -121,12 +150,12 @@ require_once __DIR__ . '/../layouts/header.php';
                                             title="<?= htmlspecialchars($msg['response'] ?? 'Nomor tidak terdaftar di WhatsApp') ?>">Tidak Aktif</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium <?= ($msg['sender'] === 'System') ? 'bg-gray-100 text-gray-800' : 'bg-indigo-100 text-indigo-800' ?>">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <?= ($msg['sender'] === 'System') ? 'bg-gray-100 text-gray-800' : 'bg-indigo-100 text-indigo-800' ?>">
                                         <?= htmlspecialchars($msg['sender'] ?? 'System') ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                     <?= date('d/m/Y H:i', strtotime($msg['created_at'])) ?>
                                 </td>
                             </tr>

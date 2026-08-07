@@ -25,13 +25,14 @@ class MessagingController
         $params = [];
         
         if ($q !== '') {
-            $where[] = "(recipient_number LIKE ? OR message LIKE ?)";
+            $where[] = "(wq.recipient_number LIKE ? OR wq.message LIKE ? OR u.nama LIKE ?)";
+            $params[] = "%$q%";
             $params[] = "%$q%";
             $params[] = "%$q%";
         }
         
         if ($status !== '') {
-            $where[] = "status = ?";
+            $where[] = "wq.status = ?";
             $params[] = $status;
         }
         
@@ -41,7 +42,12 @@ class MessagingController
         }
 
         // Get total for pagination first
-        $totalStmt = $db->query("SELECT COUNT(*) as count FROM whatsapp_queues $whereSql", $params);
+        $totalStmt = $db->query("
+            SELECT COUNT(*) as count 
+            FROM whatsapp_queues wq
+            LEFT JOIN users u ON u.username = wq.recipient_number OR u.username = CONCAT('0', SUBSTRING(wq.recipient_number, 3))
+            $whereSql
+        ", $params);
         $total = $totalStmt->fetch()['count'];
         $totalPages = max(1, (int)ceil($total / $limit));
 
@@ -52,7 +58,14 @@ class MessagingController
         }
 
         // Fetch queued messages
-        $stmt = $db->query("SELECT * FROM whatsapp_queues $whereSql ORDER BY id DESC LIMIT $limit OFFSET $offset", $params);
+        $stmt = $db->query("
+            SELECT wq.*, u.nama as recipient_name, u.id as recipient_user_id 
+            FROM whatsapp_queues wq 
+            LEFT JOIN users u ON u.username = wq.recipient_number OR u.username = CONCAT('0', SUBSTRING(wq.recipient_number, 3))
+            $whereSql 
+            ORDER BY wq.id DESC 
+            LIMIT $limit OFFSET $offset
+        ", $params);
         $messages = $stmt->fetchAll();
 
         require_once __DIR__ . '/../Views/settings/messaging.php';
