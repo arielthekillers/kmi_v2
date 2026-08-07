@@ -8,6 +8,7 @@ use App\Models\TeacherAssistantModel;
 use App\Models\TeacherModel;
 use App\Models\ScheduleModel;
 use App\Models\SubjectModel;
+use App\Models\TanqihModel;
 use PDO;
 use App\Core\Controller;
 
@@ -17,6 +18,7 @@ class TeacherLeaveController extends Controller {
     private $assistantModel;
     private $teacherModel;
     private $scheduleModel;
+    private $tanqihModel;
 
     public function __construct() {
         require_login();
@@ -28,6 +30,7 @@ class TeacherLeaveController extends Controller {
         $this->assistantModel = new TeacherAssistantModel();
         $this->teacherModel = new TeacherModel();
         $this->scheduleModel = new ScheduleModel();
+        $this->tanqihModel = new TanqihModel();
     }
 
     public function index() {
@@ -144,6 +147,17 @@ class TeacherLeaveController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
         $id = $_POST['id'] ?? '';
         if ($id) {
+            $stmt = $this->subModel->query("
+                SELECT ts.hour, ts.kelas_id, l.date, l.academic_year_id 
+                FROM teaching_substitutions ts
+                JOIN teacher_leaves l ON ts.leave_id = l.id
+                WHERE ts.leave_id = ? AND ts.substitute_teacher_id IS NOT NULL
+            ", [$id]);
+            $subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($subs as $sub) {
+                $this->tanqihModel->query("DELETE FROM tanqih WHERE date = ? AND kelas_id = ? AND hour = ? AND academic_year_id = ? AND status = 'justified'", [$sub['date'], $sub['kelas_id'], $sub['hour'], $sub['academic_year_id']]);
+            }
+
             $this->subModel->query("DELETE FROM teaching_substitutions WHERE leave_id = ?", [$id]);
             $this->leaveModel->query("DELETE FROM teacher_leaves WHERE id = ?", [$id]);
             $_SESSION['flash'] = ['type' => 'success', 'message' => 'Data berhasil dihapus.'];
@@ -294,6 +308,11 @@ class TeacherLeaveController extends Controller {
             }
             if (!empty($substitutions)) {
                 $this->subModel->createBatch($leaveId, $substitutions);
+                foreach ($substitutions as $sub) {
+                    if ($sub['substitute_teacher_id']) {
+                        $this->tanqihModel->verify($date, $sub['kelas_id'], $sub['hour'], $_SESSION['user_id'] ?? null, 'justified');
+                    }
+                }
             }
             $inserted++;
         }
@@ -427,6 +446,18 @@ class TeacherLeaveController extends Controller {
             
             if ($editLeaveId) {
                 $leaveId = $editLeaveId;
+                
+                $stmt = $this->subModel->query("
+                    SELECT ts.hour, ts.kelas_id, l.date, l.academic_year_id 
+                    FROM teaching_substitutions ts
+                    JOIN teacher_leaves l ON ts.leave_id = l.id
+                    WHERE ts.leave_id = ? AND ts.substitute_teacher_id IS NOT NULL
+                ", [$leaveId]);
+                $oldSubs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($oldSubs as $sub) {
+                    $this->tanqihModel->query("DELETE FROM tanqih WHERE date = ? AND kelas_id = ? AND hour = ? AND academic_year_id = ? AND status = 'justified'", [$sub['date'], $sub['kelas_id'], $sub['hour'], $sub['academic_year_id']]);
+                }
+
                 $this->subModel->query("DELETE FROM teaching_substitutions WHERE leave_id = ?", [$leaveId]);
             } else {
                 $leaveId = $this->leaveModel->create([
@@ -456,6 +487,11 @@ class TeacherLeaveController extends Controller {
 
             if (!empty($substitutions)) {
                 $this->subModel->createBatch($leaveId, $substitutions);
+                foreach ($substitutions as $sub) {
+                    if ($sub['substitute_teacher_id']) {
+                        $this->tanqihModel->verify($date, $sub['kelas_id'], $sub['hour'], $_SESSION['user_id'] ?? null, 'justified');
+                    }
+                }
             }
         }
 
