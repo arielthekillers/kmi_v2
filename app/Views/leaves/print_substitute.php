@@ -15,7 +15,7 @@ $groupedSchedules = $groupedSchedules ?? [];
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Lembar Rekomendasi Mengajar</title>
+    <title>Lembar Rekomendasi Mengajar - <?= $indoDate ?></title>
     <style>
         @media print {
             @page { size: A4 portrait; margin: 8mm; }
