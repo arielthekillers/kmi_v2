@@ -59,7 +59,7 @@ $bulanId = [
                 <!-- Days of week -->
                 <div class="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50">
                     <?php 
-                    $hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                    $hari = ['Sabtu', 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                     foreach($hari as $h): ?>
                         <div class="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100">
                             <?= $h ?>

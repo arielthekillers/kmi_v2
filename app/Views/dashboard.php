@@ -138,7 +138,7 @@ renderHeader ("Dashboard");
                         <!-- Days of week -->
                         <div class="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50">
                             <?php 
-                            $hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                            $hari = ['Sabtu', 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                             foreach($hari as $h): ?>
                                 <div class="px-2 py-2 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100">
                                     <?= substr($h, 0, 3) ?>
@@ -208,7 +208,7 @@ renderHeader ("Dashboard");
                                         $tooltip = htmlspecialchars($event['keterangan'] . ' (' . $event['kategori'] . ')');
 
                                         echo "<div title=\"{$tooltip}\" class=\"px-1 py-[2px] text-[8px] leading-tight font-medium truncate group-hover:whitespace-normal group-hover:text-clip group-hover:break-words {$cfg['bg']} {$cfg['text']} border-y border-transparent {$roundedClass}\">";
-                                        if ($isStart || date('w', $currentTimestamp) == 1 || $day == 1) {
+                                        if ($isStart || date('w', $currentTimestamp) == 6 || $day == 1) {
                                             echo htmlspecialchars($event['keterangan']);
                                         } else {
                                             echo "&nbsp;";

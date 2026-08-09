@@ -164,7 +164,8 @@ class DashboardController extends Controller {
         $selectedYearVal = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYearVal);
         $firstDayOfMonth = date('w', strtotime("$selectedYearVal-$selectedMonth-01"));
-        $firstDayOffset = ($firstDayOfMonth == 0) ? 6 : $firstDayOfMonth - 1;
+        // Pesantren week starts on Saturday (Sabtu = 0, Minggu = 1, Senin = 2, ..., Jumat = 6)
+        $firstDayOffset = ($firstDayOfMonth + 1) % 7;
 
         $monthEvents = [];
         foreach ($events as $event) {

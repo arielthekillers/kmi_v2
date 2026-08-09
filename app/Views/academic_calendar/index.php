@@ -195,7 +195,7 @@ $isAdmin = auth_get_role() === 'admin';
                         <!-- Days of week -->
                         <div class="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50">
                             <?php 
-                            $hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                            $hari = ['Sabtu', 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                             foreach($hari as $h): ?>
                                 <div class="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-100">
                                     <?= $h ?>
@@ -248,7 +248,7 @@ $isAdmin = auth_get_role() === 'admin';
 
                                         echo "<div title=\"{$tooltip}\" class=\"px-2 py-1 text-[10px] leading-tight font-medium truncate {$cfg['bg']} {$cfg['text']} border-y border-transparent {$roundedClass}\">";
                                         // Only show text on the start day, or on Mondays, or on the 1st of the month
-                                        if ($isStart || date('w', $currentTimestamp) == 1 || $day == 1) {
+                                        if ($isStart || date('w', $currentTimestamp) == 6 || $day == 1) {
                                             echo htmlspecialchars($event['keterangan']);
                                         } else {
                                             echo "&nbsp;";

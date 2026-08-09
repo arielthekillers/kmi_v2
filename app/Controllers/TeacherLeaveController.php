@@ -107,8 +107,9 @@ class TeacherLeaveController extends Controller {
         // Calendar metadata
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYearVal);
         $firstDayOfMonth = sprintf('%04d-%02d-01', $selectedYearVal, $selectedMonth);
-        $firstDayOfWeek = date('w', strtotime($firstDayOfMonth)); // 0 = Sunday, 1 = Monday
-        $firstDayOffset = ($firstDayOfWeek + 6) % 7; // Monday = 0
+        $firstDayOfWeek = date('w', strtotime($firstDayOfMonth)); // 0 = Sunday, 6 = Saturday
+        // Pesantren week starts on Saturday (Sabtu = 0, Minggu = 1, Senin = 2, ..., Jumat = 6)
+        $firstDayOffset = ($firstDayOfWeek + 1) % 7;
         
         $prevMonth = $selectedMonth - 1;
         $prevYear = $selectedYearVal;

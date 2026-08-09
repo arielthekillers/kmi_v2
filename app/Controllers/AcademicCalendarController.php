@@ -57,8 +57,8 @@ class AcademicCalendarController extends Controller {
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYearVal);
         $firstDayOfMonth = date('w', strtotime("$selectedYearVal-$selectedMonth-01"));
         
-        // Adjust so Monday = 0, Sunday = 6
-        $firstDayOffset = ($firstDayOfMonth == 0) ? 6 : $firstDayOfMonth - 1;
+        // Pesantren week starts on Saturday (Sabtu = 0, Minggu = 1, Senin = 2, ..., Jumat = 6)
+        $firstDayOffset = ($firstDayOfMonth + 1) % 7;
 
         // Collect events for the selected month
         $monthEvents = [];
