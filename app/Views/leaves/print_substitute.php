@@ -18,23 +18,32 @@ $groupedSchedules = $groupedSchedules ?? [];
     <title>Lembar Rekomendasi Mengajar</title>
     <style>
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
+            @page { size: A4 portrait; margin: 8mm; }
             body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; background: #fff; }
             .no-print { display: none !important; }
             .page-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: repeat(2, 1fr);
-                column-gap: 15mm;
-                row-gap: 10mm;
-                height: 277mm; /* A4 height 297mm - 20mm margins */
+                column-gap: 8mm;
+                row-gap: 5mm;
+                height: 281mm; /* A4 297mm - 16mm margins */
                 page-break-after: always;
                 box-sizing: border-box;
                 margin: 0;
                 padding: 0;
                 box-shadow: none;
-                width: 190mm;
+                width: 194mm;
             }
+            .slip { padding: 8px 10px; }
+            .header { font-size: 13px; margin-bottom: 7px; }
+            .meta { font-size: 11px; margin-bottom: 5px; }
+            .meta td { padding: 2px 0; }
+            .sub-header { font-size: 10px; margin-bottom: 4px; }
+            .data-table th, .data-table td { font-size: 11px; height: 20px; }
+            .note { font-size: 11px; margin-bottom: 8px; }
+            .footer { font-size: 11px; }
+            .footer .arabic { font-size: 15px; }
         }
         
         /* For screen view */
