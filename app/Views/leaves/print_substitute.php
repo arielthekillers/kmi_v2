@@ -19,21 +19,31 @@ $groupedSchedules = $groupedSchedules ?? [];
     <style>
         @media print {
             @page { size: A4 portrait; margin: 8mm; }
-            body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; background: #fff; }
+            /* Reset screen body (flex/padding/bg) agar tidak bocor ke print */
+            body {
+                -webkit-print-color-adjust: exact;
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
             .no-print { display: none !important; }
             .page-container {
-                display: grid;
+                display: grid !important;
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: repeat(2, 1fr);
                 column-gap: 8mm;
                 row-gap: 5mm;
-                height: 281mm; /* A4 297mm - 16mm margins */
-                page-break-after: always;
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-                box-shadow: none;
+                /* 297mm - 16mm margins - ~9mm browser render buffer = 272mm */
+                height: 272mm;
                 width: 194mm;
+                page-break-after: always;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                box-shadow: none !important;
+                overflow: hidden;
             }
             .slip { padding: 8px 10px; }
             .header { font-size: 13px; margin-bottom: 7px; }
