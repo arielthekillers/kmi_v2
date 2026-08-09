@@ -109,10 +109,10 @@ class TanqihModel extends Model {
             $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
         }
 
-        // Sort by Percentage desc
+        // Sort by compliance percentage desc (only verified, not justified)
         uasort($report, function($a, $b) {
-            $pctA = $a['expected'] > 0 ? ($a['verified_all'] / $a['expected']) : 0;
-            $pctB = $b['expected'] > 0 ? ($b['verified_all'] / $b['expected']) : 0;
+            $pctA = $a['expected'] > 0 ? ($a['verified_real'] / $a['expected']) : 0;
+            $pctB = $b['expected'] > 0 ? ($b['verified_real'] / $b['expected']) : 0;
             if ($pctA === $pctB) return strcasecmp($a['name'], $b['name']);
             return $pctB <=> $pctA;
         });

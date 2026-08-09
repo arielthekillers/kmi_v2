@@ -137,8 +137,10 @@
                         </tr>
                     <?php else: ?>
                         <?php foreach ($report as $r): 
-                            $pct = $r['expected'] > 0 ? round(($r['verified_all'] / $r['expected']) * 100) : 0;
-                            $belum = $r['expected'] - $r['verified_all'];
+                            // Kepatuhan hanya dihitung dari slot 'verified' (hadir dikonfirmasi)
+                            // 'justified' hanya penanda beralasan, tidak masuk perhitungan
+                            $pct = $r['expected'] > 0 ? round(($r['verified_real'] / $r['expected']) * 100) : 0;
+                            $belum = $r['expected'] - $r['verified_real'] - $r['justified'];
                             
                             // Color Coding
                             if ($pct >= 75) {

@@ -237,7 +237,8 @@ class TanqihController extends Controller {
                 $stats['total_jadwal'] = $r['expected'] ?? 0;
                 $stats['total_verified'] = $r['verified_real'] ?? 0;
                 $stats['total_justified'] = $r['justified'] ?? 0;
-                $stats['total_belum'] = max(0, $stats['total_jadwal'] - ($r['verified_all'] ?? 0));
+                // Unverified = jadwal - verified (justified tidak masuk kepatuhan, tapi bukan unverified)
+                $stats['total_belum'] = max(0, $stats['total_jadwal'] - ($r['verified_real'] ?? 0) - ($r['justified'] ?? 0));
             }
             
             $data['globalStats'] = $stats;
