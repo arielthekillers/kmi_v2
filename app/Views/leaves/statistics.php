@@ -45,7 +45,7 @@ $slotsTrend = getTrendHtml($totalSlots, $prevSummary['total_slots'] ?? 0, true);
 // Prepare chart labels and data
 $chartLabels = [];
 $chartValues = [];
-$daysOrder = ['Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu', 'Sunday' => 'Ahad'];
+$daysOrder = ['Saturday' => 'Sabtu', 'Sunday' => 'Ahad', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat'];
 $dayCounts = array_fill_keys(array_values($daysOrder), 0);
 
 foreach ($chartData as $row) {
@@ -258,14 +258,19 @@ $chartValues = json_encode(array_values($dayCounts));
                 <?php if (empty($topSubjects)): ?>
                     <div class="text-center text-gray-500 py-8">Belum ada data mata pelajaran.</div>
                 <?php else: ?>
-                    <ul class="space-y-2">
-                        <?php foreach ($topSubjects as $index => $row): ?>
-                            <li class="flex items-center justify-between px-2 py-1">
+                    <ul class="space-y-1.5">
+                        <?php foreach ($topSubjects as $index => $row): 
+                            $kelasLabel = $row['tingkat'] . '-' . $row['abjad'];
+                        ?>
+                            <li class="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center gap-2 overflow-hidden">
                                     <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-100 flex-shrink-0">
                                         <?= $index + 1 ?>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
+                                    <div class="overflow-hidden">
+                                        <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
+                                        <p class="text-[11px] text-gray-400">Kelas <?= htmlspecialchars($kelasLabel) ?></p>
+                                    </div>
                                 </div>
                                 <div class="text-right flex-shrink-0 ml-2">
                                     <span class="text-sm font-bold text-gray-600">

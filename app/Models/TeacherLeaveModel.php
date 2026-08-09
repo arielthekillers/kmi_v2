@@ -273,9 +273,10 @@ class TeacherLeaveModel extends Model {
         if ($filter === 'today') {
             $whereDate = "AND l.date = CURRENT_DATE()";
         } elseif ($filter === 'week') {
-            // Pesantren week starts on Saturday. 
-            // Adding 1 day shifts Saturday to Sunday. Mode 0 starts on Sunday.
-            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 1 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY), 0)";
+            // Pesantren week: Sabtu s.d. Kamis (Jumat libur).
+            // +2 days shifts Saturday→Monday in YEARWEEK(mode 0/Sunday-start),
+            // grouping Sat,Sun,Mon,Tue,Wed,Thu in the same week. Friday falls to next week (no leaves on Fri).
+            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 2 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY), 0)";
         } elseif ($filter === 'month') {
             $whereDate = "AND MONTH(l.date) = MONTH(CURRENT_DATE()) AND YEAR(l.date) = YEAR(CURRENT_DATE())";
         }
@@ -321,14 +322,15 @@ class TeacherLeaveModel extends Model {
         $stmt->execute([$academicYearId]);
         $topSubstitutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Top Subjects
+        // Top Subjects (by subject + class combination)
         $stmt = $this->db->prepare("
-            SELECT s.nama, COUNT(ts.id) as abandon_count
+            SELECT s.nama, k.tingkat, k.abjad, COUNT(ts.id) as abandon_count
             FROM teaching_substitutions ts
             JOIN teacher_leaves l ON ts.leave_id = l.id
             JOIN subjects s ON ts.subject_id = s.id
+            JOIN kelas k ON ts.kelas_id = k.id
             WHERE l.academic_year_id = ? $whereDate
-            GROUP BY s.id, s.nama
+            GROUP BY s.id, s.nama, k.id, k.tingkat, k.abjad
             ORDER BY abandon_count DESC
             LIMIT 5
         ");
@@ -340,7 +342,7 @@ class TeacherLeaveModel extends Model {
         if ($filter === 'today') {
             $wherePrevDate = "AND l.date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)";
         } elseif ($filter === 'week') {
-            $wherePrevDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 1 DAY), 0) = YEARWEEK(DATE_ADD(DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY), INTERVAL 1 DAY), 0)";
+            $wherePrevDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 2 DAY), 0) = YEARWEEK(DATE_ADD(DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY), INTERVAL 2 DAY), 0)";
         } elseif ($filter === 'month') {
             $wherePrevDate = "AND MONTH(l.date) = MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)) AND YEAR(l.date) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))";
         } elseif ($filter === 'year') {
@@ -386,7 +388,7 @@ class TeacherLeaveModel extends Model {
         if ($filter === 'today') {
             $whereDate = "AND l.date = CURRENT_DATE()";
         } elseif ($filter === 'week') {
-            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 1 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY), 0)";
+            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 2 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY), 0)";
         } elseif ($filter === 'month') {
             $whereDate = "AND MONTH(l.date) = MONTH(CURRENT_DATE()) AND YEAR(l.date) = YEAR(CURRENT_DATE())";
         }
@@ -408,7 +410,7 @@ class TeacherLeaveModel extends Model {
         if ($filter === 'today') {
             $whereDate = "AND l.date = CURRENT_DATE()";
         } elseif ($filter === 'week') {
-            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 1 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY), 0)";
+            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 2 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY), 0)";
         } elseif ($filter === 'month') {
             $whereDate = "AND MONTH(l.date) = MONTH(CURRENT_DATE()) AND YEAR(l.date) = YEAR(CURRENT_DATE())";
         }
