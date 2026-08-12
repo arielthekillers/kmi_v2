@@ -9,10 +9,11 @@ class TeacherLeaveModel extends Model {
     protected $table = 'teacher_leaves';
 
     public function create($data) {
-        $stmt = $this->db->prepare("INSERT INTO teacher_leaves (date, teacher_id, academic_year_id, created_by, status) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("INSERT INTO teacher_leaves (date, teacher_id, type, academic_year_id, created_by, status) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['date'],
             $data['teacher_id'],
+            $data['type'] ?? 'izin',
             $this->academic_year_id,
             $data['created_by'] ?? null,
             $data['status'] ?? 'draft'

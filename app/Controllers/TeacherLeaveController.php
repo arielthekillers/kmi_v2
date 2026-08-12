@@ -234,6 +234,7 @@ class TeacherLeaveController extends Controller {
         $teacherId = $_POST['teacher_id'] ?? '';
         $startDate = $_POST['tanggal_mulai'] ?? '';
         $endDate = $_POST['tanggal_selesai'] ?? $startDate;
+        $type = $_POST['type'] ?? 'izin';
         
         if (empty($teacherId) || empty($startDate)) {
             echo json_encode(['success' => false, 'message' => 'Data tidak lengkap']);
@@ -269,6 +270,7 @@ class TeacherLeaveController extends Controller {
             $leaveId = $this->leaveModel->create([
                 'date' => $date,
                 'teacher_id' => $teacherId,
+                'type' => $type,
                 'created_by' => $_SESSION['user_id'] ?? null,
                 'status' => 'published',
                 'academic_year_id' => $academicYearId

@@ -171,7 +171,7 @@ class WeeklyReportController extends Controller {
 
         // 1. Process TeacherLeaves (Izin Mengajar) as the PRIMARY source of truth
         // If they have an approved leave, it overrides whatever is in attendance_logs
-        $leaveSql = "SELECT tl.date as leave_date, tl.teacher_id, ts.kelas_id, ts.hour, ts.substitute_teacher_id, 
+        $leaveSql = "SELECT tl.date as leave_date, tl.teacher_id, tl.type, ts.kelas_id, ts.hour, ts.substitute_teacher_id, 
                             u2.nama as subst_nama
                      FROM teacher_leaves tl 
                      JOIN teaching_substitutions ts ON tl.id = ts.leave_id
@@ -187,8 +187,12 @@ class WeeklyReportController extends Controller {
 
             $slotKey = $leave['leave_date'] . '|' . $leave['kelas_id'] . '|' . $leave['hour'];
             
-            // Count it as izin
-            $report[$tid]['izin']++;
+            // Count it as izin or sakit
+            if ($leave['type'] === 'sakit') {
+                $report[$tid]['sakit']++;
+            } else {
+                $report[$tid]['izin']++;
+            }
             $processedSlots[$slotKey] = true;
 
             // Track substitute stats

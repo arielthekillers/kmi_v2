@@ -196,6 +196,13 @@ $bulanId = [
                 <input type="hidden" id="add_tanggal_mulai" name="tanggal_mulai">
                 <input type="hidden" id="add_tanggal_selesai" name="tanggal_selesai">
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Izin</label>
+                <select name="type" id="add_type" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 outline-none transition" required>
+                    <option value="izin">Izin Kepentingan</option>
+                    <option value="sakit">Sakit</option>
+                </select>
+            </div>
             <div class="flex justify-end gap-3 pt-4">
                 <button type="button" onclick="document.getElementById('modal-tambah-izin').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">Batal</button>
                 <button type="submit" id="btnSubmitTambah" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition-colors flex items-center">
