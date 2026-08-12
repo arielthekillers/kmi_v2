@@ -125,7 +125,12 @@ class WeeklyReportController extends Controller {
         // Determine which days are in the range
         $daysInRange = [];
         $currentDate = $start;
-        while (strtotime($currentDate) <= strtotime($end)) {
+        
+        // Cap the effective end date to today to avoid calculating future expected schedules
+        $today = date('Y-m-d');
+        $effectiveEnd = (strtotime($end) > strtotime($today)) ? $today : $end;
+        
+        while (strtotime($currentDate) <= strtotime($effectiveEnd)) {
             $dayNameEnglish = date('D', strtotime($currentDate));
             $daysInRange[] = [
                 'date' => $currentDate,
@@ -264,8 +269,10 @@ class WeeklyReportController extends Controller {
             }
         }
         
-        // Remove teachers with 0 expected if they don't teach this week
-        $report = array_filter($report, function($r) { return $r['expected'] > 0; });
+        // Remove teachers with 0 expected or 100% attendance (sakit + izin + alfa == 0)
+        $report = array_filter($report, function($r) { 
+            return $r['expected'] > 0 && ($r['sakit'] > 0 || $r['izin'] > 0 || $r['alfa'] > 0); 
+        });
 
         // Sort by nama
         usort($report, function($a, $b) { return strcmp($a['nama'], $b['nama']); });
