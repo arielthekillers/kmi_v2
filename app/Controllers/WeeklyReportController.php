@@ -330,7 +330,7 @@ class WeeklyReportController extends Controller {
         $kelasList = $kelasStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Get student count per class
-        $enrStmt = $db->prepare("SELECT kelas_id, COUNT(student_id) as total FROM student_enrollments WHERE academic_year_id = ? AND status IN ('Active', 'Graduated') GROUP BY kelas_id");
+        $enrStmt = $db->prepare("SELECT kelas_id, COUNT(student_id) as total FROM student_enrollments WHERE academic_year_id = ? AND status = 'Active' GROUP BY kelas_id");
         $enrStmt->execute([$ayId]);
         $enrData = $enrStmt->fetchAll(\PDO::FETCH_KEY_PAIR);
 
