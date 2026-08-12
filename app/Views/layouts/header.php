@@ -233,6 +233,9 @@
                                     <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-file-chart-line text-gray-400"></i> Laporan Piket Keliling
                                     </a>
+                                    <a href="<?= url('/weekly-report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-calendar-todo-fill text-gray-400"></i> Laporan Mingguan
+                                    </a>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -418,6 +421,9 @@
                     </a>
                     <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
+                    </a>
+                    <a href="<?= url('/weekly-report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-calendar-todo-fill mr-2"></i>Laporan Mingguan
                     </a>
                 <?php endif; ?>
 

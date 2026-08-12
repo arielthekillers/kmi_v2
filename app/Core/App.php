@@ -121,6 +121,12 @@ class App
         $this->router->post('/tanqih/verify', ['App\Controllers\TanqihController', 'verify']);
         $this->router->get('/tanqih/report', ['App\Controllers\TanqihController', 'report']);
 
+        // Weekly Report Routes
+        $this->router->get('/weekly-report', ['App\Controllers\WeeklyReportController', 'index']);
+        $this->router->get('/weekly-report/teacher-attendance', ['App\Controllers\WeeklyReportController', 'printTeacherAttendance']);
+        $this->router->get('/weekly-report/student-attendance', ['App\Controllers\WeeklyReportController', 'printStudentAttendance']);
+        $this->router->get('/weekly-report/tanqih', ['App\Controllers\WeeklyReportController', 'printTanqih']);
+
         // Attendance Routes
         $this->router->get('/attendance', ['App\Controllers\AttendanceController', 'index']);
         $this->router->post('/attendance/store', ['App\Controllers\AttendanceController', 'store']);
