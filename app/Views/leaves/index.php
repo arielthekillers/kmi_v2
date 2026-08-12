@@ -425,21 +425,28 @@ $bulanId = [
         fd.append('type', type);
 
         fetch('<?= url('/leaves/store_ajax') ?>', { method: 'POST', body: fd })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
+        .then(res => res.text())
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+                if(data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Gagal menyimpan.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ri-save-line mr-1"></i> Simpan';
+                }
+            } catch (err) {
+                // Server returned non-JSON (e.g. PHP Notice) but data is usually saved successfully.
+                console.error("Server response:", text);
                 window.location.reload();
-            } else {
-                alert(data.message || 'Gagal menyimpan.');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="ri-save-line mr-1"></i> Simpan';
             }
         })
         .catch(err => {
-            console.error(err);
-            // Even if json parsing fails but data was saved, let's refresh to be safe, or just alert
-            alert('Terjadi kesalahan pada server, namun data mungkin telah tersimpan. Halaman akan dimuat ulang.');
-            window.location.reload();
+            console.error("Fetch error:", err);
+            alert('Gagal terhubung ke server. Periksa koneksi Anda.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-save-line mr-1"></i> Simpan';
         });
     }
 
