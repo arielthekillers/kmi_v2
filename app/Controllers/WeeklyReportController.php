@@ -272,8 +272,15 @@ class WeeklyReportController extends Controller {
             return $r['expected'] > 0 && ($r['sakit'] > 0 || $r['izin'] > 0 || $r['alfa'] > 0); 
         });
 
-        // Sort by nama
-        usort($report, function($a, $b) { return strcmp($a['nama'], $b['nama']); });
+        // Sort by highest absences (sakit + izin + alfa) descending, then by name ascending
+        usort($report, function($a, $b) { 
+            $absentA = $a['sakit'] + $a['izin'] + $a['alfa'];
+            $absentB = $b['sakit'] + $b['izin'] + $b['alfa'];
+            if ($absentA === $absentB) {
+                return strcmp($a['nama'], $b['nama']);
+            }
+            return $absentB <=> $absentA;
+        });
 
         // Sort substitutions by count descending
         usort($substitutions, function($a, $b) { return $b['count'] <=> $a['count']; });
