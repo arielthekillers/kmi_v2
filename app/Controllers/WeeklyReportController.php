@@ -169,54 +169,8 @@ class WeeklyReportController extends Controller {
 
         $processedSlots = [];
 
-        // Now process raw logs (actual attendance)
-        foreach ($rawLogs as $log) {
-            $tid = $log['teacher_id'];
-            if (!$tid) continue;
-            
-            // If the teacher has no expected schedule (maybe old data or badal for someone else? Wait, badal is substitute_teacher_id)
-            if (!isset($report[$tid])) {
-                $report[$tid] = [
-                    'nama' => $log['teacher_nama'],
-                    'expected' => 0,
-                    'hadir' => 0,
-                    'sakit' => 0,
-                    'izin' => 0,
-                    'alfa' => 0
-                ];
-            }
-
-            $slotKey = $log['date'] . '|' . $log['kelas_id'] . '|' . $log['hour'];
-            $processedSlots[$slotKey] = true;
-
-            if ($log['status'] === 'hadir') {
-                $report[$tid]['hadir']++;
-            } elseif ($log['status'] === 'substitute') {
-                // The original teacher is replaced. Is it considered Izin or Sakit?
-                // The note usually contains "Izin" or "Sakit" if they used TeacherLeave.
-                // We should check TeacherLeaveModel or just default to Izin if they are substituted.
-                // Wait, if it's 'substitute', the teacher is absent. 
-                // Let's assume it's Izin for now unless we can parse 'sakit' from note.
-                if (stripos($log['note'], 'sakit') !== false) {
-                    $report[$tid]['sakit']++;
-                } else {
-                    $report[$tid]['izin']++;
-                }
-                
-                // Track substitute stats
-                $subId = $log['substitute_teacher_id'];
-                if ($subId) {
-                    if (!isset($substitutions[$subId])) {
-                        $substitutions[$subId] = ['nama' => $log['subst_nama'], 'count' => 0];
-                    }
-                    $substitutions[$subId]['count']++;
-                }
-            } elseif ($log['status'] === 'alpha') {
-                $report[$tid]['alfa']++;
-            }
-        }
-
-        // Process TeacherLeaves (Izin Mengajar) that might not be in attendance_logs yet
+        // 1. Process TeacherLeaves (Izin Mengajar) as the PRIMARY source of truth
+        // If they have an approved leave, it overrides whatever is in attendance_logs
         $leaveSql = "SELECT tl.date as leave_date, tl.teacher_id, ts.kelas_id, ts.hour, ts.substitute_teacher_id, 
                             u2.nama as subst_nama
                      FROM teacher_leaves tl 
@@ -233,10 +187,7 @@ class WeeklyReportController extends Controller {
 
             $slotKey = $leave['leave_date'] . '|' . $leave['kelas_id'] . '|' . $leave['hour'];
             
-            // If already processed from attendance_logs, don't double count
-            if (isset($processedSlots[$slotKey])) continue;
-
-            // Otherwise, count it as izin
+            // Count it as izin
             $report[$tid]['izin']++;
             $processedSlots[$slotKey] = true;
 
@@ -247,6 +198,53 @@ class WeeklyReportController extends Controller {
                     $substitutions[$subId] = ['nama' => $leave['subst_nama'], 'count' => 0];
                 }
                 $substitutions[$subId]['count']++;
+            }
+        }
+
+        // 2. Process raw logs (actual daily attendance)
+        foreach ($rawLogs as $log) {
+            $tid = $log['teacher_id'];
+            if (!$tid) continue;
+            
+            // If the teacher has no expected schedule
+            if (!isset($report[$tid])) {
+                $report[$tid] = [
+                    'nama' => $log['teacher_nama'],
+                    'expected' => 0,
+                    'hadir' => 0,
+                    'sakit' => 0,
+                    'izin' => 0,
+                    'alfa' => 0
+                ];
+            }
+
+            $slotKey = $log['date'] . '|' . $log['kelas_id'] . '|' . $log['hour'];
+            
+            // If already processed by teacher_leaves (meaning they have an approved leave), SKIP!
+            // This prevents human error where Admin marks them as 'hadir' despite having an approved leave.
+            if (isset($processedSlots[$slotKey])) continue;
+
+            $processedSlots[$slotKey] = true;
+
+            if ($log['status'] === 'hadir') {
+                $report[$tid]['hadir']++;
+            } elseif ($log['status'] === 'substitute') {
+                if (stripos($log['note'], 'sakit') !== false) {
+                    $report[$tid]['sakit']++;
+                } else {
+                    $report[$tid]['izin']++;
+                }
+                
+                // Track substitute stats
+                $subId = $log['substitute_teacher_id'];
+                if ($subId) {
+                    if (!isset($substitutions[$subId])) {
+                        $substitutions[$subId] = ['nama' => $log['subst_nama'], 'count' => 0];
+                    }
+                    $substitutions[$subId]['count']++;
+                }
+            } elseif ($log['status'] === 'alpha') {
+                $report[$tid]['alfa']++;
             }
         }
 
