@@ -172,7 +172,7 @@ $bulanId = [
 <div id="modal-tambah-izin" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('modal-tambah-izin').classList.add('hidden')"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-visible">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <i class="ri-calendar-add-line text-indigo-600"></i> Buat Izin Baru
             </h3>
@@ -407,6 +407,7 @@ $bulanId = [
         const teacher_id = document.getElementById('add_teacher_id').value;
         const mulai = document.getElementById('add_tanggal_mulai').value;
         const selesai = document.getElementById('add_tanggal_selesai').value;
+        const type = document.getElementById('add_type').value;
         
         if(!teacher_id || !mulai) {
             alert("Harap isi pengajar dan tanggal!");
@@ -421,6 +422,7 @@ $bulanId = [
         fd.append('teacher_id', teacher_id);
         fd.append('tanggal_mulai', mulai);
         fd.append('tanggal_selesai', selesai);
+        fd.append('type', type);
 
         fetch('<?= url('/leaves/store_ajax') ?>', { method: 'POST', body: fd })
         .then(res => res.json())
@@ -432,6 +434,12 @@ $bulanId = [
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ri-save-line mr-1"></i> Simpan';
             }
+        })
+        .catch(err => {
+            console.error(err);
+            // Even if json parsing fails but data was saved, let's refresh to be safe, or just alert
+            alert('Terjadi kesalahan pada server, namun data mungkin telah tersimpan. Halaman akan dimuat ulang.');
+            window.location.reload();
         });
     }
 
