@@ -272,14 +272,22 @@ class WeeklyReportController extends Controller {
             return $r['expected'] > 0 && ($r['sakit'] > 0 || $r['izin'] > 0 || $r['alfa'] > 0); 
         });
 
-        // Sort by highest absences (sakit + izin + alfa) descending, then by name ascending
+        // Sort by % Kehadiran ASC (worse attendance first), then absolute absences DESC, then by nama ASC
         usort($report, function($a, $b) { 
+            // 1. Sort by % Kehadiran ASC
+            if ($a['pct_hadir'] !== $b['pct_hadir']) {
+                return $a['pct_hadir'] <=> $b['pct_hadir'];
+            }
+            
+            // 2. Sort by total absolute absences DESC (more hours missed = worse)
             $absentA = $a['sakit'] + $a['izin'] + $a['alfa'];
             $absentB = $b['sakit'] + $b['izin'] + $b['alfa'];
-            if ($absentA === $absentB) {
-                return strcmp($a['nama'], $b['nama']);
+            if ($absentA !== $absentB) {
+                return $absentB <=> $absentA;
             }
-            return $absentB <=> $absentA;
+            
+            // 3. Fallback to Nama ASC
+            return strcmp($a['nama'], $b['nama']);
         });
 
         // Sort substitutions by count descending
