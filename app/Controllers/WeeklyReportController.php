@@ -105,6 +105,11 @@ class WeeklyReportController extends Controller {
         // I will write a custom query in the controller to get expected schedules per teacher for the given days.
         $db = \App\Core\Database::getInstance()->getConnection();
         $ayId = $_SESSION['academic_year_id'] ?? null;
+        if (!$ayId) {
+            $ayModel = new \App\Models\AcademicYearModel();
+            $activeAy = $ayModel->getActive();
+            $ayId = $activeAy['id'] ?? null;
+        }
         
         $schedulesSql = "SELECT s.*, u.nama as teacher_nama FROM schedules s JOIN users u ON s.teacher_id = u.id WHERE s.academic_year_id = ?";
         $stmt = $db->prepare($schedulesSql);
@@ -157,6 +162,8 @@ class WeeklyReportController extends Controller {
             }
         }
 
+        $processedSlots = [];
+
         // Now process raw logs (actual attendance)
         foreach ($rawLogs as $log) {
             $tid = $log['teacher_id'];
@@ -173,6 +180,9 @@ class WeeklyReportController extends Controller {
                     'alfa' => 0
                 ];
             }
+
+            $slotKey = $log['date'] . '|' . $log['kelas_id'] . '|' . $log['hour'];
+            $processedSlots[$slotKey] = true;
 
             if ($log['status'] === 'hadir') {
                 $report[$tid]['hadir']++;
@@ -198,6 +208,40 @@ class WeeklyReportController extends Controller {
                 }
             } elseif ($log['status'] === 'alpha') {
                 $report[$tid]['alfa']++;
+            }
+        }
+
+        // Process TeacherLeaves (Izin Mengajar) that might not be in attendance_logs yet
+        $leaveSql = "SELECT tl.date as leave_date, tl.teacher_id, ts.kelas_id, ts.hour, ts.substitute_teacher_id, 
+                            u2.nama as subst_nama
+                     FROM teacher_leaves tl 
+                     JOIN teaching_substitutions ts ON tl.id = ts.leave_id
+                     LEFT JOIN users u2 ON ts.substitute_teacher_id = u2.id
+                     WHERE tl.date BETWEEN ? AND ? AND tl.academic_year_id = ?";
+        $leaveStmt = $db->prepare($leaveSql);
+        $leaveStmt->execute([$start, $end, $ayId]);
+        $teacherLeaves = $leaveStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        foreach ($teacherLeaves as $leave) {
+            $tid = $leave['teacher_id'];
+            if (!$tid || !isset($report[$tid])) continue;
+
+            $slotKey = $leave['leave_date'] . '|' . $leave['kelas_id'] . '|' . $leave['hour'];
+            
+            // If already processed from attendance_logs, don't double count
+            if (isset($processedSlots[$slotKey])) continue;
+
+            // Otherwise, count it as izin
+            $report[$tid]['izin']++;
+            $processedSlots[$slotKey] = true;
+
+            // Track substitute stats
+            $subId = $leave['substitute_teacher_id'];
+            if ($subId) {
+                if (!isset($substitutions[$subId])) {
+                    $substitutions[$subId] = ['nama' => $leave['subst_nama'], 'count' => 0];
+                }
+                $substitutions[$subId]['count']++;
             }
         }
 
@@ -251,6 +295,12 @@ class WeeklyReportController extends Controller {
         if (!$start || !$end) die('Periode tidak valid');
 
         $ayId = $_SESSION['academic_year_id'] ?? null;
+        if (!$ayId) {
+            $ayModel = new \App\Models\AcademicYearModel();
+            $activeAy = $ayModel->getActive();
+            $ayId = $activeAy['id'] ?? null;
+        }
+
         $db = \App\Core\Database::getInstance()->getConnection();
 
         // Get all classes
