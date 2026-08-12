@@ -45,7 +45,7 @@ class WeeklyReportController extends Controller {
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
 
-        $options = [];
+        $groupedOptions = [];
         $thu = $currentThu;
         
         // Generate options for the past 24 weeks (approx 6 months)
@@ -54,18 +54,28 @@ class WeeklyReportController extends Controller {
             $month = (int)date('n', strtotime($thu));
             $year = (int)date('Y', strtotime($thu));
             
+            $monthKey = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+            $monthLabel = $bulanId[$month] . ' ' . $year;
+            
+            if (!isset($groupedOptions[$monthKey])) {
+                $groupedOptions[$monthKey] = [
+                    'label' => $monthLabel,
+                    'weeks' => []
+                ];
+            }
+            
             $firstThu = date('Y-m-d', strtotime('first Thursday of ' . date('F Y', strtotime($thu))));
             $diffDays = (strtotime($thu) - strtotime($firstThu)) / 86400;
             $weekNum = round($diffDays / 7) + 1;
             
-            $label = $bulanId[$month] . ' ' . $year . ' - Minggu ke-' . $weekNum;
+            $label = "Minggu ke-$weekNum";
             if ($i === 0) {
-                $label = "Minggu Ini ($label)";
+                $label .= " (Minggu Ini)";
             } elseif ($i === 1) {
-                $label = "Minggu Lalu ($label)";
+                $label .= " (Minggu Lalu)";
             }
             
-            $options[] = [
+            $groupedOptions[$monthKey]['weeks'][] = [
                 'value' => $sat . '|' . $thu,
                 'label' => $label
             ];
@@ -73,7 +83,7 @@ class WeeklyReportController extends Controller {
             $thu = date('Y-m-d', strtotime('-7 days', strtotime($thu)));
         }
         
-        return $options;
+        return $groupedOptions;
     }
 
     public function printTeacherAttendance() {
