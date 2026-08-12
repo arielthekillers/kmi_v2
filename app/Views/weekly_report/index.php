@@ -11,31 +11,32 @@
                 Laporan Mingguan
             </h1>
             <p class="text-sm text-gray-500 mt-1">
-                Pilih periode tanggal (Sabtu - Kamis) untuk mencetak laporan mingguan.
+                Pilih minggu untuk mencetak laporan mingguan.
             </p>
         </div>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai (Sabtu)</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="ri-calendar-event-line text-gray-400"></i>
-                    </div>
-                    <input type="text" id="start-date" value="<?= htmlspecialchars($default_start) ?>" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm datepicker transition-shadow" placeholder="Pilih Tanggal Mulai">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Minggu Laporan</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ri-calendar-event-line text-gray-400"></i>
+                </div>
+                <select id="week-select" class="block w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-shadow appearance-none cursor-pointer bg-white">
+                    <?php foreach ($week_options as $opt): ?>
+                        <option value="<?= htmlspecialchars($opt['value']) ?>">
+                            <?= htmlspecialchars($opt['label']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <i class="ri-arrow-down-s-line text-gray-400"></i>
                 </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Selesai (Kamis)</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="ri-calendar-event-line text-gray-400"></i>
-                    </div>
-                    <input type="text" id="end-date" value="<?= htmlspecialchars($default_end) ?>" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm datepicker transition-shadow" placeholder="Pilih Tanggal Selesai">
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 mt-2">
+                * Laporan dihitung dari hari Sabtu sampai dengan hari Kamis.
+            </p>
         </div>
     </div>
 
@@ -89,22 +90,14 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        flatpickr(".datepicker", {
-            dateFormat: "Y-m-d",
-            locale: "id"
-        });
-    });
-
     function printReport(type) {
-        const start = document.getElementById('start-date').value;
-        const end = document.getElementById('end-date').value;
-
-        if (!start || !end) {
-            alert('Silakan pilih tanggal mulai dan selesai terlebih dahulu.');
+        const weekSelect = document.getElementById('week-select').value;
+        if (!weekSelect) {
+            alert('Silakan pilih minggu terlebih dahulu.');
             return;
         }
 
+        const [start, end] = weekSelect.split('|');
         const url = `<?= url('/weekly-report/') ?>${type}?start=${start}&end=${end}`;
         window.open(url, '_blank');
     }

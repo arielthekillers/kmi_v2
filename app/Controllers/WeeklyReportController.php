@@ -16,16 +16,64 @@ class WeeklyReportController extends Controller {
             redirect('/?error=Unauthorized');
         }
 
-        $today = date('Y-m-d');
-        // If today is Friday or Saturday, maybe the last week's report is wanted. Let's just default to last Thursday
-        $thursday = date('Y-m-d', strtotime('last Thursday', strtotime($today . ' +1 day')));
-        $saturday = date('Y-m-d', strtotime('-5 days', strtotime($thursday)));
+        $weekOptions = $this->generateWeeksList();
         
         $this->view('weekly_report/index', [
-            'default_start' => $saturday,
-            'default_end' => $thursday,
+            'week_options' => $weekOptions,
             'title' => 'Laporan Mingguan'
         ]);
+    }
+
+    private function generateWeeksList() {
+        $dayOfWeek = date('w'); // 0 (Sun) to 6 (Sat)
+        
+        // If it's Friday (5), the current week's Thursday was yesterday.
+        // If it's Saturday (6), the current week's Thursday is +5 days.
+        // For Sun (0) to Thu (4), the current week's Thursday is + (4 - $dayOfWeek) days.
+        if ($dayOfWeek == 5) {
+            $currentThu = date('Y-m-d', strtotime('-1 day'));
+        } elseif ($dayOfWeek == 6) {
+            $currentThu = date('Y-m-d', strtotime('+5 days'));
+        } else {
+            $diff = 4 - $dayOfWeek;
+            $currentThu = date('Y-m-d', strtotime("+$diff days"));
+        }
+        
+        $bulanId = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $options = [];
+        $thu = $currentThu;
+        
+        // Generate options for the past 24 weeks (approx 6 months)
+        for ($i = 0; $i < 24; $i++) {
+            $sat = date('Y-m-d', strtotime('-5 days', strtotime($thu)));
+            $month = (int)date('n', strtotime($thu));
+            $year = (int)date('Y', strtotime($thu));
+            
+            $firstThu = date('Y-m-d', strtotime('first Thursday of ' . date('F Y', strtotime($thu))));
+            $diffDays = (strtotime($thu) - strtotime($firstThu)) / 86400;
+            $weekNum = round($diffDays / 7) + 1;
+            
+            $label = $bulanId[$month] . ' ' . $year . ' - Minggu ke-' . $weekNum;
+            if ($i === 0) {
+                $label = "Minggu Ini ($label)";
+            } elseif ($i === 1) {
+                $label = "Minggu Lalu ($label)";
+            }
+            
+            $options[] = [
+                'value' => $sat . '|' . $thu,
+                'label' => $label
+            ];
+            
+            $thu = date('Y-m-d', strtotime('-7 days', strtotime($thu)));
+        }
+        
+        return $options;
     }
 
     public function printTeacherAttendance() {
