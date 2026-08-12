@@ -255,12 +255,9 @@ class WeeklyReportController extends Controller {
         // Calculate %
         foreach ($report as $tid => &$data) {
             if ($data['expected'] > 0) {
-                // Some alpha might be because they didn't log.
-                // Wait, if expected > 0 and no log exists, it means they haven't been logged yet.
-                // Should we assume ALFA for missing logs in the past date range?
-                // The system has attendance_logs. If it's missing, it's missing. We can calculate Alfa = Expected - (Hadir + Sakit + Izin).
-                // Actually, let's just use:
-                $data['alfa'] = max(0, $data['expected'] - ($data['hadir'] + $data['sakit'] + $data['izin']));
+                // We assume any hour NOT explicitly marked as absent (sakit, izin, alfa) is HADIR.
+                $totalAbsent = $data['sakit'] + $data['izin'] + $data['alfa'];
+                $data['hadir'] = max(0, $data['expected'] - $totalAbsent);
                 
                 $data['pct_s'] = round(($data['sakit'] / $data['expected']) * 100, 2);
                 $data['pct_i'] = round(($data['izin'] / $data['expected']) * 100, 2);
