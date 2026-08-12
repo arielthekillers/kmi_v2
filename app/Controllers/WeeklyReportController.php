@@ -163,13 +163,13 @@ class WeeklyReportController extends Controller {
         }
         
         // Remove teachers with 0 expected if they don't teach this week
-        $report = array_filter($report, fn($r) => $r['expected'] > 0);
+        $report = array_filter($report, function($r) { return $r['expected'] > 0; });
 
         // Sort by nama
-        usort($report, fn($a, $b) => strcmp($a['nama'], $b['nama']));
+        usort($report, function($a, $b) { return strcmp($a['nama'], $b['nama']); });
 
         // Sort substitutions by count descending
-        usort($substitutions, fn($a, $b) => $b['count'] <=> $a['count']);
+        usort($substitutions, function($a, $b) { return $b['count'] <=> $a['count']; });
         
         // Keep top 10 substitutions
         $topSubstitutions = array_slice($substitutions, 0, 10);
@@ -273,7 +273,7 @@ class WeeklyReportController extends Controller {
 
         // Get Top 3 Highest and Lowest
         $sortedByHadir = $report;
-        usort($sortedByHadir, fn($a, $b) => $b['pct_hadir'] <=> $a['pct_hadir']);
+        usort($sortedByHadir, function($a, $b) { return $b['pct_hadir'] <=> $a['pct_hadir']; });
         
         $top3 = array_slice($sortedByHadir, 0, 3);
         $bottom3 = array_slice(array_reverse($sortedByHadir), 0, 3);
@@ -339,7 +339,7 @@ class WeeklyReportController extends Controller {
         });
 
         // Filter highest (100% or top 10)
-        $highest = array_filter($finalReport, fn($r) => $r['pct'] == 100);
+        $highest = array_filter($finalReport, function($r) { return $r['pct'] == 100; });
         if (empty($highest)) {
             $highest = array_slice($finalReport, 0, 10);
         }
