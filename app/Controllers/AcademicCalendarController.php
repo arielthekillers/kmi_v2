@@ -90,6 +90,9 @@ class AcademicCalendarController extends Controller {
             $nextYear++;
         }
 
+        $kelasModel = new \App\Models\KelasModel();
+        $allKelas = $kelasModel->findAllActive();
+
         renderHeader('Kalender Akademik');
         $this->view('academic_calendar/index', [
             'activeYear'     => $activeYear,
@@ -106,6 +109,7 @@ class AcademicCalendarController extends Controller {
             'prevYear'       => $prevYear,
             'nextMonth'      => $nextMonth,
             'nextYear'       => $nextYear,
+            'allKelas'       => $allKelas,
         ]);
         renderFooter();
     }
@@ -133,7 +137,46 @@ class AcademicCalendarController extends Controller {
             return;
         }
 
-        $this->calendarModel->create($data);
+        $calendarId = $this->calendarModel->create($data);
+        
+        if ($calendarId && isset($_POST['is_override'])) {
+            $is_full_day = isset($_POST['is_full_day']) ? 1 : 0;
+            $hour_start = (int)($_POST['hour_start'] ?? 0);
+            $hour_end = (int)($_POST['hour_end'] ?? 0);
+            $target_type = $_POST['target_type'] ?? 'sekolah';
+            $kelasIds = [];
+            
+            $kelasModel = new \App\Models\KelasModel();
+            $allKelas = $kelasModel->findAllActive();
+
+            if ($target_type === 'sekolah') {
+                $kelasIds = array_column($allKelas, 'id');
+            } elseif ($target_type === 'angkatan') {
+                $tingkat = $_POST['target_tingkat'] ?? '';
+                foreach ($allKelas as $k) {
+                    if ((string)$k['tingkat'] === (string)$tingkat) {
+                        $kelasIds[] = $k['id'];
+                    }
+                }
+            } elseif ($target_type === 'kelas') {
+                $kelasIds = $_POST['target_kelas'] ?? [];
+            }
+            
+            if (!empty($kelasIds)) {
+                $activityModel = new \App\Models\ActivityModel();
+                $activityData = [
+                    'name' => $data['keterangan'],
+                    'type' => $data['kategori'],
+                    'start_date' => $data['tanggal_mulai'],
+                    'end_date' => $data['tanggal_selesai'] ?: $data['tanggal_mulai'],
+                    'is_full_day' => $is_full_day,
+                    'hour_start' => $hour_start,
+                    'hour_end' => $hour_end
+                ];
+                $activityModel->createActivity($activityData, $kelasIds, $calendarId);
+            }
+        }
+
         add_flash('Event berhasil ditambahkan ke kalender.', 'success');
         $this->redirect('/academic-calendar');
     }
@@ -153,9 +196,28 @@ class AcademicCalendarController extends Controller {
             return;
         }
 
+        // Fetch existing override logic
+        $activityModel = new \App\Models\ActivityModel();
+        $stmt = $activityModel->getDb()->prepare("SELECT * FROM school_activities WHERE academic_calendar_id = ?");
+        $stmt->execute([$id]);
+        $existingOverride = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $existingTargets = [];
+        if ($existingOverride) {
+            $stmt = $activityModel->getDb()->prepare("SELECT kelas_id FROM activity_targets WHERE activity_id = ?");
+            $stmt->execute([$existingOverride['id']]);
+            $existingTargets = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        }
+
+        $kelasModel = new \App\Models\KelasModel();
+        $allKelas = $kelasModel->findAllActive();
+
         renderHeader('Edit Event Kalender');
         $this->view('academic_calendar/edit', [
-            'event' => $event,
+            'event'            => $event,
+            'existingOverride' => $existingOverride,
+            'existingTargets'  => $existingTargets,
+            'allKelas'         => $allKelas,
         ]);
         renderFooter();
     }
@@ -186,6 +248,51 @@ class AcademicCalendarController extends Controller {
         if ($existing) {
             $data['academic_year_id'] = $existing['academic_year_id'];
             $this->calendarModel->update($id, $data);
+            
+            // Handle Override Logic Update
+            $activityModel = new \App\Models\ActivityModel();
+            
+            // First, delete any existing override for this calendar_id
+            $stmt = $activityModel->getDb()->prepare("DELETE FROM school_activities WHERE academic_calendar_id = ?");
+            $stmt->execute([$id]);
+            
+            if (isset($_POST['is_override'])) {
+                $is_full_day = isset($_POST['is_full_day']) ? 1 : 0;
+                $hour_start = (int)($_POST['hour_start'] ?? 0);
+                $hour_end = (int)($_POST['hour_end'] ?? 0);
+                $target_type = $_POST['target_type'] ?? 'sekolah';
+                $kelasIds = [];
+                
+                $kelasModel = new \App\Models\KelasModel();
+                $allKelas = $kelasModel->findAllActive();
+
+                if ($target_type === 'sekolah') {
+                    $kelasIds = array_column($allKelas, 'id');
+                } elseif ($target_type === 'angkatan') {
+                    $tingkat = $_POST['target_tingkat'] ?? '';
+                    foreach ($allKelas as $k) {
+                        if ((string)$k['tingkat'] === (string)$tingkat) {
+                            $kelasIds[] = $k['id'];
+                        }
+                    }
+                } elseif ($target_type === 'kelas') {
+                    $kelasIds = $_POST['target_kelas'] ?? [];
+                }
+                
+                if (!empty($kelasIds)) {
+                    $activityData = [
+                        'name' => $data['keterangan'],
+                        'type' => $data['kategori'],
+                        'start_date' => $data['tanggal_mulai'],
+                        'end_date' => $data['tanggal_selesai'] ?: $data['tanggal_mulai'],
+                        'is_full_day' => $is_full_day,
+                        'hour_start' => $hour_start,
+                        'hour_end' => $hour_end
+                    ];
+                    $activityModel->createActivity($activityData, $kelasIds, $id);
+                }
+            }
+
             add_flash('Event berhasil diperbarui.', 'success');
         }
 

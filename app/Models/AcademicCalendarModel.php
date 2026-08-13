@@ -39,13 +39,15 @@ class AcademicCalendarModel extends Model {
                 (academic_year_id, tanggal_mulai, tanggal_selesai, keterangan, kategori)
             VALUES (?, ?, ?, ?, ?)
         ");
-        return $stmt->execute([
+        $success = $stmt->execute([
             $data['academic_year_id'],
             $data['tanggal_mulai'],
             $data['tanggal_selesai'] ?: null,
             $data['keterangan'],
             $data['kategori'],
         ]);
+        
+        return $success ? $this->db->lastInsertId() : false;
     }
 
     /**

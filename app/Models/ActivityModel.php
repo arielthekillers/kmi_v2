@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Models;
+
+use App\Core\Model;
+use PDO;
+
+class ActivityModel extends Model {
+    protected $table = 'school_activities';
+
+    /**
+     * Activity Resolver Pusat
+     * Menentukan apakah suatu kelas pada tanggal dan jam tertentu terdampak oleh kegiatan sekolah.
+     * Logika ini digunakan sebagai Single Source of Truth oleh semua modul (Jurnal, Absensi, Statistik).
+     * 
+     * @param string $date (Y-m-d)
+     * @param int $kelasId
+     * @param int $hour
+     * @return array ['affected' => bool, 'activity_id' => int|null, 'activity_name' => string|null]
+     */
+    public function getEffectiveSchedule($date, $kelasId, $hour) {
+        // Cek apakah hari tersebut adalah hari Jumat (Libur Mingguan)
+        $dayOfWeek = date('w', strtotime($date));
+        if ($dayOfWeek == 5) { // 5 adalah hari Jumat
+            return [
+                'affected' => true,
+                'activity_id' => null,
+                'activity_name' => 'Libur Mingguan (Jumat)'
+            ];
+        }
+
+        // Cari kegiatan yang cocok dengan tanggal dan kelas (berkat ekspansi target)
+        $stmt = $this->db->prepare("
+            SELECT a.id, a.name, a.is_full_day
+            FROM school_activities a
+            JOIN activity_targets t ON a.id = t.activity_id
+            WHERE t.kelas_id = ? 
+              AND ? BETWEEN a.start_date AND a.end_date
+        ");
+        $stmt->execute([$kelasId, $date]);
+        
+        $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($activities as $activity) {
+            // Jika kegiatan berlangsung sehari penuh (full day), jam berapapun pasti terdampak
+            if ($activity['is_full_day']) {
+                return [
+                    'affected' => true,
+                    'activity_id' => $activity['id'],
+                    'activity_name' => $activity['name']
+                ];
+            }
+            
+            // Jika kegiatan hanya berlangsung pada jam tertentu, cek apakah jam saat ini termasuk
+            $stmtHour = $this->db->prepare("
+                SELECT 1 
+                FROM activity_hours 
+                WHERE activity_id = ? 
+                  AND ? BETWEEN hour_start AND hour_end
+                LIMIT 1
+            ");
+            $stmtHour->execute([$activity['id'], $hour]);
+            
+            if ($stmtHour->fetchColumn()) {
+                return [
+                    'affected' => true,
+                    'activity_id' => $activity['id'],
+                    'activity_name' => $activity['name']
+                ];
+            }
+        }
+
+        // Jika tidak ada kegiatan yang relevan, KBM berjalan normal (efektif)
+        return [
+            'affected' => false,
+            'activity_id' => null,
+            'activity_name' => null
+        ];
+    }
+
+    /**
+     * Menyimpan data kegiatan beserta jam dan target kelasnya dalam satu transaksi.
+     */
+    public function createActivity($data, $kelasIds, $academic_calendar_id = null) {
+        if (!$this->academic_year_id) {
+            throw new \Exception("Tidak ada tahun ajaran aktif.");
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Insert school_activities
+            $stmtAct = $this->db->prepare("
+                INSERT INTO school_activities (academic_year_id, academic_calendar_id, name, type, start_date, end_date, is_full_day)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmtAct->execute([
+                $this->academic_year_id,
+                $academic_calendar_id,
+                $data['name'],
+                $data['type'],
+                $data['start_date'],
+                $data['end_date'],
+                $data['is_full_day']
+            ]);
+            
+            $activityId = $this->db->lastInsertId();
+
+            // 2. Insert activity_hours
+            if (!$data['is_full_day'] && $data['hour_start'] > 0 && $data['hour_end'] > 0) {
+                $stmtHours = $this->db->prepare("INSERT INTO activity_hours (activity_id, hour_start, hour_end) VALUES (?, ?, ?)");
+                $stmtHours->execute([$activityId, $data['hour_start'], $data['hour_end']]);
+            }
+
+            // 3. Insert activity_targets
+            if (!empty($kelasIds)) {
+                // Menggunakan INSERT IGNORE untuk menangani perlindungan Unique Key secara diam-diam
+                $stmtTarget = $this->db->prepare("INSERT IGNORE INTO activity_targets (activity_id, kelas_id) VALUES (?, ?)");
+                foreach ($kelasIds as $kid) {
+                    if ($kid) {
+                        $stmtTarget->execute([$activityId, $kid]);
+                    }
+                }
+            }
+
+            $this->db->commit();
+            return $activityId;
+
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function getAllActivities() {
+        $stmt = $this->db->prepare("
+            SELECT * FROM school_activities 
+            WHERE academic_year_id = ? 
+            ORDER BY start_date DESC
+        ");
+        $stmt->execute([$this->academic_year_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}

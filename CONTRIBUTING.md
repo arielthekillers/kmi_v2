@@ -30,3 +30,6 @@ Pastikan Anda menggunakan format berikut setiap kali melakukan commit, dan **pes
 * `docs: update README`
 
 Dengan mengikuti standar ini, proyek akan lebih mudah ditelusuri riwayat perubahannya dan mempermudah kerja sama dalam tim.
+
+## Aturan Khusus (AI/Agent)
+**PENTING**: Dilarang keras melakukan `git commit` (ataupun `git push`) sebelum ada perintah/instruksi eksplisit dari *User*. Hal ini bertujuan untuk menghindari jumlah *commit* yang berlebihan, *history* yang kotor, serta risiko *force push* ketika suatu masalah (*bug/feature*) belum benar-benar selesai secara tuntas.

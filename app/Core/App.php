@@ -196,6 +196,7 @@ class App
         $this->router->post('/academic-calendar/update', ['App\Controllers\AcademicCalendarController', 'update']);
         $this->router->get('/academic-calendar/delete', ['App\Controllers\AcademicCalendarController', 'delete']);
 
+
         // Teacher Leaves (Izin Mengajar)
         $this->router->get('/leaves', ['App\Controllers\TeacherLeaveController', 'index']);
         $this->router->post('/leaves/delete', ['App\Controllers\TeacherLeaveController', 'delete']);
