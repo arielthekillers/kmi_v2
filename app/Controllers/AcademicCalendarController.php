@@ -198,15 +198,23 @@ class AcademicCalendarController extends Controller {
 
         // Fetch existing override logic
         $activityModel = new \App\Models\ActivityModel();
-        $stmt = $activityModel->getDb()->prepare("SELECT * FROM school_activities WHERE academic_calendar_id = ?");
-        $stmt->execute([$id]);
+        $stmt = $activityModel->query("SELECT * FROM school_activities WHERE academic_calendar_id = ?", [$id]);
         $existingOverride = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         $existingTargets = [];
+        $hourStart = null;
+        $hourEnd = null;
         if ($existingOverride) {
-            $stmt = $activityModel->getDb()->prepare("SELECT kelas_id FROM activity_targets WHERE activity_id = ?");
-            $stmt->execute([$existingOverride['id']]);
+            $stmt = $activityModel->query("SELECT kelas_id FROM activity_targets WHERE activity_id = ?", [$existingOverride['id']]);
             $existingTargets = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+            // Fetch hour duration from activity_hours
+            $stmt = $activityModel->query("SELECT hour_start, hour_end FROM activity_hours WHERE activity_id = ?", [$existingOverride['id']]);
+            $hours = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($hours) {
+                $hourStart = $hours['hour_start'];
+                $hourEnd = $hours['hour_end'];
+            }
         }
 
         $kelasModel = new \App\Models\KelasModel();
@@ -218,6 +226,8 @@ class AcademicCalendarController extends Controller {
             'existingOverride' => $existingOverride,
             'existingTargets'  => $existingTargets,
             'allKelas'         => $allKelas,
+            'hourStart'        => $hourStart,
+            'hourEnd'          => $hourEnd,
         ]);
         renderFooter();
     }
@@ -253,14 +263,13 @@ class AcademicCalendarController extends Controller {
             $activityModel = new \App\Models\ActivityModel();
             
             // First, delete any existing override for this calendar_id
-            $stmt = $activityModel->getDb()->prepare("DELETE FROM school_activities WHERE academic_calendar_id = ?");
-            $stmt->execute([$id]);
+            $activityModel->query("DELETE FROM school_activities WHERE academic_calendar_id = ?", [$id]);
             
             if (isset($_POST['is_override'])) {
                 $is_full_day = isset($_POST['is_full_day']) ? 1 : 0;
                 $hour_start = (int)($_POST['hour_start'] ?? 0);
                 $hour_end = (int)($_POST['hour_end'] ?? 0);
-                $target_type = $_POST['target_type'] ?? 'sekolah';
+                $target_type = $_POST['target_type'] ?? 'kelas';
                 $kelasIds = [];
                 
                 $kelasModel = new \App\Models\KelasModel();

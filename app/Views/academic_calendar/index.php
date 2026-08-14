@@ -297,54 +297,61 @@ $isAdmin = auth_get_role() === 'admin';
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('modal-tambah').classList.add('hidden')"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <i class="ri-calendar-add-line text-indigo-600"></i>
+        <div class="flex items-center justify-between px-6 py-3 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="ri-calendar-add-line text-indigo-600 text-lg"></i>
                 Tambah Kegiatan
             </h3>
             <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"
-                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                 <i class="ri-close-line text-lg"></i>
             </button>
         </div>
 
         <!-- Form -->
-        <form method="POST" action="<?= url('/academic-calendar/store') ?>" class="px-6 py-5 space-y-4">
+        <form method="POST" action="<?= url('/academic-calendar/store') ?>" class="px-6 pt-3.5 pb-5 space-y-4">
             <?= csrf_token_field() ?>
 
             <!-- Keterangan -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nama / Keterangan Kegiatan <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Nama / Keterangan Kegiatan <span class="text-red-500">*</span></label>
                 <input type="text" name="keterangan" required placeholder="cth: Ulangan Umum Pertengahan Tahun"
-                    class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                    class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium text-gray-800">
             </div>
 
             <!-- Tanggal -->
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Tanggal Mulai <span class="text-red-500">*</span></label>
                     <input type="date" name="tanggal_mulai" id="add-tanggal-mulai" required
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium text-gray-800">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai <span class="text-gray-400 text-xs">(opsional)</span></label>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Tanggal Selesai <span class="text-gray-400 lowercase italic">(opsional)</span></label>
                     <input type="date" name="tanggal_selesai" id="add-tanggal-selesai"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium text-gray-800">
                 </div>
             </div>
 
             <!-- Kategori -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Kategori <span class="text-red-500">*</span></label>
-                <div class="flex flex-wrap gap-2">
-                    <?php foreach ($kategoriConfig as $kat => $cfg): ?>
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input type="radio" name="kategori" value="<?= $kat ?>" <?= $kat === 'Akademik' ? 'checked' : '' ?>
-                                class="hidden kategori-radio">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border-2 cursor-pointer transition-all
-                                kategori-option <?= $cfg['bg'] ?> <?= $cfg['text'] ?> border-transparent hover:border-current"
-                                data-kat="<?= $kat ?>">
-                                <span class="w-2 h-2 rounded-full <?= $cfg['dot'] ?>"></span>
+                <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Kategori <span class="text-red-500">*</span></label>
+                <div class="flex flex-wrap gap-1">
+                    <?php 
+                    $kategoriClasses = [
+                        'Akademik' => 'peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:border-blue-300 peer-checked:ring-1 peer-checked:ring-blue-500/10',
+                        'Ujian'    => 'peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:border-red-300 peer-checked:ring-1 peer-checked:ring-red-500/10',
+                        'Kegiatan' => 'peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:border-green-300 peer-checked:ring-1 peer-checked:ring-green-500/10',
+                        'Libur'    => 'peer-checked:bg-yellow-50 peer-checked:text-yellow-700 peer-checked:border-yellow-300 peer-checked:ring-1 peer-checked:ring-yellow-500/10',
+                        'Lainnya'  => 'peer-checked:bg-gray-100 peer-checked:text-gray-700 peer-checked:border-gray-300 peer-checked:ring-1 peer-checked:ring-gray-500/10',
+                    ];
+                    foreach ($kategoriConfig as $kat => $cfg): 
+                        $activeClass = $kategoriClasses[$kat] ?? $kategoriClasses['Lainnya'];
+                    ?>
+                        <label class="cursor-pointer select-none">
+                            <input type="radio" name="kategori" value="<?= $kat ?>" <?= $kat === 'Akademik' ? 'checked' : '' ?> class="sr-only peer">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-gray-200 text-gray-400 bg-white hover:bg-gray-50 hover:text-gray-500 transition-all duration-200 <?= $activeClass ?> shadow-sm">
+                                <span class="w-1 h-1 rounded-full bg-current opacity-70"></span>
                                 <?= $kat ?>
                             </span>
                         </label>
@@ -353,61 +360,66 @@ $isAdmin = auth_get_role() === 'admin';
             </div>
 
             <!-- Override KBM Toggle -->
-            <div class="border-t border-gray-100 pt-4 mt-4">
-                <label class="flex items-center gap-3 cursor-pointer group">
+            <div class="border-t border-gray-100/80 pt-4 mt-4 flex items-center justify-between">
+                <div>
+                    <span class="text-sm font-semibold text-gray-800">Terapkan sebagai Override KBM</span>
+                    <p class="text-[11px] text-gray-500">Jika aktif, kegiatan ini akan menimpa jadwal mengajar rutin.</p>
+                </div>
+                <label class="flex items-center cursor-pointer group">
                     <div class="relative">
                         <input type="checkbox" name="is_override" id="is_override_toggle" class="sr-only">
-                        <div class="w-10 h-6 bg-gray-200 rounded-full shadow-inner transition-colors group-hover:bg-gray-300 toggle-bg"></div>
-                        <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform toggle-dot"></div>
-                    </div>
-                    <div>
-                        <span class="text-sm font-semibold text-gray-800">Terapkan sebagai Override KBM</span>
-                        <p class="text-[11px] text-gray-500">Jika aktif, kegiatan ini akan menimpa jadwal mengajar rutin.</p>
+                        <div class="w-12 h-7 rounded-full shadow-inner transition-colors duration-300 toggle-bg bg-gray-200 group-hover:bg-gray-300"></div>
+                        <div class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 toggle-dot"></div>
                     </div>
                 </label>
             </div>
 
             <!-- Override Options (Hidden by default) -->
-            <div id="override_options" class="hidden flex flex-col gap-4 mt-3 pt-3 border-t border-gray-100">
+            <div id="override_options" class="hidden flex flex-col gap-4 mt-3 pt-3 border-t border-gray-100/80">
                 
                 <!-- Waktu Kegiatan -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">
                         <i class="ri-time-line text-indigo-500 mr-1"></i> Waktu
                     </label>
-                    <label class="flex items-center text-sm font-normal cursor-pointer mb-2">
-                        <input type="checkbox" name="is_full_day" id="is_full_day" value="1" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" checked>
-                        <span class="ml-2 text-gray-700">Full Day (Seharian)</span>
-                    </label>
-                    
-                    <div id="jam_ke_container" class="hidden grid grid-cols-2 gap-2 mt-1">
-                        <div>
-                            <label class="block text-[11px] font-medium text-gray-500 mb-0.5">Dari Jam Ke-</label>
-                            <input type="number" name="hour_start" min="1" max="10" placeholder="1"
-                                class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-medium text-gray-500 mb-0.5">Sampai Jam Ke-</label>
-                            <input type="number" name="hour_end" min="1" max="10" placeholder="7"
-                                class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                    <div class="flex items-center gap-6">
+                        <label class="cursor-pointer select-none">
+                            <input type="checkbox" name="is_full_day" id="is_full_day" value="1" class="sr-only peer" checked>
+                            <span class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold border border-gray-200 rounded-xl text-gray-600 bg-white hover:bg-gray-50 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all duration-200 shadow-sm">
+                                <i class="ri-time-line text-sm"></i>
+                                Seharian (Full Day)
+                            </span>
+                        </label>
+                        
+                        <div id="jam_ke_container" class="hidden flex items-center gap-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-gray-500">Dari jam</span>
+                                <input type="number" name="hour_start" min="1" max="10" placeholder="1"
+                                    class="w-12 border border-gray-200 rounded-lg px-1.5 py-1 text-center text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm">
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-gray-500">s/d</span>
+                                <input type="number" name="hour_end" min="1" max="10" placeholder="7"
+                                    class="w-12 border border-gray-200 rounded-lg px-1.5 py-1 text-center text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Target Kegiatan -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">
                         <i class="ri-group-line text-indigo-500 mr-1"></i> Target
                     </label>
                     
-                    <select name="target_type" id="target_type" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-300 outline-none bg-white mb-2">
+                    <select name="target_type" id="target_type" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium text-gray-800 bg-white mb-2">
                         <option value="sekolah">Seluruh Santri</option>
                         <option value="angkatan">Per Angkatan</option>
                         <option value="kelas">Pilih Kelas Manual</option>
                     </select>
 
                     <div id="target_angkatan_container" class="hidden">
-                        <select name="target_tingkat" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-300 outline-none bg-white">
+                        <select name="target_tingkat" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium text-gray-800 bg-white">
                             <?php 
                             $uniqueTingkat = [];
                             foreach ($allKelas as $k) {
@@ -430,7 +442,7 @@ $isAdmin = auth_get_role() === 'admin';
                                     if ($currentTingkat !== null) echo '</optgroup>';
                                     $currentTingkat = $k['tingkat'];
                                     echo '<optgroup label="Tingkat ' . $currentTingkat . '">';
-                                endif;
+                                  endif;
                             ?>
                                 <option value="<?= $k['id'] ?>">Kelas <?= htmlspecialchars($k['tingkat'] . $k['abjad']) ?></option>
                             <?php endforeach; 
@@ -487,25 +499,7 @@ function confirmDelete(id, label) {
     document.getElementById('modal-delete').classList.remove('hidden');
 }
 
-// Kategori radio pill selector
-document.querySelectorAll('.kategori-radio').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-        document.querySelectorAll('.kategori-option').forEach(function(opt) {
-            opt.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-400', '!border-current');
-            opt.style.borderColor = '';
-        });
-        var label = radio.closest('label').querySelector('.kategori-option');
-        if (label) {
-            label.style.borderColor = 'currentColor';
-        }
-    });
-});
 
-// Set initial selected state
-document.querySelectorAll('.kategori-radio:checked').forEach(function(radio) {
-    var label = radio.closest('label').querySelector('.kategori-option');
-    if (label) label.style.borderColor = 'currentColor';
-});
 
 // Ensure tanggal_selesai >= tanggal_mulai
 document.getElementById('add-tanggal-mulai').addEventListener('change', function() {
@@ -523,12 +517,12 @@ const toggleBg = overrideToggle.parentNode.querySelector('.toggle-bg');
 overrideToggle.addEventListener('change', function() {
     if (this.checked) {
         overrideOptions.classList.remove('hidden');
-        toggleDot.classList.add('translate-x-4');
+        toggleDot.classList.add('translate-x-5');
         toggleBg.classList.replace('bg-gray-200', 'bg-indigo-600');
         toggleBg.classList.replace('group-hover:bg-gray-300', 'group-hover:bg-indigo-700');
     } else {
         overrideOptions.classList.add('hidden');
-        toggleDot.classList.remove('translate-x-4');
+        toggleDot.classList.remove('translate-x-5');
         toggleBg.classList.replace('bg-indigo-600', 'bg-gray-200');
         toggleBg.classList.replace('group-hover:bg-indigo-700', 'group-hover:bg-gray-300');
     }
@@ -540,8 +534,10 @@ const jamKeContainer = document.getElementById('jam_ke_container');
 isFullDayCheckbox.addEventListener('change', function() {
     if (this.checked) {
         jamKeContainer.classList.add('hidden');
+        jamKeContainer.classList.remove('flex');
     } else {
         jamKeContainer.classList.remove('hidden');
+        jamKeContainer.classList.add('flex');
     }
 });
 
