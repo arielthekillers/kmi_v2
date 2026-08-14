@@ -143,4 +143,46 @@ class ActivityModel extends Model {
         $stmt->execute([$this->academic_year_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Mengambil semua dispensasi KBM yang aktif pada tanggal tertentu beserta detail target kelas dan jamnya.
+     * Menggunakan query tunggal untuk optimasi batch di memori PHP.
+     * 
+     * @param string $date (Y-m-d)
+     * @return array
+     */
+    public function getDispensationsByDate($date) {
+        $stmt = $this->db->prepare("
+            SELECT a.id, a.name, a.is_full_day,
+                   GROUP_CONCAT(DISTINCT t.kelas_id) as target_kelas_ids
+            FROM school_activities a
+            JOIN activity_targets t ON a.id = t.activity_id
+            WHERE ? BETWEEN a.start_date AND a.end_date
+            GROUP BY a.id
+        ");
+        $stmt->execute([$date]);
+        $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($activities as $act) {
+            $actId = $act['id'];
+            $kelasIds = $act['target_kelas_ids'] ? array_map('intval', explode(',', $act['target_kelas_ids'])) : [];
+            
+            $hours = [];
+            if (!$act['is_full_day']) {
+                $stmtHour = $this->db->prepare("SELECT hour_start, hour_end FROM activity_hours WHERE activity_id = ?");
+                $stmtHour->execute([$actId]);
+                $hours = $stmtHour->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            $result[] = [
+                'id' => $actId,
+                'name' => $act['name'],
+                'is_full_day' => (bool)$act['is_full_day'],
+                'kelas_ids' => $kelasIds,
+                'hours' => $hours
+            ];
+        }
+        return $result;
+    }
 }
