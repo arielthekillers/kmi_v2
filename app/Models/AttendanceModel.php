@@ -58,6 +58,13 @@ class AttendanceModel extends Model {
             $substitutions[$row['kelas_id'] . '|' . $row['hour']] = $row['substitute_name'];
         }
 
+        // 2.7 Fetch KBM Dispensations for the date
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensations = $activityModel->getDispensationsByDate($date);
+        
+        $dayOfWeek = date('w', strtotime($date));
+        $isFriday = ($dayOfWeek == 5);
+
         // 3. Merge
         $dailySchedule = [];
         foreach ($schedulesRaw as $row) {
@@ -86,12 +93,40 @@ class AttendanceModel extends Model {
 
                 $attendanceData = [
                     'status' => $log['status'],
+                    'relative_time' => $log['status'] === 'hadir' ? 'tepat_waktu' : null,
                     'ketepatan' => $ketepatan,
                     'jam_datang' => $jamDatang,
                     'note' => $log['note'],
                     'pengajar_pengganti' => $log['substitute_teacher_id'],
                     'petugas_id' => $log['petugas_id'] ?? null
                 ];
+            }
+
+            // Check dispensation
+            $isDispensation = false;
+            $dispensationName = null;
+
+            if ($isFriday) {
+                $isDispensation = true;
+                $dispensationName = 'Libur Mingguan (Jumat)';
+            } else {
+                foreach ($dispensations as $disp) {
+                    if (in_array((int)$kelasId, $disp['kelas_ids'])) {
+                        if ($disp['is_full_day']) {
+                            $isDispensation = true;
+                            $dispensationName = $disp['name'];
+                            break;
+                        } else {
+                            foreach ($disp['hours'] as $h) {
+                                if ((int)$hour >= (int)$h['hour_start'] && (int)$hour <= (int)$h['hour_end']) {
+                                    $isDispensation = true;
+                                    $dispensationName = $disp['name'];
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             $dailySchedule[] = [
@@ -105,7 +140,9 @@ class AttendanceModel extends Model {
                 'mapel_name' => $row['mapel_nama'],
                 'teacher_name' => $row['teacher_nama'],
                 'substitute_name' => $substitutions[$key] ?? null,
-                'absensi' => $attendanceData
+                'absensi' => $attendanceData,
+                'is_dispensation' => $isDispensation,
+                'dispensation_name' => $dispensationName
             ];
         }
         
