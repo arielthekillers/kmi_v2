@@ -195,7 +195,7 @@ $kategoriConfig = [
                                             <input type="checkbox" id="check_all_sekolah" class="sr-only peer">
                                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border border-dashed border-indigo-200 rounded-xl text-indigo-600 bg-indigo-50/30 hover:bg-indigo-50 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all duration-200 shadow-sm">
                                                 <i class="ri-team-line"></i>
-                                                Pilih Semua Santri (Seluruh Sekolah)
+                                                Pilih Semua Santri
                                             </span>
                                         </label>
                                     </div>
