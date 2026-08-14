@@ -362,7 +362,7 @@ $isAdmin = auth_get_role() === 'admin';
             <!-- Override KBM Toggle -->
             <div class="border-t border-gray-100/80 pt-4 mt-4 flex items-center justify-between">
                 <div>
-                    <span class="text-sm font-semibold text-gray-800">Terapkan sebagai Override KBM</span>
+                    <span class="text-sm font-semibold text-gray-800">Terapkan sebagai Dispensasi KBM</span>
                     <p class="text-[11px] text-gray-500">Jika aktif, kegiatan ini akan menimpa jadwal mengajar rutin.</p>
                 </div>
                 <label class="flex items-center cursor-pointer group">

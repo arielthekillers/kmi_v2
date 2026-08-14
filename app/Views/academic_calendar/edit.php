@@ -126,7 +126,7 @@ $kategoriConfig = [
                         <div>
                             <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
                                 <i class="ri-settings-4-line text-indigo-500"></i>
-                                Override KBM
+                                Dispensasi KBM
                             </h3>
                             <p class="text-sm text-gray-500 mt-1">Aktifkan untuk meliburkan KBM pada kelas atau jam tertentu.</p>
                         </div>
