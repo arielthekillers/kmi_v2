@@ -54,10 +54,53 @@ class StudentAttendanceController extends Controller {
 
         $students = [];
         $summary = [];
+        $schedules = [];
+        $dispensations = [];
 
         if (!empty($activeKelasId) && $activeSession) {
             $students = $this->attendanceModel->getAbsencesByClassAndDate($activeKelasId, $selectedDate, $activeSession['id']);
             $summary = $this->attendanceModel->getAbsenceSummaryByClass($activeKelasId, $activeSession['id']);
+
+            // Fetch schedules for active class on selected date
+            $timestamp = strtotime($selectedDate);
+            $dayMap = [
+                'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa',
+                'Wed' => 'Rabu', 'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'
+            ];
+            $dayName = $dayMap[date('D', $timestamp)] ?? '';
+
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("
+                SELECT s.hour, sub.nama as mapel_nama, u.nama as teacher_nama
+                FROM schedules s
+                JOIN subjects sub ON s.subject_id = sub.id
+                LEFT JOIN users u ON s.teacher_id = u.id
+                WHERE s.kelas_id = ? AND s.day = ? AND s.academic_year_id = ?
+                ORDER BY s.hour ASC
+            ");
+            $stmt->execute([$activeKelasId, $dayName, $this->currentYear['id']]);
+            $schedules = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Fetch KBM dispensations for selected date
+            $activityModel = new \App\Models\ActivityModel();
+            $allDispensations = $activityModel->getDispensationsByDate($selectedDate);
+
+            $dayOfWeek = date('w', $timestamp);
+            if ($dayOfWeek == 5) {
+                $dispensations[] = [
+                    'id' => null,
+                    'name' => 'Libur Mingguan (Jumat)',
+                    'is_full_day' => true,
+                    'kelas_ids' => [(int)$activeKelasId],
+                    'hours' => []
+                ];
+            }
+
+            foreach ($allDispensations as $disp) {
+                if (in_array((int)$activeKelasId, $disp['kelas_ids'])) {
+                    $dispensations[] = $disp;
+                }
+            }
         }
 
         $this->view('student_attendance/index', [
@@ -68,7 +111,9 @@ class StudentAttendanceController extends Controller {
             'students' => $students,
             'summary' => $summary,
             'activeSession' => $activeSession,
-            'tab' => $tab
+            'tab' => $tab,
+            'schedules' => $schedules,
+            'dispensations' => $dispensations
         ]);
     }
 

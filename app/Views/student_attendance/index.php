@@ -1,10 +1,26 @@
-<?php renderHeader("Absensi Santri"); 
+<?php
+/** @var array $kelas */
+/** @var array|null $activeSession */
+/** @var array $students */
+/** @var array $summary */
+/** @var array $dispensations */
+renderHeader("Absensi Santri"); 
 $role = auth_get_role();
 $userId = auth_get_user_id();
 
+$isFullDayDispensation = false;
+if (isset($dispensations)) {
+    foreach ($dispensations as $disp) {
+        if ($disp['is_full_day']) {
+            $isFullDayDispensation = true;
+            break;
+        }
+    }
+}
+
 // Determine editing permissions
 $canEdit = false;
-if ($activeSession && (bool)$activeSession['is_open']) {
+if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation) {
     $canEdit = auth_can_manage_attendance($activeSession['id']);
 }
 ?>
@@ -136,8 +152,42 @@ if ($activeSession && (bool)$activeSession['is_open']) {
                     </div>
                 </div>
 
+
                 <!-- Input Harian Tab -->
                 <?php if ($tab === 'input'): ?>
+                    <?php if (!empty($dispensations)): ?>
+                        <!-- Dispensasi Info -->
+                        <div class="bg-amber-50/40 border border-amber-200 rounded-2xl p-4 mb-6 flex flex-col gap-2.5 shadow-sm">
+                            <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="ri-calendar-event-line text-sm"></i>
+                                Dispensasi KBM Aktif Tanggal Ini
+                            </h4>
+                            <div class="flex flex-col gap-2">
+                                <?php foreach ($dispensations as $disp): 
+                                    $timeDesc = '';
+                                    if ($disp['is_full_day']) {
+                                        $timeDesc = 'Seharian (Full Day)';
+                                    } else {
+                                        $hourRanges = [];
+                                        foreach ($disp['hours'] as $h) {
+                                            $hourRanges[] = 'Jam ' . $h['hour_start'] . ' s/d ' . $h['hour_end'];
+                                        }
+                                        $timeDesc = implode(', ', $hourRanges);
+                                    }
+                                ?>
+                                    <div class="text-xs text-amber-900 flex flex-col sm:flex-row sm:items-start sm:gap-4 bg-white/70 border border-amber-100/50 px-3 py-2 rounded-xl">
+                                        <span class="font-bold flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+                                            <?= htmlspecialchars($disp['name']) ?>
+                                        </span>
+                                        <span class="hidden sm:inline text-amber-300">|</span>
+                                        <span class="text-amber-800"><span class="font-medium text-amber-500">Waktu:</span> <?= htmlspecialchars($timeDesc) ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <form action="<?= url('/student-attendance/store') ?>" method="POST" id="attendance-form" onsubmit="return handleFormSubmit(event)">
                         <?= csrf_token_field() ?>
                         <input type="hidden" name="session_id" value="<?= htmlspecialchars($activeSession['id']) ?>">
@@ -282,9 +332,13 @@ if ($activeSession && (bool)$activeSession['is_open']) {
                             </div>
                         <?php elseif (!empty($students)): ?>
                             <div class="flex items-center justify-center gap-2 bg-gray-100 p-4 border border-gray-200 rounded-2xl">
-                                <i class="ri-lock-line text-gray-400"></i>
+                                <i class="<?= $isFullDayDispensation ? 'ri-calendar-event-line' : 'ri-lock-line' ?> text-gray-400"></i>
                                 <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-center">
-                                    Sesi terkunci / Anda tidak memiliki akses edit untuk kelas & tanggal ini.
+                                    <?php if ($isFullDayDispensation): ?>
+                                        Absensi dikunci karena hari ini Bebas KBM (Libur).
+                                    <?php else: ?>
+                                        Sesi terkunci / Anda tidak memiliki akses edit untuk kelas & tanggal ini.
+                                    <?php endif; ?>
                                 </span>
                             </div>
                         <?php endif; ?>
