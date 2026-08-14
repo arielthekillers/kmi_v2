@@ -84,6 +84,10 @@ class ApiSyncController
 
             $success = 0;
             $errors = [];
+            
+            // Disable foreign key checks to allow creating tables in any order
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            
             foreach ($queries as $sql) {
                 try {
                     $conn->exec($sql);
@@ -92,6 +96,9 @@ class ApiSyncController
                     $errors[] = "Error running: $sql | " . $e->getMessage();
                 }
             }
+
+            // Re-enable foreign key checks
+            $conn->exec("SET FOREIGN_KEY_CHECKS = 1;");
 
             echo json_encode(['success' => true, 'executed' => $success, 'errors' => $errors]);
         } else {
