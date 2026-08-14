@@ -120,6 +120,9 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <?php foreach ($slotsByJam[$activeJam] as $slot): 
+                        $absgrid = $slot['absensi'];
+                        $isDisp = !empty($slot['is_dispensation']);
+                        $dispName = $slot['dispensation_name'] ?? '';
                         $absensi = $slot['absensi'];
                         $hasRecord = !empty($absensi);
                         $status = $absensi['status'] ?? '';
@@ -128,7 +131,11 @@
                         $cardBorder = 'border-gray-200';
                         $cardBg = 'bg-white';
                         
-                        if ($status === 'hadir') {
+                        if ($isDisp) {
+                            $cardBorder = 'border-gray-200';
+                            $cardBg = 'bg-gray-50/60 opacity-80';
+                            $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">Dispensasi: ' . htmlspecialchars($dispName) . '</span>';
+                        } elseif ($status === 'hadir') {
                             $cardBorder = 'border-green-200';
                             $cardBg = 'bg-green-50/50';
                             $ketepatan = $absensi['ketepatan'] ?? '';
@@ -150,15 +157,19 @@
                             $statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Diganti: ' . htmlspecialchars($penggantiName) . '</span>';
                         }
                     ?>
-                    <div class="<?= $cardBg ?> border-2 <?= $cardBorder ?> rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group overflow-hidden">
+                    <div class="<?= $cardBg ?> border-2 <?= $cardBorder ?> rounded-2xl shadow-sm <?= !$isDisp ? 'hover:shadow-md' : '' ?> transition-all duration-300 flex flex-col group overflow-hidden">
                         <div class="p-5 flex-1">
                             <div class="flex justify-between items-start mb-4">
-                                <div class="px-3 py-1 rounded-lg bg-white border border-gray-100 text-xs font-bold text-gray-700 shadow-sm group-hover:border-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                <div class="px-3 py-1 rounded-lg bg-white border border-gray-100 text-xs font-bold text-gray-700 shadow-sm <?= !$isDisp ? 'group-hover:border-indigo-100 group-hover:text-indigo-600' : '' ?> transition-colors">
                                     Kelas <?= htmlspecialchars($slot['kelas_name']) ?>
                                 </div>
                                 <?php if ($hasRecord): ?>
                                     <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg shadow-green-100">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                <?php elseif ($isDisp): ?>
+                                    <div class="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-100" title="Dispensasi KBM">
+                                        <i class="ri-calendar-event-line text-xs font-bold"></i>
                                     </div>
                                 <?php else: ?>
                                     <div class="w-6 h-6 rounded-full border-2 border-gray-200 group-hover:border-indigo-300 transition-colors"></div>
@@ -184,7 +195,7 @@
                                 </p>
                             <?php endif; ?>
 
-                            <?php if ($hasRecord): ?>
+                            <?php if ($hasRecord || $isDisp): ?>
                                 <div class="mt-2">
                                     <?= $statusBadge ?>
                                 </div>
@@ -192,11 +203,19 @@
                         </div>
 
                         <div class="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
-                             <button onclick="openAbsensiModal('<?= $slot['key'] ?>', <?= htmlspecialchars(json_encode($slot['kelas_name']), ENT_QUOTES) ?>, '<?= $slot['hour'] ?>', <?= htmlspecialchars(json_encode($slot['mapel_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($slot['teacher_name']), ENT_QUOTES) ?>, '<?= $slot['pengajar_id'] ?>', <?= htmlspecialchars(json_encode($absensi), ENT_QUOTES, 'UTF-8') ?>)" 
-                                    class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm text-white transition-all duration-200 <?= $hasRecord ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100' ?>">
-                                <i class="<?= $hasRecord ? 'ri-edit-line' : 'ri-checkbox-circle-line' ?> mr-2 text-sm"></i>
-                                <?= $hasRecord ? 'Edit Absensi' : 'Catat Absensi' ?>
-                            </button>
+                             <?php if ($isDisp): ?>
+                                 <button disabled 
+                                        class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed">
+                                     <i class="ri-close-circle-line mr-2 text-sm"></i>
+                                     Bebas KBM
+                                 </button>
+                             <?php else: ?>
+                                 <button onclick="openAbsensiModal('<?= $slot['key'] ?>', <?= htmlspecialchars(json_encode($slot['kelas_name']), ENT_QUOTES) ?>, '<?= $slot['hour'] ?>', <?= htmlspecialchars(json_encode($slot['mapel_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($slot['teacher_name']), ENT_QUOTES) ?>, '<?= $slot['pengajar_id'] ?>', <?= htmlspecialchars(json_encode($absensi), ENT_QUOTES, 'UTF-8') ?>)" 
+                                        class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm text-white transition-all duration-200 <?= $hasRecord ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100' ?>">
+                                     <i class="<?= $hasRecord ? 'ri-edit-line' : 'ri-checkbox-circle-line' ?> mr-2 text-sm"></i>
+                                     <?= $hasRecord ? 'Edit Absensi' : 'Catat Absensi' ?>
+                                 </button>
+                             <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
