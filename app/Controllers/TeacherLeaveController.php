@@ -125,6 +125,32 @@ class TeacherLeaveController extends Controller {
             $nextYear++;
         }
         $teachers = $this->teacherModel->getAll();
+
+        // Build list of dates in the month that have NO KBM at all (Friday or full-day dispensation for all classes)
+        $noKbmDates = [];
+        $kelasModel = new \App\Models\KelasModel();
+        $totalActiveKelas = count($kelasModel->findAllActive());
+        $activityModel = new \App\Models\ActivityModel();
+        
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $currentDateStr = sprintf('%04d-%02d-%02d', $selectedYearVal, $selectedMonth, $day);
+            $timestamp = strtotime($currentDateStr);
+            
+            // Friday is always weekly holiday (no KBM)
+            if (date('w', $timestamp) == 5) {
+                $noKbmDates[$currentDateStr] = 'Libur Mingguan (Jumat)';
+                continue;
+            }
+            
+            // Check full day dispensations for all classes
+            $disps = $activityModel->getDispensationsByDate($currentDateStr);
+            foreach ($disps as $disp) {
+                if ($disp['is_full_day'] && count($disp['kelas_ids']) >= $totalActiveKelas) {
+                    $noKbmDates[$currentDateStr] = $disp['name'];
+                    break;
+                }
+            }
+        }
         
         $this->view('layouts/header', ['title' => 'Izin Mengajar']);
         $this->view('leaves/index', [
@@ -140,7 +166,8 @@ class TeacherLeaveController extends Controller {
             'prevYear' => $prevYear,
             'nextMonth' => $nextMonth,
             'nextYear' => $nextYear,
-            'teachers' => $teachers
+            'teachers' => $teachers,
+            'noKbmDates' => $noKbmDates
         ]);
     }
 
@@ -244,24 +271,36 @@ class TeacherLeaveController extends Controller {
             $endDate = $startDate;
         }
         
-        $start = strtotime($startDate);
-        $end = strtotime($endDate);
-        
-        if ($end < $start) {
-            echo json_encode(['success' => false, 'message' => 'Tanggal selesai tidak valid']);
-            exit;
+        $dates = [];
+        $current = $startDate;
+        while ($current <= $endDate) {
+            $dates[] = $current;
+            $current = date('Y-m-d', strtotime($current . ' +1 day'));
         }
+        
         $daysIndo = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $academicYearId = $this->leaveModel->getAcademicYearId();
         $inserted = 0;
         
-        for ($i = $start; $i <= $end; $i += 86400) {
-            $date = date('Y-m-d', $i);
-            $dayName = $daysIndo[date('w', $i)];
+        foreach ($dates as $date) {
+            $timestamp = strtotime($date);
+            $dayOfWeek = (int)date('w', $timestamp);
+            $dayName = $daysIndo[$dayOfWeek];
             
             // Check if teacher has schedules on this day
-            $stmt = $this->scheduleModel->query("SELECT COUNT(*) FROM schedules WHERE teacher_id = ? AND day = ? AND academic_year_id = ?", [$teacherId, $dayName, $academicYearId]);
-            if ($stmt->fetchColumn() == 0) continue;
+            $stmtSch = $this->scheduleModel->query("SELECT hour, kelas_id, subject_id FROM schedules WHERE teacher_id = ? AND day = ? AND academic_year_id = ?", [$teacherId, $dayName, $academicYearId]);
+            $schedules = $stmtSch->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($schedules)) continue;
+            
+            $activityModel = new \App\Models\ActivityModel();
+            $effectiveSchedules = [];
+            foreach ($schedules as $sch) {
+                $eff = $activityModel->getEffectiveSchedule($date, $sch['kelas_id'], $sch['hour']);
+                if (!$eff['affected']) {
+                    $effectiveSchedules[] = $sch;
+                }
+            }
+            if (empty($effectiveSchedules)) continue;
             
             // Check if leave already exists
             $stmt = $this->leaveModel->query("SELECT id FROM teacher_leaves WHERE teacher_id = ? AND date = ?", [$teacherId, $date]);
@@ -276,11 +315,8 @@ class TeacherLeaveController extends Controller {
                 'academic_year_id' => $academicYearId
             ]);
             
-            $stmtSch = $this->scheduleModel->query("SELECT hour, kelas_id, subject_id FROM schedules WHERE teacher_id = ? AND day = ? AND academic_year_id = ?", [$teacherId, $dayName, $academicYearId]);
-            $schedules = $stmtSch->fetchAll(PDO::FETCH_ASSOC);
-            
             $substitutions = [];
-            foreach ($schedules as $sch) {
+            foreach ($effectiveSchedules as $sch) {
                 // Determine default substitute if an assistant is set
                 $assistantId = $this->assistantModel->getAssistantForSubject($teacherId, $sch['subject_id'], $sch['kelas_id'], $academicYearId);
                 
@@ -391,6 +427,16 @@ class TeacherLeaveController extends Controller {
         ", [$teacherId, $dayName, $this->scheduleModel->getAcademicYearId()]);
         
         $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $activityModel = new \App\Models\ActivityModel();
+        $effectiveSchedules = [];
+        foreach ($schedules as $sch) {
+            $eff = $activityModel->getEffectiveSchedule($date, $sch['kelas_id'], $sch['hour']);
+            if (!$eff['affected']) {
+                $effectiveSchedules[] = $sch;
+            }
+        }
+        $schedules = $effectiveSchedules;
         
         // Also fetch teacher name for the UI
         $stmt2 = $this->teacherModel->query("SELECT nama FROM users WHERE id = ?", [$teacherId]);

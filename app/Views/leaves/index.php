@@ -2,6 +2,7 @@
 $data = $data ?? [];
 $tab = $tab ?? 'leaves';
 $date = $date ?? date('Y-m-d');
+$noKbmDates = $noKbmDates ?? [];
 ?>
 
 <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto">
@@ -90,14 +91,24 @@ $bulanId = [
                         echo "</div>";
                         
                         // Add button, Substitute view, and Print view (Absolute Top Left, visible on hover)
-                        echo "<div class=\"absolute top-1.5 left-1.5 z-10 opacity-0 group-hover/cell:opacity-100 transition-opacity flex gap-0.5\">";
-                        echo "<a href=\"javascript:void(0)\" onclick=\"openAddModal('{$currentDateStr}')\" class=\"text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 p-1 rounded-md transition-colors\" title=\"Tambah izin di tanggal ini\"><i class=\"ri-add-line text-[15px]\"></i></a>";
-                        echo "<a href=\"javascript:void(0)\" onclick=\"openDailySubstitutesModal('{$currentDateStr}')\" class=\"text-gray-400 hover:text-teal-600 hover:bg-teal-50 p-1 rounded-md transition-colors\" title=\"Lihat Guru Pengganti Hari Ini\"><i class=\"ri-user-received-line text-[15px]\"></i></a>";
-                        echo "<a href=\"" . url("/leaves/print_substitute?date={$currentDateStr}") . "\" target=\"_blank\" class=\"text-gray-400 hover:text-amber-600 hover:bg-amber-50 p-1 rounded-md transition-colors\" title=\"Cetak Jadwal Pengganti Hari Ini\"><i class=\"ri-printer-line text-[15px]\"></i></a>";
-                        echo "</div>";
+                        $isNoKbm = isset($noKbmDates[$currentDateStr]);
+                        if (!$isNoKbm) {
+                            echo "<div class=\"absolute top-1.5 left-1.5 z-10 opacity-0 group-hover/cell:opacity-100 transition-opacity flex gap-0.5\">";
+                            echo "<a href=\"javascript:void(0)\" onclick=\"openAddModal('{$currentDateStr}')\" class=\"text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 p-1 rounded-md transition-colors\" title=\"Tambah izin di tanggal ini\"><i class=\"ri-add-line text-[15px]\"></i></a>";
+                            echo "<a href=\"javascript:void(0)\" onclick=\"openDailySubstitutesModal('{$currentDateStr}')\" class=\"text-gray-400 hover:text-teal-600 hover:bg-teal-50 p-1 rounded-md transition-colors\" title=\"Lihat Guru Pengganti Hari Ini\"><i class=\"ri-user-received-line text-[15px]\"></i></a>";
+                            echo "<a href=\"" . url("/leaves/print_substitute?date={$currentDateStr}") . "\" target=\"_blank\" class=\"text-gray-400 hover:text-amber-600 hover:bg-amber-50 p-1 rounded-md transition-colors\" title=\"Cetak Jadwal Pengganti Hari Ini\"><i class=\"ri-printer-line text-[15px]\"></i></a>";
+                            echo "</div>";
+                        }
                         
                         // Render Events for this day
                         echo "<div class=\"flex-1 flex flex-col gap-0.5 overflow-y-auto max-h-[150px] no-scrollbar relative z-0\">";
+                        
+                        if ($isNoKbm) {
+                            echo "<div class=\"text-[9px] font-bold text-red-600 bg-red-50 border border-red-100/50 rounded px-1.5 py-1 text-center mt-1 select-none leading-tight\" title=\"Bebas KBM: " . htmlspecialchars($noKbmDates[$currentDateStr]) . "\">";
+                            echo "<i class=\"ri-close-circle-line text-[13px] mr-1 align-middle\"></i><span class=\"align-middle\">Bebas KBM</span><br>";
+                            echo "<span class=\"text-[8px] font-normal text-red-500/80 truncate block mt-0.5\">" . htmlspecialchars($noKbmDates[$currentDateStr]) . "</span>";
+                            echo "</div>";
+                        }
                         
                         if (isset($monthLeaves[$currentDateStr])) {
                             foreach ($monthLeaves[$currentDateStr] as $leave) {
