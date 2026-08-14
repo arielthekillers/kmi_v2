@@ -202,6 +202,24 @@ class AttendanceController extends Controller {
             ]);
         }
 
+        // Fetch KBM dispensations for the report date
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensations = $activityModel->getDispensationsByDate($date);
+
+        // Add Libur Mingguan (Jumat) if day is Friday
+        $dayOfWeek = date('w', strtotime($date));
+        if ($dayOfWeek == 5) {
+            // Get all active class IDs to say Friday applies to all
+            $allKelasIds = array_column($kelasData, 'id');
+            $dispensations[] = [
+                'id' => null,
+                'name' => 'Libur Mingguan (Jumat)',
+                'is_full_day' => true,
+                'kelas_ids' => $allKelasIds,
+                'hours' => []
+            ];
+        }
+
         $this->view('attendance/report', [
             'title' => 'Laporan Piket Keliling',
             'logs' => $processedLogs,
@@ -209,6 +227,7 @@ class AttendanceController extends Controller {
             'kelasData' => $kelasData,
             'pengajarData' => $teachers,
             'hoursConfig' => $hoursConfig,
+            'dispensations' => $dispensations,
             'filter' => [
                 'date' => $date,
                 'kelas_id' => $kelasId,

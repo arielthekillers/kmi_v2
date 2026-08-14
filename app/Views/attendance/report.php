@@ -59,6 +59,55 @@
             </form>
         </div>
 
+        <?php if (!empty($dispensations)): ?>
+            <!-- Dispensasi Info -->
+            <div class="bg-amber-50/40 border border-amber-200 rounded-xl p-4 mb-6 flex flex-col gap-2.5 shadow-sm">
+                <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="ri-calendar-event-line text-sm"></i>
+                    Dispensasi KBM Aktif Tanggal Ini
+                </h4>
+                <div class="flex flex-col gap-2">
+                    <?php foreach ($dispensations as $disp): 
+                        $kelasNames = [];
+                        foreach ($disp['kelas_ids'] as $kid) {
+                            foreach ($kelasData as $kls) {
+                                if ($kls['id'] == $kid) {
+                                    $kelasNames[] = $kls['tingkat'] . '-' . $kls['abjad'];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        $targetsDesc = '';
+                        if (count($kelasNames) === count($kelasData)) {
+                            $targetsDesc = 'Seluruh Sekolah';
+                        } else {
+                            $targetsDesc = implode(', ', $kelasNames);
+                        }
+                        
+                        $timeDesc = '';
+                        if ($disp['is_full_day']) {
+                            $timeDesc = 'Seharian (Full Day)';
+                        } else {
+                            $hourRanges = [];
+                            foreach ($disp['hours'] as $h) {
+                                $hourRanges[] = 'Jam ' . $h['hour_start'] . ' s/d ' . $h['hour_end'];
+                            }
+                            $timeDesc = implode(', ', $hourRanges);
+                        }
+                    ?>
+                        <div class="text-xs text-amber-900 flex flex-col sm:flex-row sm:items-start sm:gap-4 bg-white/70 border border-amber-100/50 px-3 py-2 rounded-lg">
+                            <span class="font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></span><?= htmlspecialchars($disp['name']) ?></span>
+                            <span class="hidden sm:inline text-amber-300">|</span>
+                            <span class="text-amber-800"><span class="font-medium text-amber-500">Target:</span> <?= htmlspecialchars($targetsDesc) ?></span>
+                            <span class="hidden sm:inline text-amber-300">|</span>
+                            <span class="text-amber-800"><span class="font-medium text-amber-500">Waktu:</span> <?= htmlspecialchars($timeDesc) ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- Statistics -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
