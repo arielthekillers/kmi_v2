@@ -77,6 +77,13 @@ class TanqihController extends Controller {
         // Fetch Logs
         $tanqihLogs = $this->tanqihModel->getVerificationsByDate($date);
 
+        // Fetch KBM dispensations for this date
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensations = $activityModel->getDispensationsByDate($date);
+        
+        $dayOfWeek = date('w', strtotime($date));
+        $isFriday = ($dayOfWeek == 5);
+
         $dailySchedule = [];
         foreach ($schedulesRaw as $row) {
             $pengajarId = $row['teacher_id'];
@@ -99,6 +106,33 @@ class TanqihController extends Controller {
                 }
             }
 
+            // Check dispensation
+            $isDispensation = false;
+            $dispensationName = null;
+
+            if ($isFriday) {
+                $isDispensation = true;
+                $dispensationName = 'Libur Mingguan (Jumat)';
+            } else {
+                foreach ($dispensations as $disp) {
+                    if (in_array((int)$row['kelas_id'], $disp['kelas_ids'])) {
+                        if ($disp['is_full_day']) {
+                            $isDispensation = true;
+                            $dispensationName = $disp['name'];
+                            break;
+                        } else {
+                            foreach ($disp['hours'] as $h) {
+                                if ((int)$row['hour'] >= (int)$h['hour_start'] && (int)$row['hour'] <= (int)$h['hour_end']) {
+                                    $isDispensation = true;
+                                    $dispensationName = $disp['name'];
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             $dailySchedule[] = [
                 'kelas_id' => $row['kelas_id'],
                 'hour' => $row['hour'],
@@ -113,7 +147,9 @@ class TanqihController extends Controller {
                 // Passing extra display info directly
                 'kelas_name' => "Kelas " . ($row['tingkat'] ?? '?') . "-" . ($row['abjad'] ?? '?'),
                 'teacher_name' => $row['teacher_nama'],
-                'subject_name' => $row['mapel_nama']
+                'subject_name' => $row['mapel_nama'],
+                'is_dispensation' => $isDispensation,
+                'dispensation_name' => $dispensationName
             ];
         }
 
@@ -164,6 +200,15 @@ class TanqihController extends Controller {
             }
             if ((string)$userId === (string)$pengajarId) {
                  $this->jsonOrRedirect($ajax, false, 'Tidak boleh memverifikasi diri sendiri.', $date);
+            }
+        }
+
+        // KBM Dispensation Guard
+        if ($action === 'verify') {
+            $activityModel = new \App\Models\ActivityModel();
+            $eff = $activityModel->getEffectiveSchedule($date, $kelasId, $hour);
+            if ($eff['affected']) {
+                $this->jsonOrRedirect($ajax, false, 'Tidak dapat memverifikasi sesi bebas KBM: ' . $eff['activity_name'], $date);
             }
         }
 

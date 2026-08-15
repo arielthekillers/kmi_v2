@@ -48,6 +48,9 @@ class TanqihModel extends Model {
         $schedules = $this->getAllSchedules($ayId);
         $verifications = $this->getVerificationsInRange($startDate, $endDate, $ayId);
         
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensationsByDate = $activityModel->getDispensationsByRange($startDate, $endDate);
+
         $report = [];
         $globalStats = [
             'total_jadwal' => 0,
@@ -67,12 +70,42 @@ class TanqihModel extends Model {
             $dayNameEnglish = date('D', strtotime($currentDate));
             $dayNameVideo = $dayMap[$dayNameEnglish] ?? '';
 
+            $dayOfWeek = date('w', strtotime($currentDate));
+            $isFriday = ($dayOfWeek == 5);
+            $dayDispensations = $dispensationsByDate[$currentDate] ?? [];
+
             // Get schedules for this day
             $daySchedules = $schedules[$dayNameVideo] ?? [];
 
             foreach ($daySchedules as $slot) {
                 $pid = $slot['teacher_id'];
                 if (!$pid) continue;
+
+                // Check dispensation
+                $isDisp = false;
+                if ($isFriday) {
+                    $isDisp = true;
+                } else {
+                    foreach ($dayDispensations as $disp) {
+                        if (in_array((int)$slot['kelas_id'], $disp['kelas_ids'])) {
+                            if ($disp['is_full_day']) {
+                                $isDisp = true;
+                                break;
+                            } else {
+                                foreach ($disp['hours'] as $h) {
+                                    if ((int)$slot['hour'] >= (int)$h['hour_start'] && (int)$slot['hour'] <= (int)$h['hour_end']) {
+                                        $isDisp = true;
+                                        break 2;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($isDisp) {
+                    continue;
+                }
 
                 if (!isset($report[$pid])) {
                     $report[$pid] = [

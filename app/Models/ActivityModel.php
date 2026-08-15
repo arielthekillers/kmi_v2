@@ -185,4 +185,62 @@ class ActivityModel extends Model {
         }
         return $result;
     }
+
+    /**
+     * Mengambil semua dispensasi KBM yang aktif pada rentang tanggal tertentu beserta detail target kelas dan jamnya.
+     * 
+     * @param string $startDate (Y-m-d)
+     * @param string $endDate (Y-m-d)
+     * @return array [date => [dispensations]]
+     */
+    public function getDispensationsByRange($startDate, $endDate) {
+        $stmt = $this->db->prepare("
+            SELECT a.id, a.name, a.is_full_day, a.start_date, a.end_date,
+                   GROUP_CONCAT(DISTINCT t.kelas_id) as target_kelas_ids
+            FROM school_activities a
+            JOIN activity_targets t ON a.id = t.activity_id
+            WHERE a.academic_year_id = ?
+              AND (a.start_date <= ? AND a.end_date >= ?)
+            GROUP BY a.id
+        ");
+        $stmt->execute([$this->academic_year_id, $endDate, $startDate]);
+        $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $hoursMap = [];
+        $actIds = array_column($activities, 'id');
+        if (!empty($actIds)) {
+            $inClause = implode(',', array_fill(0, count($actIds), '?'));
+            $stmtHour = $this->db->prepare("SELECT activity_id, hour_start, hour_end FROM activity_hours WHERE activity_id IN ($inClause)");
+            $stmtHour->execute($actIds);
+            while ($row = $stmtHour->fetch(PDO::FETCH_ASSOC)) {
+                $hoursMap[$row['activity_id']][] = [
+                    'hour_start' => (int)$row['hour_start'],
+                    'hour_end' => (int)$row['hour_end']
+                ];
+            }
+        }
+
+        // We can pre-process this into a day-by-day mapping for fast lookup in PHP
+        $dispensationsByDate = [];
+        $current = $startDate;
+        while ($current <= $endDate) {
+            $dispensationsByDate[$current] = [];
+
+            foreach ($activities as $act) {
+                if ($current >= $act['start_date'] && $current <= $act['end_date']) {
+                    $kelasIds = $act['target_kelas_ids'] ? array_map('intval', explode(',', $act['target_kelas_ids'])) : [];
+                    $dispensationsByDate[$current][] = [
+                        'id' => $act['id'],
+                        'name' => $act['name'],
+                        'is_full_day' => (bool)$act['is_full_day'],
+                        'kelas_ids' => $kelasIds,
+                        'hours' => $hoursMap[$act['id']] ?? []
+                    ];
+                }
+            }
+            $current = date('Y-m-d', strtotime($current . ' +1 day'));
+        }
+
+        return $dispensationsByDate;
+    }
 }

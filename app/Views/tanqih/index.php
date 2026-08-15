@@ -31,7 +31,15 @@
         </form>
     </div>
 
-    <?php if (empty($dailySchedule)): ?>
+    <?php 
+    $activeTotalCount = 0;
+    foreach ($dailySchedule as $item) {
+        if (empty($item['is_dispensation'])) {
+            $activeTotalCount++;
+        }
+    }
+    if ($activeTotalCount === 0): 
+    ?>
         <div class="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
             <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada jadwal</h3>
@@ -69,22 +77,25 @@
                 <nav class="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-3 md:pb-2 no-scrollbar snap-x">
                     <?php for ($jam = 1; $jam <= 7; $jam++): 
                         $slots = $slotsByJam[$jam] ?? [];
+                        if (empty($slots)) continue;
                         $isActive = $jam == $activeJam;
                         $count = count($slots);
                         $doneCount = 0;
                         $pendingCount = 0;
+                        $dispCount = 0;
                         foreach($slots as $s) {
                             if($s['is_verified']) $doneCount++;
+                            elseif(!empty($s['is_dispensation'])) $dispCount++;
                             else $pendingCount++;
                         }
-                        $isComplete = $count > 0 && $doneCount === $count;
-                        
+                        $activeCount = $count - $dispCount;
+                        if ($activeCount === 0) continue;
+                        $isComplete = $doneCount === $activeCount;
                         $badgeClass = $isComplete
                             ? 'bg-green-100 text-green-700'
                             : ($doneCount > 0
                                 ? 'bg-yellow-100 text-yellow-700'
                                 : 'bg-gray-100 text-gray-400');
-                        
                         $activeClass = $isActive 
                             ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-100' 
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
@@ -109,7 +120,7 @@
                                 <?php endif; ?>
                             </div>
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 <?= $badgeClass ?>">
-                                <?= $doneCount ?>/<?= $count ?>
+                                <?= $doneCount ?>/<?= $activeCount ?>
                             </span>
                         </a>
                     <?php endfor; ?>
@@ -140,16 +151,17 @@
                     </button>
                 </div>
             </div>
-
             <div id="tanqih-list" class="grid grid-cols-1 gap-4">
                 <?php foreach ($dailySchedule as $item): 
                     $isVerified = $item['is_verified'];
                     $isJustified = $isVerified && isset($item['verification']['status']) && $item['verification']['status'] === 'justified';
                     $timestamp = $isVerified ? ($item['verification']['timestamp'] ?? 0) : 0;
+                    $isDisp = !empty($item['is_dispensation']);
+                    $dispName = $item['dispensation_name'] ?? '';
                 ?>
-                <div class="bg-white rounded-2xl border-2 <?= $isVerified ? 'border-green-100 bg-green-50/10' : 'border-gray-100' ?> p-4 hover:shadow-md transition-all schedule-item" 
+                <div class="bg-white rounded-2xl border-2 <?= $isVerified ? 'border-green-100 bg-green-50/10' : ($isDisp ? 'border-gray-200 bg-gray-50/60 opacity-80' : 'border-gray-100') ?> p-4 hover:shadow-md transition-all schedule-item" 
                     data-name="<?= strtolower(htmlspecialchars($item['teacher_name'] . ' ' . $item['subject_name'] . ' ' . $item['kelas_name'])) ?>"
-                    data-status="<?= $isVerified ? 'verified' : 'pending' ?>"
+                    data-status="<?= $isVerified ? 'verified' : ($isDisp ? 'dispensation' : 'pending') ?>"
                     data-timestamp="<?= $timestamp ?>"
                     data-hour="<?= $item['hour'] ?>"
                     data-original-order="<?= $item['hour'] * 1000 + $item['kelas_id'] ?>">
@@ -167,6 +179,10 @@
                                 <?php if ($isVerified): ?>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold <?= $isJustified ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' ?>">
                                         <i class="ri-checkbox-circle-fill mr-1"></i> <?= $isJustified ? 'Justifikasi' : 'Terverifikasi' ?>
+                                    </span>
+                                <?php elseif ($isDisp): ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                                        Bebas KBM: <?= htmlspecialchars($dispName) ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -195,7 +211,9 @@
                                 </form>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <?php if ($canVerify): ?>
+                                <?php if ($isDisp): ?>
+                                    <span class="text-xs font-bold text-amber-600 uppercase tracking-wider select-none">Bebas KBM</span>
+                                <?php elseif ($canVerify): ?>
                                 <form id="form-verify-<?= $item['kelas_id'] ?>-<?= $item['hour'] ?>" action="<?= url('/tanqih/verify') ?>" method="POST">
                                     <?= csrf_token_field() ?>
                                     <input type="hidden" name="date" value="<?= $selectedDate ?>">
@@ -369,11 +387,9 @@ function filterList(status) {
         const searchInput = document.getElementById('searchInput');
         const search = searchInput.value.toLowerCase();
         const isSearching = search.length > 0;
-        const currentStatusTab = Array.from(document.querySelectorAll('button[id^="tab-"]')).find(b => b.classList.contains('bg-white'))?.id.replace('tab-', '') || 'all';
-
         // 1. Update Sidebar Badges (Global Jam Stats - Not filtered by search)
         const jamStats = {};
-        for(let j=1; j<=7; j++) jamStats[j] = { total: 0, verified: 0, pending: 0 };
+        for(let j=1; j<=7; j++) jamStats[j] = { total: 0, verified: 0, pending: 0, dispensation: 0 };
         
         items.forEach(item => {
             const h = item.getAttribute('data-hour');
@@ -381,6 +397,7 @@ function filterList(status) {
             if (jamStats[h]) {
                 jamStats[h].total++;
                 if (s === 'verified') jamStats[h].verified++;
+                else if (s === 'dispensation') jamStats[h].dispensation++;
                 else jamStats[h].pending++;
             }
         });
@@ -390,9 +407,9 @@ function filterList(status) {
             if (sidebarBtn) {
                 const badge = sidebarBtn.querySelector('.inline-flex');
                 const pendingText = sidebarBtn.querySelector('.text-red-500');
-                const numBadge = sidebarBtn.querySelector('.w-8.h-8');
+                const activeCount = jamStats[j].total - jamStats[j].dispensation;
                 
-                if (badge) badge.textContent = `${jamStats[j].verified}/${jamStats[j].total}`;
+                if (badge) badge.textContent = `${jamStats[j].verified}/${activeCount}`;
                 
                 if (pendingText) {
                     if (jamStats[j].pending > 0) {
@@ -405,7 +422,7 @@ function filterList(status) {
 
                 // Update badge color based on completion
                 if (badge) {
-                    const isComplete = jamStats[j].total > 0 && jamStats[j].verified === jamStats[j].total;
+                    const isComplete = activeCount === 0 || jamStats[j].verified === activeCount;
                     if (isComplete) {
                         badge.className = 'inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-2 bg-green-100 text-green-700';
                     } else if (jamStats[j].verified > 0) {
