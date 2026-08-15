@@ -24,19 +24,19 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
     <title>Laporan Mingguan Kehadiran Santri</title>
     <style>
         @media print {
-            @page { size: A4 portrait; margin: 2cm; }
+            @page { size: A4 portrait; margin: 0.4cm 0.6cm; }
             .no-print { display: none !important; }
         }
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.3;
             color: #000;
             background: #fff;
             margin: 0;
-            padding: 2cm;
+            padding: 0.4cm 0.6cm;
         }
-        .header { text-align: center; font-weight: bold; margin-bottom: 20px; line-height: 1.3; font-size: 16px; }
+        .header { text-align: center; font-weight: bold; margin-bottom: 12px; line-height: 1.3; font-size: 15px; }
         .sub-header { font-weight: bold; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
         th, td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
