@@ -66,30 +66,11 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
     </div>
 
     <div class="sub-header" style="text-align: center;">
-        Periode Tanggal : <?= $periode ?>
+        Periode Tanggal: <?= $periode ?>
     </div>
 
-    <div class="stats-box">
-        <p style="font-weight: bold; text-align: center; margin-bottom: 10px;">Statistik Persentase Tanqih</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Persentase</th>
-                    <th>Jumlah Guru</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>100%</td><td><?= $stats['100'] ?> Orang</td></tr>
-                <tr><td>76% - 99%</td><td><?= $stats['76_99'] ?> Orang</td></tr>
-                <tr><td>51% - 75%</td><td><?= $stats['51_75'] ?> Orang</td></tr>
-                <tr><td>26% - 50%</td><td><?= $stats['26_50'] ?> Orang</td></tr>
-                <tr><td><= 25%</td><td><?= $stats['0_25'] ?> Orang</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div style="margin-bottom: 10px;">Guru-guru dengan persentase tertinggi:</div>
-    <table>
+    <div style="margin-bottom: 5px; font-weight: bold; font-size: 12px;">Guru-guru dengan persentase tertinggi:</div>
+    <table style="margin-bottom: 10px;">
         <thead>
             <tr>
                 <th style="width: 10%;">No.</th>
@@ -110,16 +91,8 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
         </tbody>
     </table>
 
-    <div class="page-break"></div>
-
-    <div class="header">
-        LAPORAN MINGGUAN TANQIH IDAD GURU<br>
-        PONDOK PESANTREN DARUSSALAM BOGOR<br>
-        TAHUN PELAJARAN <?= htmlspecialchars($__currentYearName ?? '') ?>
-    </div>
-    
-    <div style="margin-bottom: 10px; margin-top: 20px;">Guru-guru dengan persentase terendah:</div>
-    <table>
+    <div style="margin-bottom: 5px; font-weight: bold; font-size: 12px;">Guru-guru dengan persentase terendah:</div>
+    <table style="margin-bottom: 15px;">
         <thead>
             <tr>
                 <th style="width: 10%;">No.</th>
@@ -140,12 +113,29 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
         </tbody>
     </table>
 
-    <div class="footer-signatures">
-        <div class="signature-box" style="visibility: hidden;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 10px;">
+        <div class="stats-box" style="width: 45%; margin: 0;">
+            <p style="font-weight: bold; text-align: center; margin-bottom: 5px; margin-top: 0; font-size: 12px;">Statistik Persentase Tanqih</p>
+            <table style="width: 100%; margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Persentase</th>
+                        <th>Jumlah Guru</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>100%</td><td><?= $stats['100'] ?> Orang</td></tr>
+                    <tr><td>76% - 99%</td><td><?= $stats['76_99'] ?> Orang</td></tr>
+                    <tr><td>51% - 75%</td><td><?= $stats['51_75'] ?> Orang</td></tr>
+                    <tr><td>26% - 50%</td><td><?= $stats['26_50'] ?> Orang</td></tr>
+                    <tr><td>&lt;= 25%</td><td><?= $stats['0_25'] ?> Orang</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="signature-box">
-            <div class="date">Kamis, <?= $tglEnd ?> <?= $blnEnd ?> <?= $thnEnd ?><br>Kepala Bidang PBM</div>
-            <div class="name" style="margin-top: 40px;">______________________</div>        </div>
+        <div class="signature-box" style="width: 45%; margin-top: 10px;">
+            <div class="date" style="margin-bottom: 35px; font-size: 12px;">Kamis, <?= $tglEnd ?> <?= $blnEnd ?> <?= $thnEnd ?><br>Kepala Bidang PBM</div>
+            <div class="name" style="font-weight: bold; text-decoration: underline; font-size: 12px;">______________________</div>
+        </div>
     </div>
 </body>
 </html>
