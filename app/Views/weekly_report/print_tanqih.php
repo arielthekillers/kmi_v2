@@ -37,15 +37,15 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
             margin: 0;
             padding: 0.4cm 0.6cm;
         }
-        .header { text-align: center; font-weight: bold; margin-bottom: 12px; line-height: 1.3; font-size: 15px; }
-        .sub-header { font-weight: bold; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-        th, td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
+        .header { text-align: center; font-weight: bold; margin-bottom: 6px; line-height: 1.2; font-size: 14px; }
+        .sub-header { font-weight: bold; margin-bottom: 6px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
+        th, td { border: 1px solid #000; padding: 3px 4px; text-align: center; }
         td.text-left { text-align: left; }
-        .footer-signatures { display: flex; justify-content: space-between; margin-top: 40px; }
+        .footer-signatures { display: flex; justify-content: space-between; margin-top: 15px; }
         .signature-box { text-align: center; width: 250px; }
-        .signature-box .date { margin-bottom: 60px; }
-        .signature-box .name { font-weight: bold; text-decoration: underline; }
+        .signature-box .date { margin-bottom: 40px; font-size: 12px; }
+        .signature-box .name { font-weight: bold; text-decoration: underline; font-size: 12px; }
         
         .no-print-btn {
             position: fixed; top: 20px; right: 20px;
@@ -53,8 +53,8 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
             border: none; border-radius: 8px; cursor: pointer;
             font-family: sans-serif; font-weight: bold;
         }
-        .stats-box { width: 50%; margin: 0 auto 30px auto; }
-        .stats-box table th, .stats-box table td { padding: 4px 8px; font-size: 14px; }
+        .stats-box { width: 50%; margin: 0 auto 10px auto; }
+        .stats-box table th, .stats-box table td { padding: 3px 6px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -62,8 +62,7 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
 
     <div class="header">
         LAPORAN MINGGUAN TANQIH IDAD GURU<br>
-        PONDOK PESANTREN DARUSSALAM BOGOR<br>
-        TAHUN PELAJARAN <?= htmlspecialchars($__currentYearName ?? '') ?>
+        PONPES DARUSSALAM BOGOR
     </div>
 
     <div class="sub-header" style="text-align: center;">
@@ -146,8 +145,7 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
         </div>
         <div class="signature-box">
             <div class="date">Kamis, <?= $tglEnd ?> <?= $blnEnd ?> <?= $thnEnd ?><br>Kepala Bidang PBM</div>
-            <div class="name" style="margin-top: 60px;">______________________</div>
-        </div>
+            <div class="name" style="margin-top: 40px;">______________________</div>        </div>
     </div>
 </body>
 </html>
