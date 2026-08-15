@@ -590,10 +590,16 @@ class WeeklyReportController extends Controller {
         $end = $_GET['end'] ?? '';
         if (!$start || !$end) die('Periode tidak valid');
 
+        $ayId = $_SESSION['academic_year_id'] ?? null;
+        if (!$ayId) {
+            $ayModel = new \App\Models\AcademicYearModel();
+            $activeAy = $ayModel->getActive();
+            $ayId = $activeAy['id'] ?? null;
+        }
+
         $tanqihModel = new TanqihModel();
-        $statsData = $tanqihModel->getReportStats($start, $end);
+        $statsData = $tanqihModel->getReportStats($start, $end, $ayId);
         $report = $statsData['report'];
-        
         // Ensure justified is NOT counted towards verified_real
         // Wait, getReportStats already does this. It calculates pct based on verified_real.
 
