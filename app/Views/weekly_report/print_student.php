@@ -88,12 +88,14 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
             $totalAlfa = 0;
             $totalIzin = 0;
             $totalSakit = 0;
+            $grandTotalStudentDays = 0;
 
             foreach ($report as $r): 
                 $totalSantri += $r['jumlah_santri'];
                 $totalAlfa += $r['alfa'];
                 $totalIzin += $r['izin'];
                 $totalSakit += $r['sakit'];
+                $grandTotalStudentDays += ($r['jumlah_santri'] * $r['hari_efektif']);
             ?>
             <tr>
                 <td><?= $no++ ?></td>
@@ -115,12 +117,12 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
                 <td colspan="3">Jumlah rata-rata kehadiran santri</td>
                 <td><?= $totalSantri ?></td>
                 <td><?= $totalAlfa ?></td>
-                <td><?= $totalSantri > 0 ? number_format(($totalAlfa/($totalSantri*6))*100, 2, ',', '.') : '0,00' ?></td>
+                <td><?= $grandTotalStudentDays > 0 ? number_format(($totalAlfa/$grandTotalStudentDays)*100, 2, ',', '.') : '0,00' ?></td>
                 <td><?= $totalIzin ?></td>
-                <td><?= $totalSantri > 0 ? number_format(($totalIzin/($totalSantri*6))*100, 2, ',', '.') : '0,00' ?></td>
+                <td><?= $grandTotalStudentDays > 0 ? number_format(($totalIzin/$grandTotalStudentDays)*100, 2, ',', '.') : '0,00' ?></td>
                 <td><?= $totalSakit ?></td>
-                <td><?= $totalSantri > 0 ? number_format(($totalSakit/($totalSantri*6))*100, 2, ',', '.') : '0,00' ?></td>
-                <td><?= $totalSantri > 0 ? number_format((($totalSantri*6 - $totalAlfa - $totalIzin - $totalSakit)/($totalSantri*6))*100, 2, ',', '.') : '0,00' ?></td>
+                <td><?= $grandTotalStudentDays > 0 ? number_format(($totalSakit/$grandTotalStudentDays)*100, 2, ',', '.') : '0,00' ?></td>
+                <td><?= $grandTotalStudentDays > 0 ? number_format((($grandTotalStudentDays - $totalAlfa - $totalIzin - $totalSakit)/$grandTotalStudentDays)*100, 2, ',', '.') : '0,00' ?></td>
             </tr>
         </tfoot>
     </table>
