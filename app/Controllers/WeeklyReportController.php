@@ -458,9 +458,62 @@ class WeeklyReportController extends Controller {
         foreach ($absRaw as $row) {
             $absences[$row['kelas_id']][$row['type']] = $row['total'];
         }
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensationsByDate = $activityModel->getDispensationsByRange($start, $end, $ayId);
 
-        $hariEfektif = 6; // Hardcoded to 6 (Sat-Thu) as per user request
+        // Fetch academic calendar events categorized as Libur (Holiday)
+        $stmtCal = $db->prepare("
+            SELECT tanggal_mulai, tanggal_selesai 
+            FROM academic_calendar_events 
+            WHERE academic_year_id = ? 
+              AND kategori = 'Libur'
+              AND (tanggal_mulai <= ? AND (tanggal_selesai >= ? OR tanggal_selesai IS NULL))
+        ");
+        $stmtCal->execute([$ayId, $end, $start]);
+        $calendarHolidays = $stmtCal->fetchAll(\PDO::FETCH_ASSOC);
 
+        $holidays = [];
+        foreach ($calendarHolidays as $cal) {
+            $s = $cal['tanggal_mulai'];
+            $e = !empty($cal['tanggal_selesai']) ? $cal['tanggal_selesai'] : $cal['tanggal_mulai'];
+            $cur = $s;
+            while ($cur <= $e) {
+                $holidays[$cur] = true;
+                $cur = date('Y-m-d', strtotime($cur . ' +1 day'));
+            }
+        }
+
+        $kelasEffectiveDays = [];
+        foreach ($kelasList as $k) {
+            $kid = $k['id'];
+            
+            // Loop through all dates in range to count effective KBM days
+            $currentDate = $start;
+            $effDays = 0;
+            while (strtotime($currentDate) <= strtotime($end)) {
+                $dayOfWeek = date('w', strtotime($currentDate));
+                $isFriday = ($dayOfWeek == 5);
+                $isHoliday = isset($holidays[$currentDate]);
+
+                if (!$isFriday && !$isHoliday) {
+                    // Check if this class has a full-day dispensation on this date
+                    $dayDispensations = $dispensationsByDate[$currentDate] ?? [];
+                    $isFullDayDisp = false;
+                    foreach ($dayDispensations as $disp) {
+                        if ($disp['is_full_day'] && in_array((int)$kid, $disp['kelas_ids'])) {
+                            $isFullDayDisp = true;
+                            break;
+                        }
+                    }
+
+                    if (!$isFullDayDisp) {
+                        $effDays++;
+                    }
+                }
+                $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+            }
+            $kelasEffectiveDays[$kid] = $effDays;
+        }
         $report = [];
         foreach ($kelasList as $k) {
             $kid = $k['id'];
@@ -472,6 +525,7 @@ class WeeklyReportController extends Controller {
             $izin = $absences[$kid]['izin'] ?? 0;
             $alfa = $absences[$kid]['alpha'] ?? 0;
 
+            $hariEfektif = $kelasEffectiveDays[$kid] ?? 0;
             $totalStudentDays = $jumlahSantri * $hariEfektif;
             $totalAbsences = $sakit + $izin + $alfa;
             
