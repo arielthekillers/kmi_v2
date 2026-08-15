@@ -116,7 +116,31 @@ class WeeklyReportController extends Controller {
         $stmt->execute([$ayId]);
         $schedules = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Map English day to Indonesian
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensationsByDate = $activityModel->getDispensationsByRange($start, $end, $ayId);
+
+        // Fetch academic calendar events categorized as Libur (Holiday)
+        $stmtCal = $db->prepare("
+            SELECT tanggal_mulai, tanggal_selesai 
+            FROM academic_calendar_events 
+            WHERE academic_year_id = ? 
+              AND kategori = 'Libur'
+              AND (tanggal_mulai <= ? AND (tanggal_selesai >= ? OR tanggal_selesai IS NULL))
+        ");
+        $stmtCal->execute([$ayId, $end, $start]);
+        $calendarHolidays = $stmtCal->fetchAll(\PDO::FETCH_ASSOC);
+
+        $holidays = [];
+        foreach ($calendarHolidays as $cal) {
+            $s = $cal['tanggal_mulai'];
+            $e = !empty($cal['tanggal_selesai']) ? $cal['tanggal_selesai'] : $cal['tanggal_mulai'];
+            $cur = $s;
+            while ($cur <= $e) {
+                $holidays[$cur] = true;
+                $cur = date('Y-m-d', strtotime($cur . ' +1 day'));
+            }
+        }
+
         $dayMap = [
             'Sun' => 'Ahad', 'Mon' => 'Senin', 'Tue' => 'Selasa',
             'Wed' => 'Rabu', 'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'
@@ -158,10 +182,41 @@ class WeeklyReportController extends Controller {
                     'alfa' => 0
                 ];
             }
-            
             // Check if this schedule falls on a day in our range
             foreach ($daysInRange as $dayObj) {
                 if ($sched['day'] === $dayObj['dayName']) {
+                    // Check if it's a Friday or Calendar Holiday
+                    $dayOfWeek = date('w', strtotime($dayObj['date']));
+                    $isFriday = ($dayOfWeek == 5);
+                    $isHoliday = isset($holidays[$dayObj['date']]);
+
+                    if ($isFriday || $isHoliday) {
+                        continue;
+                    }
+
+                    // Check if this specific schedule is under KBM dispensation
+                    $dayDispensations = $dispensationsByDate[$dayObj['date']] ?? [];
+                    $isDisp = false;
+                    foreach ($dayDispensations as $disp) {
+                        if (in_array((int)$sched['kelas_id'], $disp['kelas_ids'])) {
+                            if ($disp['is_full_day']) {
+                                $isDisp = true;
+                                break;
+                            } else {
+                                foreach ($disp['hours'] as $h) {
+                                    if ((int)$sched['hour'] >= (int)$h['hour_start'] && (int)$sched['hour'] <= (int)$h['hour_end']) {
+                                        $isDisp = true;
+                                        break 2;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if ($isDisp) {
+                        continue;
+                    }
+
                     $report[$tid]['expected']++;
                 }
             }
@@ -180,11 +235,35 @@ class WeeklyReportController extends Controller {
         $leaveStmt = $db->prepare($leaveSql);
         $leaveStmt->execute([$start, $end, $ayId]);
         $teacherLeaves = $leaveStmt->fetchAll(\PDO::FETCH_ASSOC);
-
         foreach ($teacherLeaves as $leave) {
             $tid = $leave['teacher_id'];
             if (!$tid || !isset($report[$tid])) continue;
 
+            // Check if this slot was a holiday or dispensation
+            $isFriday = (date('w', strtotime($leave['leave_date'])) == 5);
+            $isHoliday = isset($holidays[$leave['leave_date']]);
+            if ($isFriday || $isHoliday) {
+                continue;
+            }
+            
+            $dayDispensations = $dispensationsByDate[$leave['leave_date']] ?? [];
+            $isDisp = false;
+            foreach ($dayDispensations as $disp) {
+                if (in_array((int)$leave['kelas_id'], $disp['kelas_ids'])) {
+                    if ($disp['is_full_day']) {
+                        $isDisp = true;
+                        break;
+                    } else {
+                        foreach ($disp['hours'] as $h) {
+                            if ((int)$leave['hour'] >= (int)$h['hour_start'] && (int)$leave['hour'] <= (int)$h['hour_end']) {
+                                $isDisp = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+            if ($isDisp) continue;
             $slotKey = $leave['leave_date'] . '|' . $leave['kelas_id'] . '|' . $leave['hour'];
             
             // Count it as izin or sakit
@@ -209,7 +288,32 @@ class WeeklyReportController extends Controller {
         foreach ($rawLogs as $log) {
             $tid = $log['teacher_id'];
             if (!$tid) continue;
+
+            // Check if this slot was a holiday or dispensation
+            $isFriday = (date('w', strtotime($log['date'])) == 5);
+            $isHoliday = isset($holidays[$log['date']]);
+            if ($isFriday || $isHoliday) {
+                continue;
+            }
             
+            $dayDispensations = $dispensationsByDate[$log['date']] ?? [];
+            $isDisp = false;
+            foreach ($dayDispensations as $disp) {
+                if (in_array((int)$log['kelas_id'], $disp['kelas_ids'])) {
+                    if ($disp['is_full_day']) {
+                        $isDisp = true;
+                        break;
+                    } else {
+                        foreach ($disp['hours'] as $h) {
+                            if ((int)$log['hour'] >= (int)$h['hour_start'] && (int)$log['hour'] <= (int)$h['hour_end']) {
+                                $isDisp = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+            if ($isDisp) continue;
             // If the teacher has no expected schedule
             if (!isset($report[$tid])) {
                 $report[$tid] = [
