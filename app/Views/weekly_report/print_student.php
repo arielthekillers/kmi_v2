@@ -36,14 +36,14 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
             margin: 0;
             padding: 0.4cm 0.6cm;
         }
-        .header { text-align: center; font-weight: bold; margin-bottom: 12px; line-height: 1.3; font-size: 15px; }
-        .sub-header { font-weight: bold; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-        th, td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
-        .footer-signatures { display: flex; justify-content: space-between; margin-top: 40px; }
+        .header { text-align: center; font-weight: bold; margin-bottom: 6px; line-height: 1.2; font-size: 14px; }
+        .sub-header { font-weight: bold; margin-bottom: 6px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
+        th, td { border: 1px solid #000; padding: 3px 4px; text-align: center; }
+        .footer-signatures { display: flex; justify-content: space-between; margin-top: 15px; }
         .signature-box { text-align: center; width: 250px; }
-        .signature-box .date { margin-bottom: 60px; }
-        .signature-box .name { font-weight: bold; text-decoration: underline; }
+        .signature-box .date { margin-bottom: 40px; font-size: 12px; }
+        .signature-box .name { font-weight: bold; text-decoration: underline; font-size: 12px; }
         
         .no-print-btn {
             position: fixed; top: 20px; right: 20px;
@@ -58,8 +58,7 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
 
     <div class="header">
         LAPORAN MINGGUAN KEHADIRAN SANTRI<br>
-        PONDOK PESANTREN DARUSSALAM BOGOR<br>
-        TAHUN PELAJARAN <?= htmlspecialchars($__currentYearName ?? '') ?>
+        PONPES DARUSSALAM BOGOR
     </div>
 
     <div class="sub-header">
@@ -71,7 +70,7 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
             <tr>
                 <th>No</th>
                 <th>Kelas</th>
-                <th>Jumlah<br>Hari<br>Efektif</th>
+                <th>Hari<br>Efektif</th>
                 <th>Jumlah<br>Santri</th>
                 <th>Alfa</th>
                 <th>Persentase</th>
@@ -157,11 +156,11 @@ if ($blnStart === $blnEnd && $thnStart === $thnEnd) {
     <div class="footer-signatures">
         <div class="signature-box">
             <div class="date">Kepala Biro Pengajaran</div>
-            <div class="name" style="margin-top: 60px;">______________________</div>
+            <div class="name" style="margin-top: 40px;">______________________</div>
         </div>
         <div class="signature-box">
             <div class="date">Kamis, <?= $tglEnd ?> <?= $blnEnd ?> <?= $thnEnd ?><br>Kepala Bidang PBM</div>
-            <div class="name" style="margin-top: 60px;">______________________</div>
+            <div class="name" style="margin-top: 40px;">______________________</div>
         </div>
     </div>
 </body>
