@@ -193,7 +193,8 @@ class ActivityModel extends Model {
      * @param string $endDate (Y-m-d)
      * @return array [date => [dispensations]]
      */
-    public function getDispensationsByRange($startDate, $endDate) {
+    public function getDispensationsByRange($startDate, $endDate, $academicYearId = null) {
+        $ayId = $academicYearId ?? $this->academic_year_id;
         $stmt = $this->db->prepare("
             SELECT a.id, a.name, a.is_full_day, a.start_date, a.end_date,
                    GROUP_CONCAT(DISTINCT t.kelas_id) as target_kelas_ids
@@ -203,7 +204,7 @@ class ActivityModel extends Model {
               AND (a.start_date <= ? AND a.end_date >= ?)
             GROUP BY a.id
         ");
-        $stmt->execute([$this->academic_year_id, $endDate, $startDate]);
+        $stmt->execute([$ayId, $endDate, $startDate]);
         $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $hoursMap = [];

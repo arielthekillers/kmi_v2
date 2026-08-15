@@ -49,7 +49,29 @@ class TanqihModel extends Model {
         $verifications = $this->getVerificationsInRange($startDate, $endDate, $ayId);
         
         $activityModel = new \App\Models\ActivityModel();
-        $dispensationsByDate = $activityModel->getDispensationsByRange($startDate, $endDate);
+        $dispensationsByDate = $activityModel->getDispensationsByRange($startDate, $endDate, $ayId);
+
+        // Fetch academic calendar events categorized as Libur (Holiday)
+        $stmtCal = $this->db->prepare("
+            SELECT tanggal_mulai, tanggal_selesai 
+            FROM academic_calendar_events 
+            WHERE academic_year_id = ? 
+              AND kategori = 'Libur'
+              AND (tanggal_mulai <= ? AND (tanggal_selesai >= ? OR tanggal_selesai IS NULL))
+        ");
+        $stmtCal->execute([$ayId, $endDate, $startDate]);
+        $calendarHolidays = $stmtCal->fetchAll(PDO::FETCH_ASSOC);
+
+        $holidays = [];
+        foreach ($calendarHolidays as $cal) {
+            $s = $cal['tanggal_mulai'];
+            $e = !empty($cal['tanggal_selesai']) ? $cal['tanggal_selesai'] : $cal['tanggal_mulai'];
+            $cur = $s;
+            while ($cur <= $e) {
+                $holidays[$cur] = true;
+                $cur = date('Y-m-d', strtotime($cur . ' +1 day'));
+            }
+        }
 
         $report = [];
         $globalStats = [
@@ -69,9 +91,9 @@ class TanqihModel extends Model {
         while (strtotime($currentDate) <= strtotime($endDate)) {
             $dayNameEnglish = date('D', strtotime($currentDate));
             $dayNameVideo = $dayMap[$dayNameEnglish] ?? '';
-
             $dayOfWeek = date('w', strtotime($currentDate));
             $isFriday = ($dayOfWeek == 5);
+            $isHoliday = isset($holidays[$currentDate]);
             $dayDispensations = $dispensationsByDate[$currentDate] ?? [];
 
             // Get schedules for this day
@@ -81,9 +103,9 @@ class TanqihModel extends Model {
                 $pid = $slot['teacher_id'];
                 if (!$pid) continue;
 
-                // Check dispensation
+                // Check dispensation / holiday
                 $isDisp = false;
-                if ($isFriday) {
+                if ($isFriday || $isHoliday) {
                     $isDisp = true;
                 } else {
                     foreach ($dayDispensations as $disp) {
