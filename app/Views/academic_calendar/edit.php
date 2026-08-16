@@ -164,7 +164,7 @@ $kategoriConfig = [
                                     <div id="jam_ke_container" class="<?= $isFullDay ? 'hidden' : 'flex' ?> flex-wrap items-center gap-2 mt-2 w-full">
                                         <span class="text-xs font-semibold text-gray-500 w-full mb-1">Pilih Jam Pelajaran:</span>
                                         <div class="flex flex-wrap gap-1.5">
-                                            <?php for ($i = 1; $i <= 10; $i++): 
+                                            <?php for ($i = 1; $i <= 7; $i++): 
                                                 $checked = in_array($i, $selectedHours) ? 'checked' : '';
                                             ?>
                                                 <label class="cursor-pointer select-none">
