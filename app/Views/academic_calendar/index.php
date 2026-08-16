@@ -391,16 +391,17 @@ $isAdmin = auth_get_role() === 'admin';
                             </span>
                         </label>
                         
-                        <div id="jam_ke_container" class="hidden flex items-center gap-2">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs text-gray-500">Dari jam</span>
-                                <input type="number" name="hour_start" min="1" max="10" placeholder="1"
-                                    class="w-12 border border-gray-200 rounded-lg px-1.5 py-1 text-center text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm">
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-xs text-gray-500">s/d</span>
-                                <input type="number" name="hour_end" min="1" max="10" placeholder="7"
-                                    class="w-12 border border-gray-200 rounded-lg px-1.5 py-1 text-center text-xs font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm">
+                        <div id="jam_ke_container" class="hidden flex-wrap items-center gap-2 mt-2 w-full">
+                            <span class="text-xs font-semibold text-gray-500 w-full mb-1">Pilih Jam Pelajaran:</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <?php for ($i = 1; $i <= 10; $i++): ?>
+                                    <label class="cursor-pointer select-none">
+                                        <input type="checkbox" name="hours[]" value="<?= $i ?>" class="sr-only peer">
+                                        <span class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-xl text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-700 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all duration-200 shadow-sm min-w-[36px] text-center">
+                                            <?= $i ?>
+                                        </span>
+                                    </label>
+                                <?php endfor; ?>
                             </div>
                         </div>
                     </div>

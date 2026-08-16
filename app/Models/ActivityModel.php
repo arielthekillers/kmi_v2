@@ -107,9 +107,22 @@ class ActivityModel extends Model {
             $activityId = $this->db->lastInsertId();
 
             // 2. Insert activity_hours
-            if (!$data['is_full_day'] && $data['hour_start'] > 0 && $data['hour_end'] > 0) {
-                $stmtHours = $this->db->prepare("INSERT INTO activity_hours (activity_id, hour_start, hour_end) VALUES (?, ?, ?)");
-                $stmtHours->execute([$activityId, $data['hour_start'], $data['hour_end']]);
+            if (!$data['is_full_day']) {
+                $hoursToInsert = [];
+                if (!empty($data['hours'])) {
+                    $hoursToInsert = $data['hours'];
+                } elseif (isset($data['hour_start']) && isset($data['hour_end']) && $data['hour_start'] > 0 && $data['hour_end'] > 0) {
+                    for ($i = $data['hour_start']; $i <= $data['hour_end']; $i++) {
+                        $hoursToInsert[] = $i;
+                    }
+                }
+                
+                if (!empty($hoursToInsert)) {
+                    $stmtHours = $this->db->prepare("INSERT INTO activity_hours (activity_id, hour_start, hour_end) VALUES (?, ?, ?)");
+                    foreach ($hoursToInsert as $h) {
+                        $stmtHours->execute([$activityId, (int)$h, (int)$h]);
+                    }
+                }
             }
 
             // 3. Insert activity_targets

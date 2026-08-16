@@ -177,11 +177,15 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                                     if ($disp['is_full_day']) {
                                         $timeDesc = 'Seharian (Full Day)';
                                     } else {
-                                        $hourRanges = [];
+                                        $selectedHours = [];
                                         foreach ($disp['hours'] as $h) {
-                                            $hourRanges[] = 'Jam ' . $h['hour_start'] . ' s/d ' . $h['hour_end'];
+                                            for ($i = $ah_start = $h['hour_start']; $i <= $h['hour_end']; $i++) {
+                                                $selectedHours[] = $i;
+                                            }
                                         }
-                                        $timeDesc = implode(', ', $hourRanges);
+                                        $selectedHours = array_unique($selectedHours);
+                                        sort($selectedHours);
+                                        $timeDesc = 'Jam ' . implode(', ', $selectedHours);
                                     }
                                 ?>
                                     <div class="text-xs text-amber-900 flex flex-col sm:flex-row sm:items-start sm:gap-4 bg-white/70 border border-amber-100/50 px-3 py-2 rounded-xl">
