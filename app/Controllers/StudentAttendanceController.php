@@ -56,6 +56,11 @@ class StudentAttendanceController extends Controller {
         $summary = [];
         $schedules = [];
         $dispensations = [];
+        $absentCounts = [];
+
+        if ($activeSession) {
+            $absentCounts = $this->attendanceModel->getAbsentCountPerClass($selectedDate, $activeSession['id']);
+        }
 
         if (!empty($activeKelasId) && $activeSession) {
             $students = $this->attendanceModel->getAbsencesByClassAndDate($activeKelasId, $selectedDate, $activeSession['id']);
@@ -113,7 +118,8 @@ class StudentAttendanceController extends Controller {
             'activeSession' => $activeSession,
             'tab' => $tab,
             'schedules' => $schedules,
-            'dispensations' => $dispensations
+            'dispensations' => $dispensations,
+            'absentCounts' => $absentCounts
         ]);
     }
 

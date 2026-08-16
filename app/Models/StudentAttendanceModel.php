@@ -174,4 +174,16 @@ class StudentAttendanceModel extends Model {
         }
         return $summary;
     }
+
+    public function getAbsentCountPerClass($date, $sessionId) {
+        if (!$sessionId) return [];
+        $stmt = $this->db->prepare("
+            SELECT kelas_id, COUNT(*) as count 
+            FROM student_absences 
+            WHERE date = ? AND attendance_session_id = ? AND type IN ('sakit', 'izin', 'alpha')
+            GROUP BY kelas_id
+        ");
+        $stmt->execute([$date, $sessionId]);
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
 }

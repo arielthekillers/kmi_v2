@@ -4,6 +4,7 @@
 /** @var array $students */
 /** @var array $summary */
 /** @var array $dispensations */
+/** @var array $absentCounts */
 renderHeader("Absensi Santri"); 
 $role = auth_get_role();
 $userId = auth_get_user_id();
@@ -101,14 +102,22 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
                             
                             $sidebarUrl = url('/student-attendance?kelas=' . $k['id'] . '&date=' . urlencode($selectedDate) . '&tab=' . urlencode($tab));
+                            $absentCount = $absentCounts[$k['id']] ?? 0;
                         ?>
                             <a href="<?= $sidebarUrl ?>" 
                                id="class-nav-item-<?= $k['id'] ?>"
-                               class="whitespace-nowrap flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl transition-all duration-200 group <?= $activeClass ?> snap-start min-w-[45%] lg:min-w-0">
-                                <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs <?= $isActive ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200' ?>">
-                                    <i class="ri-community-line"></i>
+                               class="whitespace-nowrap flex items-center justify-between gap-3 px-3 py-2.5 text-sm rounded-xl transition-all duration-200 group <?= $activeClass ?> snap-start min-w-[45%] lg:min-w-0">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs <?= $isActive ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200' ?>">
+                                        <i class="ri-community-line"></i>
+                                    </div>
+                                    <span class="truncate"><?= htmlspecialchars($k['tingkat']) ?> - <?= htmlspecialchars($k['abjad']) ?></span>
                                 </div>
-                                <span><?= htmlspecialchars($k['tingkat']) ?> - <?= htmlspecialchars($k['abjad']) ?></span>
+                                <?php if ($absentCount > 0): ?>
+                                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+                                        <?= $absentCount ?>
+                                    </span>
+                                <?php endif; ?>
                             </a>
                         <?php endforeach; ?>
                     </nav>
