@@ -32,16 +32,22 @@
         }
         
         /* Tom Select Tailwind Tweaks */
-        .ts-control {
-            border-radius: 0.375rem;
-            padding: 0.5rem 0.75rem;
-            border-color: #d1d5db;
+        .ts-control, .ts-wrapper.single .ts-control {
+            border-radius: 0.75rem !important;
+            padding: 0.75rem 1rem !important;
+            border-color: #e2e8f0 !important;
+            background-color: #ffffff !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+            min-height: 46px !important;
+            display: flex !important;
+            align-items: center !important;
         }
         .ts-wrapper.single .ts-control {
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .ts-dropdown {
-            border-radius: 0.375rem;
+            border-radius: 0.75rem !important;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             z-index: 50;
         }
@@ -197,19 +203,24 @@
                                     <a href="<?= url('/attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-user-received-2-line text-gray-400"></i> Absensi Pengajar
                                     </a>
-                                    <a href="<?= url('/student-attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-user-unfollow-line text-gray-400"></i> Absensi Santri
-                                    </a>
                                     <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
                                         <a href="<?= url('/leaves') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                             <i class="ri-user-unfollow-fill text-gray-400"></i> Izin Mengajar
                                         </a>
-                                        <a href="<?= url('/student-attendance/pbm') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                    <?php endif; ?>
+                                    <a href="<?= url('/student-attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-user-unfollow-line text-gray-400"></i> Absensi Santri
+                                    </a>
+                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                                        <a href="<?= url('/student-attendance/pbm') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                             <i class="ri-group-line text-gray-400"></i> Petugas Absensi
                                         </a>
-                                    <?php else: ?>
-                                        <div class="border-b border-gray-50 pb-2 mb-1"></div>
                                     <?php endif; ?>
+                                    <a href="<?= url('/student-development') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-heart-pulse-line text-gray-400"></i> Perkembangan Santri
+                                    </a>
+                                    
+                                    <div class="border-b border-gray-50 pb-2 mb-1"></div>
 
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Ujian & Penilaian</div>
                                     <a href="<?= url('/tanqih') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
@@ -219,22 +230,22 @@
                                         <i class="ri-edit-2-line text-gray-400"></i> Koreksi Ujian
                                     </a>
                                     <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
-                                        <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
+                                        <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                             <i class="ri-team-line text-gray-400"></i> Panitia Ujian
                                         </a>
-                                    <?php else: ?>
-                                        <div class="border-b border-gray-50 pb-2 mb-1"></div>
                                     <?php endif; ?>
+
+                                    <div class="border-b border-gray-50 pb-2 mb-1"></div>
 
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pusat Laporan</div>
                                     <a href="<?= url('/tanqih/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-file-list-3-line text-gray-400"></i> Laporan Tanqih
                                     </a>
-                                    <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-file-chart-line text-gray-400"></i> Laporan Piket Keliling
-                                    </a>
                                     <a href="<?= url('/weekly-report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                                         <i class="ri-calendar-todo-fill text-gray-400"></i> Laporan Mingguan
+                                    </a>
+                                    <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                        <i class="ri-file-chart-line text-gray-400"></i> Laporan Piket Keliling
                                     </a>
                                 </div>
                             </div>
@@ -392,17 +403,22 @@
                     <a href="<?= url('/attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-user-received-2-line mr-2"></i>Absensi Pengajar
                     </a>
-                    <a href="<?= url('/student-attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                        <i class="ri-user-unfollow-line mr-2"></i>Absensi Santri
-                    </a>
                     <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
                         <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
                         </a>
+                    <?php endif; ?>
+                    <a href="<?= url('/student-attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-user-unfollow-line mr-2"></i>Absensi Santri
+                    </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
                         <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-group-line mr-2"></i>Petugas Absensi
                         </a>
                     <?php endif; ?>
+                    <a href="<?= url('/student-development') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-heart-pulse-line mr-2"></i>Perkembangan Santri
+                    </a>
 
                     <a href="<?= url('/tanqih') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 mt-1">
                         <i class="ri-checkbox-circle-line mr-2"></i>Tanqih Idad
@@ -419,11 +435,11 @@
                     <a href="<?= url('/tanqih/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 mt-1">
                         <i class="ri-file-list-3-line mr-2"></i>Laporan Tanqih
                     </a>
-                    <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                        <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
-                    </a>
                     <a href="<?= url('/weekly-report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-calendar-todo-fill mr-2"></i>Laporan Mingguan
+                    </a>
+                    <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
                     </a>
                 <?php endif; ?>
 

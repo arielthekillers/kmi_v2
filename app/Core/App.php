@@ -136,6 +136,22 @@ class App
         $this->router->get('/student-attendance', ['App\Controllers\StudentAttendanceController', 'index']);
         $this->router->post('/student-attendance/store', ['App\Controllers\StudentAttendanceController', 'store']);
 
+        // Modul Pemantauan Perkembangan Santri (Student Development)
+        $this->router->get('/student-development', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'index']);
+        $this->router->get('/student-development/observe', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'observe']);
+        $this->router->post('/student-development/observe/store', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'storeObservation']);
+        $this->router->get('/student-development/student', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'studentProfile']);
+        $this->router->post('/student-development/observation/delete', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'deleteObservation']);
+        $this->router->post('/student-development/observation/context', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'updateContext']);
+        $this->router->post('/student-development/observation/respond', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'addResponse']);
+        $this->router->get('/api/student-development/class-subjects', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'getClassSubjects']);
+        
+        // Admin category settings
+        $this->router->get('/student-development/categories', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'categories']);
+        $this->router->post('/student-development/categories/store', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'storeCategory']);
+        $this->router->post('/student-development/categories/update', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'updateCategory']);
+        $this->router->get('/student-development/categories/delete', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'deleteCategory']);
+
         // PBM Committee Routes (Bagian PBM)
         $this->router->get('/student-attendance/pbm', ['App\Controllers\StudentAttendanceController', 'pbmIndex']);
         $this->router->post('/student-attendance/pbm/session/status', ['App\Controllers\StudentAttendanceController', 'updateSessionStatus']);

@@ -82,6 +82,13 @@
                     <svg class="w-4 h-4 <?= $tab === 'perilaku' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Nilai Perilaku
                 </a>
+
+                <a href="?id=<?= $kelas['id'] ?>&tab=perkembangan" 
+                   <?= $tab === 'perkembangan' ? 'id="active-tab"' : '' ?>
+                   class="whitespace-nowrap flex items-center gap-2 px-4 py-2.5 md:px-3 md:py-2 text-sm rounded-full md:rounded-lg border md:border-0 transition-all <?= $tab === 'perkembangan' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm' : 'bg-white md:bg-transparent border-gray-200 text-gray-600 hover:bg-gray-100' ?>">
+                    <svg class="w-4 h-4 <?= $tab === 'perkembangan' ? 'text-indigo-500' : 'text-gray-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14"/></svg>
+                    Perkembangan Santri
+                </a>
             </nav>
         </aside>
 
@@ -445,6 +452,76 @@
             <?php elseif ($tab === 'perilaku'): ?>
                 <!-- Nilai Perilaku Tab -->
                 <?php include __DIR__ . '/view_perilaku.php'; ?>
+
+            <?php elseif ($tab === 'perkembangan'): ?>
+                <!-- Perkembangan Santri Tab -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="bg-slate-50/50 p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Perkembangan Kelas <?= htmlspecialchars($kelas['tingkat']) ?>-<?= htmlspecialchars($kelas['abjad']) ?></h3>
+                                <p class="text-xs text-slate-400">Pendidik dapat memantau observasi dari guru pengajar lain dan memberikan tanggapan/respons.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-slate-50/30 text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-4 pl-6">NIS</th>
+                                        <th class="p-4">Nama Santri</th>
+                                        <th class="p-4 text-center">Observasi</th>
+                                        <th class="p-4 pr-6 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-slate-700">
+                                    <?php if (empty($class_students)): ?>
+                                        <tr>
+                                            <td colspan="4" class="p-8 text-center text-slate-400 italic">Tidak ada santri terdaftar di kelas ini.</td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($class_students as $s): ?>
+                                            <tr class="hover:bg-slate-50/40 transition-all">
+                                                <td class="p-4 pl-6 font-medium text-slate-400"><?= htmlspecialchars($s['nis']) ?></td>
+                                                <td class="p-4 font-bold text-slate-800"><?= htmlspecialchars($s['nama']) ?></td>
+                                                <td class="p-4 text-center">
+                                                    <div class="flex justify-center gap-1.5 text-[11px] font-bold">
+                                                        <?php if ($s['count_positif'] > 0): ?>
+                                                            <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
+                                                                <?= $s['count_positif'] ?>+
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if ($s['count_perhatian'] > 0): ?>
+                                                            <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                                                                <?= $s['count_perhatian'] ?>!
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if ($s['count_informasi'] > 0): ?>
+                                                            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                                                                <?= $s['count_informasi'] ?>i
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if ($s['count_positif'] == 0 && $s['count_perhatian'] == 0 && $s['count_informasi'] == 0): ?>
+                                                            <span class="text-slate-400 font-normal italic">Belum ada catatan</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                                <td class="p-4 pr-6 text-right flex justify-end gap-2">
+                                                    <a href="<?= url('/student-development/student?id=' . $s['id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1">
+                                                        <i class="ri-history-line"></i> Timeline & Respon
+                                                    </a>
+                                                    <a href="<?= url('/student-development/observe?student_id=' . $s['id']) ?>" class="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-slate-200 transition-all flex items-center gap-1">
+                                                        <i class="ri-add-line"></i> Observasi
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
             <?php elseif ($tab === 'raport_arab'): ?>
                 <!-- Cetak Rapor Arab Tab -->

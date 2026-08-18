@@ -448,6 +448,21 @@ class KelasController extends Controller {
             $data['studentScores'] = $studentScores;
             $data['rankings'] = $rankings;
             $data['examAverages'] = $examAverages;
+        } elseif ($tab === 'perkembangan') {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $sql = "SELECT s.id, s.nama, s.nis, s.gender,
+                           SUM(CASE WHEN so.type = 'Positif' THEN 1 ELSE 0 END) as count_positif,
+                           SUM(CASE WHEN so.type = 'Perhatian' THEN 1 ELSE 0 END) as count_perhatian,
+                           SUM(CASE WHEN so.type = 'Informasi' THEN 1 ELSE 0 END) as count_informasi
+                    FROM students s
+                    INNER JOIN student_enrollments se ON s.id = se.student_id
+                    LEFT JOIN student_observations so ON s.id = so.student_id AND so.academic_year_id = ?
+                    WHERE se.kelas_id = ? AND se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL
+                    GROUP BY s.id, s.nama, s.nis, s.gender
+                    ORDER BY s.nama ASC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$this->currentYear['id'], $id, $this->currentYear['id']]);
+            $data['class_students'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         }
 
         renderHeader($data['title']);
