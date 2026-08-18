@@ -222,6 +222,14 @@
             }
         });
 
+        window.tomSelectKelas = new TomSelect("#kelas-select", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        });
+
         window.tomSelectSubject = new TomSelect("#subject-select", {
             create: false,
             sortField: {
@@ -289,10 +297,9 @@
         });
 
         // Watch class selection change
-        document.getElementById('kelas-select').addEventListener('change', function() {
-            const classId = this.value;
-            if (classId) {
-                fetchClassSubjects(classId);
+        window.tomSelectKelas.on('change', function(value) {
+            if (value) {
+                fetchClassSubjects(value);
             } else {
                 clearSubjects();
             }
@@ -330,6 +337,10 @@
             studentSelect.setAttribute('required', 'required');
             classSelect.removeAttribute('required');
 
+            if (window.tomSelectKelas) {
+                window.tomSelectKelas.clear();
+            }
+
             // Style labels
             labelStudent.className = "inline-flex items-center justify-center cursor-pointer px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs transition-all select-none text-center";
             labelClass.className = "inline-flex items-center justify-center cursor-pointer px-4 py-2.5 text-slate-500 rounded-xl font-bold text-xs transition-all select-none text-center hover:text-slate-800";
@@ -361,11 +372,13 @@
             labelClass.className = "inline-flex items-center justify-center cursor-pointer px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs transition-all select-none text-center";
             
             // Re-trigger subject loading based on active class selector
-            const cid = classSelect.value;
-            if (cid) {
-                fetchClassSubjects(cid);
-            } else {
-                clearSubjects();
+            if (window.tomSelectKelas) {
+                const cid = window.tomSelectKelas.getValue();
+                if (cid) {
+                    fetchClassSubjects(cid);
+                } else {
+                    clearSubjects();
+                }
             }
         }
     }
