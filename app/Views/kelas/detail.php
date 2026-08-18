@@ -507,7 +507,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="p-4 pr-6 text-right flex justify-end gap-2">
-                                                    <a href="<?= url('/student-development/student?id=' . $s['id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1">
+                                                    <a href="<?= url('/student-development/student?id=' . $s['id'] . '&back=' . urlencode('/classes/detail?id=' . $kelas['id'] . '&tab=perkembangan')) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-indigo-100 transition-all flex items-center gap-1">
                                                         <i class="ri-history-line"></i> Timeline & Respon
                                                     </a>
                                                     <a href="<?= url('/student-development/observe?student_id=' . $s['id']) ?>" class="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold px-3.5 py-1.5 rounded-xl border border-slate-200 transition-all flex items-center gap-1">

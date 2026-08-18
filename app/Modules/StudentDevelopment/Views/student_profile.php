@@ -9,9 +9,15 @@
 </style>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
 
+    <?php
+    $backUrl = url('/student-development');
+    if (!empty($_GET['back'])) {
+        $backUrl = htmlspecialchars($_GET['back']);
+    }
+    ?>
     <!-- Back Navigation -->
     <div class="mb-6 flex justify-between items-center">
-        <a href="<?= url('/student-development') ?>" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-semibold transition-all">
+        <a href="<?= $backUrl ?>" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-semibold transition-all">
             <i class="ri-arrow-left-line"></i> Kembali
         </a>
         <a href="<?= url('/student-development/observe?student_id=' . $profile['id']) ?>" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1">
