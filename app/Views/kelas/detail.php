@@ -455,12 +455,13 @@
 
             <?php elseif ($tab === 'perkembangan'): ?>
                 <!-- Perkembangan Santri Tab -->
-                <div class="space-y-4">
+                <div class="space-y-6">
+                    <!-- 1. Catatan Perorangan Santri -->
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                         <div class="bg-slate-50/50 p-6 border-b border-slate-100 flex justify-between items-center">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800">Perkembangan Kelas <?= htmlspecialchars($kelas['tingkat']) ?>-<?= htmlspecialchars($kelas['abjad']) ?></h3>
-                                <p class="text-xs text-slate-400">Pendidik dapat memantau observasi dari guru pengajar lain dan memberikan tanggapan/respons.</p>
+                                <h3 class="text-lg font-bold text-slate-800">Catatan Santri (Personal)</h3>
+                                <p class="text-xs text-slate-400">Pendidik dapat memantau observasi dari guru pengajar lain per individu santri.</p>
                             </div>
                         </div>
                         
@@ -519,6 +520,79 @@
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- 2. Catatan Kolektif Kelas -->
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="bg-slate-50/50 p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Catatan Kelas (Kolektif)</h3>
+                                <p class="text-xs text-slate-400">Pendidik dapat memantau observasi kolektif satu kelas penuh dari guru pengajar lain.</p>
+                            </div>
+                            <div>
+                                <a href="<?= url('/student-development/observe?target_type=class&kelas_id=' . $kelas['id']) ?>" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1">
+                                    <i class="ri-add-line"></i> Catat Observasi Kelas
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <?php if (empty($collective_observations)): ?>
+                                <div class="p-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                    <i class="ri-team-line text-4xl mb-2 block text-slate-350"></i>
+                                    Belum ada catatan observasi kolektif untuk kelas ini.
+                                </div>
+                            <?php else: ?>
+                                <div class="space-y-4">
+                                    <?php foreach ($collective_observations as $obs): ?>
+                                        <div class="p-4 bg-indigo-50/15 rounded-2xl border border-indigo-50/30 flex items-start gap-3">
+                                            <!-- Icon / Avatar Guru -->
+                                            <div class="shrink-0 mt-0.5">
+                                                <?php 
+                                                require_once __DIR__ . '/../../../helpers/profile_helper.php';
+                                                ?>
+                                                <img src="<?= url('/' . get_profile_picture_url($obs['teacher_id'], $obs['teacher_name'])) ?>" 
+                                                     alt="Avatar Guru" 
+                                                     class="w-8 h-8 rounded-full border border-slate-200 object-cover shadow-sm"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($obs['teacher_name'] ?? '') ?>&background=F3F4F6&color=1F2937'">
+                                            </div>
+                                            <div class="space-y-1.5 flex-grow min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                                                    <span class="font-bold text-slate-700 text-xs shrink-0"><?= htmlspecialchars($obs['teacher_name']) ?></span>
+                                                    <span>•</span>
+                                                    <span><i class="ri-calendar-line text-[9px]"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
+                                                    <?php if ($obs['subject_name']): ?>
+                                                        <span>•</span>
+                                                        <span class="font-semibold text-slate-500"><i class="ri-book-open-line text-[9px]"></i> <?= htmlspecialchars($obs['subject_name']) ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <p class="text-slate-600 text-xs leading-relaxed font-medium"><?= htmlspecialchars($obs['content']) ?></p>
+                                                <div class="flex flex-wrap items-center gap-1.5 text-[9px] font-bold">
+                                                    <!-- Tipe Badge -->
+                                                    <?php if ($obs['type'] === 'Positif'): ?>
+                                                        <span class="text-green-600 bg-green-50 px-1.5 py-0.2 rounded border border-green-200">Positif</span>
+                                                    <?php elseif ($obs['type'] === 'Perhatian'): ?>
+                                                        <span class="text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">Perhatian</span>
+                                                    <?php else: ?>
+                                                        <span class="text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">Info</span>
+                                                    <?php endif; ?>
+
+                                                    <!-- Kategori -->
+                                                    <span class="px-1.5 py-0.2 rounded border" style="background-color: <?= ($obs['category_color'] ?? '#64748b') ?>15; color: <?= $obs['category_color'] ?? '#64748b' ?>; border-color: <?= $obs['category_color'] ?? '#64748b' ?>30;">
+                                                        <?= htmlspecialchars($obs['category_name']) ?>
+                                                    </span>
+                                                </div>
+                                                <?php if (!empty($obs['context'])): ?>
+                                                    <div class="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded border-l border-slate-300">
+                                                        Konteks: <?= htmlspecialchars($obs['context']) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

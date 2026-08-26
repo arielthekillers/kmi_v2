@@ -463,6 +463,18 @@ class KelasController extends Controller {
             $stmt = $db->prepare($sql);
             $stmt->execute([$this->currentYear['id'], $id, $this->currentYear['id']]);
             $data['class_students'] = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Fetch collective class observations
+            $sqlCollective = "SELECT so.*, u.nama as teacher_name, c.name as category_name, c.color as category_color, sub.nama as subject_name
+                              FROM student_observations so
+                              INNER JOIN users u ON so.teacher_id = u.id
+                              INNER JOIN student_observation_categories c ON so.category_id = c.id
+                              LEFT JOIN subjects sub ON so.subject_id = sub.id
+                              WHERE so.kelas_id = ? AND so.student_id IS NULL AND so.academic_year_id = ?
+                              ORDER BY so.observation_date DESC, so.created_at DESC";
+            $stmtCol = $db->prepare($sqlCollective);
+            $stmtCol->execute([$id, $this->currentYear['id']]);
+            $data['collective_observations'] = $stmtCol->fetchAll(\PDO::FETCH_ASSOC);
         }
 
         renderHeader($data['title']);
