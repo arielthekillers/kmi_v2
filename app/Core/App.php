@@ -229,6 +229,7 @@ class App
         $this->router->post('/leaves/teacher_subjects', ['App\Controllers\TeacherLeaveController', 'getTeacherSubjects']);
         $this->router->get('/leaves/statistics', ['App\Controllers\TeacherLeaveController', 'statistics']);
         $this->router->post('/leaves/statistics/details', ['App\Controllers\TeacherLeaveController', 'statisticsDetails']);
+        $this->router->post('/leaves/statistics/full-list', ['App\Controllers\TeacherLeaveController', 'statisticsFullList']);
 
         // WhatsApp Worker Route
         $this->router->get('/whatsapp/process', ['App\Controllers\WhatsappWorkerController', 'processQueue']);

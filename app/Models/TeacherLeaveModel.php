@@ -295,6 +295,15 @@ class TeacherLeaveModel extends Model {
         $stmt->execute([$academicYearId]);
         $summary = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Top Absentees Count
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT l.teacher_id) as total
+            FROM teacher_leaves l
+            WHERE l.academic_year_id = ? $whereDate
+        ");
+        $stmt->execute([$academicYearId]);
+        $totalAbsentees = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
         // Top Absentees
         $stmt = $this->db->prepare("
             SELECT u.id, u.nama, COUNT(DISTINCT l.id) as leave_count, COUNT(ts.id) as total_jam_kosong
@@ -309,6 +318,16 @@ class TeacherLeaveModel extends Model {
         $stmt->execute([$academicYearId]);
         $topAbsentees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Top Substitutes Count
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT ts.substitute_teacher_id) as total
+            FROM teaching_substitutions ts
+            JOIN teacher_leaves l ON ts.leave_id = l.id
+            WHERE l.academic_year_id = ? $whereDate AND ts.substitute_teacher_id IS NOT NULL
+        ");
+        $stmt->execute([$academicYearId]);
+        $totalSubstitutes = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
         // Top Substitutes
         $stmt = $this->db->prepare("
             SELECT u.id as teacher_id, u.nama, COUNT(ts.id) as substitution_count
@@ -322,6 +341,16 @@ class TeacherLeaveModel extends Model {
         ");
         $stmt->execute([$academicYearId]);
         $topSubstitutes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Top Subjects Count
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT CONCAT(ts.subject_id, '-', ts.kelas_id)) as total
+            FROM teaching_substitutions ts
+            JOIN teacher_leaves l ON ts.leave_id = l.id
+            WHERE l.academic_year_id = ? $whereDate
+        ");
+        $stmt->execute([$academicYearId]);
+        $totalSubjects = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
         // Top Subjects (by subject + class combination)
         $stmt = $this->db->prepare("
@@ -377,11 +406,65 @@ class TeacherLeaveModel extends Model {
         return [
             'summary' => $summary,
             'topAbsentees' => $topAbsentees,
+            'totalAbsentees' => $totalAbsentees,
             'topSubstitutes' => $topSubstitutes,
+            'totalSubstitutes' => $totalSubstitutes,
             'topSubjects' => $topSubjects,
+            'totalSubjects' => $totalSubjects,
             'prevSummary' => $prevSummary,
             'chartData' => $chartData
         ];
+    }
+
+    public function getFullStatisticsList($type, $filter, $academicYearId) {
+        $whereDate = "";
+        if ($filter === 'today') {
+            $whereDate = "AND l.date = CURRENT_DATE()";
+        } elseif ($filter === 'week') {
+            $whereDate = "AND YEARWEEK(DATE_ADD(l.date, INTERVAL 2 DAY), 0) = YEARWEEK(DATE_ADD(CURRENT_DATE(), INTERVAL 2 DAY), 0)";
+        } elseif ($filter === 'month') {
+            $whereDate = "AND MONTH(l.date) = MONTH(CURRENT_DATE()) AND YEAR(l.date) = YEAR(CURRENT_DATE())";
+        }
+
+        if ($type === 'absentees') {
+            $stmt = $this->db->prepare("
+                SELECT u.id, u.nama, COUNT(DISTINCT l.id) as leave_count, COUNT(ts.id) as total_jam_kosong
+                FROM teacher_leaves l
+                JOIN users u ON l.teacher_id = u.id
+                LEFT JOIN teaching_substitutions ts ON l.id = ts.leave_id
+                WHERE l.academic_year_id = ? $whereDate
+                GROUP BY u.id, u.nama
+                ORDER BY leave_count DESC, total_jam_kosong DESC
+            ");
+            $stmt->execute([$academicYearId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } elseif ($type === 'substitutes') {
+            $stmt = $this->db->prepare("
+                SELECT u.id as teacher_id, u.nama, COUNT(ts.id) as substitution_count
+                FROM teaching_substitutions ts
+                JOIN teacher_leaves l ON ts.leave_id = l.id
+                JOIN users u ON ts.substitute_teacher_id = u.id
+                WHERE l.academic_year_id = ? $whereDate AND ts.substitute_teacher_id IS NOT NULL
+                GROUP BY u.id, u.nama
+                ORDER BY substitution_count DESC
+            ");
+            $stmt->execute([$academicYearId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } elseif ($type === 'subjects') {
+            $stmt = $this->db->prepare("
+                SELECT s.nama, k.tingkat, k.abjad, COUNT(ts.id) as abandon_count
+                FROM teaching_substitutions ts
+                JOIN teacher_leaves l ON ts.leave_id = l.id
+                JOIN subjects s ON ts.subject_id = s.id
+                JOIN kelas k ON ts.kelas_id = k.id
+                WHERE l.academic_year_id = ? $whereDate
+                GROUP BY s.id, s.nama, k.id, k.tingkat, k.abjad
+                ORDER BY abandon_count DESC
+            ");
+            $stmt->execute([$academicYearId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        return [];
     }
 
     public function getTeacherLeaveDetails($teacherId, $filter, $academicYearId) {

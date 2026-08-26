@@ -6,6 +6,9 @@ $prevSummary = $stats['prevSummary'] ?? [];
 $topAbsentees = $stats['topAbsentees'] ?? [];
 $topSubstitutes = $stats['topSubstitutes'] ?? [];
 $topSubjects = $stats['topSubjects'] ?? [];
+$totalAbsenteesCount = $stats['totalAbsentees'] ?? 0;
+$totalSubstitutesCount = $stats['totalSubstitutes'] ?? 0;
+$totalSubjectsCount = $stats['totalSubjects'] ?? 0;
 $chartData = $stats['chartData'] ?? [];
 
 $totalLeaves = $summary['total_leaves'] ?? 0;
@@ -190,18 +193,18 @@ $chartValues = json_encode(array_values($dayCounts));
                     <ul class="space-y-1">
                         <?php foreach ($topAbsentees as $index => $row): ?>
                             <li>
-                                <button onclick="showDetails(<?= $row['id'] ?>, 'absentee', '<?= htmlspecialchars($row['nama']) ?>')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group">
-                                    <div class="flex items-center gap-2">
+                                <button onclick="showDetails(<?= $row['id'] ?>, 'absentee', '<?= htmlspecialchars($row['nama']) ?>')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group gap-3">
+                                    <div class="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                                         <div class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 border border-gray-200 group-hover:bg-red-50 group-hover:text-red-600 group-hover:border-red-200 transition-colors flex-shrink-0">
                                             <?= $index + 1 ?>
                                         </div>
-                                        <div class="overflow-hidden">
+                                        <div class="overflow-hidden min-w-0 flex-1">
                                             <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
                                             <p class="text-[11px] text-gray-500"><?= $row['total_jam_kosong'] ?> jam pelajaran</p>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-red-50 text-red-700 rounded-lg group-hover:bg-red-100">
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-red-50 text-red-700 rounded-lg group-hover:bg-red-100 whitespace-nowrap">
                                             <?= $row['leave_count'] ?> hari
                                         </span>
                                     </div>
@@ -210,6 +213,14 @@ $chartValues = json_encode(array_values($dayCounts));
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
+            </div>
+            <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+                <button 
+                    onclick="showFullList('absentees', 'Total Hari Izin Terbanyak')" 
+                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    <?= $totalAbsenteesCount <= 5 ? 'disabled' : '' ?>>
+                    Selengkapnya <i class="ri-arrow-right-s-line text-sm"></i>
+                </button>
             </div>
         </div>
 
@@ -227,15 +238,15 @@ $chartValues = json_encode(array_values($dayCounts));
                     <ul class="space-y-1">
                         <?php foreach ($topSubstitutes as $index => $row): ?>
                             <li>
-                                <button onclick="showDetails(<?= $row['teacher_id'] ?>, 'substitute', '<?= htmlspecialchars($row['nama']) ?>')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group">
-                                    <div class="flex items-center gap-2 overflow-hidden">
+                                <button onclick="showDetails(<?= $row['teacher_id'] ?>, 'substitute', '<?= htmlspecialchars($row['nama']) ?>')" class="w-full text-left px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group gap-3">
+                                    <div class="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                                         <div class="w-7 h-7 rounded-full <?= $index === 0 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-600 border-gray-200' ?> flex items-center justify-center text-xs font-bold border group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors flex-shrink-0">
                                             <?= $index + 1 ?>
                                         </div>
-                                        <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
+                                        <p class="text-sm font-bold text-gray-900 truncate flex-1 min-w-0"><?= htmlspecialchars($row['nama']) ?></p>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg group-hover:bg-indigo-100">
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg group-hover:bg-indigo-100 whitespace-nowrap">
                                             <?= $row['substitution_count'] ?> JP
                                         </span>
                                     </div>
@@ -244,6 +255,14 @@ $chartValues = json_encode(array_values($dayCounts));
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
+            </div>
+            <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+                <button 
+                    onclick="showFullList('substitutes', 'Beban Mengganti Terbanyak')" 
+                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    <?= $totalSubstitutesCount <= 5 ? 'disabled' : '' ?>>
+                    Selengkapnya <i class="ri-arrow-right-s-line text-sm"></i>
+                </button>
             </div>
         </div>
 
@@ -262,18 +281,18 @@ $chartValues = json_encode(array_values($dayCounts));
                         <?php foreach ($topSubjects as $index => $row): 
                             $kelasLabel = $row['tingkat'] . '-' . $row['abjad'];
                         ?>
-                            <li class="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                                <div class="flex items-center gap-2 overflow-hidden">
+                            <li class="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors gap-3">
+                                <div class="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
                                     <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-100 flex-shrink-0">
                                         <?= $index + 1 ?>
                                     </div>
-                                    <div class="overflow-hidden">
+                                    <div class="overflow-hidden min-w-0 flex-1">
                                         <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($row['nama']) ?></p>
                                         <p class="text-[11px] text-gray-400">Kelas <?= htmlspecialchars($kelasLabel) ?></p>
                                     </div>
                                 </div>
-                                <div class="text-right flex-shrink-0 ml-2">
-                                    <span class="text-sm font-bold text-gray-600">
+                                <div class="flex-shrink-0">
+                                    <span class="text-sm font-bold text-gray-600 whitespace-nowrap">
                                         <?= $row['abandon_count'] ?> <span class="text-xs font-normal text-gray-400">JP</span>
                                     </span>
                                 </div>
@@ -281,6 +300,14 @@ $chartValues = json_encode(array_values($dayCounts));
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
+            </div>
+            <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+                <button 
+                    onclick="showFullList('subjects', 'Pelajaran Sering Ditinggalkan')" 
+                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                    <?= $totalSubjectsCount <= 5 ? 'disabled' : '' ?>>
+                    Selengkapnya <i class="ri-arrow-right-s-line text-sm"></i>
+                </button>
             </div>
         </div>
 
@@ -460,6 +487,152 @@ function showDetails(teacherId, type, teacherName) {
 function closeDetailsModal() {
     document.getElementById('detailsModal').classList.add('hidden');
 }
+
+// Modal & Ajax for Full Lists
+function showFullList(type, titleText) {
+    const modal = document.getElementById('fullListModal');
+    const title = document.getElementById('fullListTitle');
+    const loader = document.getElementById('fullListLoader');
+    const content = document.getElementById('fullListContent');
+    const container = document.getElementById('fullListContainer');
+    
+    title.textContent = titleText;
+    container.innerHTML = '';
+    
+    loader.classList.remove('hidden');
+    content.classList.add('hidden');
+    modal.classList.remove('hidden');
+    
+    const filter = new URLSearchParams(window.location.search).get('filter') || 'month';
+    const formData = new FormData();
+    formData.append('type', type);
+    formData.append('filter', filter);
+    
+    fetch('<?= url('/leaves/statistics/full-list') ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(res => {
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+        
+        if (res.success && res.data.length > 0) {
+            let html = '<ul class="space-y-1.5 p-2">';
+            res.data.forEach((item, index) => {
+                if (type === 'absentees') {
+                    html += `
+                        <li class="px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <div class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 border border-gray-200 group-hover:bg-red-50 group-hover:text-red-600 group-hover:border-red-200 transition-colors flex-shrink-0">
+                                    ${index + 1}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-sm font-bold text-gray-900 truncate">${item.nama}</p>
+                                    <p class="text-[11px] text-gray-500">${item.total_jam_kosong} jam pelajaran</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0 ml-2">
+                                <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-red-50 text-red-700 rounded-lg group-hover:bg-red-100 whitespace-nowrap">
+                                    ${item.leave_count} hari
+                                </span>
+                            </div>
+                        </li>
+                    `;
+                } else if (type === 'substitutes') {
+                    html += `
+                        <li class="px-3 py-2 flex items-center justify-between hover:bg-gray-50 rounded-xl transition-colors group">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <div class="w-7 h-7 rounded-full ${index === 0 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-600 border-gray-200'} flex items-center justify-center text-xs font-bold border group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors flex-shrink-0">
+                                    ${index + 1}
+                                </div>
+                                <p class="text-sm font-bold text-gray-900 truncate">${item.nama}</p>
+                            </div>
+                            <div class="text-right flex-shrink-0 ml-2">
+                                <span class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-lg group-hover:bg-indigo-100 whitespace-nowrap">
+                                    ${item.substitution_count} JP
+                                </span>
+                            </div>
+                        </li>
+                    `;
+                } else if (type === 'subjects') {
+                    const kelasLabel = item.tingkat + '-' + item.abjad;
+                    html += `
+                        <li class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <div class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-100 flex-shrink-0">
+                                    ${index + 1}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-sm font-bold text-gray-900 truncate">${item.nama}</p>
+                                    <p class="text-[11px] text-gray-400">Kelas ${kelasLabel}</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0 ml-2">
+                                <span class="text-sm font-bold text-gray-600 whitespace-nowrap">
+                                    ${item.abandon_count} <span class="text-xs font-normal text-gray-400">JP</span>
+                                </span>
+                            </div>
+                        </li>
+                    `;
+                }
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `<div class="py-8 text-center text-sm text-gray-500">Tidak ada data.</div>`;
+        }
+    })
+    .catch(err => {
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+        container.innerHTML = `<div class="py-8 text-center text-sm text-red-500">Gagal memuat data.</div>`;
+        console.error(err);
+    });
+}
+
+function closeFullListModal() {
+    document.getElementById('fullListModal').classList.add('hidden');
+}
 </script>
+
+<!-- Modal for Full List -->
+<div id="fullListModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeFullListModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+            <div class="bg-white px-4 pt-5 pb-2 sm:p-6 sm:pb-2">
+                <div class="flex items-center justify-between mb-4 pb-1">
+                    <h3 class="text-lg leading-6 font-bold text-gray-900" id="fullListTitle">Data Selengkapnya</h3>
+                    <button onclick="closeFullListModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+                <div class="w-full">
+                    <!-- Loader -->
+                    <div id="fullListLoader" class="flex justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div id="fullListContent" class="hidden max-h-96 overflow-y-auto">
+                        <div id="fullListContainer">
+                            <!-- Dynamic compact list content -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="closeFullListModal()" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:w-auto sm:text-sm">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php renderFooter(); ?>

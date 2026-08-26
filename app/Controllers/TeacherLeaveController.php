@@ -728,4 +728,21 @@ class TeacherLeaveController extends Controller {
         
         echo json_encode(['success' => true, 'data' => $details]);
     }
+
+    public function statisticsFullList() {
+        header('Content-Type: application/json');
+        
+        $type = $_POST['type'] ?? null;
+        $filter = $_POST['filter'] ?? 'month';
+        
+        if (!$type) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+        
+        $academicYearId = $this->leaveModel->getAcademicYearId();
+        $data = $this->leaveModel->getFullStatisticsList($type, $filter, $academicYearId);
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+    }
 }
