@@ -1,3 +1,6 @@
+<?php
+require_once __DIR__ . '/../../../../helpers/profile_helper.php';
+?>
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
 
     <!-- Top Hero Section -->
@@ -102,58 +105,81 @@
                                 $bgClass = $isCollective ? 'bg-indigo-50/20 hover:bg-indigo-50/40' : 'hover:bg-slate-50/50';
                             ?>
                                 <div class="p-4 <?= $bgClass ?> transition-all flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
-                                    <div class="space-y-1">
-                                        <!-- Header: Student Name + NIS + Class -->
-                                        <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-                                            <?php if (empty($obs['student_id'])): ?>
-                                                <span class="text-indigo-650 text-sm font-black flex items-center gap-1">
-                                                    <i class="ri-team-line text-indigo-500"></i> Kolektif Kelas
-                                                </span>
+                                    <div class="flex items-start gap-3 flex-grow min-w-0">
+                                        <!-- Murid / Kolektif Avatar -->
+                                        <div class="shrink-0 mt-0.5">
+                                            <?php if ($isCollective): ?>
+                                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-650 flex items-center justify-center text-sm font-bold border border-indigo-200">
+                                                    <i class="ri-team-line"></i>
+                                                </div>
                                             <?php else: ?>
-                                                <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="text-slate-800 hover:text-indigo-600 transition-all text-sm font-black">
-                                                    <?= htmlspecialchars($obs['student_name'] ?? '') ?>
-                                                </a>
-                                                <span class="text-slate-400 font-normal">(<?= htmlspecialchars($obs['student_nis'] ?? '') ?>)</span>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($obs['tingkat']): ?>
-                                                <span class="text-slate-400 font-semibold">• Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?></span>
+                                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($obs['student_name'] ?? '') ?>&background=EEF2F6&color=475569&bold=true" 
+                                                     alt="Avatar Murid" 
+                                                     class="w-8 h-8 rounded-full border border-slate-200 object-cover"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name=Student&background=EEF2F6&color=475569'">
                                             <?php endif; ?>
                                         </div>
 
-                                        <!-- Content Description -->
-                                        <p class="text-slate-600 text-xs leading-relaxed"><?= htmlspecialchars($obs['content']) ?></p>
+                                        <div class="space-y-1 flex-grow min-w-0">
+                                            <!-- Header: Student Name + NIS + Class -->
+                                            <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                                                <?php if (empty($obs['student_id'])): ?>
+                                                    <span class="text-indigo-650 text-sm font-black flex items-center gap-1">
+                                                        Kolektif Kelas
+                                                    </span>
+                                                <?php else: ?>
+                                                    <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="text-slate-800 hover:text-indigo-600 transition-all text-sm font-black truncate">
+                                                        <?= htmlspecialchars($obs['student_name'] ?? '') ?>
+                                                    </a>
+                                                    <span class="text-slate-400 font-normal">(<?= htmlspecialchars($obs['student_nis'] ?? '') ?>)</span>
+                                                <?php endif; ?>
+                                                
+                                                <?php if ($obs['tingkat']): ?>
+                                                    <span class="text-slate-400 font-semibold">• Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
 
-                                        <!-- Footer info: Badges & Creator/Date Info -->
-                                        <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-                                            <!-- Target Type Badge -->
-                                            <?php if (empty($obs['student_id'])): ?>
-                                                <span class="text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Kolektif</span>
-                                            <?php else: ?>
-                                                <span class="text-slate-600 font-bold bg-slate-50 px-1.5 py-0.2 rounded border border-slate-200">Personal</span>
-                                            <?php endif; ?>
+                                            <!-- Content Description -->
+                                            <p class="text-slate-600 text-xs leading-relaxed"><?= htmlspecialchars($obs['content']) ?></p>
 
-                                            <!-- Tipe Badge -->
-                                            <?php if ($obs['type'] === 'Positif'): ?>
-                                                <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.2 rounded border border-green-200">Positif</span>
-                                            <?php elseif ($obs['type'] === 'Perhatian'): ?>
-                                                <span class="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">Perhatian</span>
-                                            <?php else: ?>
-                                                <span class="text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">Info</span>
-                                            <?php endif; ?>
+                                            <!-- Footer info: Badges & Creator/Date Info -->
+                                            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                                                <!-- Target Type Badge -->
+                                                <?php if (empty($obs['student_id'])): ?>
+                                                    <span class="text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Kolektif</span>
+                                                <?php else: ?>
+                                                    <span class="text-slate-600 font-bold bg-slate-50 px-1.5 py-0.2 rounded border border-slate-200">Personal</span>
+                                                <?php endif; ?>
 
-                                            <!-- Kategori -->
-                                            <span class="px-1.5 py-0.2 rounded border font-medium text-[10px]" style="background-color: <?= ($obs['category_color'] ?? '#64748b') ?>15; color: <?= $obs['category_color'] ?? '#64748b' ?>; border-color: <?= $obs['category_color'] ?? '#64748b' ?>30;">
-                                                <?= htmlspecialchars($obs['category_name']) ?>
-                                            </span>
-                                            
-                                            <span>• Oleh: <span class="font-semibold text-slate-500"><?= htmlspecialchars($obs['teacher_name']) ?></span></span>
-                                            <span>• <i class="ri-calendar-line text-[9px]"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
+                                                <!-- Tipe Badge -->
+                                                <?php if ($obs['type'] === 'Positif'): ?>
+                                                    <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.2 rounded border border-green-200">Positif</span>
+                                                <?php elseif ($obs['type'] === 'Perhatian'): ?>
+                                                    <span class="text-amber-600 font-bold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">Perhatian</span>
+                                                <?php else: ?>
+                                                    <span class="text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">Info</span>
+                                                <?php endif; ?>
 
-                                            <!-- Context Banner inline if present -->
-                                            <?php if (!empty($obs['context'])): ?>
-                                                <span class="text-slate-500 italic bg-slate-50 border-l border-slate-300 pl-1">Konteks: <?= htmlspecialchars($obs['context']) ?></span>
-                                            <?php endif; ?>
+                                                <!-- Kategori -->
+                                                <span class="px-1.5 py-0.2 rounded border font-medium text-[10px]" style="background-color: <?= ($obs['category_color'] ?? '#64748b') ?>15; color: <?= $obs['category_color'] ?? '#64748b' ?>; border-color: <?= $obs['category_color'] ?? '#64748b' ?>30;">
+                                                    <?= htmlspecialchars($obs['category_name']) ?>
+                                                </span>
+                                                
+                                                <span class="flex items-center gap-1">
+                                                    • Oleh: 
+                                                    <img src="<?= url('/' . get_profile_picture_url($obs['teacher_id'], $obs['teacher_name'])) ?>" 
+                                                         alt="Avatar Guru" 
+                                                         class="w-4 h-4 rounded-full border border-slate-100 object-cover inline"
+                                                         onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($obs['teacher_name'] ?? '') ?>&background=F3F4F6&color=1F2937'">
+                                                    <span class="font-semibold text-slate-500"><?= htmlspecialchars($obs['teacher_name']) ?></span>
+                                                </span>
+                                                <span>• <i class="ri-calendar-line text-[9px]"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
+
+                                                <!-- Context Banner inline if present -->
+                                                <?php if (!empty($obs['context'])): ?>
+                                                    <span class="text-slate-500 italic bg-slate-50 border-l border-slate-300 pl-1">Konteks: <?= htmlspecialchars($obs['context']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -275,43 +301,59 @@
                                     $isCollective = empty($obs['student_id']);
                                     $bgClass = $isCollective ? 'bg-indigo-50/20 hover:bg-indigo-50/40' : 'hover:bg-slate-50/50';
                                 ?>
-                                    <div class="p-6 <?= $bgClass ?> transition-all">
-                                        <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
-                                            <!-- Target Type Badge -->
-                                            <?php if (empty($obs['student_id'])): ?>
-                                                <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-200">Kolektif</span>
+                                    <div class="p-6 <?= $bgClass ?> transition-all flex items-start gap-4">
+                                        <!-- Murid / Kolektif Avatar -->
+                                        <div class="shrink-0 mt-1">
+                                            <?php if ($isCollective): ?>
+                                                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-650 flex items-center justify-center text-base font-bold border border-indigo-200 shadow-sm">
+                                                    <i class="ri-team-line"></i>
+                                                </div>
                                             <?php else: ?>
-                                                <span class="bg-slate-50 text-slate-700 px-2 py-0.5 rounded-full font-semibold border border-slate-200">Personal</span>
+                                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($obs['student_name'] ?? '') ?>&background=EEF2F6&color=475569&bold=true" 
+                                                     alt="Avatar Murid" 
+                                                     class="w-10 h-10 rounded-full border border-slate-200 object-cover shadow-sm"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name=Student&background=EEF2F6&color=475569'">
                                             <?php endif; ?>
-
-                                            <?php if ($obs['type'] === 'Positif'): ?>
-                                                <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-semibold border border-green-200">Positif</span>
-                                            <?php elseif ($obs['type'] === 'Perhatian'): ?>
-                                                <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold border border-amber-200">Perhatian</span>
-                                            <?php else: ?>
-                                                <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold border border-blue-200">Informasi</span>
-                                            <?php endif; ?>
-                                            <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium border border-slate-200"><?= htmlspecialchars($obs['category_name']) ?></span>
-                                            <span class="text-slate-400"><i class="ri-calendar-line"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
                                         </div>
-                                        <h4 class="font-bold text-slate-800 text-base">
-                                            <?php if (empty($obs['student_id'])): ?>
-                                                <span class="text-indigo-650 flex items-center gap-1">
-                                                    <i class="ri-team-line text-indigo-500"></i> Kolektif Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?>
-                                                </span>
-                                            <?php else: ?>
-                                                <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="hover:text-indigo-600 transition-all">
-                                                    <?= htmlspecialchars($obs['student_name'] ?? '') ?>
-                                                </a>
-                                            <?php endif; ?>
-                                        </h4>
-                                        <p class="text-slate-600 text-sm mt-1 whitespace-pre-line"><?= htmlspecialchars($obs['content']) ?></p>
-                                        
-                                        <?php if (!empty($obs['context'])): ?>
-                                            <div class="mt-2 bg-slate-50 border-l-4 border-slate-300 p-2.5 rounded-r-lg text-xs text-slate-500 italic">
-                                                Konteks: <?= htmlspecialchars($obs['context']) ?>
+
+                                        <div class="flex-grow min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
+                                                <!-- Target Type Badge -->
+                                                <?php if (empty($obs['student_id'])): ?>
+                                                    <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-200">Kolektif</span>
+                                                <?php else: ?>
+                                                    <span class="bg-slate-50 text-slate-700 px-2 py-0.5 rounded-full font-semibold border border-slate-200">Personal</span>
+                                                <?php endif; ?>
+
+                                                <?php if ($obs['type'] === 'Positif'): ?>
+                                                    <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-semibold border border-green-200">Positif</span>
+                                                <?php elseif ($obs['type'] === 'Perhatian'): ?>
+                                                    <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold border border-amber-200">Perhatian</span>
+                                                <?php else: ?>
+                                                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold border border-blue-200">Informasi</span>
+                                                <?php endif; ?>
+                                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium border border-slate-200"><?= htmlspecialchars($obs['category_name']) ?></span>
+                                                <span class="text-slate-400"><i class="ri-calendar-line"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
                                             </div>
-                                        <?php endif; ?>
+                                            <h4 class="font-bold text-slate-800 text-base">
+                                                <?php if (empty($obs['student_id'])): ?>
+                                                    <span class="text-indigo-650 flex items-center gap-1">
+                                                        Kolektif Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="hover:text-indigo-600 transition-all">
+                                                        <?= htmlspecialchars($obs['student_name'] ?? '') ?>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </h4>
+                                            <p class="text-slate-600 text-sm mt-1 whitespace-pre-line"><?= htmlspecialchars($obs['content']) ?></p>
+                                            
+                                            <?php if (!empty($obs['context'])): ?>
+                                                <div class="mt-2 bg-slate-50 border-l-4 border-slate-300 p-2.5 rounded-r-lg text-xs text-slate-500 italic">
+                                                    Konteks: <?= htmlspecialchars($obs['context']) ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
