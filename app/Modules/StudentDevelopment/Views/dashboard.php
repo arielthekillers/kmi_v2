@@ -97,15 +97,25 @@
                         </div>
                     <?php else: ?>
                         <div class="divide-y divide-slate-100">
-                            <?php foreach ($observations as $obs): ?>
-                                <div class="p-4 hover:bg-slate-50/50 transition-all flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
+                            <?php foreach ($observations as $obs): 
+                                $isCollective = empty($obs['student_id']);
+                                $bgClass = $isCollective ? 'bg-indigo-50/20 hover:bg-indigo-50/40' : 'hover:bg-slate-50/50';
+                            ?>
+                                <div class="p-4 <?= $bgClass ?> transition-all flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
                                     <div class="space-y-1">
                                         <!-- Header: Student Name + NIS + Class -->
                                         <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-                                            <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="text-slate-800 hover:text-indigo-600 transition-all text-sm font-black">
-                                                <?= htmlspecialchars($obs['student_name']) ?>
-                                            </a>
-                                            <span class="text-slate-400 font-normal">(<?= htmlspecialchars($obs['student_nis']) ?>)</span>
+                                            <?php if (empty($obs['student_id'])): ?>
+                                                <span class="text-indigo-650 text-sm font-black flex items-center gap-1">
+                                                    <i class="ri-team-line text-indigo-500"></i> Kolektif Kelas
+                                                </span>
+                                            <?php else: ?>
+                                                <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="text-slate-800 hover:text-indigo-600 transition-all text-sm font-black">
+                                                    <?= htmlspecialchars($obs['student_name'] ?? '') ?>
+                                                </a>
+                                                <span class="text-slate-400 font-normal">(<?= htmlspecialchars($obs['student_nis'] ?? '') ?>)</span>
+                                            <?php endif; ?>
+                                            
                                             <?php if ($obs['tingkat']): ?>
                                                 <span class="text-slate-400 font-semibold">• Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?></span>
                                             <?php endif; ?>
@@ -116,6 +126,13 @@
 
                                         <!-- Footer info: Badges & Creator/Date Info -->
                                         <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                                            <!-- Target Type Badge -->
+                                            <?php if (empty($obs['student_id'])): ?>
+                                                <span class="text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Kolektif</span>
+                                            <?php else: ?>
+                                                <span class="text-slate-600 font-bold bg-slate-50 px-1.5 py-0.2 rounded border border-slate-200">Personal</span>
+                                            <?php endif; ?>
+
                                             <!-- Tipe Badge -->
                                             <?php if ($obs['type'] === 'Positif'): ?>
                                                 <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.2 rounded border border-green-200">Positif</span>
@@ -147,9 +164,12 @@
                                                 <i class="ri-chat-1-line"></i> <?= $obs['response_count'] ?>
                                             </span>
                                         <?php endif; ?>
-                                        <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-indigo-100 transition-all flex items-center gap-0.5">
-                                            Detail <i class="ri-arrow-right-s-line"></i>
-                                        </a>
+                                        
+                                        <?php if (!empty($obs['student_id'])): ?>
+                                            <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-indigo-100 transition-all flex items-center gap-0.5">
+                                                Detail <i class="ri-arrow-right-s-line"></i>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -251,9 +271,19 @@
                             </div>
                         <?php else: ?>
                             <div class="divide-y divide-slate-100">
-                                <?php foreach ($my_observations as $obs): ?>
-                                    <div class="p-6 hover:bg-slate-50/50 transition-all">
+                                <?php foreach ($my_observations as $obs): 
+                                    $isCollective = empty($obs['student_id']);
+                                    $bgClass = $isCollective ? 'bg-indigo-50/20 hover:bg-indigo-50/40' : 'hover:bg-slate-50/50';
+                                ?>
+                                    <div class="p-6 <?= $bgClass ?> transition-all">
                                         <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
+                                            <!-- Target Type Badge -->
+                                            <?php if (empty($obs['student_id'])): ?>
+                                                <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-200">Kolektif</span>
+                                            <?php else: ?>
+                                                <span class="bg-slate-50 text-slate-700 px-2 py-0.5 rounded-full font-semibold border border-slate-200">Personal</span>
+                                            <?php endif; ?>
+
                                             <?php if ($obs['type'] === 'Positif'): ?>
                                                 <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-semibold border border-green-200">Positif</span>
                                             <?php elseif ($obs['type'] === 'Perhatian'): ?>
@@ -265,9 +295,15 @@
                                             <span class="text-slate-400"><i class="ri-calendar-line"></i> <?= date('d M Y', strtotime($obs['observation_date'])) ?></span>
                                         </div>
                                         <h4 class="font-bold text-slate-800 text-base">
-                                            <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="hover:text-indigo-600 transition-all">
-                                                <?= htmlspecialchars($obs['student_name']) ?>
-                                            </a>
+                                            <?php if (empty($obs['student_id'])): ?>
+                                                <span class="text-indigo-650 flex items-center gap-1">
+                                                    <i class="ri-team-line text-indigo-500"></i> Kolektif Kelas <?= htmlspecialchars($obs['tingkat']) ?>-<?= htmlspecialchars($obs['abjad']) ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="hover:text-indigo-600 transition-all">
+                                                    <?= htmlspecialchars($obs['student_name'] ?? '') ?>
+                                                </a>
+                                            <?php endif; ?>
                                         </h4>
                                         <p class="text-slate-600 text-sm mt-1 whitespace-pre-line"><?= htmlspecialchars($obs['content']) ?></p>
                                         

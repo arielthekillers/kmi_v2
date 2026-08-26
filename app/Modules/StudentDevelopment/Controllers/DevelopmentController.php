@@ -132,7 +132,7 @@ class DevelopmentController extends Controller {
         csrf_validate_token();
 
         $targetType = $_POST['target_type'] ?? 'student'; // 'student' or 'class'
-        $studentId = ($targetType === 'student' && !empty($_POST['student_id'])) ? (int)$_POST['student_id'] : null;
+        $studentIds = ($targetType === 'student' && !empty($_POST['student_ids'])) ? $_POST['student_ids'] : [];
         $kelasId = !empty($_POST['kelas_id']) ? (int)$_POST['kelas_id'] : null;
         $type = $_POST['type'] ?? '';
         $categoryId = (int)($_POST['category_id'] ?? 0);
@@ -141,37 +141,64 @@ class DevelopmentController extends Controller {
         $subjectId = !empty($_POST['subject_id']) ? (int)$_POST['subject_id'] : null;
         $observationDate = $_POST['observation_date'] ?? date('Y-m-d');
 
-        if (($targetType === 'student' && !$studentId) || ($targetType === 'class' && !$kelasId) || !$type || !$categoryId || empty($content)) {
+        if (($targetType === 'student' && empty($studentIds)) || ($targetType === 'class' && !$kelasId) || !$type || !$categoryId || empty($content)) {
             add_flash('Semua field wajib (Target Observasi, Tipe, Kategori, dan Catatan) harus diisi.', 'error');
             $this->redirect('/student-development/observe');
         }
 
         $userId = auth_get_user_id();
 
-        $insertData = [
-            'student_id' => $studentId,
-            'teacher_id' => $userId,
-            'type' => $type,
-            'category_id' => $categoryId,
-            'content' => $content,
-            'context' => $context,
-            'kelas_id' => $kelasId,
-            'subject_id' => $subjectId,
-            'observation_date' => $observationDate,
-        ];
-
-        $result = $this->model->storeObservation($insertData);
-
-        if ($result) {
-            add_flash('Catatan observasi berhasil disimpan.', 'success');
-            // If page requested to redirect back to a profile (only if studentId is set)
-            if ($studentId && !empty($_POST['redirect_student_profile'])) {
-                $this->redirect('/student-development/student?id=' . $studentId);
+        if ($targetType === 'student') {
+            $successCount = 0;
+            foreach ($studentIds as $studentId) {
+                $insertData = [
+                    'student_id' => (int)$studentId,
+                    'teacher_id' => $userId,
+                    'type' => $type,
+                    'category_id' => $categoryId,
+                    'content' => $content,
+                    'context' => $context,
+                    'kelas_id' => $kelasId,
+                    'subject_id' => $subjectId,
+                    'observation_date' => $observationDate,
+                ];
+                if ($this->model->storeObservation($insertData)) {
+                    $successCount++;
+                }
             }
-            $this->redirect('/student-development');
+
+            if ($successCount > 0) {
+                add_flash($successCount . ' catatan observasi berhasil disimpan.', 'success');
+                // Redirect to profile only if single student was selected and redirect was requested
+                if (count($studentIds) === 1 && !empty($_POST['redirect_student_profile'])) {
+                    $this->redirect('/student-development/student?id=' . $studentIds[0]);
+                }
+                $this->redirect('/student-development');
+            } else {
+                add_flash('Gagal menyimpan observasi. Silakan coba lagi.', 'error');
+                $this->redirect('/student-development/observe');
+            }
         } else {
-            add_flash('Gagal menyimpan observasi. Silakan coba lagi.', 'error');
-            $this->redirect('/student-development/observe');
+            // For class target
+            $insertData = [
+                'student_id' => null,
+                'teacher_id' => $userId,
+                'type' => $type,
+                'category_id' => $categoryId,
+                'content' => $content,
+                'context' => $context,
+                'kelas_id' => $kelasId,
+                'subject_id' => $subjectId,
+                'observation_date' => $observationDate,
+            ];
+            $result = $this->model->storeObservation($insertData);
+            if ($result) {
+                add_flash('Catatan observasi kelas berhasil disimpan.', 'success');
+                $this->redirect('/student-development');
+            } else {
+                add_flash('Gagal menyimpan observasi kelas. Silakan coba lagi.', 'error');
+                $this->redirect('/student-development/observe');
+            }
         }
     }
 

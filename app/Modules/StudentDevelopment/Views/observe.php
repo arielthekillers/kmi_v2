@@ -52,7 +52,7 @@
             <!-- 1. Student Selector -->
             <div id="student-selector-container" class="space-y-1">
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Santri <span class="text-red-500">*</span></label>
-                <select id="student-select" name="student_id" class="block w-full rounded-xl focus:ring-indigo-500 focus:border-indigo-500" required>
+                <select id="student-select" name="student_ids[]" class="block w-full rounded-xl focus:ring-indigo-500 focus:border-indigo-500" multiple required>
                     <option value="">-- Cari Nama atau NIS Santri --</option>
                     <?php foreach ($students as $s): ?>
                         <option value="<?= $s['id'] ?>" data-class-id="<?= $s['kelas_id'] ?>" <?= $preselected_student == $s['id'] ? 'selected' : '' ?>>
@@ -216,6 +216,7 @@
     document.addEventListener("DOMContentLoaded", function() {
         window.tomSelectInstance = new TomSelect("#student-select", {
             create: false,
+            plugins: ['remove_button'],
             sortField: {
                 field: "text",
                 direction: "asc"
@@ -283,11 +284,13 @@
 
         // Watch student selection change
         window.tomSelectInstance.on('change', function(value) {
-            if (!value) {
+            if (!value || value.length === 0) {
                 clearSubjects();
                 return;
             }
-            const option = window.tomSelectInstance.options[value];
+            // For multiple selection, we get an array. Take the first selected student's class to load subjects.
+            const firstVal = Array.isArray(value) ? value[0] : value;
+            const option = window.tomSelectInstance.options[firstVal];
             const classId = option ? option.$option.getAttribute('data-class-id') : null;
             if (classId) {
                 fetchClassSubjects(classId);
@@ -348,9 +351,14 @@
             // Re-trigger subject loading based on active student
             if (window.tomSelectInstance && window.tomSelectInstance.getValue()) {
                 const val = window.tomSelectInstance.getValue();
-                const opt = window.tomSelectInstance.options[val];
-                const cid = opt ? opt.$option.getAttribute('data-class-id') : null;
-                if (cid) fetchClassSubjects(cid);
+                const firstVal = Array.isArray(val) ? val[0] : val;
+                if (firstVal) {
+                    const opt = window.tomSelectInstance.options[firstVal];
+                    const cid = opt ? opt.$option.getAttribute('data-class-id') : null;
+                    if (cid) fetchClassSubjects(cid);
+                } else {
+                    clearSubjects();
+                }
             } else {
                 clearSubjects();
             }
