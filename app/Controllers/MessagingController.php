@@ -82,7 +82,7 @@ class MessagingController
         $db = Database::getInstance();
         
         // Search by username (phone number) or name
-        $stmt = $db->query("SELECT username as id, nama, role FROM users WHERE (nama LIKE ? OR username LIKE ?) AND deleted_at IS NULL LIMIT 20", ["%$query%", "%$query%"]);
+        $stmt = $db->query("SELECT username as id, nama, role FROM users WHERE (nama LIKE ? OR username LIKE ?) AND is_active = 1 AND deleted_at IS NULL LIMIT 20", ["%$query%", "%$query%"]);
         $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         echo json_encode($users);
