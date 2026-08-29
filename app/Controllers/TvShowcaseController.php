@@ -19,7 +19,7 @@ class TvShowcaseController extends Controller {
         $gender = $teacher['gender'] ?? '';
         
         $namaClean = preg_replace('/^(Al-Ustadz|Al-Ustadzah|Kiai|Ustadz|Ustadzah)\s+/i', '', $nama);
-        $namaClean = preg_replace('/,?\s+(S\.Pd\.?I?|M\.Pd\.?I?|Lc\.?|S\.H\.?I?|M\.S\.?I?|S\.Ag\.?|BA\.?|S\.E\.?|S\.A\.B\.?)\.?$/i', '', $namaClean);
+        // $namaClean = preg_replace('/,?\s+(S\.Pd\.?I?|M\.Pd\.?I?|Lc\.?|S\.H\.?I?|M\.S\.?I?|S\.Ag\.?|BA\.?|S\.E\.?|S\.A\.B\.?)\.?$/i', '', $namaClean);
         
         $title = '';
         $badgeColor = 'gray';
