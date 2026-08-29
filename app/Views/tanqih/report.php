@@ -117,15 +117,50 @@
     <div class="bg-white shadow overflow-hidden rounded-lg border border-gray-200">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
+                <?php
+                $sort = $sort ?? '';
+                $order = $order ?? 'desc';
+                
+                $nextKepatuhanOrder = ($sort === 'kepatuhan' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+                $nextStatusOrder = ($sort === 'status' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+                $nextNamaOrder = ($sort === 'nama' && $order === 'asc') ? 'desc' : 'asc';
+                ?>
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pengajar</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="<?= url('/tanqih/report?start=' . $startDate . '&end=' . $endDate . '&sort=nama&order=' . $nextNamaOrder) ?>" class="hover:text-indigo-650 flex items-center gap-1.5 group select-none">
+                                Nama Pengajar
+                                <?php if ($sort === 'nama'): ?>
+                                    <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-sm text-indigo-600 font-bold"></i>
+                                <?php else: ?>
+                                    <i class="ri-expand-up-down-line text-xs text-gray-300 group-hover:text-gray-400"></i>
+                                <?php endif; ?>
+                            </a>
+                        </th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jadwal</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Verified</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Justified</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unverified</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kepatuhan (%)</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="<?= url('/tanqih/report?start=' . $startDate . '&end=' . $endDate . '&sort=kepatuhan&order=' . $nextKepatuhanOrder) ?>" class="hover:text-indigo-650 flex items-center justify-center gap-1.5 group select-none">
+                                Kepatuhan (%)
+                                <?php if ($sort === 'kepatuhan'): ?>
+                                    <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-sm text-indigo-600 font-bold"></i>
+                                <?php else: ?>
+                                    <i class="ri-expand-up-down-line text-xs text-gray-300 group-hover:text-gray-400"></i>
+                                <?php endif; ?>
+                            </a>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="<?= url('/tanqih/report?start=' . $startDate . '&end=' . $endDate . '&sort=status&order=' . $nextStatusOrder) ?>" class="hover:text-indigo-650 flex items-center gap-1.5 group select-none">
+                                Status
+                                <?php if ($sort === 'status'): ?>
+                                    <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-sm text-indigo-600 font-bold"></i>
+                                <?php else: ?>
+                                    <i class="ri-expand-up-down-line text-xs text-gray-300 group-hover:text-gray-400"></i>
+                                <?php endif; ?>
+                            </a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">

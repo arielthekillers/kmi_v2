@@ -256,6 +256,9 @@ class TanqihController extends Controller {
         $endDate = $_GET['end'] ?? date('Y-m-d', strtotime('next thursday'));
         $ayId = $_GET['academic_year_id'] ?? get_active_academic_year_id();
 
+        $sort = $_GET['sort'] ?? '';
+        $order = $_GET['order'] ?? 'desc';
+
         $data = $this->tanqihModel->getReportStats($startDate, $endDate, $ayId);
         
         // Access Control: Non-admins only see their own report
@@ -289,12 +292,57 @@ class TanqihController extends Controller {
             $data['globalStats'] = $stats;
         }
 
+        // Precalculate compliance & status for sorting
+        foreach ($data['report'] as $key => &$r) {
+            $r['pct'] = $r['expected'] > 0 ? ($r['verified_real'] / $r['expected']) : 0;
+            if ($r['pct'] >= 0.75) {
+                $r['status_level'] = 4; // Excellent
+            } elseif ($r['pct'] >= 0.50) {
+                $r['status_level'] = 3; // Baik
+            } elseif ($r['pct'] >= 0.25) {
+                $r['status_level'] = 2; // Cukup
+            } else {
+                $r['status_level'] = 1; // Perlu Perhatian
+            }
+        }
+        unset($r);
+
+        // Perform sorting if specified
+        if (!empty($sort)) {
+            uasort($data['report'], function($a, $b) use ($sort, $order) {
+                if ($sort === 'kepatuhan') {
+                    $valA = $a['pct'];
+                    $valB = $b['pct'];
+                } elseif ($sort === 'status') {
+                    $valA = $a['status_level'];
+                    $valB = $b['status_level'];
+                } elseif ($sort === 'nama') {
+                    $valA = strtolower($a['name'] ?? '');
+                    $valB = strtolower($b['name'] ?? '');
+                } else {
+                    return 0;
+                }
+
+                if ($valA == $valB) {
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+                }
+
+                if ($order === 'asc') {
+                    return ($valA < $valB) ? -1 : 1;
+                } else {
+                    return ($valA > $valB) ? -1 : 1;
+                }
+            });
+        }
+
         $this->view('tanqih/report', [
             'title' => 'Laporan Tanqih',
             'startDate' => $startDate,
             'endDate' => $endDate,
             'report' => $data['report'],
-            'globalStats' => $data['globalStats']
+            'globalStats' => $data['globalStats'],
+            'sort' => $sort,
+            'order' => $order
         ]);
     }
 
