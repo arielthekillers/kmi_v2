@@ -133,6 +133,10 @@ unset($_SESSION['reset_result']);
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2 items-center">
+                                    <a href="<?= url('/teachers/history?id=' . $id) ?>"
+                                       class="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Riwayat Mengajar">
+                                        <i class="ri-history-line text-lg"></i>
+                                    </a>
                                     <button onclick="editPengajar('<?= $id ?>', <?= htmlspecialchars(json_encode($p['nama_raw']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($p['hp'] ?? ''), ENT_QUOTES) ?>)"
                                              class="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit Data">
                                         <i class="ri-edit-box-line text-lg"></i>

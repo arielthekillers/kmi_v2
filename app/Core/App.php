@@ -70,6 +70,7 @@ class App
 
         // Teachers Routes
         $this->router->get('/teachers', ['App\Controllers\TeacherController', 'index']);
+        $this->router->get('/teachers/history', ['App\Controllers\TeacherController', 'history']);
         $this->router->post('/teachers/store', ['App\Controllers\TeacherController', 'store']);
         $this->router->get('/teachers/delete', ['App\Controllers\TeacherController', 'delete']);
         $this->router->get('/teachers/toggle-status', ['App\Controllers\TeacherController', 'toggleStatus']);

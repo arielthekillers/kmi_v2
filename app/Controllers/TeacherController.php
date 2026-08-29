@@ -404,6 +404,42 @@ class TeacherController extends Controller {
         exit;
     }
 
+    public function history() {
+        require_admin();
+
+        $id = $_GET['id'] ?? '';
+        if (empty($id)) {
+            add_flash('ID pengajar tidak ditemukan.', 'error');
+            $this->redirect('/teachers');
+        }
+
+        $teacher = $this->teacherModel->getTeacherDetail($id);
+        if (!$teacher) {
+            add_flash('Pengajar tidak ditemukan.', 'error');
+            $this->redirect('/teachers');
+        }
+
+        $history = $this->teacherModel->getTeachingHistory($id);
+
+        // Group history by academic year
+        $groupedHistory = [];
+        foreach ($history as $h) {
+            $groupedHistory[$h['academic_year_name']][] = $h;
+        }
+
+        $data = [
+            'title' => 'Riwayat Mengajar: ' . $teacher['nama'],
+            'teacher' => $teacher,
+            'groupedHistory' => $groupedHistory,
+            'user' => $_SESSION['nama'] ?? 'User',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('teachers/history', $data);
+        $this->view('layouts/footer', $data);
+    }
+
     public function shareCredentials() {
         require_admin();
         header('Content-Type: application/json');

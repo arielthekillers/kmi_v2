@@ -225,4 +225,42 @@ class TeacherModel extends Model {
         $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
+    public function getTeacherDetail($id) {
+        $sql = "
+            SELECT u.id, 
+                   u.nama as nama_raw,
+                   CASE 
+                       WHEN tp.gender = 'Laki-laki' THEN CONCAT('Al-Ustadz ', u.nama)
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE u.nama
+                   END as nama,
+                   u.username, u.password_plain, u.is_active, 
+                   tp.phone as hp, tp.nip, tp.gender, tp.birth_place, 
+                   tp.birth_date, tp.address, tp.education, 
+                   tp.year_graduated, tp.father_name, tp.mother_name
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.id = ? AND u.role = 'pengajar' AND u.deleted_at IS NULL
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getTeachingHistory($teacherId) {
+        $sql = "
+            SELECT ay.name as academic_year_name, k.tingkat, k.abjad, sub.nama as subject_name
+            FROM schedules s
+            JOIN academic_years ay ON s.academic_year_id = ay.id
+            JOIN kelas k ON s.kelas_id = k.id
+            JOIN subjects sub ON s.subject_id = sub.id
+            WHERE s.teacher_id = ?
+            GROUP BY s.academic_year_id, s.kelas_id, s.subject_id
+            ORDER BY ay.name DESC, k.tingkat ASC, k.abjad ASC, sub.nama ASC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$teacherId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
