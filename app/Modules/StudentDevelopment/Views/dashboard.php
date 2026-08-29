@@ -185,6 +185,16 @@ require_once __DIR__ . '/../../../../helpers/profile_helper.php';
 
                                     <!-- Right side actions -->
                                     <div class="flex items-center gap-2 shrink-0">
+                                         <?php 
+                                         $timeDiff = time() - strtotime($obs['created_at']);
+                                         $isEditable = ($obs['teacher_id'] == $userId && $timeDiff <= 15 * 60);
+                                         ?>
+                                         <?php if ($isEditable): ?>
+                                             <a href="<?= url('/student-development/observe/edit?id=' . $obs['id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-indigo-100 transition-all flex items-center gap-0.5">
+                                                 <i class="ri-edit-line"></i> Edit
+                                             </a>
+                                         <?php endif; ?>
+
                                         <?php if ($obs['response_count'] > 0): ?>
                                             <span class="text-[10px] text-green-600 bg-green-50 border border-green-200 font-bold px-2 py-0.5 rounded-lg flex items-center gap-0.5" title="<?= $obs['response_count'] ?> Respons">
                                                 <i class="ri-chat-1-line"></i> <?= $obs['response_count'] ?>
@@ -353,9 +363,34 @@ require_once __DIR__ . '/../../../../helpers/profile_helper.php';
                                                     Konteks: <?= htmlspecialchars($obs['context']) ?>
                                                 </div>
                                             <?php endif; ?>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+                                         </div>
+
+                                         <!-- Right side actions (Guru) -->
+                                         <div class="flex items-center gap-2 shrink-0 self-center">
+                                             <?php 
+                                             $timeDiff = time() - strtotime($obs['created_at']);
+                                             $isEditable = ($obs['teacher_id'] == $userId && $timeDiff <= 15 * 60);
+                                             ?>
+                                             <?php if ($isEditable): ?>
+                                                 <a href="<?= url('/student-development/observe/edit?id=' . $obs['id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-indigo-100 transition-all flex items-center gap-0.5" title="Edit Catatan">
+                                                     <i class="ri-edit-line"></i> Edit
+                                                 </a>
+                                             <?php endif; ?>
+                                             
+                                             <?php if ($obs['response_count'] > 0): ?>
+                                                 <span class="text-[10px] text-green-600 bg-green-50 border border-green-200 font-bold px-2 py-0.5 rounded-lg flex items-center gap-0.5" title="<?= $obs['response_count'] ?> Respons">
+                                                     <i class="ri-chat-1-line"></i> <?= $obs['response_count'] ?>
+                                                 </span>
+                                             <?php endif; ?>
+                                             
+                                             <?php if (!empty($obs['student_id'])): ?>
+                                                 <a href="<?= url('/student-development/student?id=' . $obs['student_id']) ?>" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold px-3 py-1.5 rounded-lg border border-indigo-100 transition-all flex items-center gap-0.5">
+                                                     Detail <i class="ri-arrow-right-s-line"></i>
+                                                 </a>
+                                             <?php endif; ?>
+                                         </div>
+                                     </div>
+                                 <?php endforeach; ?>
                             </div>
 
                             <!-- Pagination -->

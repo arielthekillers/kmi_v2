@@ -20,7 +20,7 @@
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white p-5 md:p-8">
             <h1 class="text-xl md:text-2xl font-extrabold flex items-center gap-2">
-                <i class="ri-draft-line"></i> Catat Observasi Santri
+                <i class="ri-draft-line"></i> <?= htmlspecialchars($title) ?>
             </h1>
             <p class="text-indigo-100 text-[11px] md:text-sm mt-1 leading-relaxed">
                 Tulis fakta objektif dari perilaku, peningkatan, prestasi, atau perubahan yang teramati pada santri atau kelas secara umum.
@@ -30,20 +30,34 @@
         <form method="POST" action="<?= $action ?>" class="p-4 sm:p-6 md:p-8 space-y-6">
             <?= csrf_input() ?>
             
-            <?php if (!empty($_GET['student_id'])): ?>
+            <?php if (!empty($_GET['student_id']) || !empty($observation)): ?>
                 <input type="hidden" name="redirect_student_profile" value="1">
             <?php endif; ?>
 
+            <?php if (!empty($observation)): ?>
+                <input type="hidden" name="observation_id" value="<?= $observation['id'] ?>">
+            <?php endif; ?>
+
             <!-- Target Selection Toggle -->
+            <?php 
+            $isEdit = !empty($observation);
+            $targetType = 'student';
+            if ($isEdit) {
+                $targetType = empty($observation['student_id']) ? 'class' : 'student';
+            }
+            ?>
+            <?php if ($isEdit): ?>
+                <input type="hidden" name="target_type" value="<?= $targetType ?>">
+            <?php endif; ?>
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Observasi <span class="text-red-500">*</span></label>
                 <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl w-full">
                     <label class="inline-flex items-center justify-center cursor-pointer px-4 py-2.5 rounded-xl font-bold text-xs transition-all select-none text-center" id="label-target-student">
-                        <input type="radio" name="target_type" value="student" class="sr-only" checked onchange="toggleTarget(this.value)">
+                        <input type="radio" name="target_type" value="student" class="sr-only" <?= $targetType === 'student' ? 'checked' : '' ?> onchange="toggleTarget(this.value)" <?= $isEdit ? 'disabled' : '' ?>>
                         <i class="ri-user-line mr-1.5"></i> Personal (Per Santri)
                     </label>
                     <label class="inline-flex items-center justify-center cursor-pointer px-4 py-2.5 rounded-xl font-bold text-xs transition-all text-slate-500 select-none text-center" id="label-target-class">
-                        <input type="radio" name="target_type" value="class" class="sr-only" onchange="toggleTarget(this.value)">
+                        <input type="radio" name="target_type" value="class" class="sr-only" <?= $targetType === 'class' ? 'checked' : '' ?> onchange="toggleTarget(this.value)" <?= $isEdit ? 'disabled' : '' ?>>
                         <i class="ri-home-4-line mr-1.5"></i> Kolektif (Per Kelas)
                     </label>
                 </div>
@@ -55,7 +69,7 @@
                 <select id="student-select" name="student_ids[]" class="block w-full rounded-xl focus:ring-indigo-500 focus:border-indigo-500" multiple required>
                     <option value="">-- Cari Nama atau NIS Santri --</option>
                     <?php foreach ($students as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-class-id="<?= $s['kelas_id'] ?>" <?= $preselected_student == $s['id'] ? 'selected' : '' ?>>
+                        <option value="<?= $s['id'] ?>" data-class-id="<?= $s['kelas_id'] ?>" <?= (isset($observation) && $observation['student_id'] == $s['id']) || $preselected_student == $s['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($s['nama']) ?> (NIS: <?= htmlspecialchars($s['nis']) ?>) - Kelas <?= htmlspecialchars($s['tingkat']) ?>-<?= htmlspecialchars($s['abjad']) ?>
                         </option>
                     <?php endforeach; ?>
@@ -68,7 +82,7 @@
                 <select id="kelas-select" name="kelas_id" class="block w-full rounded-xl text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">-- Pilih Kelas --</option>
                     <?php foreach ($kelas_list as $k): ?>
-                        <option value="<?= $k['id'] ?>">Kelas <?= htmlspecialchars($k['tingkat']) ?>-<?= htmlspecialchars($k['abjad']) ?></option>
+                        <option value="<?= $k['id'] ?>" <?= isset($observation) && $observation['kelas_id'] == $k['id'] ? 'selected' : '' ?>>Kelas <?= htmlspecialchars($k['tingkat']) ?>-<?= htmlspecialchars($k['abjad']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -99,7 +113,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <!-- Positif -->
                     <label class="relative flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50/50 transition-all select-none group focus-within:ring-2 focus-within:ring-green-500">
-                        <input type="radio" name="type" value="Positif" class="sr-only peer" checked required>
+                        <input type="radio" name="type" value="Positif" class="sr-only peer" <?= (!isset($observation) || $observation['type'] === 'Positif') ? 'checked' : '' ?> required>
                         <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center peer-checked:bg-green-600 peer-checked:text-white transition-all shrink-0">
                             <i class="ri-checkbox-circle-line text-lg"></i>
                         </div>
@@ -112,7 +126,7 @@
 
                     <!-- Perhatian -->
                     <label class="relative flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50/50 transition-all select-none group focus-within:ring-2 focus-within:ring-amber-500">
-                        <input type="radio" name="type" value="Perhatian" class="sr-only peer" required>
+                        <input type="radio" name="type" value="Perhatian" class="sr-only peer" <?= (isset($observation) && $observation['type'] === 'Perhatian') ? 'checked' : '' ?> required>
                         <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center peer-checked:bg-amber-600 peer-checked:text-white transition-all shrink-0">
                             <i class="ri-alert-line text-lg"></i>
                         </div>
@@ -125,7 +139,7 @@
 
                     <!-- Informasi -->
                     <label class="relative flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50/50 transition-all select-none group focus-within:ring-2 focus-within:ring-blue-500">
-                        <input type="radio" name="type" value="Informasi" class="sr-only peer" required>
+                        <input type="radio" name="type" value="Informasi" class="sr-only peer" <?= (isset($observation) && $observation['type'] === 'Informasi') ? 'checked' : '' ?> required>
                         <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center peer-checked:bg-blue-600 peer-checked:text-white transition-all shrink-0">
                             <i class="ri-information-line text-lg"></i>
                         </div>
@@ -144,7 +158,7 @@
                 <select id="category-select" name="category_id" class="block w-full rounded-xl focus:ring-indigo-500 focus:border-indigo-500" required>
                     <option value="">-- Pilih Kategori --</option>
                     <?php foreach ($categories as $cat): ?>
-                        <option value="<?= $cat['id'] ?>" data-description="<?= htmlspecialchars($cat['description'] ?? '') ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                        <option value="<?= $cat['id'] ?>" data-description="<?= htmlspecialchars($cat['description'] ?? '') ?>" <?= isset($observation) && $observation['category_id'] == $cat['id'] ? 'selected' : '' ?>><?= htmlspecialchars($cat['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <div id="category-description-text" class="text-[11px] text-slate-400 mt-1.5 italic hidden"></div>
@@ -156,7 +170,7 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Isi Catatan Observasi <span class="text-red-500">*</span></label>
                     <span class="text-[11px] text-slate-400 italic">Tuliskan fakta objektif</span>
                 </div>
-                <textarea name="content" rows="4" placeholder="Contoh: Ahmad tertidur pada menit ke-20 pembelajaran Matematika berlangsung.&#10;Atau untuk Kelas: Kelas 5-C Pa terlihat sangat berantakan dan kotor sebelum jam pelajaran pertama dimulai." class="block w-full border-slate-200 rounded-xl text-sm p-3.5 border focus:border-indigo-500 focus:ring-indigo-500" required></textarea>
+                <textarea name="content" rows="4" placeholder="Contoh: Ahmad tertidur pada menit ke-20 pembelajaran Matematika berlangsung.&#10;Atau untuk Kelas: Kelas 5-C Pa terlihat sangat berantakan dan kotor sebelum jam pelajaran pertama dimulai." class="block w-full border-slate-200 rounded-xl text-sm p-3.5 border focus:border-indigo-500 focus:ring-indigo-500" required><?= isset($observation) ? htmlspecialchars($observation['content']) : '' ?></textarea>
             </div>
 
             <!-- Toggle Opsi Tambahan -->
@@ -173,7 +187,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Konteks Tambahan <span class="text-xs text-slate-400 font-normal">(Opsional)</span></label>
                     </div>
-                    <textarea name="context" rows="2" placeholder="Contoh: Kejadian ini disebabkan oleh keterlambatan petugas piket kelas membersihkan ruang kelas." class="block w-full border-slate-200 rounded-xl text-sm p-3 border focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    <textarea name="context" rows="2" placeholder="Contoh: Kejadian ini disebabkan oleh keterlambatan petugas piket kelas membersihkan ruang kelas." class="block w-full border-slate-200 rounded-xl text-sm p-3 border focus:border-indigo-500 focus:ring-indigo-500"><?= isset($observation) ? htmlspecialchars($observation['context']) : '' ?></textarea>
                 </div>
 
                 <!-- 8. Academic Context (Optional & Prefilled by schedule) -->
@@ -182,7 +196,7 @@
                     <select id="subject-select" name="subject_id" class="block w-full rounded-xl text-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">-- Tanpa Pelajaran Khusus --</option>
                         <?php foreach ($subjects as $sub): ?>
-                            <option value="<?= $sub['id'] ?>"><?= htmlspecialchars($sub['nama']) ?></option>
+                            <option value="<?= $sub['id'] ?>" <?= isset($observation) && $observation['subject_id'] == $sub['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sub['nama']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -191,7 +205,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tanggal Kejadian</label>
                     <div class="relative">
-                        <input type="date" name="observation_date" value="<?= date('Y-m-d') ?>" class="flatpickr block w-full border-slate-200 rounded-xl text-sm p-3 pl-10 border focus:border-indigo-500 focus:ring-indigo-500">
+                        <input type="date" name="observation_date" value="<?= isset($observation) ? htmlspecialchars($observation['observation_date']) : date('Y-m-d') ?>" class="flatpickr block w-full border-slate-200 rounded-xl text-sm p-3 pl-10 border focus:border-indigo-500 focus:ring-indigo-500">
                         <i class="ri-calendar-line absolute left-3.5 top-3.5 text-slate-400"></i>
                     </div>
                 </div>
@@ -261,7 +275,11 @@
         });
 
         // Setup style initial target state
-        toggleTarget('student');
+        toggleTarget('<?= $targetType ?>');
+
+        <?php if (isset($observation) && (!empty($observation['context']) || !empty($observation['subject_id']))): ?>
+            toggleAdvancedOptions();
+        <?php endif; ?>
 
         // Watch category selection change to update description banner
         window.tomSelectCategory.on('change', function(value) {
@@ -310,11 +328,17 @@
 
         // Handle pre-selected student initial subjects load
         const initialStudent = document.getElementById("student-select").value;
+        const initialSubject = '<?= $observation['subject_id'] ?? '' ?>';
         if (initialStudent) {
             const opt = window.tomSelectInstance.options[initialStudent];
             const cid = opt ? opt.$option.getAttribute('data-class-id') : null;
             if (cid) {
-                fetchClassSubjects(cid);
+                fetchClassSubjects(cid, initialSubject);
+            }
+        } else {
+            const initialClass = document.getElementById("kelas-select").value;
+            if (initialClass) {
+                fetchClassSubjects(initialClass, initialSubject);
             }
         }
     });
@@ -392,7 +416,7 @@
     }
 
     // Fetch subjects list for specific class
-    function fetchClassSubjects(classId) {
+    function fetchClassSubjects(classId, selectedId = '') {
         fetch('<?= url("/api/student-development/class-subjects?kelas_id=") ?>' + classId)
             .then(response => response.json())
             .then(data => {
@@ -406,7 +430,7 @@
                             window.tomSelectSubject.addOption({value: sub.id, text: sub.nama});
                         });
                     }
-                    window.tomSelectSubject.setValue('');
+                    window.tomSelectSubject.setValue(selectedId);
                 }
             })
             .catch(err => console.error('Error fetching subjects:', err));

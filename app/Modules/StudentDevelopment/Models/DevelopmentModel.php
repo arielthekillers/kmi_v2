@@ -289,6 +289,39 @@ class DevelopmentModel {
         return $result ? $this->db->lastInsertId() : false;
     }
 
+    public function updateObservation($id, $data) {
+        // Find student class if not explicitly passed (only if student is specified)
+        if (empty($data['kelas_id']) && !empty($data['student_id'])) {
+            $stmt = $this->db->prepare("SELECT kelas_id FROM student_enrollments WHERE student_id = ? AND academic_year_id = ? AND status = 'Active' LIMIT 1");
+            $stmt->execute([$data['student_id'], $this->academic_year_id]);
+            $enrollment = $stmt->fetch();
+            $data['kelas_id'] = $enrollment ? $enrollment['kelas_id'] : null;
+        }
+
+        $sql = "UPDATE student_observations SET 
+                student_id = ?, 
+                type = ?, 
+                category_id = ?, 
+                content = ?, 
+                context = ?, 
+                kelas_id = ?, 
+                subject_id = ?, 
+                observation_date = ? 
+                WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            $data['student_id'] ?: null,
+            $data['type'],
+            $data['category_id'],
+            $data['content'],
+            $data['context'] ?? null,
+            $data['kelas_id'] ?? null,
+            $data['subject_id'] ?? null,
+            $data['observation_date'],
+            $id
+        ]);
+    }
+
     public function updateContext($id, $context) {
         $stmt = $this->db->prepare("UPDATE student_observations SET context = ? WHERE id = ?");
         return $stmt->execute([$context, $id]);

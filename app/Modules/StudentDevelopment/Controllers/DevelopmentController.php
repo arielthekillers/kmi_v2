@@ -28,6 +28,7 @@ class DevelopmentController extends Controller {
             'role' => $role,
             'user' => $_SESSION['user']['nama'] ?? 'Pengguna',
             'categories' => $this->model->getCategories(),
+            'userId' => $userId,
         ];
 
         // 1. Admin & BK (Akses Global)
@@ -199,6 +200,134 @@ class DevelopmentController extends Controller {
                 add_flash('Gagal menyimpan observasi kelas. Silakan coba lagi.', 'error');
                 $this->redirect('/student-development/observe');
             }
+        }
+    }
+
+    /**
+     * Edit Observation View
+     */
+    public function edit() {
+        $obsId = (int)($_GET['id'] ?? 0);
+        if (!$obsId) {
+            add_flash('ID Catatan tidak valid.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $obs = $this->model->getObservationById($obsId);
+        if (!$obs) {
+            add_flash('Catatan observasi tidak ditemukan.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $userId = auth_get_user_id();
+
+        // Verification: Only creator can edit
+        if ($obs['teacher_id'] != $userId) {
+            add_flash('Anda tidak memiliki otorisasi untuk mengedit catatan ini.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        // Verification: Check time window (max 15 mins)
+        $timeDiff = time() - strtotime($obs['created_at']);
+        if ($timeDiff > 15 * 60) {
+            add_flash('Catatan tidak dapat diedit karena sudah melewati batas waktu 15 menit.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $subjectModel = new SubjectModel();
+        $kelasModel = new KelasModel();
+        $scheduleContext = $this->model->getContextualSchedule($userId);
+
+        $data = [
+            'title' => 'Edit Catatan Observasi Santri',
+            'students' => $this->model->getStudentsForSelect(),
+            'categories' => $this->model->getCategories(),
+            'preselected_student' => $obs['student_id'] ?? '',
+            'schedule_context' => $scheduleContext,
+            'subjects' => $subjectModel->findAll(),
+            'kelas_list' => $kelasModel->findAllActive(),
+            'action' => url('/student-development/observe/update'),
+            'observation' => $obs,
+        ];
+
+        $this->view('layouts/header', $data);
+        $this->view('StudentDevelopment/Views/observe', $data);
+        $this->view('layouts/footer', $data);
+    }
+
+    /**
+     * Update Observation
+     */
+    public function updateObservation() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/student-development');
+        }
+
+        csrf_validate_token();
+
+        $obsId = (int)($_POST['observation_id'] ?? 0);
+        if (!$obsId) {
+            add_flash('ID Catatan tidak valid.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $obs = $this->model->getObservationById($obsId);
+        if (!$obs) {
+            add_flash('Catatan observasi tidak ditemukan.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $userId = auth_get_user_id();
+        
+        // Verification: Only creator can edit
+        if ($obs['teacher_id'] != $userId) {
+            add_flash('Anda tidak memiliki otorisasi untuk mengedit catatan ini.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        // Verification: Check time window (max 15 mins)
+        $timeDiff = time() - strtotime($obs['created_at']);
+        if ($timeDiff > 15 * 60) {
+            add_flash('Catatan tidak dapat diedit karena sudah melewati batas waktu 15 menit.', 'error');
+            $this->redirect('/student-development');
+        }
+
+        $targetType = $_POST['target_type'] ?? 'student'; // 'student' or 'class'
+        // Editing is for a single observation, so it'll have at most one student ID
+        $studentId = ($targetType === 'student' && !empty($_POST['student_ids'])) ? (int)$_POST['student_ids'][0] : null;
+        $kelasId = !empty($_POST['kelas_id']) ? (int)$_POST['kelas_id'] : null;
+        $type = $_POST['type'] ?? '';
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        $content = trim($_POST['content'] ?? '');
+        $context = trim($_POST['context'] ?? '');
+        $subjectId = !empty($_POST['subject_id']) ? (int)$_POST['subject_id'] : null;
+        $observationDate = $_POST['observation_date'] ?? date('Y-m-d');
+
+        if (($targetType === 'student' && !$studentId) || ($targetType === 'class' && !$kelasId) || !$type || !$categoryId || empty($content)) {
+            add_flash('Semua field wajib (Target Observasi, Tipe, Kategori, dan Catatan) harus diisi.', 'error');
+            $this->redirect('/student-development/observe/edit?id=' . $obsId);
+        }
+
+        $updateData = [
+            'student_id' => $studentId,
+            'type' => $type,
+            'category_id' => $categoryId,
+            'content' => $content,
+            'context' => $context,
+            'kelas_id' => $kelasId,
+            'subject_id' => $subjectId,
+            'observation_date' => $observationDate,
+        ];
+
+        if ($this->model->updateObservation($obsId, $updateData)) {
+            add_flash('Catatan observasi berhasil diperbarui.', 'success');
+            if ($studentId && !empty($_POST['redirect_student_profile'])) {
+                $this->redirect('/student-development/student?id=' . $studentId);
+            }
+            $this->redirect('/student-development');
+        } else {
+            add_flash('Gagal memperbarui observasi. Silakan coba lagi.', 'error');
+            $this->redirect('/student-development/observe/edit?id=' . $obsId);
         }
     }
 

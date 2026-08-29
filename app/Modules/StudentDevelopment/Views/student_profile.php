@@ -203,6 +203,17 @@
 
                                 <?php if ($isCreator || $isWali || $isAdmin): ?>
                                     <div class="flex flex-wrap gap-2 text-[10px] pt-1">
+                                        <!-- Edit Note Button (Creator only, max 15 mins) -->
+                                        <?php 
+                                        $timeDiff = time() - strtotime($obs['created_at']);
+                                        $isEditable = ($isCreator && $timeDiff <= 15 * 60);
+                                        ?>
+                                        <?php if ($isEditable): ?>
+                                            <a href="<?= url('/student-development/observe/edit?id=' . $obs['id']) ?>" class="text-indigo-650 hover:text-white bg-indigo-50 hover:bg-indigo-600 font-semibold px-2.5 py-1 rounded-lg border border-indigo-100 hover:border-indigo-600 transition-all flex items-center gap-1">
+                                                <i class="ri-edit-line"></i> Edit Catatan
+                                            </a>
+                                        <?php endif; ?>
+
                                         <!-- Show Context form toggle -->
                                         <button onclick="toggleForm('context-form-<?= $obs['id'] ?>')" class="text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 transition-all">
                                             <?= empty($obs['context']) ? '<i class="ri-add-line"></i> Tambah Konteks' : '<i class="ri-edit-line"></i> Edit Konteks' ?>

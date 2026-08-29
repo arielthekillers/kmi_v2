@@ -139,7 +139,9 @@ class App
         // Modul Pemantauan Perkembangan Santri (Student Development)
         $this->router->get('/student-development', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'index']);
         $this->router->get('/student-development/observe', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'observe']);
+        $this->router->get('/student-development/observe/edit', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'edit']);
         $this->router->post('/student-development/observe/store', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'storeObservation']);
+        $this->router->post('/student-development/observe/update', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'updateObservation']);
         $this->router->get('/student-development/student', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'studentProfile']);
         $this->router->post('/student-development/observation/delete', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'deleteObservation']);
         $this->router->post('/student-development/observation/context', ['App\Modules\StudentDevelopment\Controllers\DevelopmentController', 'updateContext']);
