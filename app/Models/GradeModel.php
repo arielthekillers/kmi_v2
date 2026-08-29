@@ -406,7 +406,22 @@ class GradeModel extends Model {
     public function getSessions($academicYearId) {
         $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE academic_year_id = ? ORDER BY id ASC");
         $stmt->execute([$academicYearId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($sessions)) {
+            // Seed default sessions for this academic year
+            $defaultTypes = ['UUPT', 'UPT', 'UUAT', 'UAT'];
+            foreach ($defaultTypes as $type) {
+                $insert = $this->db->prepare("INSERT INTO exam_sessions (academic_year_id, type, is_open, is_active) VALUES (?, ?, 0, 0)");
+                $insert->execute([$academicYearId, $type]);
+            }
+            
+            // Re-fetch
+            $stmt->execute([$academicYearId]);
+            $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        return $sessions;
     }
 
     public function getActiveSession($academicYearId) {
