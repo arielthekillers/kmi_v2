@@ -243,7 +243,7 @@
                 <!-- Jadwal Tab -->
                 <div class="grid grid-cols-1 gap-6">
                     <?php 
-                    $daysSorted = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    $daysSorted = ['Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                     foreach ($daysSorted as $day): 
                         if (empty($schedule[$day])) continue; // Optional: show empty days or hide them
                     ?>
