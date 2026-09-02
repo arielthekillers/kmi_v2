@@ -12,16 +12,19 @@ if (!function_exists('debug_dump')) {
 
 if (!function_exists('url')) {
     function url($path = '') {
-        // Simple base URL detection
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-        $host = $_SERVER['HTTP_HOST'];
+        // Simple base URL detection with SSL proxy support
+        $isHttps = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on') 
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+            || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        $protocol = $isHttps ? "https" : "http";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         
         // If path is a full URL, return it as is
         if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) {
             return $path;
         }
 
-        $scriptName = $_SERVER['SCRIPT_NAME'];
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
         $baseDir = dirname($scriptName);
         
         // If we are in public, go up one level to get app root
@@ -56,6 +59,43 @@ if (!function_exists('url')) {
         $path = ltrim($path, '/');
         
         return $protocol . "://" . $host . $baseDir . '/' . $path;
+    }
+}
+
+if (!function_exists('render_meta_tags')) {
+    function render_meta_tags($title = null, $description = null, $image = null) {
+        $defaultTitle = "KMI - Darussalam Bogor";
+        $defaultDesc = "Sistem Informasi Akademik & Kulliyatu-l-Mu'allimin Al-Islamiyyah Pondok Modern Darussalam Bogor";
+        $defaultImg = url('/img/kmi.png');
+
+        $metaTitle = !empty($title) ? $title : $defaultTitle;
+        $metaDesc = !empty($description) ? $description : $defaultDesc;
+        $metaImg = !empty($image) ? url($image) : $defaultImg;
+        $currentUrl = url($_SERVER['REQUEST_URI'] ?? '/');
+
+        ?>
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta name="description" content="<?= htmlspecialchars($metaDesc) ?>">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?= htmlspecialchars($currentUrl) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($metaDesc) ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($metaImg) ?>">
+    <meta property="og:image:secure_url" content="<?= htmlspecialchars($metaImg) ?>">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="600">
+    <meta property="og:image:height" content="600">
+
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?= htmlspecialchars($currentUrl) ?>">
+    <meta property="twitter:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta property="twitter:description" content="<?= htmlspecialchars($metaDesc) ?>">
+    <meta property="twitter:image" content="<?= htmlspecialchars($metaImg) ?>">
+        <?php
     }
 }
 

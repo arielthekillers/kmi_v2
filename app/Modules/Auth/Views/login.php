@@ -10,6 +10,7 @@ unset($_SESSION['error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - KMI App</title>
+    <?php if (function_exists('render_meta_tags')) render_meta_tags('Login - KMI Darussalam Bogor'); ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
