@@ -135,7 +135,19 @@ class TanqihModel extends Model {
                         'expected' => 0,
                         'verified_all' => 0,
                         'verified_real' => 0,
-                        'justified' => 0
+                        'justified' => 0,
+                        'subjects' => [],
+                        'details' => []
+                    ];
+                }
+
+                $kelasName = 'Kelas ' . trim(($slot['tingkat'] ?? '') . ' ' . ($slot['abjad'] ?? ''));
+                $subjectName = $slot['mapel_nama'] ?? 'Pelajaran';
+                $subKey = $subjectName . ' - ' . $kelasName;
+                if (!isset($report[$pid]['subjects'][$subKey])) {
+                    $report[$pid]['subjects'][$subKey] = [
+                        'subject' => $subjectName,
+                        'kelas' => $kelasName
                     ];
                 }
 
@@ -144,7 +156,8 @@ class TanqihModel extends Model {
 
                 // Check verification
                 $key = $currentDate . '|' . $slot['kelas_id'] . '|' . $slot['hour'];
-                $status = $verifications[$key]['status'] ?? 'missing';
+                $verif = $verifications[$key] ?? null;
+                $status = $verif['status'] ?? 'unverified';
 
                 if ($status === 'verified') {
                     $report[$pid]['verified_all']++;
@@ -159,6 +172,18 @@ class TanqihModel extends Model {
                 } else {
                     $globalStats['total_belum']++;
                 }
+
+                $report[$pid]['details'][] = [
+                    'date' => $currentDate,
+                    'day' => $dayNameVideo,
+                    'hour' => (int)$slot['hour'],
+                    'kelas' => $kelasName,
+                    'subject' => $subjectName,
+                    'status' => $status,
+                    'verifier_name' => $verif['verifier_name'] ?? null,
+                    'created_at' => $verif['created_at'] ?? null,
+                    'updated_at' => $verif['updated_at'] ?? null,
+                ];
             }
             
             $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
@@ -176,9 +201,11 @@ class TanqihModel extends Model {
     }
 
     private function getAllSchedules($academicYearId) {
-        $sql = "SELECT s.*, u.nama as teacher_nama 
+        $sql = "SELECT s.*, u.nama as teacher_nama, sub.nama as mapel_nama, k.tingkat, k.abjad
                 FROM schedules s 
                 LEFT JOIN users u ON s.teacher_id = u.id
+                LEFT JOIN subjects sub ON s.subject_id = sub.id
+                LEFT JOIN kelas k ON s.kelas_id = k.id
                 WHERE s.academic_year_id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$academicYearId]);
@@ -192,7 +219,12 @@ class TanqihModel extends Model {
     }
 
     private function getVerificationsInRange($startDate, $endDate, $academicYearId) {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE (date BETWEEN ? AND ?) AND academic_year_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT t.*, u.nama as verifier_name 
+            FROM {$this->table} t 
+            LEFT JOIN users u ON t.verifier_id = u.id 
+            WHERE (t.date BETWEEN ? AND ?) AND t.academic_year_id = ?
+        ");
         $stmt->execute([$startDate, $endDate, $academicYearId]);
         
         $data = [];

@@ -252,8 +252,23 @@ class TanqihController extends Controller {
     public function report() {
         require_login();
         
-        $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('last saturday'));
-        $endDate = $_GET['end'] ?? date('Y-m-d', strtotime('next thursday'));
+        $today = date('Y-m-d');
+
+        // Calculate Saturday (Sabtu) of the current KMI week (Sabtu - Kamis)
+        $w = (int)date('w'); // 0 (Sun) to 6 (Sat)
+        $daysToSub = ($w === 6) ? 0 : ($w + 1);
+        $defaultStart = date('Y-m-d', strtotime("-{$daysToSub} days"));
+
+        $startDate = $_GET['start'] ?? $defaultStart;
+        $endDate = $_GET['end'] ?? $today;
+
+        if ($startDate > $today) {
+            $startDate = $today;
+        }
+        if ($endDate > $today) {
+            $endDate = $today;
+        }
+
         $ayId = $_GET['academic_year_id'] ?? get_active_academic_year_id();
 
         $sort = $_GET['sort'] ?? '';
@@ -319,6 +334,18 @@ class TanqihController extends Controller {
                 } elseif ($sort === 'nama') {
                     $valA = strtolower($a['name'] ?? '');
                     $valB = strtolower($b['name'] ?? '');
+                } elseif ($sort === 'jadwal') {
+                    $valA = $a['expected'] ?? 0;
+                    $valB = $b['expected'] ?? 0;
+                } elseif ($sort === 'verified') {
+                    $valA = $a['verified_real'] ?? 0;
+                    $valB = $b['verified_real'] ?? 0;
+                } elseif ($sort === 'justified') {
+                    $valA = $a['justified'] ?? 0;
+                    $valB = $b['justified'] ?? 0;
+                } elseif ($sort === 'belum') {
+                    $valA = max(0, ($a['expected'] ?? 0) - ($a['verified_real'] ?? 0) - ($a['justified'] ?? 0));
+                    $valB = max(0, ($b['expected'] ?? 0) - ($b['verified_real'] ?? 0) - ($b['justified'] ?? 0));
                 } else {
                     return 0;
                 }
