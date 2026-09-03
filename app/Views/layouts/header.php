@@ -64,6 +64,17 @@
             -ms-overflow-style: none; /* IE and Edge */
             scrollbar-width: none; /* Firefox */
         }
+
+        /* Print styles - Hide nav, header, logo, sidebar, and print buttons */
+        @media print {
+            nav, header, footer, aside, #sidebar, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: #111827 !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-gray-800 flex flex-col min-h-screen">

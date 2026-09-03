@@ -27,6 +27,17 @@ function renderHeader($title = "KMI App")
             
             /* Sidebar transitions */
             .sidebar-transition { transition: transform 0.3s ease-in-out; }
+
+            /* Print styles */
+            @media print {
+                nav, header, footer, aside, #sidebar, .no-print {
+                    display: none !important;
+                }
+                body {
+                    background: white !important;
+                    color: #111827 !important;
+                }
+            }
         </style>
     </head>
 

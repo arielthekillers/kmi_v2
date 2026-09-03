@@ -1,7 +1,111 @@
+<style>
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 6mm 8mm;
+    }
+    body {
+        background: white !important;
+        color: #111827 !important;
+        font-size: 11px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    /* Compact margins and grid gaps for single page fit */
+    .grid {
+        gap: 0.5rem !important;
+    }
+    .mb-6 {
+        margin-bottom: 0.45rem !important;
+    }
+    .p-6 {
+        padding: 0.45rem 0.65rem !important;
+    }
+    .px-6 {
+        padding-left: 0.65rem !important;
+        padding-right: 0.65rem !important;
+    }
+    .py-4 {
+        padding-top: 0.3rem !important;
+        padding-bottom: 0.3rem !important;
+    }
+    .py-8 {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    .p-4 {
+        padding: 0.3rem 0.5rem !important;
+    }
+    .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+        margin-top: 0.3rem !important;
+    }
+    .mb-4 {
+        margin-bottom: 0.3rem !important;
+    }
+    .mb-3 {
+        margin-bottom: 0.2rem !important;
+    }
+    /* Typography scaling */
+    .text-4xl {
+        font-size: 1.4rem !important;
+        line-height: 1.6rem !important;
+        margin-bottom: 0.1rem !important;
+    }
+    .text-3xl {
+        font-size: 1.2rem !important;
+        line-height: 1.4rem !important;
+    }
+    .text-2xl {
+        font-size: 1.1rem !important;
+        line-height: 1.3rem !important;
+    }
+    .w-16.h-16 {
+        width: 2.25rem !important;
+        height: 2.25rem !important;
+        font-size: 1.1rem !important;
+        border-radius: 0.5rem !important;
+    }
+    .rounded-2xl {
+        border-radius: 0.5rem !important;
+    }
+    .rounded-xl {
+        border-radius: 0.375rem !important;
+    }
+    /* Force multi-column grids in print mode */
+    .overview-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .classes-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    .two-col-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .domisili-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .shadow-lg, .shadow-sm, .shadow-inner {
+        box-shadow: none !important;
+    }
+    .ri-group-line.text-9xl {
+        display: none !important;
+    }
+}
+</style>
+
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6 flex items-center justify-between">
         <div class="flex items-center gap-4">
-            <a href="<?= url('/students') ?>" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors">
+            <a href="<?= url('/students') ?>" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 transition-colors no-print">
                 <i class="ri-arrow-left-line text-xl"></i>
             </a>
             <div>
@@ -9,7 +113,7 @@
                 <p class="text-sm text-gray-500">Ringkasan dan analitik data santri aktif.</p>
             </div>
         </div>
-        <div>
+        <div class="no-print">
             <button onclick="window.print()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all flex items-center">
                 <i class="ri-printer-line mr-2"></i> Cetak Laporan
             </button>
@@ -17,7 +121,7 @@
     </div>
 
     <!-- Overview Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 overview-grid">
         <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
             <div class="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
                 <i class="ri-group-line text-9xl"></i>
@@ -67,7 +171,7 @@
             <?php if (empty($stats['kelas_completeness'])): ?>
                 <div class="text-center text-gray-400 py-8 italic text-sm">Belum ada data kelengkapan kelas.</div>
             <?php else: ?>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 classes-grid">
                     <?php foreach ($stats['kelas_completeness'] as $tingkat => $pct): ?>
                     <div class="p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-sm transition-all">
                         <div class="flex justify-between items-center mb-3">
@@ -84,7 +188,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 two-col-grid">
         <!-- Demografi Usia -->
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
@@ -165,7 +269,7 @@
             <?php if (empty($stats['kabupaten_terbanyak'])): ?>
                 <div class="text-center text-gray-400 py-8 italic text-sm">Belum ada data domisili santri.</div>
             <?php else: ?>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 domisili-grid">
                     <?php 
                     $maxKab = max(array_values($stats['kabupaten_terbanyak']));
                     foreach ($stats['kabupaten_terbanyak'] as $kab => $count): 
