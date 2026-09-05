@@ -287,8 +287,18 @@ class TeacherLeaveController extends Controller {
             $dayOfWeek = (int)date('w', $timestamp);
             $dayName = $daysIndo[$dayOfWeek];
             
-            // Check if teacher has schedules on this day
-            $stmtSch = $this->scheduleModel->query("SELECT hour, kelas_id, subject_id FROM schedules WHERE teacher_id = ? AND day = ? AND academic_year_id = ?", [$teacherId, $dayName, $academicYearId]);
+            // Check if teacher has active schedules on this day
+            $stmtSch = $this->scheduleModel->query("
+                SELECT s.hour, s.kelas_id, s.subject_id 
+                FROM schedules s
+                INNER JOIN (
+                    SELECT MAX(id) as max_id 
+                    FROM schedules 
+                    WHERE academic_year_id = ? 
+                    GROUP BY kelas_id, day, hour
+                ) latest ON s.id = latest.max_id
+                WHERE s.teacher_id = ? AND s.day = ?
+            ", [$academicYearId, $teacherId, $dayName]);
             $schedules = $stmtSch->fetchAll(PDO::FETCH_ASSOC);
             if (empty($schedules)) continue;
             
@@ -321,8 +331,18 @@ class TeacherLeaveController extends Controller {
                 $assistantId = $this->assistantModel->getAssistantForSubject($teacherId, $sch['subject_id'], $sch['kelas_id'], $academicYearId);
                 
                 if ($assistantId) {
-                    // Check if assistant has a regular schedule at this hour
-                    $stmtBusy1 = $this->scheduleModel->query("SELECT 1 FROM schedules WHERE teacher_id = ? AND day = ? AND hour = ? AND academic_year_id = ?", [$assistantId, $dayName, $sch['hour'], $academicYearId]);
+                    // Check if assistant has a regular active schedule at this hour
+                    $stmtBusy1 = $this->scheduleModel->query("
+                        SELECT 1 
+                        FROM schedules s
+                        INNER JOIN (
+                            SELECT MAX(id) as max_id 
+                            FROM schedules 
+                            WHERE academic_year_id = ? 
+                            GROUP BY kelas_id, day, hour
+                        ) latest ON s.id = latest.max_id
+                        WHERE s.teacher_id = ? AND s.day = ? AND s.hour = ?
+                    ", [$academicYearId, $assistantId, $dayName, $sch['hour']]);
                     
                     // Check if assistant is already substituting at this hour
                     $stmtBusy2 = $this->subModel->query("

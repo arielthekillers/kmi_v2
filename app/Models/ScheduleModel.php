@@ -9,7 +9,16 @@ class ScheduleModel extends Model {
     protected $table = 'schedules';
 
     public function getByClass($classId) {
-        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE kelas_id = ? AND academic_year_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT s.* 
+            FROM schedules s
+            INNER JOIN (
+                SELECT MAX(id) as max_id 
+                FROM schedules 
+                WHERE kelas_id = ? AND academic_year_id = ? 
+                GROUP BY day, hour
+            ) latest ON s.id = latest.max_id
+        ");
         $stmt->execute([$classId, $this->academic_year_id]);
         $result = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -22,8 +31,18 @@ class ScheduleModel extends Model {
     }
 
     public function getByTeacher($teacherId) {
-        $stmt = $this->db->prepare("SELECT * FROM schedules WHERE teacher_id = ? AND academic_year_id = ?");
-        $stmt->execute([$teacherId, $this->academic_year_id]);
+        $stmt = $this->db->prepare("
+            SELECT s.* 
+            FROM schedules s
+            INNER JOIN (
+                SELECT MAX(id) as max_id 
+                FROM schedules 
+                WHERE academic_year_id = ? 
+                GROUP BY kelas_id, day, hour
+            ) latest ON s.id = latest.max_id
+            WHERE s.teacher_id = ?
+        ");
+        $stmt->execute([$this->academic_year_id, $teacherId]);
         $result = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $result[$row['day']][$row['hour']] = [
@@ -34,24 +53,131 @@ class ScheduleModel extends Model {
         return $result;
     }
 
-    public function updateBatch($classId, $scheduleData) {
+    /**
+     * Get primary/first schedule entry for each slot in a class
+     */
+    public function getPrimaryScheduleByClass($classId) {
+        $stmt = $this->db->prepare("
+            SELECT s.* 
+            FROM schedules s
+            INNER JOIN (
+                SELECT MIN(id) as min_id 
+                FROM schedules 
+                WHERE kelas_id = ? AND academic_year_id = ? 
+                GROUP BY day, hour
+            ) primary_slot ON s.id = primary_slot.min_id
+        ");
+        $stmt->execute([$classId, $this->academic_year_id]);
+        $result = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $result[$row['day']][$row['hour']] = [
+                'id' => $row['id'],
+                'mapel' => $row['subject_id'],
+                'pengajar' => $row['teacher_id']
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Get replacement (2nd / latest) schedule entry for each slot in a class that has more than 1 entry
+     */
+    public function getReplacementScheduleByClass($classId) {
+        $stmt = $this->db->prepare("
+            SELECT s.* 
+            FROM schedules s
+            INNER JOIN (
+                SELECT MAX(id) as max_id, COUNT(*) as cnt 
+                FROM schedules 
+                WHERE kelas_id = ? AND academic_year_id = ? 
+                GROUP BY day, hour
+                HAVING cnt > 1
+            ) latest ON s.id = latest.max_id
+        ");
+        $stmt->execute([$classId, $this->academic_year_id]);
+        $result = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $result[$row['day']][$row['hour']] = [
+                'id' => $row['id'],
+                'mapel' => $row['subject_id'],
+                'pengajar' => $row['teacher_id']
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Edit Jadwal Utama (Hard Edit / Fix Typo):
+     * Updates existing latest records without creating new history, or inserts initial records if slot is empty.
+     */
+    public function updateBatchUtama($classId, $scheduleData) {
         try {
             $this->db->beginTransaction();
 
-            // 1. Delete existing schedule for this class for current year
-            $stmtDelete = $this->db->prepare("DELETE FROM schedules WHERE kelas_id = ? AND academic_year_id = ?");
-            $stmtDelete->execute([$classId, $this->academic_year_id]);
+            $primarySchedule = $this->getPrimaryScheduleByClass($classId);
 
-            // 2. Insert new schedule
+            $stmtUpdate = $this->db->prepare("UPDATE schedules SET subject_id = ?, teacher_id = ? WHERE id = ?");
+            $stmtInsert = $this->db->prepare("INSERT INTO schedules (kelas_id, day, hour, subject_id, teacher_id, academic_year_id) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtDelete = $this->db->prepare("DELETE FROM schedules WHERE id = ?");
+
+            foreach ($scheduleData as $day => $hours) {
+                foreach ($hours as $hour => $slot) {
+                    $mapelId = !empty($slot['mapel']) ? (int)$slot['mapel'] : null;
+                    $pengajarId = !empty($slot['pengajar']) ? (int)$slot['pengajar'] : null;
+
+                    $existing = $primarySchedule[$day][$hour] ?? null;
+
+                    if (!empty($mapelId) && !empty($pengajarId)) {
+                        if ($existing) {
+                            $stmtUpdate->execute([$mapelId, $pengajarId, $existing['id']]);
+                        } else {
+                            $stmtInsert->execute([$classId, $day, $hour, $mapelId, $pengajarId, $this->academic_year_id]);
+                        }
+                    } else {
+                        // Empty slot submitted -> if existing primary entry present, remove it
+                        if ($existing) {
+                            $stmtDelete->execute([$existing['id']]);
+                        }
+                    }
+                }
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Add Jadwal Pengganti (Pergantian Resmi):
+     * Inserts new history entries for slots that have changed.
+     */
+    public function updateBatchPengganti($classId, $scheduleData) {
+        try {
+            $this->db->beginTransaction();
+
+            $currentActive = $this->getByClass($classId);
+
             $stmtInsert = $this->db->prepare("INSERT INTO schedules (kelas_id, day, hour, subject_id, teacher_id, academic_year_id) VALUES (?, ?, ?, ?, ?, ?)");
 
             foreach ($scheduleData as $day => $hours) {
                 foreach ($hours as $hour => $slot) {
-                    $mapelId = $slot['mapel'] ?? null;
-                    $pengajarId = $slot['pengajar'] ?? null;
+                    $mapelId = !empty($slot['mapel']) ? (int)$slot['mapel'] : null;
+                    $pengajarId = !empty($slot['pengajar']) ? (int)$slot['pengajar'] : null;
+
+                    $activeSlot = $currentActive[$day][$hour] ?? null;
+                    $activeMapel = $activeSlot['mapel'] ?? null;
+                    $activePengajar = $activeSlot['pengajar'] ?? null;
 
                     if (!empty($mapelId) && !empty($pengajarId)) {
-                        $stmtInsert->execute([$classId, $day, $hour, $mapelId, $pengajarId, $this->academic_year_id]);
+                        // Insert replacement entry if different from currently active slot
+                        if ($activeMapel != $mapelId || $activePengajar != $pengajarId) {
+                            $stmtInsert->execute([$classId, $day, $hour, $mapelId, $pengajarId, $this->academic_year_id]);
+                        }
                     }
                 }
             }
@@ -75,9 +201,14 @@ class ScheduleModel extends Model {
                 s.teacher_id, 
                 u.nama as teacher_name
             FROM schedules s
+            INNER JOIN (
+                SELECT MAX(id) as max_id
+                FROM schedules
+                WHERE academic_year_id = ?
+                GROUP BY kelas_id, day, hour
+            ) latest ON s.id = latest.max_id
             JOIN subjects sub ON s.subject_id = sub.id
             JOIN users u ON s.teacher_id = u.id
-            WHERE s.academic_year_id = ?
             ORDER BY sub.nama ASC
         ");
         $stmt->execute([$academicYearId]);

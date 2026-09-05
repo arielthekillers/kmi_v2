@@ -86,10 +86,15 @@ class ScheduleController extends Controller {
         $currentJadwal = [];
         $teacherSchedule = [];
 
+        $primaryJadwal = [];
+        $replacementJadwal = [];
+
         if ($selectedKelasId && isset($kelasData[$selectedKelasId])) {
             $k = $kelasData[$selectedKelasId];
             $viewTitle = 'Jadwal Kelas ' . $k['tingkat'] . '-' . $k['abjad'];
             $currentJadwal = $scheduleModel->getByClass($selectedKelasId);
+            $primaryJadwal = $scheduleModel->getPrimaryScheduleByClass($selectedKelasId);
+            $replacementJadwal = $scheduleModel->getReplacementScheduleByClass($selectedKelasId);
         }
 
         if ($selectedPengajarId && isset($pengajarData[$selectedPengajarId])) {
@@ -111,6 +116,8 @@ class ScheduleController extends Controller {
             'selectedPengajarId' => $selectedPengajarId,
             'viewTitle' => $viewTitle,
             'currentJadwal' => $currentJadwal,
+            'primaryJadwal' => $primaryJadwal,
+            'replacementJadwal' => $replacementJadwal,
             'teacherSchedule' => $teacherSchedule,
             'days' => $days,
             'hours' => $hours
@@ -127,6 +134,7 @@ class ScheduleController extends Controller {
         csrf_validate_token();
 
         $kelasId = $_POST['kelas_id'] ?? '';
+        $mode = $_POST['mode'] ?? 'utama';
         $newSchedule = $_POST['schedule'] ?? [];
 
         if (empty($kelasId)) {
@@ -136,8 +144,13 @@ class ScheduleController extends Controller {
 
         $model = new ScheduleModel();
         try {
-            $model->updateBatch($kelasId, $newSchedule);
-            add_flash('Jadwal berhasil diperbarui.', 'success');
+            if ($mode === 'pengganti') {
+                $model->updateBatchPengganti($kelasId, $newSchedule);
+                add_flash('Jadwal pengganti berhasil ditambahkan.', 'success');
+            } else {
+                $model->updateBatchUtama($kelasId, $newSchedule);
+                add_flash('Jadwal utama berhasil diperbarui.', 'success');
+            }
         } catch (\Exception $e) {
             add_flash('Gagal menyimpan jadwal: ' . $e->getMessage(), 'error');
         }

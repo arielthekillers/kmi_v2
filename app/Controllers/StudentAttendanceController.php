@@ -80,12 +80,18 @@ class StudentAttendanceController extends Controller {
             $stmt = $db->prepare("
                 SELECT s.hour, sub.nama as mapel_nama, u.nama as teacher_nama
                 FROM schedules s
+                INNER JOIN (
+                    SELECT MAX(id) as max_id 
+                    FROM schedules 
+                    WHERE kelas_id = ? AND academic_year_id = ? 
+                    GROUP BY day, hour
+                ) latest ON s.id = latest.max_id
                 JOIN subjects sub ON s.subject_id = sub.id
                 LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE s.kelas_id = ? AND s.day = ? AND s.academic_year_id = ?
+                WHERE s.day = ?
                 ORDER BY s.hour ASC
             ");
-            $stmt->execute([$activeKelasId, $dayName, $this->currentYear['id']]);
+            $stmt->execute([$activeKelasId, $this->currentYear['id'], $dayName]);
             $schedules = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
             // Fetch KBM dispensations for selected date

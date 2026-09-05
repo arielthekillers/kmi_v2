@@ -120,9 +120,14 @@ class KelasModel extends Model {
         $stmt = $this->db->prepare("
             SELECT sch.*, sub.nama as subject_name, u.nama as teacher_name 
             FROM schedules sch 
+            INNER JOIN (
+                SELECT MAX(id) as max_id 
+                FROM schedules 
+                WHERE kelas_id = ? AND academic_year_id = ? 
+                GROUP BY day, hour
+            ) latest ON sch.id = latest.max_id
             LEFT JOIN subjects sub ON sch.subject_id = sub.id 
             LEFT JOIN users u ON sch.teacher_id = u.id 
-            WHERE sch.kelas_id = ? AND sch.academic_year_id = ? 
             ORDER BY sch.day ASC, sch.hour ASC
         ");
         $stmt->execute([$id, $yearId]);
