@@ -20,7 +20,7 @@
                             <?= htmlspecialchars($k['tingkat']) ?>-<?= htmlspecialchars($k['abjad']) ?>
                         </a>
                         <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 flex bg-white/90 rounded-md shadow-sm border border-gray-100">
-                            <button onclick='editKelas("<?= $k['id'] ?>", "<?= $k['tingkat'] ?>", "<?= $k['abjad'] ?>", "<?= $k['location'] ?>", "<?= $k['teacher_id'] ?>")' class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-l-md" title="Edit">
+                            <button onclick='editKelas("<?= $k['id'] ?>", "<?= $k['tingkat'] ?>", "<?= $k['abjad'] ?>", "<?= $k['location'] ?>", "<?= $k['teacher_id'] ?>", "<?= $k['teacher_id_2'] ?? '' ?>")' class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-l-md" title="Edit">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
                             <div class="w-px bg-gray-200"></div>
@@ -32,7 +32,7 @@
                     <div class="mt-2 space-y-1">
                         <div class="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
                             <i class="ri-user-star-line text-indigo-400"></i>
-                            <span class="truncate"><?= htmlspecialchars($k['wali_kelas'] ?? '-') ?></span>
+                            <span class="truncate" title="<?= htmlspecialchars($k['wali_kelas'] ?? '-') ?>"><?= htmlspecialchars($k['wali_kelas'] ?? '-') ?></span>
                         </div>
                         <div class="flex items-center gap-1.5 text-[10px] text-gray-400 italic">
                             <i class="ri-map-pin-line"></i>
@@ -83,9 +83,18 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Wali Kelas</label>
+                            <label class="block text-sm font-medium text-gray-700">Wali Kelas 1</label>
                             <select name="teacher_id" id="inputTeacher" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm">
-                                <option value="">-- Pilih Wali Kelas --</option>
+                                <option value="">-- Pilih Wali Kelas 1 --</option>
+                                <?php foreach ($teachers as $t): ?>
+                                <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Wali Kelas 2 (Opsional / Pa+Pi)</label>
+                            <select name="teacher_id_2" id="inputTeacher2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm">
+                                <option value="">-- Pilih Wali Kelas 2 (Opsional) --</option>
                                 <?php foreach ($teachers as $t): ?>
                                 <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
                                 <?php endforeach; ?>
@@ -117,16 +126,18 @@
         document.getElementById('inputAbjad').value = '';
         document.getElementById('inputLocation').value = '';
         document.getElementById('inputTeacher').value = '';
+        document.getElementById('inputTeacher2').value = '';
         document.getElementById('inputId').value = '';
         document.getElementById('modalTitle').textContent = 'Tambah Kelas';
         toggleModal('addKelasModal');
     }
 
-    function editKelas(id, tingkat, abjad, location, teacherId) {
+    function editKelas(id, tingkat, abjad, location, teacherId, teacherId2) {
         document.getElementById('inputTingkat').value = tingkat;
         document.getElementById('inputAbjad').value = abjad;
         document.getElementById('inputLocation').value = location;
         document.getElementById('inputTeacher').value = teacherId;
+        document.getElementById('inputTeacher2').value = teacherId2 || '';
         document.getElementById('inputId').value = id;
         document.getElementById('modalTitle').textContent = 'Edit Kelas';
         toggleModal('addKelasModal');

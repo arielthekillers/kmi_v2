@@ -63,7 +63,8 @@ class KelasController extends Controller {
             'tingkat' => htmlspecialchars($_POST['tingkat'] ?? ''),
             'abjad' => $abjad,
             'location' => htmlspecialchars($_POST['location'] ?? ''),
-            'teacher_id' => $_POST['teacher_id'] ?? null,
+            'teacher_id' => !empty($_POST['teacher_id']) ? $_POST['teacher_id'] : null,
+            'teacher_id_2' => !empty($_POST['teacher_id_2']) ? $_POST['teacher_id_2'] : null,
             'gender' => $gender
         ];
 
@@ -97,8 +98,8 @@ class KelasController extends Controller {
         $role = auth_get_role();
         $userId = auth_get_user_id();
 
-        // Check permission: Must be admin OR Wali Kelas for this class
-        if ($role !== 'admin' && $kelas['teacher_id'] != $userId) {
+        // Check permission: Must be admin OR Wali Kelas (1 or 2) for this class
+        if ($role !== 'admin' && $kelas['teacher_id'] != $userId && ($kelas['teacher_id_2'] ?? null) != $userId) {
             add_flash('Anda tidak memiliki akses ke halaman ini.', 'error');
             $this->redirect('/');
         }

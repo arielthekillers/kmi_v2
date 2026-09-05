@@ -98,25 +98,71 @@
             <?php if ($tab === 'overview'): ?>
                 <!-- Overview Tab -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-6 rounded-2xl border border-indigo-100 shadow-sm transition-all hover:shadow-md">
-                        <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
-                                <i class="ri-user-star-line text-xl"></i>
+                    <!-- Wali Kelas Card -->
+                    <div class="bg-gradient-to-br from-indigo-50/70 to-indigo-100/40 p-6 rounded-2xl border border-indigo-100 shadow-sm transition-all hover:shadow-md flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                    <i class="ri-user-star-line text-sm"></i> Wali Kelas
+                                </span>
+                                <?php if (!empty($kelas['teacher_id_2'])): ?>
+                                    <span class="px-2.5 py-0.5 bg-indigo-100/80 text-indigo-700 text-[10px] font-bold rounded-full">2 Pengajar</span>
+                                <?php endif; ?>
                             </div>
-                            <div>
-                                <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Wali Kelas</p>
-                                <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($kelas['wali_kelas'] ?? 'Belum Ditentukan') ?></p>
+
+                            <div class="space-y-3.5">
+                                <?php if (empty($kelas['teacher_id']) && empty($kelas['teacher_id_2'])): ?>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm shrink-0">
+                                            ?
+                                        </div>
+                                        <p class="text-sm font-semibold text-gray-400 italic">Belum Ditentukan</p>
+                                    </div>
+                                <?php else: ?>
+                                    <?php if (!empty($kelas['teacher_id'])): ?>
+                                        <div class="flex items-center gap-3.5">
+                                            <img src="<?= url('/avatar?id=' . $kelas['teacher_id']) ?>" 
+                                                 alt="Avatar Wali Kelas 1" 
+                                                 class="w-10 h-10 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                                                 onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($kelas['wali_kelas_1'] ?? 'Guru') ?>&background=E0E7FF&color=3730A3&bold=true'">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($kelas['wali_kelas_1'] ?? 'Wali Kelas 1') ?></p>
+                                                <span class="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider block mt-0.5">Wali Kelas 1</span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($kelas['teacher_id_2'])): ?>
+                                        <div class="flex items-center gap-3.5">
+                                            <img src="<?= url('/avatar?id=' . $kelas['teacher_id_2']) ?>" 
+                                                 alt="Avatar Wali Kelas 2" 
+                                                 class="w-10 h-10 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                                                 onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($kelas['wali_kelas_2'] ?? 'Guru') ?>&background=E0E7FF&color=3730A3&bold=true'">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-sm font-bold text-gray-900 truncate"><?= htmlspecialchars($kelas['wali_kelas_2'] ?? 'Wali Kelas 2') ?></p>
+                                                <span class="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider block mt-0.5">Wali Kelas 2</span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-6 rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md">
-                        <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-200">
-                                <i class="ri-map-pin-line text-xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Lokasi Kelas</p>
-                                <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($kelas['location'] ?: 'Belum Ditentukan') ?></p>
+
+                    <!-- Lokasi Kelas Card -->
+                    <div class="bg-gradient-to-br from-emerald-50/70 to-emerald-100/40 p-6 rounded-2xl border border-emerald-100 shadow-sm transition-all hover:shadow-md flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-1.5 mb-4">
+                                <i class="ri-map-pin-line text-sm"></i> Lokasi Kelas
+                            </span>
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-200 shrink-0">
+                                    <i class="ri-building-4-line text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($kelas['location'] ?: 'Belum Ditentukan') ?></p>
+                                    <span class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider block mt-0.5">Ruang KBM</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -175,7 +221,7 @@
                                     <td class="px-6 py-3.5 font-bold text-gray-900">
                                         <?php if (auth_get_role() === 'admin'): ?>
                                             <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
-                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'])): ?>
+                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'], $kelas['teacher_id_2'] ?? null)): ?>
                                             <a href="<?= url('/kelas/edit-student?id=' . $s['id'] . '&kelas_id=' . $kelas['id']) ?>" class="hover:text-indigo-600 transition-colors" title="Edit Data Santri"><?= htmlspecialchars($s['nama']) ?> <i class="ri-edit-line text-gray-400 text-xs ml-1"></i></a>
                                         <?php else: ?>
                                             <?= htmlspecialchars($s['nama']) ?>
@@ -212,7 +258,7 @@
                                     <p class="font-bold text-gray-900 text-sm">
                                         <?php if (auth_get_role() === 'admin'): ?>
                                             <a href="<?= url('/students/edit?id=' . $s['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?></a>
-                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'])): ?>
+                                        <?php elseif (auth_can_edit_student_in_class($kelas['teacher_id'], $kelas['teacher_id_2'] ?? null)): ?>
                                             <a href="<?= url('/kelas/edit-student?id=' . $s['id'] . '&kelas_id=' . $kelas['id']) ?>" class="hover:text-indigo-600 transition-colors"><?= htmlspecialchars($s['nama']) ?> <i class="ri-edit-line text-gray-400 text-xs"></i></a>
                                         <?php else: ?>
                                             <?= htmlspecialchars($s['nama']) ?>

@@ -604,8 +604,8 @@ if (!function_exists('auth_get_wali_kelas_kelas')) {
         try {
             $db = \App\Core\Database::getInstance()->getConnection();
             $yearId = get_active_academic_year_id();
-            $stmt = $db->prepare("SELECT id, tingkat, abjad FROM kelas WHERE teacher_id = ? AND academic_year_id = ? ORDER BY tingkat ASC, abjad ASC");
-            $stmt->execute([$userId, $yearId]);
+            $stmt = $db->prepare("SELECT id, tingkat, abjad FROM kelas WHERE (teacher_id = ? OR teacher_id_2 = ?) AND academic_year_id = ? ORDER BY tingkat ASC, abjad ASC");
+            $stmt->execute([$userId, $userId, $yearId]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
             return [];
@@ -615,11 +615,16 @@ if (!function_exists('auth_get_wali_kelas_kelas')) {
 
 if (!function_exists('auth_can_edit_student_in_class')) {
     /**
-     * Check if user is admin or the teacher (wali kelas) of the specified class.
+     * Check if user is admin or one of the teachers (wali kelas 1 or 2) of the specified class.
      */
-    function auth_can_edit_student_in_class($kelas_teacher_id) {
+    function auth_can_edit_student_in_class($kelas_teacher_id, $kelas_teacher_id_2 = null) {
         if (auth_get_role() === 'admin') return true;
-        if (auth_get_role() === 'pengajar' && auth_get_user_id() == $kelas_teacher_id) return true;
+        if (auth_get_role() === 'pengajar') {
+            $userId = auth_get_user_id();
+            if ($userId == $kelas_teacher_id || ($kelas_teacher_id_2 && $userId == $kelas_teacher_id_2)) {
+                return true;
+            }
+        }
         return false;
     }
 }
