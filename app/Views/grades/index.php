@@ -648,7 +648,7 @@ $isAdmin = (auth_get_role() === 'admin');
                             <label class="block text-sm font-medium text-gray-700">Kelas</label>
                             <select name="id_kelas" id="modal_id_kelas" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white" onchange="onClassChange()">
                                 <option value="">Pilih Kelas...</option>
-                                <?php foreach ($kelas as $k): ?>
+                                <?php foreach ($allKelas as $k): ?>
                                     <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['tingkat']) ?> - <?= htmlspecialchars($k['abjad']) ?></option>
                                 <?php endforeach; ?>
                             </select>

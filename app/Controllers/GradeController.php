@@ -79,6 +79,8 @@ class GradeController extends Controller {
             }
         }
 
+        $allKelas = $kelas;
+
         // Decorate and filter out classes with no exams (0/0 correction)
         foreach ($kelas as $key => &$k) {
             $kId = $k['id'];
@@ -128,6 +130,7 @@ class GradeController extends Controller {
         $this->view('grades/index', [
             'exams'          => $exams,
             'kelas'          => $kelas,
+            'allKelas'       => $allKelas,
             'pelajaran'      => $allSubjects,
             'pengajar'       => $pengajar,
             'teachingMap'    => $teachingMap,
