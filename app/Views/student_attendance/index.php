@@ -101,7 +101,8 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                                 ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-100' 
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
                             
-                            $sidebarUrl = url('/student-attendance?kelas=' . $k['id'] . '&date=' . urlencode($selectedDate) . '&tab=' . urlencode($tab));
+                            $extraDates = (!empty($startDate) ? '&start_date=' . urlencode($startDate) : '') . (!empty($endDate) ? '&end_date=' . urlencode($endDate) : '');
+                            $sidebarUrl = url('/student-attendance?kelas=' . $k['id'] . '&date=' . urlencode($selectedDate) . '&tab=' . urlencode($tab) . $extraDates);
                             $absentCount = $absentCounts[$k['id']] ?? 0;
                         ?>
                             <a href="<?= $sidebarUrl ?>" 
@@ -135,6 +136,7 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                         break;
                     }
                 }
+                $extraDates = (!empty($startDate) ? '&start_date=' . urlencode($startDate) : '') . (!empty($endDate) ? '&end_date=' . urlencode($endDate) : '');
                 ?>
 
                 <!-- Class Title Card -->
@@ -148,11 +150,11 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                         <!-- Date Selector / Toggle Tab -->
                         <div class="flex items-center gap-3 self-start sm:self-center">
                             <div class="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-                                <a href="<?= url('/student-attendance?kelas=' . $activeKelasId . '&date=' . urlencode($selectedDate) . '&tab=input') ?>" 
+                                <a href="<?= url('/student-attendance?kelas=' . $activeKelasId . '&date=' . urlencode($selectedDate) . '&tab=input' . $extraDates) ?>" 
                                    class="px-3 py-1.5 rounded-md text-xs font-semibold transition-all <?= $tab === 'input' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' ?>">
                                     Input Harian
                                 </a>
-                                <a href="<?= url('/student-attendance?kelas=' . $activeKelasId . '&date=' . urlencode($selectedDate) . '&tab=rekap') ?>" 
+                                <a href="<?= url('/student-attendance?kelas=' . $activeKelasId . '&date=' . urlencode($selectedDate) . '&tab=rekap' . $extraDates) ?>" 
                                    class="px-3 py-1.5 rounded-md text-xs font-semibold transition-all <?= $tab === 'rekap' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' ?>">
                                     Rekap Semester
                                 </a>
@@ -359,10 +361,42 @@ if ($activeSession && (bool)$activeSession['is_open'] && !$isFullDayDispensation
                 <?php else: ?>
                     <!-- Rekap Semester Tab -->
                     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                Rekap Ketidakhadiran Semester <?= htmlspecialchars($activeSession['semester']) ?>
-                            </h3>
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    Rekap Ketidakhadiran Semester <?= htmlspecialchars($activeSession['semester']) ?>
+                                </h3>
+                                <?php if (!empty($startDate) || !empty($endDate)): ?>
+                                    <p class="text-xs text-indigo-600 font-semibold mt-0.5">
+                                        Periode: <?= htmlspecialchars($startDate ?: 'Awal Semester') ?> s.d. <?= htmlspecialchars($endDate ?: 'Hari ini') ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                            <form method="GET" action="<?= url('/student-attendance') ?>" class="flex flex-wrap items-center gap-2">
+                                <input type="hidden" name="kelas" value="<?= htmlspecialchars($activeKelasId) ?>">
+                                <input type="hidden" name="date" value="<?= htmlspecialchars($selectedDate) ?>">
+                                <input type="hidden" name="tab" value="rekap">
+                                
+                                <div class="flex items-center gap-1.5">
+                                    <label class="text-xs text-gray-500 font-medium">Dari:</label>
+                                    <input type="text" id="rekap-start-picker" name="start_date" value="<?= htmlspecialchars($startDate) ?>" placeholder="Mulai Tgl" 
+                                           class="bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 w-28" />
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <label class="text-xs text-gray-500 font-medium">s.d.:</label>
+                                    <input type="text" id="rekap-end-picker" name="end_date" value="<?= htmlspecialchars($endDate) ?>" placeholder="Sampai Tgl" 
+                                           class="bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 w-28" />
+                                </div>
+                                <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1">
+                                    <i class="ri-filter-3-line"></i> Filter
+                                </button>
+                                <?php if (!empty($startDate) || !empty($endDate)): ?>
+                                    <a href="<?= url('/student-attendance?kelas=' . $activeKelasId . '&date=' . urlencode($selectedDate) . '&tab=rekap') ?>" 
+                                       class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium rounded-lg transition-colors">
+                                        Reset
+                                    </a>
+                                <?php endif; ?>
+                            </form>
                         </div>
 
                         <!-- Desktop Rekap Table -->
@@ -659,17 +693,33 @@ document.addEventListener('DOMContentLoaded', function() {
         activeNavItem.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
     }
 
-    // Initialize flatpickr date picker
-    const picker = flatpickr("#date-picker", {
-        dateFormat: "Y-m-d",
-        maxDate: "today",
-        onChange: function(selectedDates, dateStr, instance) {
-            // Redirect with new date
-            const urlParams = new URLSearchParams(window.location.search);
-            urlParams.set('date', dateStr);
-            window.location.search = urlParams.toString();
-        }
-    });
+    // Initialize flatpickr date picker for daily attendance
+    if (document.getElementById('date-picker')) {
+        flatpickr("#date-picker", {
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                // Redirect with new date
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('date', dateStr);
+                window.location.search = urlParams.toString();
+            }
+        });
+    }
+
+    // Initialize flatpickr date pickers for rekap range
+    if (document.getElementById('rekap-start-picker')) {
+        flatpickr("#rekap-start-picker", {
+            dateFormat: "Y-m-d",
+            maxDate: "today"
+        });
+    }
+    if (document.getElementById('rekap-end-picker')) {
+        flatpickr("#rekap-end-picker", {
+            dateFormat: "Y-m-d",
+            maxDate: "today"
+        });
+    }
 });
 </script>
 

@@ -155,17 +155,30 @@ class StudentAttendanceModel extends Model {
         }
     }
 
-    public function getAbsenceSummaryByClass($kelasId, $sessionId) {
-        $stmt = $this->db->prepare("
+    public function getAbsenceSummaryByClass($kelasId, $sessionId, $startDate = null, $endDate = null) {
+        $sql = "
             SELECT student_id,
                    SUM(CASE WHEN type = 'sakit' THEN 1 ELSE 0 END) as sakit,
                    SUM(CASE WHEN type = 'izin' THEN 1 ELSE 0 END) as izin,
                    SUM(CASE WHEN type = 'alpha' THEN 1 ELSE 0 END) as alpa
             FROM student_absences
             WHERE kelas_id = ? AND attendance_session_id = ?
-            GROUP BY student_id
-        ");
-        $stmt->execute([$kelasId, $sessionId]);
+        ";
+        $params = [$kelasId, $sessionId];
+
+        if (!empty($startDate)) {
+            $sql .= " AND date >= ?";
+            $params[] = $startDate;
+        }
+        if (!empty($endDate)) {
+            $sql .= " AND date <= ?";
+            $params[] = $endDate;
+        }
+
+        $sql .= " GROUP BY student_id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $summary = [];

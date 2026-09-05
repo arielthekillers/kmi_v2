@@ -50,6 +50,8 @@ class StudentAttendanceController extends Controller {
         }
 
         $selectedDate = $_GET['date'] ?? date('Y-m-d');
+        $startDate = $_GET['start_date'] ?? '';
+        $endDate = $_GET['end_date'] ?? '';
         $tab = $_GET['tab'] ?? 'input';
 
         $students = [];
@@ -64,7 +66,7 @@ class StudentAttendanceController extends Controller {
 
         if (!empty($activeKelasId) && $activeSession) {
             $students = $this->attendanceModel->getAbsencesByClassAndDate($activeKelasId, $selectedDate, $activeSession['id']);
-            $summary = $this->attendanceModel->getAbsenceSummaryByClass($activeKelasId, $activeSession['id']);
+            $summary = $this->attendanceModel->getAbsenceSummaryByClass($activeKelasId, $activeSession['id'], $startDate, $endDate);
 
             // Fetch schedules for active class on selected date
             $timestamp = strtotime($selectedDate);
@@ -113,6 +115,8 @@ class StudentAttendanceController extends Controller {
             'kelas' => $kelas,
             'activeKelasId' => $activeKelasId,
             'selectedDate' => $selectedDate,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
             'students' => $students,
             'summary' => $summary,
             'activeSession' => $activeSession,
