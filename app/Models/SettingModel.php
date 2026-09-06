@@ -59,7 +59,8 @@ class SettingModel extends Model {
             ['type' => 'jam', 'label' => 'Jam 5', 'start' => '11:00', 'end' => '11:45', 'value' => 5],
             ['type' => 'jam', 'label' => 'Jam 6', 'start' => '11:45', 'end' => '12:30', 'value' => 6],
             ['type' => 'break', 'label' => 'Dzuhur & Makan', 'start' => '12:30', 'end' => '14:00', 'value' => 'dzuhur'],
-            ['type' => 'jam', 'label' => 'Jam 7', 'start' => '14:00', 'end' => '14:45', 'value' => 7]
+            ['type' => 'jam', 'label' => 'Jam 7', 'start' => '14:00', 'end' => '14:45', 'value' => 7],
+            ['type' => 'break', 'label' => 'Belajar Malam (Muwajjah)', 'start' => '20:00', 'end' => '21:30', 'value' => 'muwajjah']
         ];
         
         return $this->get('tv_showcase_hours', $default);

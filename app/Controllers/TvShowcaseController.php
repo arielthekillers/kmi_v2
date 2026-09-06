@@ -225,6 +225,7 @@ class TvShowcaseController extends Controller {
 
         $piketSyeikh = [];
         $piketKeliling = [];
+        $piketMuwajjah = [];
 
         $piketStmt = $pdo->prepare("
             SELECT ps.*, u.nama, u.id as user_id 
@@ -239,10 +240,61 @@ class TvShowcaseController extends Controller {
             $profile = $this->getTeacherProfile($p['user_id'], $pdo);
             if ($p['type'] === 'syeikh') {
                 $piketSyeikh[] = $profile;
+            } elseif ($p['type'] === 'muwajjah') {
+                $piketMuwajjah[] = $profile;
             } else {
                 $sess = $p['session'] ?? 1;
                 if (!isset($piketKeliling[$sess])) $piketKeliling[$sess] = [];
                 $piketKeliling[$sess][] = $profile;
+            }
+        }
+
+        // Muwajjah Live Stats Today
+        $muwajjahModel = new \App\Models\MuwajjahModel();
+        $isRoutineHoliday = $muwajjahModel->isRoutineHoliday($selectedDate);
+        $classesWithWali = $muwajjahModel->getClassesWithWaliKelas();
+        $todayMuwajjahAbs = $muwajjahModel->getAbsensiByDate($selectedDate);
+
+        $muwajjahCards = [];
+        $totalWaliMuwajjah = 0;
+        $recordedWaliMuwajjah = 0;
+        $hadirWaliMuwajjah = 0;
+
+        foreach ($classesWithWali as $cw) {
+            $kelasName = $cw['tingkat'] . '-' . $cw['abjad'];
+            $gender = $cw['gender'] ?? 'Pa';
+            foreach ($cw['wali_kelas'] as $wIdx => $wk) {
+                $totalWaliMuwajjah++;
+                $kKey = $cw['kelas_id'] . '_' . $wk['teacher_id'];
+                $rec = $todayMuwajjahAbs[$kKey] ?? null;
+                $status = $rec['status'] ?? 'pending';
+                
+                if (!empty($rec)) {
+                    $recordedWaliMuwajjah++;
+                    if ($status === 'hadir') {
+                        $hadirWaliMuwajjah++;
+                    }
+                }
+
+                $tProfile = $this->getTeacherProfile($wk['teacher_id'], $pdo);
+                
+                $substituteName = null;
+                if (!empty($rec['pengganti_id'])) {
+                    $subP = $this->getTeacherProfile($rec['pengganti_id'], $pdo);
+                    if ($subP) $substituteName = $subP['nama_display'];
+                }
+
+                $muwajjahCards[] = [
+                    'kelas' => $kelasName . ' ' . $gender,
+                    'mapel' => 'Muwajjah / Pendampingan',
+                    'pengajar' => $wk['formatted_nama'],
+                    'pengajar_profile' => $tProfile,
+                    'status' => ($status === 'hadir') ? 'verified' : (($status === 'alfa') ? 'alfa' : (($status === 'izin') ? 'justified' : 'pending')),
+                    'raw_status' => $status,
+                    'verified' => !empty($rec),
+                    'is_substitute' => !empty($rec['pengganti_id']),
+                    'substitute_name' => $substituteName
+                ];
             }
         }
 
@@ -251,12 +303,21 @@ class TvShowcaseController extends Controller {
             'date' => $selectedDate,
             'day' => $dayNameIndo,
             'schedule_by_hour' => $dailySchedule,
+            'muwajjah_cards' => $muwajjahCards,
             'stats' => $stats,
             'master_stats' => $masterStats,
+            'muwajjah_stats' => [
+                'is_holiday' => $isRoutineHoliday,
+                'total_wali' => $totalWaliMuwajjah,
+                'recorded' => $recordedWaliMuwajjah,
+                'hadir' => $hadirWaliMuwajjah,
+                'percent' => ($totalWaliMuwajjah > 0) ? round(($recordedWaliMuwajjah / $totalWaliMuwajjah) * 100) : 0
+            ],
             'latest_verifications' => $latestVerifications,
             'piket' => [
                 'syeikh' => $piketSyeikh,
-                'keliling' => $piketKeliling
+                'keliling' => $piketKeliling,
+                'muwajjah' => $piketMuwajjah
             ],
             'hours_config' => (new \App\Models\SettingModel())->getTvHours(),
             'bgm_youtube' => (new \App\Models\SettingModel())->get('tv_showcase_bgm_youtube', ''),

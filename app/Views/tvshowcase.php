@@ -890,13 +890,52 @@
                 }
             }
 
-            // If break time, add break slide
-            if (breakType) {
+            // If break time (istirahat1, istirahat2, dzuhur)
+            if (breakType && breakType !== 'muwajjah') {
                 slides.push({
                     type: 'break',
                     breakType: breakType
                 });
                 return slides;
+            }
+
+            // If Belajar Malam (Muwajjah) time slot!
+            if (breakType === 'muwajjah') {
+                const muwajjahItems = appData.muwajjah_cards || [];
+                if (muwajjahItems.length > 0) {
+                    const groups = {};
+                    muwajjahItems.forEach(item => {
+                        const match = item.kelas.match(/^(\d+)/);
+                        const prefix = match ? match[1] : 'Others';
+                        if (!groups[prefix]) groups[prefix] = [];
+                        groups[prefix].push(item);
+                    });
+
+                    const prefixes = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+                    prefixes.forEach(prefix => {
+                        const groupItems = groups[prefix];
+                        const totalPages = Math.ceil(groupItems.length / ITEMS_PER_PAGE);
+
+                        for (let i = 0; i < totalPages; i++) {
+                            slides.push({
+                                type: 'muwajjah_schedule',
+                                hour: 'Muwajjah',
+                                items: groupItems.slice(i * ITEMS_PER_PAGE, (i + 1) * ITEMS_PER_PAGE),
+                                page: i + 1,
+                                totalPages: totalPages,
+                                grade: prefix
+                            });
+                        }
+                    });
+                    return slides;
+                } else {
+                    slides.push({
+                        type: 'empty',
+                        message: 'Malam Libur Rutin / Belum Ada Data Muwajjah'
+                    });
+                    return slides;
+                }
             }
 
             if (activeHour && scheduleData[activeHour]) {
@@ -1000,6 +1039,7 @@
             let duration = 12000;
             if (sidebarWidgetIndex === 1) duration = 18000;
             if (sidebarWidgetIndex === 2) duration = 15000;
+            if (sidebarWidgetIndex === 3) duration = 18000;
             duration += (Math.random() * 4000 - 2000);
 
             sidebarTimeout = setTimeout(() => {
@@ -1007,9 +1047,8 @@
                 if (container) {
                     container.classList.add('fade-out');
                     setTimeout(() => {
-                        // Toggle between 1 (Syeikh Diwan) and 2 (Piket Keliling)
-                        // If current is 1, go to 2. If 2, go back to 1.
-                        sidebarWidgetIndex = sidebarWidgetIndex === 1 ? 2 : 1;
+                        // Cycle through 1 (Syeikh Diwan) -> 2 (Piket Keliling) -> 3 (Piket & Live Muwajjah)
+                        sidebarWidgetIndex = (sidebarWidgetIndex % 3) + 1;
 
                         renderSidebarWidget();
                         container.classList.remove('fade-out');
@@ -1033,6 +1072,7 @@
                 appData.stats = data.stats;
                 appData.latest = data.latest_verifications;
                 appData.schedule = data.schedule_by_hour;
+                appData.muwajjah_cards = data.muwajjah_cards || [];
                 appData.piket = data.piket || { syeikh: [], keliling: [] };
                 appData.hours_config = data.hours_config || [];
                 appData.bgm_youtube = data.bgm_youtube || '';
@@ -1111,6 +1151,9 @@
             if (slide.type === 'schedule') {
                 const gradeLabel = slide.grade ? ` • Kelas ${slide.grade}` : '';
                 badge.textContent = `Jam Ke-${slide.hour}${gradeLabel} (${slide.page}/${slide.totalPages})`;
+            } else if (slide.type === 'muwajjah_schedule') {
+                const gradeLabel = slide.grade ? ` • Kelas ${slide.grade}` : '';
+                badge.textContent = `Muwajjah${gradeLabel} (${slide.page}/${slide.totalPages})`;
             } else if (slide.type === 'break') {
                 // Update badge for break time
                 if (slide.breakType === 'istirahat1') {
@@ -1153,6 +1196,12 @@
                         </svg>`;
                         breakMessage = 'Waktu Istirahat Dzuhur & Makan Siang';
                         breakSubmessage = '90 Menit • 12:30 - 14:00';
+                    } else if (slide.breakType === 'muwajjah') {
+                        breakIcon = `<svg class="w-20 h-20 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>`;
+                        breakMessage = 'Waktu Pendampingan Belajar Malam (Muwajjah)';
+                        breakSubmessage = 'Absensi Muwajjah Santri & Wali Kelas';
                     }
 
                     html = `<div class="flex h-full w-full flex-col items-center justify-center gap-6">
@@ -1553,6 +1602,68 @@
                         <div class="flex-1 overflow-y-auto px-1 no-scrollbar">
                              <div class="flex flex-col">
                                 ${list || '<div class="text-center text-emerald-100/80 italic py-10">Belum ada data Piket Keliling</div>'}
+                             </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+            } else if (sidebarWidgetIndex === 3) {
+                // --- PIKET MUWAJJAH & LIVE STATS VIEW ---
+                container.className = "bg-gradient-to-br from-violet-600 to-indigo-800 rounded-3xl p-6 flex flex-col flex-1 relative transition-all duration-500 overflow-hidden shadow-2xl shadow-indigo-900/30";
+
+                const piketMuwajjahList = (appData.piket?.muwajjah || []).map(item => renderItem(item, 'border-indigo-400')).join('');
+                const mStats = appData.muwajjah_stats || { is_holiday: false, total_wali: 0, recorded: 0, hadir: 0, percent: 0 };
+
+                let liveStatsHtml = '';
+                if (mStats.is_holiday) {
+                    liveStatsHtml = `
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 text-center text-white mb-4 border border-white/10">
+                            <div class="text-xs font-bold text-indigo-200 flex items-center justify-center gap-1.5 mb-1">
+                                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path></svg>
+                                Malam Libur Rutin
+                            </div>
+                            <div class="text-[11px] text-indigo-100">Tidak ada kegiatan Muwajjah malam ini</div>
+                        </div>
+                    `;
+                } else {
+                    liveStatsHtml = `
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 text-white mb-4 border border-white/10">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-indigo-100">Live Absen Muwajjah</span>
+                                <span class="text-xs font-extrabold bg-emerald-500/80 text-white px-2 py-0.5 rounded-full">${mStats.percent}%</span>
+                            </div>
+                            <div class="w-full bg-white/20 rounded-full h-2 overflow-hidden mb-2">
+                                <div class="bg-emerald-400 h-full rounded-full transition-all duration-500" style="width: ${mStats.percent}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[11px] text-indigo-100">
+                                <span>Tercatat: <b>${mStats.recorded}</b> / ${mStats.total_wali} Wali</span>
+                                <span>Hadir: <b class="text-emerald-300">${mStats.hadir}</b></span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html = `
+                    <div class="absolute -top-10 -right-10 w-48 h-48 bg-white/15 rounded-full blur-sm animate-float-1 pointer-events-none"></div>
+                    <div class="absolute -bottom-10 -left-10 w-48 h-48 bg-white/10 rounded-full blur-sm animate-float-2 pointer-events-none"></div>
+
+                    <div class="flex flex-col h-full fade-transition relative z-10">
+                        <div class="flex items-center gap-3 mb-3 border-b border-indigo-400/30 pb-3">
+                            <span class="p-2 bg-white/20 rounded-xl">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                            </span>
+                            <div>
+                                <h3 class="text-xl font-bold text-white tracking-wide">Piket Muwajjah</h3>
+                                <p class="text-[10px] text-indigo-200 font-bold uppercase tracking-widest">Pendampingan Malam</p>
+                            </div>
+                        </div>
+
+                        ${liveStatsHtml}
+
+                        <div class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider mb-2">Petugas Piket Muwajjah</div>
+                        <div class="flex-1 overflow-y-auto px-1 no-scrollbar">
+                             <div class="flex flex-col">
+                                ${piketMuwajjahList || '<div class="text-center text-indigo-200/80 italic py-6 text-xs">Belum ada Petugas Piket Muwajjah</div>'}
                              </div>
                         </div>
                     </div>

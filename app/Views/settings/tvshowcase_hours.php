@@ -97,6 +97,7 @@
                                                 <option value="istirahat1" <?= $row['value'] === 'istirahat1' ? 'selected' : '' ?>>Istirahat I</option>
                                                 <option value="istirahat2" <?= $row['value'] === 'istirahat2' ? 'selected' : '' ?>>Istirahat II</option>
                                                 <option value="dzuhur" <?= $row['value'] === 'dzuhur' ? 'selected' : '' ?>>Istirahat Sholat/Makan</option>
+                                                <option value="muwajjah" <?= $row['value'] === 'muwajjah' ? 'selected' : '' ?>>Belajar Malam (Muwajjah)</option>
                                             </select>
                                             <?php endif; ?>
                                         </td>
@@ -159,6 +160,7 @@ function addHourRow(type) {
                 <option value="istirahat1">Istirahat I</option>
                 <option value="istirahat2">Istirahat II</option>
                 <option value="dzuhur">Istirahat Sholat/Makan</option>
+                <option value="muwajjah">Belajar Malam (Muwajjah)</option>
             </select>`;
     }
 
