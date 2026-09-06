@@ -151,113 +151,120 @@
                                     <i class="ri-database-2-line"></i> Data & Kesiswaan <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 <div class="absolute left-0 mt-0 w-60 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Master Data</div>
-                                    <a href="<?= url('/academic-years') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-calendar-2-line text-gray-400"></i> Tahun Ajaran
-                                    </a>
-                                    <a href="<?= url('/subjects') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-book-open-line text-gray-400"></i> Master Pelajaran
-                                    </a>
-                                    <a href="<?= url('/teachers') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-user-star-line text-gray-400"></i> Data Pengajar
-                                    </a>
-                                    <a href="<?= url('/students') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
-                                        <i class="ri-user-heart-line text-gray-400"></i> Data Santri
-                                    </a>
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Master Data</div>
+                                     <a href="<?= url('/academic-years') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-calendar-2-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Tahun Ajaran
+                                     </a>
+                                     <a href="<?= url('/subjects') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-book-open-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Master Pelajaran
+                                     </a>
+                                     <a href="<?= url('/teachers') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-user-star-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Data Pengajar
+                                     </a>
+                                     <a href="<?= url('/students') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1 group/item">
+                                         <i class="ri-user-heart-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Data Santri
+                                     </a>
 
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Administrasi Santri</div>
-                                    <a href="<?= url('/admin/ppsb') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-user-add-line text-gray-400"></i> Penerimaan Baru (PPSB)
-                                    </a>
-                                    <a href="<?= url('/students/promote') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-graduation-cap-line text-gray-400"></i> Mutasi Kelas Santri
-                                    </a>
-                                </div>
-                            </div>
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Administrasi Santri</div>
+                                     <a href="<?= url('/admin/ppsb') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-user-add-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Penerimaan Baru (PPSB)
+                                     </a>
+                                     <a href="<?= url('/students/promote') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-graduation-cap-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Mutasi Kelas Santri
+                                     </a>
+                                 </div>
+                             </div>
 
-                            <!-- Group 2: Akademik & Operasional -->
-                            <div class="relative group">
-                                <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                    <i class="ri-community-line"></i> Akademik & Jadwal <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </button>
-                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manajemen Kelas</div>
-                                    <a href="<?= url('/classes') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-layout-masonry-line text-gray-400"></i> Data Kelas
-                                    </a>
-                                    <a href="<?= url('/schedule') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1">
-                                        <i class="ri-calendar-todo-line text-gray-400"></i> Jadwal Pelajaran
-                                    </a>
+                             <!-- Group 2: Akademik & Operasional -->
+                             <div class="relative group">
+                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                     <i class="ri-community-line"></i> Akademik & Jadwal <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                 </button>
+                                 <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manajemen Kelas</div>
+                                     <a href="<?= url('/classes') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-layout-masonry-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Data Kelas
+                                     </a>
+                                     <a href="<?= url('/schedule') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-gray-50 pb-3 mb-1 group/item">
+                                         <i class="ri-calendar-todo-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Jadwal Pelajaran
+                                     </a>
 
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Operasional</div>
-                                    <a href="<?= url('/piket/office') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-government-line text-gray-400"></i> Jadwal Syeikh Diwan
-                                    </a>
-                                    <a href="<?= url('/piket/roaming') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-walk-line text-gray-400"></i> Jadwal Piket Keliling
-                                    </a>
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Kalender</div>
-                                    <a href="<?= url('/academic-calendar') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-calendar-event-line text-gray-400"></i> Kalender Akademik
-                                    </a>
-                                </div>
-                            </div>
-                        <?php endif; ?>
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Operasional</div>
+                                     <a href="<?= url('/piket/office') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-government-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Jadwal Syeikh Diwan
+                                     </a>
+                                     <a href="<?= url('/piket/roaming') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-walk-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Jadwal Piket Keliling
+                                     </a>
+                                     <a href="<?= url('/piket/muwajjah') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-moon-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Jadwal Piket Muwajjah
+                                     </a>
+                                     <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                                         <a href="<?= url('/student-attendance/pbm') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                             <i class="ri-group-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Petugas PBM
+                                         </a>
+                                         <a href="<?= url('/leaves') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                             <i class="ri-user-unfollow-fill text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Izin Mengajar
+                                         </a>
+                                     <?php endif; ?>
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Kalender</div>
+                                     <a href="<?= url('/academic-calendar') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-calendar-event-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Kalender Akademik
+                                     </a>
+                                 </div>
+                             </div>
+                         <?php endif; ?>
 
-                        <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
-                            <!-- Group 3: Taklim & Evaluasi -->
-                            <div class="relative group">
-                                <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                    <i class="ri-honor-line"></i> Ta'lim & Evaluasi <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </button>
-                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kehadiran Harian</div>
-                                    <a href="<?= url('/attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-user-received-2-line text-gray-400"></i> Absensi Pengajar
-                                    </a>
-                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
-                                        <a href="<?= url('/leaves') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                            <i class="ri-user-unfollow-fill text-gray-400"></i> Izin Mengajar
-                                        </a>
-                                    <?php endif; ?>
-                                    <a href="<?= url('/student-attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-user-unfollow-line text-gray-400"></i> Absensi Santri
-                                    </a>
-                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
-                                        <a href="<?= url('/student-attendance/pbm') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                            <i class="ri-group-line text-gray-400"></i> Petugas Absensi
-                                        </a>
-                                    <?php endif; ?>
-                                    <a href="<?= url('/student-development') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-heart-pulse-line text-gray-400"></i> Perkembangan Santri
-                                    </a>
+                         <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
+                             <!-- Group 3: Ta'lim & Evaluasi -->
+                             <div class="relative group">
+                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                     <i class="ri-honor-line"></i> Ta'lim & Evaluasi <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                 </button>
+                                 <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kehadiran Harian</div>
+                                     <a href="<?= url('/attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-user-received-2-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Absensi Pengajar
+                                     </a>
+                                     <a href="<?= url('/student-attendance') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-user-unfollow-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Absensi Santri
+                                     </a>
+                                     <a href="<?= url('/muwajjah') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-moon-clear-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Absensi Muwajjah
+                                     </a>
+                                     
+                                     <div class="border-b border-gray-50 pb-2 mb-1"></div>
+
+                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Ujian & Penilaian</div>
+                                     <a href="<?= url('/tanqih') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-checkbox-circle-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Tanqih Idad
+                                     </a>
+                                     <a href="<?= url('/grades') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-edit-2-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Koreksi Ujian
+                                     </a>
+                                     <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                                         <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                             <i class="ri-team-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Panitia Ujian
+                                         </a>
+                                     <?php endif; ?>
+                                     <a href="<?= url('/student-development') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                         <i class="ri-heart-pulse-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Perkembangan Santri
+                                     </a>
                                     
                                     <div class="border-b border-gray-50 pb-2 mb-1"></div>
 
-                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Ujian & Penilaian</div>
-                                    <a href="<?= url('/tanqih') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-checkbox-circle-line text-gray-400"></i> Tanqih Idad
-                                    </a>
-                                    <a href="<?= url('/grades') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-edit-2-line text-gray-400"></i> Koreksi Ujian
-                                    </a>
-                                    <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
-                                        <a href="<?= url('/grades/panitia') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                            <i class="ri-team-line text-gray-400"></i> Panitia Ujian
-                                        </a>
-                                    <?php endif; ?>
-
-                                    <div class="border-b border-gray-50 pb-2 mb-1"></div>
-
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pusat Laporan</div>
-                                    <a href="<?= url('/tanqih/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-file-list-3-line text-gray-400"></i> Laporan Tanqih
+                                    <a href="<?= url('/muwajjah/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-file-chart-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Muwajjah
                                     </a>
-                                    <a href="<?= url('/weekly-report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-calendar-todo-fill text-gray-400"></i> Laporan Mingguan
+                                    <a href="<?= url('/tanqih/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-file-list-3-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Tanqih
                                     </a>
-                                    <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
-                                        <i class="ri-file-chart-line text-gray-400"></i> Laporan Piket Keliling
+                                    <a href="<?= url('/weekly-report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-calendar-todo-fill text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Mingguan
+                                    </a>
+                                    <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-file-chart-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Piket Keliling
                                     </a>
                                 </div>
                             </div>
@@ -405,6 +412,18 @@
                     </a>
                     <a href="<?= url('/piket/roaming') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-walk-line mr-2"></i>Jadwal Piket Keliling
+                    </a>
+                    <a href="<?= url('/piket/muwajjah') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-moon-line mr-2"></i>Jadwal Piket Muwajjah
+                    </a>
+                    <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-group-line mr-2"></i>Petugas PBM
+                    </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                        <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
+                        </a>
+                    <?php endif; ?>
                     <a href="<?= url('/academic-calendar') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-calendar-event-line mr-2"></i>Kalender Akademik
                     </a>
@@ -415,17 +434,22 @@
                     <a href="<?= url('/attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-user-received-2-line mr-2"></i>Absensi Pengajar
                     </a>
-                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
-                        <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
-                        </a>
-                    <?php endif; ?>
                     <a href="<?= url('/student-attendance') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-user-unfollow-line mr-2"></i>Absensi Santri
                     </a>
-                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
-                        <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="ri-group-line mr-2"></i>Petugas Absensi
+                    <a href="<?= url('/muwajjah') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-moon-clear-line mr-2"></i>Absensi Muwajjah
+                    </a>
+
+                    <a href="<?= url('/tanqih') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 mt-1">
+                        <i class="ri-checkbox-circle-line mr-2"></i>Tanqih Idad
+                    </a>
+                    <a href="<?= url('/grades') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-edit-2-line mr-2"></i>Koreksi Ujian
+                    </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                        <a href="<?= url('/grades/panitia') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-team-line mr-2"></i>Panitia Ujian
                         </a>
                     <?php endif; ?>
                     <a href="<?= url('/student-development') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
