@@ -30,12 +30,30 @@
                         </div>
                     </div>
                     <div class="mt-2 space-y-1">
-                        <div class="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium">
-                            <i class="ri-user-star-line text-indigo-400"></i>
-                            <span class="truncate" title="<?= htmlspecialchars($k['wali_kelas'] ?? '-') ?>"><?= htmlspecialchars($k['wali_kelas'] ?? '-') ?></span>
-                        </div>
+                        <?php 
+                            $w1 = $k['wali_kelas_1'] ?? null;
+                            $w2 = $k['wali_kelas_2'] ?? null;
+                        ?>
+                        <?php if ($w1): ?>
+                            <div class="flex items-center gap-1.5 text-[10px] text-gray-600 font-medium">
+                                <i class="ri-user-star-line text-indigo-500 flex-shrink-0"></i>
+                                <span class="truncate" title="<?= htmlspecialchars($w1) ?>"><?= htmlspecialchars($w1) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($w2): ?>
+                            <div class="flex items-center gap-1.5 text-[10px] text-gray-600 font-medium">
+                                <i class="ri-user-star-fill text-indigo-400 flex-shrink-0"></i>
+                                <span class="truncate" title="<?= htmlspecialchars($w2) ?>"><?= htmlspecialchars($w2) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!$w1 && !$w2): ?>
+                            <div class="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium">
+                                <i class="ri-user-star-line text-gray-300 flex-shrink-0"></i>
+                                <span>-</span>
+                            </div>
+                        <?php endif; ?>
                         <div class="flex items-center gap-1.5 text-[10px] text-gray-400 italic">
-                            <i class="ri-map-pin-line"></i>
+                            <i class="ri-map-pin-line flex-shrink-0"></i>
                             <span class="truncate"><?= htmlspecialchars($k['location'] ?: '-') ?></span>
                         </div>
                         <div class="pt-1 flex items-center justify-between text-[11px]">
