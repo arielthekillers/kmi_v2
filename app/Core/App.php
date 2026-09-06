@@ -236,6 +236,13 @@ class App
 
         // WhatsApp Worker Route
         $this->router->get('/whatsapp/process', ['App\Controllers\WhatsappWorkerController', 'processQueue']);
+
+        // Muwajjah (Belajar Malam Wali Kelas) Routes
+        $this->router->get('/muwajjah', ['App\Controllers\MuwajjahController', 'index']);
+        $this->router->post('/muwajjah/store', ['App\Controllers\MuwajjahController', 'store']);
+        $this->router->get('/muwajjah/report', ['App\Controllers\MuwajjahController', 'report']);
+        $this->router->get('/piket/muwajjah', ['App\Controllers\MuwajjahController', 'piketSchedule']);
+        $this->router->post('/piket/muwajjah/update', ['App\Controllers\MuwajjahController', 'updatePiketSchedule']);
     }
 
     public function run()

@@ -113,6 +113,19 @@ class DashboardController extends Controller {
 
         $attendancePercent = $totalSlotsToday > 0 ? round(($verifiedCount / $totalSlotsToday) * 100) : 0;
 
+        // 6b. Muwajjah Personal Stats for Wali Kelas
+        $muwajjahPersonalStats = null;
+        if ($userId) {
+            $muwajjahModel = new \App\Models\MuwajjahModel();
+            $myReport = $muwajjahModel->getComplianceReport(date('Y-m-01'), date('Y-m-t'));
+            foreach ($myReport['wali_stats'] as $ws) {
+                if ($ws['teacher_id'] == $userId) {
+                    $muwajjahPersonalStats = $ws;
+                    break;
+                }
+            }
+        }
+
         // 6. Piket Info
         $piketSyeikh = $pdo->prepare("SELECT u.nama FROM piket_schedule p JOIN users u ON p.user_id = u.id WHERE p.type = 'syeikh' AND p.day = ? AND p.academic_year_id = ?");
         $piketSyeikh->execute([$todayDay, $yearId]);
@@ -207,6 +220,7 @@ class DashboardController extends Controller {
             'piketKeliling' => $piketKelilingNames,
             'absensiStats' => $absensiStats,
             'studentAbsensiStats' => $studentAbsensiStats,
+            'muwajjahPersonalStats' => $muwajjahPersonalStats,
             'role' => $role,
             'userId' => $userId,
             'selectedMonth' => $selectedMonth,

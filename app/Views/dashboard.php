@@ -27,10 +27,22 @@ renderHeader ("Dashboard");
     ?>
     <div class="mb-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-md p-6 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h2 class="text-xl font-bold">Selamat Datang, Wali Kelas!</h2>
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <span>Selamat Datang, Wali Kelas!</span>
+            </h2>
             <p class="text-indigo-100 text-sm mt-1">Anda adalah wali kelas untuk kelas berikut pada tahun ajaran ini. Klik untuk melihat detail kelas.</p>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+            <?php if (!empty($muwajjahPersonalStats)): ?>
+                <div class="px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-xs font-semibold flex items-center gap-2" title="Statistik pendampingan Muwajjah Anda bulan ini">
+                    <i class="ri-moon-clear-line text-amber-300 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-indigo-200 uppercase font-bold tracking-wider">Muwajjah Bulan Ini</div>
+                        <div class="text-sm font-bold text-white"><?= $muwajjahPersonalStats['compliance_rate'] ?>% Kehadiran <span class="text-[11px] font-normal text-indigo-200">(<?= $muwajjahPersonalStats['hadir'] ?>/<?= $muwajjahPersonalStats['total_effective_days'] ?>)</span></div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php foreach ($myClasses as $c): ?>
                 <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/10 rounded-xl text-white font-semibold transition-all">
                     <i class="ri-community-line text-lg"></i>
