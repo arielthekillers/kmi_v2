@@ -246,7 +246,7 @@
                         <div class="space-y-2">
                             <label class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-indigo-50/40 transition-colors">
                                 <div class="flex items-center gap-2.5">
-                                    <input type="radio" name="attendance[0][status]" value="hadir" id="st_hadir" required class="text-indigo-600 focus:ring-indigo-500">
+                                    <input type="radio" name="attendance[0][status]" value="hadir" id="st_hadir" required onchange="updateBadalVisibility(this.value)" class="text-indigo-600 focus:ring-indigo-500">
                                     <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
                                         <i class="ri-checkbox-circle-line text-green-600 text-base"></i> Hadir
                                     </span>
@@ -254,17 +254,25 @@
                             </label>
                             <label class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-indigo-50/40 transition-colors">
                                 <div class="flex items-center gap-2.5">
-                                    <input type="radio" name="attendance[0][status]" value="alfa" id="st_alfa" required class="text-indigo-600 focus:ring-indigo-500">
+                                    <input type="radio" name="attendance[0][status]" value="badal" id="st_badal" required onchange="updateBadalVisibility(this.value)" class="text-indigo-600 focus:ring-indigo-500">
                                     <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
-                                        <i class="ri-close-circle-line text-red-600 text-base"></i> Tidak Hadir
+                                        <i class="ri-user-shared-line text-purple-600 text-base"></i> Diganti Guru Pengganti
                                     </span>
                                 </div>
                             </label>
                             <label class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-indigo-50/40 transition-colors">
                                 <div class="flex items-center gap-2.5">
-                                    <input type="radio" name="attendance[0][status]" value="izin" id="st_izin" required class="text-indigo-600 focus:ring-indigo-500">
+                                    <input type="radio" name="attendance[0][status]" value="izin" id="st_izin" required onchange="updateBadalVisibility(this.value)" class="text-indigo-600 focus:ring-indigo-500">
                                     <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
                                         <i class="ri-user-unfollow-line text-blue-600 text-base"></i> Izin / Sakit
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-indigo-50/40 transition-colors">
+                                <div class="flex items-center gap-2.5">
+                                    <input type="radio" name="attendance[0][status]" value="alfa" id="st_alfa" required onchange="updateBadalVisibility(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                                        <i class="ri-close-circle-line text-red-600 text-base"></i> Tidak Hadir (Alfa)
                                     </span>
                                 </div>
                             </label>
@@ -273,34 +281,79 @@
 
                     <!-- Dropdown Guru Pengganti (Badal) -->
                     <div id="modal_field_badal" class="hidden">
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Guru Pengganti (Badal)</label>
-                        <select name="attendance[0][pengganti_id]" id="modal_select_badal" <?= (!$hasAccess || $isRoutineHoliday) ? 'disabled' : '' ?>
-                                class="block w-full border-gray-300 rounded-xl text-xs p-2.5 border focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">-- Pilih Guru Pengganti --</option>
-                            <?php foreach ($teachers as $t): ?>
-                                <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Guru Pengganti (Badal) <span class="text-red-500">*</span></label>
+                        <div class="w-full">
+                            <select name="attendance[0][pengganti_id]" id="modal_select_badal" <?= (!$hasAccess || $isRoutineHoliday) ? 'disabled' : '' ?>
+                                    class="tom-select block w-full text-xs">
+                                <option value="">-- Ketik / Pilih Guru Pengganti --</option>
+                                <?php foreach ($teachers as $t): ?>
+                                    <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['nama']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Catatan -->
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Catatan (Opsional)</label>
-                        <input type="text" name="attendance[0][catatan]" id="modal_input_catatan" placeholder="Misal: Alasan keterlambatan/izin..." <?= (!$hasAccess || $isRoutineHoliday) ? 'disabled' : '' ?>
-                               class="block w-full border-gray-300 rounded-xl text-xs p-2.5 border focus:ring-indigo-500 focus:border-indigo-500">
+                        <input type="text" name="attendance[0][catatan]" id="modal_input_catatan" placeholder="Misal: Alasan keterlambatan/izin/digantikan..." <?= (!$hasAccess || $isRoutineHoliday) ? 'disabled' : '' ?>
+                               class="block w-full border border-gray-200 rounded-xl text-xs px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                     </div>
                 </div>
 
+                <style>
+                    #modal_field_badal .ts-wrapper {
+                        width: 100% !important;
+                        display: block !important;
+                        padding: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                    }
+                    #modal_field_badal .ts-control {
+                        width: 100% !important;
+                        min-height: 46px !important;
+                        height: 46px !important;
+                        border-radius: 0.75rem !important;
+                        border: 1px solid #e5e7eb !important;
+                        padding: 0.75rem 1rem !important;
+                        font-size: 0.75rem !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+                        background-color: #ffffff !important;
+                    }
+                    #modal_input_catatan {
+                        width: 100% !important;
+                        height: 46px !important;
+                        border-radius: 0.75rem !important;
+                        border: 1px solid #e5e7eb !important;
+                        padding: 0.75rem 1rem !important;
+                        font-size: 0.75rem !important;
+                        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+                        background-color: #ffffff !important;
+                    }
+                </style>
+
                 <!-- Modal Footer -->
-                <div class="bg-gray-50/80 px-6 py-4 border-t border-gray-100 flex flex-row-reverse gap-3">
-                    <?php if ($hasAccess && !$isRoutineHoliday): ?>
-                        <button type="submit" class="inline-flex justify-center rounded-xl border border-transparent shadow-md px-5 py-2.5 bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700 focus:outline-none transition-all">
-                            Simpan Absensi
+                <div class="bg-gray-50/80 px-6 py-4 border-t border-gray-100 flex flex-row items-center justify-between">
+                    <div id="delete_btn_container" class="hidden">
+                        <?php if ($hasAccess && !$isRoutineHoliday): ?>
+                            <button type="button" onclick="deleteAbsensiRecord()" class="inline-flex justify-center items-center rounded-xl border border-red-200 px-4 py-2.5 bg-red-50 text-xs font-bold text-red-600 hover:bg-red-100 transition-all">
+                                <i class="ri-delete-bin-line mr-1.5 text-sm"></i> Hapus Absensi
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex items-center gap-3 ml-auto">
+                        <button type="button" onclick="toggleModal('singleWaliModal')" class="inline-flex justify-center rounded-xl border border-gray-300 shadow-xs px-5 py-2.5 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all">
+                            Batal
                         </button>
-                    <?php endif; ?>
-                    <button type="button" onclick="toggleModal('singleWaliModal')" class="inline-flex justify-center rounded-xl border border-gray-300 shadow-xs px-5 py-2.5 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all">
-                        Batal
-                    </button>
+                        <?php if ($hasAccess && !$isRoutineHoliday): ?>
+                            <button type="submit" class="inline-flex justify-center rounded-xl border border-transparent shadow-md px-5 py-2.5 bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700 focus:outline-none transition-all">
+                                Simpan Absensi
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </form>
         </div>
@@ -324,22 +377,43 @@ function openSingleWaliModal(kelasObj, waliObj, recordObj) {
     const currPengganti = (recordObj && recordObj.pengganti_id) ? recordObj.pengganti_id : '';
     const currCatatan = (recordObj && recordObj.catatan) ? recordObj.catatan : '';
 
+    // Remove any leftover delete status action input
+    const delInput = document.getElementById('modal_status_delete_action');
+    if (delInput) delInput.remove();
+
     // Check radio status (Jika belum diisi absensinya, tidak ada yang ter-select)
     const radioHadir = document.getElementById('st_hadir');
-    const radioAlfa = document.getElementById('st_alfa');
+    const radioBadal = document.getElementById('st_badal');
     const radioIzin = document.getElementById('st_izin');
+    const radioAlfa = document.getElementById('st_alfa');
 
-    if (radioHadir) radioHadir.checked = (currStatus === 'hadir');
-    if (radioAlfa) radioAlfa.checked = (currStatus === 'alfa');
-    if (radioIzin) radioIzin.checked = (currStatus === 'izin');
+    if (radioHadir) { radioHadir.checked = (currStatus === 'hadir'); radioHadir.required = true; }
+    if (radioBadal) { radioBadal.checked = (currStatus === 'badal' || currStatus === 'diganti'); radioBadal.required = true; }
+    if (radioIzin) { radioIzin.checked = (currStatus === 'izin'); radioIzin.required = true; }
+    if (radioAlfa) { radioAlfa.checked = (currStatus === 'alfa'); radioAlfa.required = true; }
 
-    // Badal dropdown
+    // Badal dropdown (TomSelect integration)
     const selectBadal = document.getElementById('modal_select_badal');
-    if (selectBadal) selectBadal.value = currPengganti;
+    if (selectBadal) {
+        selectBadal.value = currPengganti;
+        if (selectBadal.tomselect) {
+            selectBadal.tomselect.setValue(currPengganti || '');
+        }
+    }
 
     // Catatan
     const inputCatatan = document.getElementById('modal_input_catatan');
     if (inputCatatan) inputCatatan.value = currCatatan;
+
+    // Show/Hide Delete Button
+    const deleteBtnBox = document.getElementById('delete_btn_container');
+    if (deleteBtnBox) {
+        if (currStatus) {
+            deleteBtnBox.classList.remove('hidden');
+        } else {
+            deleteBtnBox.classList.add('hidden');
+        }
+    }
 
     updateBadalVisibility(currStatus);
     toggleModal('singleWaliModal');
@@ -347,13 +421,44 @@ function openSingleWaliModal(kelasObj, waliObj, recordObj) {
 
 function updateBadalVisibility(val) {
     const badalBox = document.getElementById('modal_field_badal');
+    const selectBadal = document.getElementById('modal_select_badal');
     if (badalBox) {
-        if (val === 'badal') {
+        if (val === 'badal' || val === 'diganti') {
             badalBox.classList.remove('hidden');
+            if (selectBadal) {
+                selectBadal.required = true;
+            }
         } else {
             badalBox.classList.add('hidden');
+            if (selectBadal) {
+                selectBadal.required = false;
+                selectBadal.value = '';
+                if (selectBadal.tomselect) {
+                    selectBadal.tomselect.clear();
+                }
+            }
         }
     }
+}
+
+function deleteAbsensiRecord() {
+    if (!confirm('Apakah Anda yakin ingin menghapus / membatalkan catatan absensi ini?')) {
+        return;
+    }
+    let statusInput = document.getElementById('modal_status_delete_action');
+    if (!statusInput) {
+        statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'attendance[0][status]';
+        statusInput.id = 'modal_status_delete_action';
+        document.querySelector('#singleWaliModal form').appendChild(statusInput);
+    }
+    statusInput.value = 'delete';
+
+    // Remove required from status radios
+    document.querySelectorAll('#singleWaliModal input[type="radio"]').forEach(r => r.required = false);
+
+    document.querySelector('#singleWaliModal form').submit();
 }
 </script>
 

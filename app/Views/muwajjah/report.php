@@ -129,6 +129,7 @@
                             </a>
                         </th>
                         <th scope="col" class="px-3 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Hadir</th>
+                        <th scope="col" class="px-3 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Diganti (Badal)</th>
                         <th scope="col" class="px-3 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Tidak Hadir</th>
                         <th scope="col" class="px-3 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">Izin / Sakit</th>
                         <th scope="col" class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider">
@@ -142,7 +143,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php if (empty($waliStats)): ?>
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-400 italic">
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-400 italic">
                                 Belum ada data Wali Kelas yang terpetakan untuk tahun ajaran aktif ini.
                             </td>
                         </tr>
@@ -176,6 +177,7 @@
                                     <?= htmlspecialchars($w['class_names'] ?? '-') ?>
                                 </td>
                                 <td class="px-3 py-3 text-center text-green-700 font-bold bg-green-50/30"><?= $w['hadir'] ?></td>
+                                <td class="px-3 py-3 text-center text-purple-700 font-bold bg-purple-50/30"><?= $w['badal'] ?? 0 ?></td>
                                 <td class="px-3 py-3 text-center text-red-700 font-bold bg-red-50/30"><?= $w['alfa'] ?></td>
                                 <td class="px-3 py-3 text-center text-blue-700 font-bold bg-blue-50/30"><?= $w['izin'] ?></td>
                                 <td class="px-4 py-3 text-center">

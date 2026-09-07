@@ -147,10 +147,24 @@ class MuwajjahModel extends Model {
                     updated_at = CURRENT_TIMESTAMP
             ");
 
+            $stmtDelete = $this->db->prepare("
+                DELETE FROM muwajjah_absensi
+                WHERE tanggal = ? AND kelas_id = ? AND teacher_id = ? AND academic_year_id = ?
+            ");
+
             foreach ($attendanceData as $item) {
                 $kelasId = (int)$item['kelas_id'];
                 $teacherId = (int)$item['teacher_id'];
                 $status = $item['status'] ?? 'hadir';
+
+                if ($status === 'delete') {
+                    $stmtDelete->execute([$dateStr, $kelasId, $teacherId, $yearId]);
+                    continue;
+                }
+
+                if ($status === 'diganti') {
+                    $status = 'badal';
+                }
                 $penggantiId = !empty($item['pengganti_id']) ? (int)$item['pengganti_id'] : null;
                 $catatan = !empty($item['catatan']) ? trim($item['catatan']) : null;
 
@@ -263,6 +277,7 @@ class MuwajjahModel extends Model {
             foreach ($waliList as &$w) {
                 $w['total_effective_days'] = 0;
                 $w['hadir'] = 0;
+                $w['badal'] = 0;
                 $w['izin'] = 0;
                 $w['alfa'] = 0;
                 $w['compliance_rate'] = 0;
@@ -290,7 +305,7 @@ class MuwajjahModel extends Model {
                 $tId = $w['teacher_id'];
                 $hadirRaw = $statsMap[$tId]['hadir'] ?? 0;
                 $terlambatRaw = $statsMap[$tId]['terlambat'] ?? 0;
-                $badalRaw = $statsMap[$tId]['badal'] ?? 0;
+                $badalRaw = ($statsMap[$tId]['badal'] ?? 0) + ($statsMap[$tId]['diganti'] ?? 0);
                 $izinRaw = $statsMap[$tId]['izin'] ?? 0;
                 $alfaRaw = $statsMap[$tId]['alfa'] ?? 0;
 
@@ -305,6 +320,7 @@ class MuwajjahModel extends Model {
 
                 $w['total_effective_days'] = $totalEffectiveDays;
                 $w['hadir'] = $hadirCount;
+                $w['badal'] = $badalRaw;
                 $w['izin'] = $izinCount;
                 $w['alfa'] = $tidakHadirCount;
                 $w['compliance_rate'] = min(100, $complianceRate);
