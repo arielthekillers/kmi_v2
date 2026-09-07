@@ -62,11 +62,13 @@ class PanitiaController extends Controller {
         $id = $_POST['id'] ?? null;
         $isOpen = isset($_POST['is_open']) ? (int)$_POST['is_open'] : null;
         $isActive = isset($_POST['is_active']) ? (int)$_POST['is_active'] : null;
+        $useBayanat = isset($_POST['use_bayanat']) ? (int)$_POST['use_bayanat'] : null;
 
         if ($id) {
             $data = [];
             if ($isOpen !== null) $data['is_open'] = $isOpen;
             if ($isActive !== null) $data['is_active'] = $isActive;
+            if ($useBayanat !== null) $data['use_bayanat'] = $useBayanat;
 
             if ($this->gradeModel->updateSessionStatus($id, $data)) {
                 add_flash('Status sesi ujian berhasil diperbarui.', 'success');

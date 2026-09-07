@@ -19,10 +19,13 @@ $isReadOnly = $isFinished || (!$isAdminOrPanitia && !$sessionOpen);
 $canEditSkorMaks = $isAdminOrPanitia && !$isFinished;
 $canEditScores = $isExaminer && $sessionOpen && !$isFinished;
 
+$useBayanat = (int)($exam['use_bayanat'] ?? 1);
+
 // Insight: Honesty & Integrity First.
-// If the user is the designated examiner for this subject, they MUST be blind-folded,
-// even if they hold an Admin or Panitia role. Names are only visible to auditors (Admin/Panitia who are NOT the examiner).
-$showNames = ($isAdminOrPanitia && !$isExaminer);
+// If mode bayanat is active (1), examiner is blindfolded (names hidden).
+// If mode bayanat is non-active (0, Ulangan mode), names are visible to examiner.
+$showNames = ($isAdminOrPanitia && !$isExaminer) || ($useBayanat == 0);
+$hideBayanat = ($exam['has_oral'] == 2 || $useBayanat == 0);
 
 // Parse Scale for JS
 $skala = $exam['skala'] ?? '80-30';
@@ -213,7 +216,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             </th>
                         <?php endif; ?>
 
-                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
+                        <th class="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/30 w-24 cursor-pointer hover:text-indigo-600 transition-colors col-bayanat <?= $hideBayanat ? 'hidden' : '' ?>" onclick="sortTable(this, true)" style="<?= $hideBayanat ? 'display: none;' : '' ?>">
                             <div class="flex items-center gap-1">
                                 No. Bayanat
                                 <i class="ri-sort-asc"></i>
@@ -250,7 +253,7 @@ renderHeader("Input Nilai - " . htmlspecialchars($exam['mapel_nama']));
                             <?php endif; ?>
 
                             <!-- No Bayanat -->
-                            <td class="md:px-6 md:py-5 col-bayanat <?= $exam['has_oral'] == 2 ? 'hidden' : '' ?>" style="<?= $exam['has_oral'] == 2 ? 'display: none;' : '' ?>">
+                            <td class="md:px-6 md:py-5 col-bayanat <?= $hideBayanat ? 'hidden' : '' ?>" style="<?= $hideBayanat ? 'display: none;' : '' ?>">
                                 <div class="flex flex-col">
                                     <span class="block md:hidden text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">No. Bayanat</span>
                                     <input type="hidden" name="student_id[]" value="<?= $row['student_id'] ?>">

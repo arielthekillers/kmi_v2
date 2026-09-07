@@ -392,7 +392,8 @@ $isAdmin = (auth_get_role() === 'admin');
                                                 <?php endif; ?>
                                             <?php else: ?>
                                                 <?php 
-                                                    $isBayanatComplete = ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
+                                                    $useBayanat = (int)($k['use_bayanat'] ?? 1);
+                                                    $isBayanatComplete = ($useBayanat == 0) || ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
                                                     $isDesignatedExaminer = ($k['teacher_id'] == auth_get_user_id());
                                                     
                                                     // Admin & Panitia ALWAYS can enter (to fill bayanat or scores)
@@ -464,7 +465,8 @@ $isAdmin = (auth_get_role() === 'admin');
                         $colorClassOral = $percentageOral >= 100 ? 'bg-green-600' : 'bg-pink-600';
 
                         // Action permissions (same as table)
-                        $isBayanatComplete = ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
+                        $useBayanat = (int)($k['use_bayanat'] ?? 1);
+                        $isBayanatComplete = ($useBayanat == 0) || ($totalStudents > 0 && $k['bayanat_count'] >= $totalStudents);
                         $isDesignatedExaminer = ($k['teacher_id'] == auth_get_user_id());
                         
                         if ($isAdmin || $isPanitia) {

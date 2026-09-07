@@ -18,7 +18,7 @@ class GradeModel extends Model {
                            WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
                            ELSE u.nama
                        END as pengajar_nama,
-                       es.type as exam_type, es.is_open as session_is_open, e.has_oral,
+                       es.type as exam_type, es.is_open as session_is_open, COALESCE(es.use_bayanat, 1) as use_bayanat, e.has_oral,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_raw IS NOT NULL)) as graded_count,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.score_oral IS NOT NULL)) as graded_oral_count,
                        (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count,
@@ -88,7 +88,7 @@ class GradeModel extends Model {
                        WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
                        ELSE u.nama
                    END as pengajar_nama,
-                   es.type as exam_type, es.is_open as session_is_open, e.has_oral,
+                   es.type as exam_type, es.is_open as session_is_open, COALESCE(es.use_bayanat, 1) as use_bayanat, e.has_oral,
                    (SELECT COUNT(*) FROM grades g WHERE g.exam_id = e.id AND (g.no_bayanat IS NOT NULL)) as bayanat_count
             FROM exams e
             JOIN kelas k ON e.kelas_id = k.id
@@ -436,6 +436,10 @@ class GradeModel extends Model {
         if (isset($data['is_open'])) {
             $fields[] = "is_open = ?";
             $params[] = $data['is_open'];
+        }
+        if (isset($data['use_bayanat'])) {
+            $fields[] = "use_bayanat = ?";
+            $params[] = $data['use_bayanat'];
         }
         if (isset($data['is_active'])) {
              // If we are setting this session to active, deactivate others in same year

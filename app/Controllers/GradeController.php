@@ -213,9 +213,10 @@ class GradeController extends Controller {
         
         $isPanitia = auth_is_panitia($exam['exam_session_id'] ?? null);
         $isExaminer = (isset($exam['teacher_id']) && $exam['teacher_id'] == auth_get_user_id());
+        $useBayanat = (int)($exam['use_bayanat'] ?? 1);
 
         // Sorting for Students
-        if ($isExaminer) {
+        if ($isExaminer && $useBayanat == 1) {
             // Examiner sorts by bayanat (Requirement 2)
             // Handle NULL/empty bayanat by putting them at the end
             usort($students, function ($a, $b) {
@@ -227,7 +228,7 @@ class GradeController extends Controller {
                 return $aBay <=> $bBay;
             });
         } else {
-            // Admin/Panitia/Others sort by name
+            // Admin/Panitia/Others or Ulangan mode (without bayanat) sort by name
             usort($students, function ($a, $b) {
                 return strnatcasecmp($a['nama'] ?? '', $b['nama'] ?? '');
             });

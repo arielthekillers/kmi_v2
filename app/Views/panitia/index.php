@@ -50,9 +50,9 @@ $isAdmin = auth_get_role() === 'admin';
             ];
         ?>
             <div class="bg-white rounded-xl shadow-sm border <?= $isActive ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-200' ?> overflow-hidden flex flex-col transition-all">
-                <div class="px-5 py-4 border-b border-gray-100 <?= $isActive ? 'bg-indigo-50/30' : 'bg-gray-50/50' ?>">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
+                <div class="px-4 sm:px-5 py-3.5 border-b border-gray-100 <?= $isActive ? 'bg-indigo-50/30' : 'bg-gray-50/50' ?>">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="flex items-center justify-between sm:justify-start gap-3">
                             <div class="flex flex-col">
                                 <div class="flex items-center gap-2">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 tracking-tight">
@@ -62,11 +62,28 @@ $isAdmin = auth_get_role() === 'admin';
                                 </div>
                                 <p class="text-[11px] text-gray-400 font-medium tracking-wide"><?= $typeMap[$session['type']] ?></p>
                             </div>
+
+                            <div class="sm:hidden">
+                                <?php if ($isActive): ?>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm">
+                                        <i class="ri-flashlight-line mr-1"></i> AKTIF
+                                    </span>
+                                <?php elseif ($isAdmin): ?>
+                                    <form action="<?= url('/grades/panitia/session/status') ?>" method="POST">
+                                        <?= csrf_token_field() ?>
+                                        <input type="hidden" name="id" value="<?= $session['id'] ?>">
+                                        <input type="hidden" name="is_active" value="1">
+                                        <button type="submit" class="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-lg bg-white hover:bg-indigo-50 transition">
+                                            Aktifkan
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
-                        <div class="flex items-center gap-5">
-                            <div class="flex items-center gap-2 <?= !$isActive ? 'opacity-30 pointer-events-none' : '' ?>" title="<?= !$isActive ? 'Hanya bisa dibuka jika sesi AKTIF' : 'Buka/Tutup input nilai' ?>">
-                                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Input:</span>
+                        <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-gray-100 sm:border-t-0">
+                            <div class="flex items-center gap-1.5 <?= !$isActive ? 'opacity-30 pointer-events-none' : '' ?>" title="<?= !$isActive ? 'Hanya bisa dibuka jika sesi AKTIF' : 'Buka/Tutup input nilai' ?>">
+                                <span class="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider">Input:</span>
                                 <?php if ($isAdmin): ?>
                                     <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" id="form-toggle-<?= $session['id'] ?>" class="flex items-center">
                                         <?= csrf_token_field() ?>
@@ -83,24 +100,45 @@ $isAdmin = auth_get_role() === 'admin';
                                 <?php endif; ?>
                             </div>
 
-                            <?php if ($isActive): ?>
-                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-                                    <i class="ri-flashlight-line mr-1"></i> AKTIF
-                                </span>
-                            <?php elseif ($isAdmin): ?>
-                                <form action="<?= url('/grades/panitia/session/status') ?>" method="POST">
-                                    <?= csrf_token_field() ?>
-                                    <input type="hidden" name="id" value="<?= $session['id'] ?>">
-                                    <input type="hidden" name="is_active" value="1">
-                                    <button type="submit" class="text-xs font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg transition-all hover:shadow-sm">
-                                        Aktifkan
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-400">
-                                    TIDAK AKTIF
-                                </span>
-                            <?php endif; ?>
+                            <?php $useBayanat = (int)($session['use_bayanat'] ?? 1); ?>
+                            <div class="flex items-center gap-1.5 <?= !$isActive ? 'opacity-30 pointer-events-none' : '' ?>" title="Mode Bayanat: ON = Ujian Anonim, OFF = Ulangan Langsung (Tanpa Bayanat)">
+                                <span class="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider">Bayanat:</span>
+                                <?php if ($isAdmin): ?>
+                                    <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" id="form-bayanat-<?= $session['id'] ?>" class="flex items-center">
+                                        <?= csrf_token_field() ?>
+                                        <input type="hidden" name="id" value="<?= $session['id'] ?>">
+                                        <input type="hidden" name="use_bayanat" value="<?= $useBayanat ? '0' : '1' ?>">
+                                        <button type="submit" title="<?= $useBayanat ? 'Bayanat Aktif (Ujian Anonim)' : 'Bayanat Non-Aktif (Ulangan Langsung)' ?>" class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none <?= $useBayanat ? 'bg-indigo-600' : 'bg-gray-200' ?>">
+                                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out <?= $useBayanat ? 'translate-x-5' : 'translate-x-0' ?>"></span>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold <?= $useBayanat ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' ?>">
+                                        <?= $useBayanat ? 'AKTIF' : 'TANPA BAYANAT' ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="hidden sm:block">
+                                <?php if ($isActive): ?>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200">
+                                        <i class="ri-flashlight-line mr-1"></i> AKTIF
+                                    </span>
+                                <?php elseif ($isAdmin): ?>
+                                    <form action="<?= url('/grades/panitia/session/status') ?>" method="POST">
+                                        <?= csrf_token_field() ?>
+                                        <input type="hidden" name="id" value="<?= $session['id'] ?>">
+                                        <input type="hidden" name="is_active" value="1">
+                                        <button type="submit" class="px-3 py-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 rounded-lg bg-white hover:bg-indigo-50 transition">
+                                            Aktifkan Sesi Ini
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-400">
+                                        TIDAK AKTIF
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
