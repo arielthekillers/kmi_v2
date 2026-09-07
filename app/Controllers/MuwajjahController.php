@@ -53,11 +53,8 @@ class MuwajjahController extends Controller {
         $classes = $this->muwajjahModel->getClassesWithWaliKelas();
         $existingAbsensi = $this->muwajjahModel->getAbsensiByDate($selectedDate);
 
-        // Fetch teachers list for Badal (guru pengganti) dropdown
-        $allTeachers = $this->teacherModel->findAll();
-        $teachers = array_filter($allTeachers, function($t) {
-            return in_array($t['role'], ['pengajar', 'admin']) && $t['is_active'] == 1 && $t['deleted_at'] === null;
-        });
+        // Fetch teachers list for Badal (guru pengganti) dropdown (only active teachers with role 'pengajar')
+        $teachers = $this->teacherModel->getAll('Active');
         uasort($teachers, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
 
         $this->view('muwajjah/index', [
