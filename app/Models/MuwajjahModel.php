@@ -14,7 +14,7 @@ class MuwajjahModel extends Model {
     }
 
     /**
-     * Check if a specific date is Thursday Night or Friday Night (Libur Rutin)
+     * Check if a specific date is Friday Night (Malam Jumat = Kamis/4) or Saturday Night (Malam Sabtu = Jumat/5) (Libur Rutin)
      * Thursday = 4, Friday = 5
      */
     public function isRoutineHoliday($dateStr) {

@@ -204,7 +204,7 @@
             <i class="ri-information-fill text-indigo-500"></i> Catatan Perhitungan Hari Efektif & Libur Otomatis:
         </span>
         <ul class="list-disc pl-5 space-y-0.5">
-            <li><strong>Malam Kamis & Malam Jumat</strong> otomatis diabaikan dari rekap (Libur Rutin).</li>
+            <li><strong>Malam Jumat & Malam Sabtu</strong> otomatis diabaikan dari rekap (Libur Rutin).</li>
             <li>Hari aktif lainnya (Sabtu - Rabu) yang <strong>tidak ada 1 pun data absensi</strong> yang diinput oleh petugas otomatis terdeteksi sebagai <strong>Libur Kegiatan Pondok</strong>.</li>
             <li>Persentase Kehadiran dihitung dari: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-indigo-700 font-mono">Total Hadir / Total Hari Muwajjah Efektif * 100%</code>.</li>
         </ul>

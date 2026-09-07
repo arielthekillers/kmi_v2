@@ -127,14 +127,14 @@ class MuwajjahController extends Controller {
     public function piketSchedule() {
         require_login();
 
-        $allTeachers = $this->teacherModel->findAll();
+        $rawTeachers = $this->teacherModel->getAll('Active');
         $teachers = [];
-        foreach ($allTeachers as $t) {
-            if (in_array($t['role'], ['pengajar', 'admin']) && $t['is_active'] == 1 && $t['deleted_at'] === null) {
-                $teachers[$t['id']] = $t;
-            }
+        foreach ($rawTeachers as $t) {
+            $teachers[$t['id']] = $t;
         }
-        uasort($teachers, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
+        uasort($teachers, function($a, $b) { 
+            return strnatcmp($a['nama_raw'] ?? $a['nama'], $b['nama_raw'] ?? $b['nama']); 
+        });
 
         $schedule = $this->piketModel->getSchedule('muwajjah');
 

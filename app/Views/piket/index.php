@@ -141,9 +141,11 @@
                                                     <?= $sessionLabels[$s] ?>
                                                 </h5>
                                                 <div class="space-y-1 h-48 overflow-y-auto text-xs">
-                                                    <?php foreach ($teachers as $id => $p): ?>
+                                                    <?php foreach ($teachers as $id => $p): 
+                                                        $teacherUserId = $p['id'] ?? $id;
+                                                    ?>
                                                         <label class="flex items-center space-x-2 py-0.5 hover:bg-indigo-50 rounded px-1 transition-colors cursor-pointer">
-                                                            <input type="checkbox" name="piket[<?= $day ?>][<?= $s ?>][]" value="<?= $id ?>" <?= in_array($id, $sessionSpecificIds) ? 'checked' : '' ?> class="rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 w-3 h-3">
+                                                            <input type="checkbox" name="piket[<?= $day ?>][<?= $s ?>][]" value="<?= $teacherUserId ?>" <?= in_array($teacherUserId, $sessionSpecificIds) ? 'checked' : '' ?> class="rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 w-3 h-3">
                                                             <span class="text-gray-700 truncate"><?= htmlspecialchars($p['nama']) ?></span>
                                                         </label>
                                                     <?php endforeach; ?>
@@ -151,7 +153,7 @@
                                             </div>
                                             <?php endfor; ?>
                                         <?php else: 
-                                            // Syeikh Diwan - Whole day
+                                            // Whole day (syeikh & muwajjah)
                                             $sessionSpecificIds = $currentDayData;
                                         ?>
                                             <div class="col-span-full bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
@@ -159,9 +161,11 @@
                                                     Petugas Hari <?= $day ?>
                                                 </h5>
                                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 h-48 overflow-y-auto text-xs p-2">
-                                                    <?php foreach ($teachers as $id => $p): ?>
+                                                    <?php foreach ($teachers as $id => $p): 
+                                                        $teacherUserId = $p['id'] ?? $id;
+                                                    ?>
                                                         <label class="flex items-center space-x-2 py-1 hover:bg-indigo-50 rounded px-1 transition-colors cursor-pointer">
-                                                            <input type="checkbox" name="piket[<?= $day ?>][]" value="<?= $id ?>" <?= in_array($id, $sessionSpecificIds) ? 'checked' : '' ?> class="rounded text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                                            <input type="checkbox" name="piket[<?= $day ?>][]" value="<?= $teacherUserId ?>" <?= in_array($teacherUserId, $sessionSpecificIds) ? 'checked' : '' ?> class="rounded text-indigo-600 focus:ring-indigo-500 border-gray-300">
                                                             <span class="text-gray-700 truncate"><?= htmlspecialchars($p['nama']) ?></span>
                                                         </label>
                                                     <?php endforeach; ?>

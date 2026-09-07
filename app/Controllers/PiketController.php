@@ -21,16 +21,16 @@ class PiketController extends Controller {
     private function getCommonData() {
         require_login();
         
-        // Fetch Teachers for display/select
-        $allTeachers = $this->teacherModel->findAll();
+        // Fetch active teachers for display/select
+        $rawTeachers = $this->teacherModel->getAll('Active');
         $teachers = [];
-        foreach ($allTeachers as $t) {
-             if (in_array($t['role'], ['pengajar', 'admin']) && $t['is_active'] == 1 && $t['deleted_at'] === null) {
-                 $teachers[$t['id']] = $t;
-             }
+        foreach ($rawTeachers as $t) {
+            $teachers[$t['id']] = $t;
         }
         // Sort by name
-        uasort($teachers, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
+        uasort($teachers, function($a, $b) { 
+            return strnatcmp($a['nama_raw'] ?? $a['nama'], $b['nama_raw'] ?? $b['nama']); 
+        });
 
         return $teachers;
     }
