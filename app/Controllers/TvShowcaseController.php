@@ -32,8 +32,15 @@ class TvShowcaseController extends Controller {
         }
         
         $profilePic = url('/avatar') . "?id=" . urlencode((string)$teacherId); 
-        if (!empty($teacher['profile_picture']) && file_exists(__DIR__ . '/../../' . $teacher['profile_picture'])) {
-             $profilePic = url('/' . $teacher['profile_picture']) . '?t=' . time();
+        if (!empty($teacher['profile_picture'])) {
+            $relPath = ltrim($teacher['profile_picture'], '/');
+            $fullPath = __DIR__ . '/../../' . $relPath;
+            if (file_exists($fullPath)) {
+                if (function_exists('optimize_profile_picture')) {
+                    optimize_profile_picture($fullPath, 400);
+                }
+                $profilePic = url('/' . $relPath) . '?v=' . filemtime($fullPath);
+            }
         }
         
         return [
@@ -259,6 +266,9 @@ class TvShowcaseController extends Controller {
         $totalWaliMuwajjah = 0;
         $recordedWaliMuwajjah = 0;
         $hadirWaliMuwajjah = 0;
+        $badalWaliMuwajjah = 0;
+        $izinWaliMuwajjah = 0;
+        $alfaWaliMuwajjah = 0;
 
         foreach ($classesWithWali as $cw) {
             $kelasName = $cw['tingkat'] . '-' . $cw['abjad'];
@@ -271,8 +281,14 @@ class TvShowcaseController extends Controller {
                 
                 if (!empty($rec)) {
                     $recordedWaliMuwajjah++;
-                    if (in_array($status, ['hadir', 'badal', 'diganti', 'terlambat'])) {
+                    if (in_array($status, ['hadir', 'terlambat'])) {
                         $hadirWaliMuwajjah++;
+                    } elseif (in_array($status, ['badal', 'diganti'])) {
+                        $badalWaliMuwajjah++;
+                    } elseif (in_array($status, ['izin', 'sakit'])) {
+                        $izinWaliMuwajjah++;
+                    } elseif ($status === 'alfa') {
+                        $alfaWaliMuwajjah++;
                     }
                 }
 
@@ -284,15 +300,28 @@ class TvShowcaseController extends Controller {
                     if ($subP) $substituteName = $subP['nama_display'];
                 }
 
+                $cardStatus = 'pending';
+                if (!empty($rec)) {
+                    if (in_array($status, ['hadir', 'terlambat'])) {
+                        $cardStatus = 'verified';
+                    } elseif (in_array($status, ['badal', 'diganti'])) {
+                        $cardStatus = 'substitute';
+                    } elseif (in_array($status, ['izin', 'sakit'])) {
+                        $cardStatus = 'justified';
+                    } elseif ($status === 'alfa') {
+                        $cardStatus = 'alfa';
+                    }
+                }
+
                 $muwajjahCards[] = [
                     'kelas' => $kelasName . ' ' . $gender,
                     'mapel' => 'Muwajjah / Pendampingan',
                     'pengajar' => $wk['formatted_nama'],
                     'pengajar_profile' => $tProfile,
-                    'status' => ($status === 'hadir') ? 'verified' : (($status === 'alfa') ? 'alfa' : (($status === 'izin') ? 'justified' : 'pending')),
+                    'status' => $cardStatus,
                     'raw_status' => $status,
                     'verified' => !empty($rec),
-                    'is_substitute' => !empty($rec['pengganti_id']),
+                    'is_substitute' => !empty($rec['pengganti_id']) || in_array($status, ['badal', 'diganti']),
                     'substitute_name' => $substituteName
                 ];
             }
@@ -311,6 +340,9 @@ class TvShowcaseController extends Controller {
                 'total_wali' => $totalWaliMuwajjah,
                 'recorded' => $recordedWaliMuwajjah,
                 'hadir' => $hadirWaliMuwajjah,
+                'badal' => $badalWaliMuwajjah,
+                'izin' => $izinWaliMuwajjah,
+                'alfa' => $alfaWaliMuwajjah,
                 'percent' => ($totalWaliMuwajjah > 0) ? round(($recordedWaliMuwajjah / $totalWaliMuwajjah) * 100) : 0
             ],
             'latest_verifications' => $latestVerifications,

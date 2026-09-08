@@ -38,7 +38,7 @@ renderHeader ("Dashboard");
                     <i class="ri-moon-clear-line text-amber-300 text-lg"></i>
                     <div>
                         <div class="text-[10px] text-indigo-200 uppercase font-bold tracking-wider">Muwajjah Bulan Ini</div>
-                        <div class="text-sm font-bold text-white"><?= $muwajjahPersonalStats['compliance_rate'] ?>% Kehadiran <span class="text-[11px] font-normal text-indigo-200">(<?= $muwajjahPersonalStats['hadir'] ?>/<?= $muwajjahPersonalStats['total_effective_days'] ?>)</span></div>
+                        <div class="text-sm font-bold text-white"><?= $muwajjahPersonalStats['compliance_rate'] ?>% Kehadiran <span class="text-[11px] font-normal text-indigo-200">(<?= $muwajjahPersonalStats['hadir_total'] ?? $muwajjahPersonalStats['hadir'] ?>/<?= $muwajjahPersonalStats['total_effective_days'] ?>)</span></div>
                     </div>
                 </div>
             <?php endif; ?>

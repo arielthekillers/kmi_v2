@@ -84,6 +84,64 @@ SVG;
 }
 
 /**
+ * Auto-crop and resize profile picture to an optimized square avatar (max 400x400)
+ * @param string $filePath Absolute or relative path to image file
+ * @param int $maxDim Max width/height in pixels
+ */
+function optimize_profile_picture($filePath, $maxDim = 400) {
+    $fullPath = (strpos($filePath, __DIR__) === 0) ? $filePath : __DIR__ . '/../' . ltrim($filePath, '/');
+    
+    if (!file_exists($fullPath)) return;
+    
+    $info = @getimagesize($fullPath);
+    if (!$info) return;
+    
+    $width = $info[0];
+    $height = $info[1];
+    $mime = $info['mime'];
+    
+    // Skip if already within max bounds and small file size (< 150KB)
+    if ($width <= $maxDim && $height <= $maxDim && filesize($fullPath) < 150 * 1024) {
+        return;
+    }
+    
+    if (!extension_loaded('gd')) return;
+    
+    switch ($mime) {
+        case 'image/jpeg': $srcImg = @imagecreatefromjpeg($fullPath); break;
+        case 'image/png': $srcImg = @imagecreatefrompng($fullPath); break;
+        case 'image/webp': $srcImg = @imagecreatefromwebp($fullPath); break;
+        default: return;
+    }
+    
+    if (!$srcImg) return;
+    
+    // Crop center square
+    $minDim = min($width, $height);
+    $cropX = (int)(($width - $minDim) / 2);
+    $cropY = (int)(($height - $minDim) / 2);
+    
+    $targetDim = min($maxDim, $minDim);
+    $dstImg = imagecreatetruecolor($targetDim, $targetDim);
+    
+    if ($mime === 'image/png' || $mime === 'image/webp') {
+        imagealphablending($dstImg, false);
+        imagesavealpha($dstImg, true);
+    }
+    
+    imagecopyresampled($dstImg, $srcImg, 0, 0, $cropX, $cropY, $targetDim, $targetDim, $minDim, $minDim);
+    
+    switch ($mime) {
+        case 'image/jpeg': imagejpeg($dstImg, $fullPath, 85); break;
+        case 'image/png': imagepng($dstImg, $fullPath, 7); break;
+        case 'image/webp': imagewebp($dstImg, $fullPath, 85); break;
+    }
+    
+    imagedestroy($srcImg);
+    imagedestroy($dstImg);
+}
+
+/**
  * Get profile picture URL for a teacher
  * @param string $teacherId Teacher ID
  * @param string $teacherName Teacher name (fallback if no ID)
@@ -100,9 +158,11 @@ function get_profile_picture_url($teacherId, $teacherName = '', $prefetchedPath 
     }
 
     if (!empty($path)) {
-        // Ensure path is relative to web root if stored absolute or with prefix
-        if (file_exists(__DIR__ . '/../' . $path)) {
-             return $path . '?t=' . time();
+        $relPath = ltrim($path, '/');
+        $fullPath = __DIR__ . '/../' . $relPath;
+        if (file_exists($fullPath)) {
+            optimize_profile_picture($fullPath, 400);
+            return $relPath . '?v=' . filemtime($fullPath);
         }
     }
 
@@ -113,7 +173,8 @@ function get_profile_picture_url($teacherId, $teacherName = '', $prefetchedPath 
     foreach ($extensions as $ext) {
         $filePath = $basePath . $teacherId . '.' . $ext;
         if (file_exists($filePath)) {
-            return 'uploads/profiles/' . $teacherId . '.' . $ext . '?t=' . filemtime($filePath);
+            optimize_profile_picture($filePath, 400);
+            return 'uploads/profiles/' . $teacherId . '.' . $ext . '?v=' . filemtime($filePath);
         }
     }
     

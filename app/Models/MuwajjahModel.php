@@ -309,7 +309,8 @@ class MuwajjahModel extends Model {
                 $izinRaw = $statsMap[$tId]['izin'] ?? 0;
                 $alfaRaw = $statsMap[$tId]['alfa'] ?? 0;
 
-                $hadirCount = $hadirRaw + $terlambatRaw + $badalRaw;
+                $hadirPure = $hadirRaw + $terlambatRaw;
+                $hadirCount = $hadirPure + $badalRaw;
                 $izinCount = $izinRaw;
 
                 $totalRecorded = $hadirRaw + $terlambatRaw + $badalRaw + $izinRaw + $alfaRaw;
@@ -319,7 +320,9 @@ class MuwajjahModel extends Model {
                 $complianceRate = ($totalEffectiveDays > 0) ? round(($hadirCount / $totalEffectiveDays) * 100, 1) : 0;
 
                 $w['total_effective_days'] = $totalEffectiveDays;
-                $w['hadir'] = $hadirCount;
+                $w['hadir'] = $hadirPure; // Pure attendance (Hadir Murni / Terlambat)
+                $w['hadir_pure'] = $hadirPure;
+                $w['hadir_total'] = $hadirCount; // Hadir + Badal (for compliance)
                 $w['badal'] = $badalRaw;
                 $w['izin'] = $izinCount;
                 $w['alfa'] = $tidakHadirCount;

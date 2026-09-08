@@ -121,6 +121,10 @@ class ProfileController extends Controller {
                 $this->redirect('/profil');
             }
             
+            // Auto crop square and optimize to 400x400 avatar
+            require_once __DIR__ . '/../../helpers/profile_helper.php';
+            optimize_profile_picture($targetFile, 400);
+            
             $profileData['profile_picture'] = 'uploads/profiles/' . $teacherId . '.' . $extension;
         }
 

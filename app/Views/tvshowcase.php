@@ -1614,7 +1614,7 @@
                 container.className = "bg-gradient-to-br from-violet-600 to-indigo-800 rounded-3xl p-6 flex flex-col flex-1 relative transition-all duration-500 overflow-hidden shadow-2xl shadow-indigo-900/30";
 
                 const piketMuwajjahList = (appData.piket?.muwajjah || []).map(item => renderItem(item, 'border-indigo-400')).join('');
-                const mStats = appData.muwajjah_stats || { is_holiday: false, total_wali: 0, recorded: 0, hadir: 0, percent: 0 };
+                const mStats = appData.muwajjah_stats || { is_holiday: false, total_wali: 0, recorded: 0, hadir: 0, badal: 0, izin: 0, alfa: 0, percent: 0 };
 
                 let liveStatsHtml = '';
                 if (mStats.is_holiday) {
@@ -1629,17 +1629,40 @@
                     `;
                 } else {
                     liveStatsHtml = `
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 text-white mb-4 border border-white/10">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-bold text-indigo-100">Live Absen Muwajjah</span>
-                                <span class="text-xs font-extrabold bg-emerald-500/80 text-white px-2 py-0.5 rounded-full">${mStats.percent}%</span>
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 text-white mb-4 border border-white/10">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-bold text-indigo-100 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Live Absen Muwajjah
+                                </span>
+                                <span class="text-[10px] font-extrabold ${mStats.percent === 100 ? 'bg-emerald-500/80' : 'bg-indigo-500/80'} text-white px-2 py-0.5 rounded-full">
+                                    Input ${mStats.percent}%
+                                </span>
                             </div>
-                            <div class="w-full bg-white/20 rounded-full h-2 overflow-hidden mb-2">
+                            <div class="w-full bg-white/20 rounded-full h-1.5 overflow-hidden mb-2">
                                 <div class="bg-emerald-400 h-full rounded-full transition-all duration-500" style="width: ${mStats.percent}%"></div>
                             </div>
-                            <div class="flex justify-between text-[11px] text-indigo-100">
-                                <span>Tercatat: <b>${mStats.recorded}</b> / ${mStats.total_wali} Wali</span>
-                                <span>Hadir: <b class="text-emerald-300">${mStats.hadir}</b></span>
+                            <div class="flex justify-between text-[11px] text-indigo-100 mb-2 pb-1.5 border-b border-white/10">
+                                <span>Tercatat: <b class="text-white">${mStats.recorded}</b> / ${mStats.total_wali} Wali</span>
+                                <span>Status Terisi: <b class="text-emerald-300">${mStats.percent}%</b></span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1 text-center">
+                                <div class="bg-emerald-500/20 border border-emerald-400/30 rounded-lg py-1 px-0.5">
+                                    <div class="text-emerald-300 font-extrabold text-xs">${mStats.hadir || 0}</div>
+                                    <div class="text-[9px] text-emerald-100/80 font-medium uppercase">Hadir</div>
+                                </div>
+                                <div class="bg-purple-500/20 border border-purple-400/30 rounded-lg py-1 px-0.5">
+                                    <div class="text-purple-300 font-extrabold text-xs">${mStats.badal || 0}</div>
+                                    <div class="text-[9px] text-purple-100/80 font-medium uppercase">Badal</div>
+                                </div>
+                                <div class="bg-blue-500/20 border border-blue-400/30 rounded-lg py-1 px-0.5">
+                                    <div class="text-blue-300 font-extrabold text-xs">${mStats.izin || 0}</div>
+                                    <div class="text-[9px] text-blue-100/80 font-medium uppercase">Izin</div>
+                                </div>
+                                <div class="bg-rose-500/20 border border-rose-400/30 rounded-lg py-1 px-0.5">
+                                    <div class="text-rose-300 font-extrabold text-xs">${mStats.alfa || 0}</div>
+                                    <div class="text-[9px] text-rose-100/80 font-medium uppercase">Alfa</div>
+                                </div>
                             </div>
                         </div>
                     `;
