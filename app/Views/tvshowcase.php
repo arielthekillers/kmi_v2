@@ -704,7 +704,8 @@
             latest: [],
             piket: { syeikh: [], keliling: [] },
             hours_config: [],
-            bgm_youtube: ''
+            bgm_youtube: '',
+            muwajjah_stats: null
         };
 
         let slideInterval = null;
@@ -1077,6 +1078,7 @@
                 appData.hours_config = data.hours_config || [];
                 appData.bgm_youtube = data.bgm_youtube || '';
                 appData.master_stats = data.master_stats || null;
+                appData.muwajjah_stats = data.muwajjah_stats || null;
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;

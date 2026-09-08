@@ -271,7 +271,7 @@ class TvShowcaseController extends Controller {
                 
                 if (!empty($rec)) {
                     $recordedWaliMuwajjah++;
-                    if ($status === 'hadir') {
+                    if (in_array($status, ['hadir', 'badal', 'diganti', 'terlambat'])) {
                         $hadirWaliMuwajjah++;
                     }
                 }
