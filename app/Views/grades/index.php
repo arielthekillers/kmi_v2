@@ -1,6 +1,19 @@
 <?php 
 renderHeader("Koreksi Ujian"); 
 $isAdmin = (auth_get_role() === 'admin');
+
+$sessionComplete = false;
+if (isset($allKelas) && !empty($allKelas)) {
+    $totalAllExams = 0;
+    $totalSelesaiExams = 0;
+    foreach ($allKelas as $k) {
+        $totalAllExams += $k['total_exams'] ?? 0;
+        $totalSelesaiExams += $k['selesai_exams'] ?? 0;
+    }
+    if ($totalAllExams > 0 && $totalAllExams === $totalSelesaiExams) {
+        $sessionComplete = true;
+    }
+}
 ?>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -71,6 +84,12 @@ $isAdmin = (auth_get_role() === 'admin');
             <?php endif; ?>
 
             <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+                <?php if ($sessionComplete): ?>
+                    <a href="<?= url('/grades/rekap_rata_rata') ?>" class="inline-flex items-center justify-center px-2.5 py-1.5 md:px-4 md:py-2 border border-emerald-500 rounded-xl text-[11px] md:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap shadow-sm" style="white-space: nowrap;">
+                        <i class="ri-file-chart-line mr-1"></i>
+                        <span class="hidden sm:inline">Rekap&nbsp;</span>Rata-rata
+                    </a>
+                <?php endif; ?>
                 <a href="<?= url('/grades/trash') ?>" class="inline-flex items-center justify-center px-2.5 py-1.5 md:px-4 md:py-2 border border-gray-300 rounded-xl text-[11px] md:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap shadow-sm" style="white-space: nowrap;" title="Tong Sampah">
                     <i class="ri-delete-bin-line md:mr-2 text-gray-400"></i>
                     <span class="hidden md:inline">Tong Sampah</span>

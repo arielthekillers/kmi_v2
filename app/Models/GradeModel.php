@@ -551,4 +551,28 @@ class GradeModel extends Model {
             'grades' => $gradesByStudent
         ];
     }
+
+    public function getRekapRataRataKelas($sessionId, $academicYearId) {
+        $sql = "
+            SELECT 
+                k.id as kelas_id, 
+                CONCAT(k.tingkat, k.abjad) as nama_kelas,
+                AVG(sub_grades.student_avg) as nilai_rata_rata
+            FROM kelas k
+            JOIN (
+                SELECT g.student_id, se.kelas_id, AVG(g.score_final) as student_avg
+                FROM grades g
+                JOIN exams e ON g.exam_id = e.id
+                JOIN student_enrollments se ON g.student_id = se.student_id AND se.academic_year_id = e.academic_year_id
+                WHERE e.exam_session_id = ? AND e.academic_year_id = ? AND e.is_deleted = 0 AND g.score_final IS NOT NULL
+                GROUP BY g.student_id, se.kelas_id
+            ) sub_grades ON k.id = sub_grades.kelas_id
+            WHERE k.is_active = 1
+            GROUP BY k.id, k.tingkat, k.abjad
+            ORDER BY nilai_rata_rata DESC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sessionId, $academicYearId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

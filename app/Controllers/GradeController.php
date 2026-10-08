@@ -490,4 +490,46 @@ class GradeController extends Controller {
         }
         $this->redirect('/grades/trash');
     }
+
+    public function rekap_rata_rata() {
+        require_login();
+        if (!auth_can_manage_grades()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/grades');
+        }
+
+        $model = new GradeModel();
+        $activeSession = $model->getActiveSession($this->currentYear['id']);
+        if (!$activeSession) {
+            add_flash('Tidak ada sesi ujian yang aktif.', 'error');
+            $this->redirect('/grades');
+        }
+
+        // Verify if session progress is 100%
+        $progressFilters = [
+            'academic_year_id' => $this->currentYear['id'],
+            'exam_session_id' => $activeSession['id']
+        ];
+        $allExamsForStats = $model->getAllExams($progressFilters);
+        $totalAllExams = count($allExamsForStats);
+        $totalSelesaiExams = 0;
+        foreach ($allExamsForStats as $exam) {
+            if (($exam['status'] ?? '') === 'selesai') {
+                $totalSelesaiExams++;
+            }
+        }
+
+        if ($totalAllExams === 0 || $totalAllExams !== $totalSelesaiExams) {
+            add_flash('Rekapitulasi hanya bisa dilihat jika progres koreksi sudah 100%.', 'error');
+            $this->redirect('/grades');
+        }
+
+        $rekap = $model->getRekapRataRataKelas($activeSession['id'], $this->currentYear['id']);
+
+        $this->view('grades/rekap_rata_rata', [
+            'rekap' => $rekap,
+            'sessionName' => $activeSession['type'],
+            'title' => 'Rekapitulasi Nilai Rata-rata Kelas'
+        ]);
+    }
 }
