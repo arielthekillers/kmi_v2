@@ -97,6 +97,7 @@ class App
 
         // Grades Routes
         $this->router->get('/grades', ['App\Controllers\GradeController', 'index']);
+        $this->router->get('/grades/rekap_rata_rata', ['App\Controllers\GradeController', 'rekap_rata_rata']);
         $this->router->post('/grades/create', ['App\Controllers\GradeController', 'create']);
         $this->router->get('/grades/edit', ['App\Controllers\GradeController', 'edit']);
         $this->router->post('/grades/update', ['App\Controllers\GradeController', 'update']);

@@ -567,12 +567,12 @@ class GradeModel extends Model {
                 WHERE e.exam_session_id = ? AND e.academic_year_id = ? AND e.is_deleted = 0 AND g.score_final IS NOT NULL
                 GROUP BY g.student_id, se.kelas_id
             ) sub_grades ON k.id = sub_grades.kelas_id
-            WHERE k.is_active = 1
+            WHERE k.academic_year_id = ?
             GROUP BY k.id, k.tingkat, k.abjad
             ORDER BY nilai_rata_rata DESC
         ";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$sessionId, $academicYearId]);
+        $stmt->execute([$sessionId, $academicYearId, $academicYearId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

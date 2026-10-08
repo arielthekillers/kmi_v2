@@ -3,10 +3,10 @@ renderHeader("Koreksi Ujian");
 $isAdmin = (auth_get_role() === 'admin');
 
 $sessionComplete = false;
-if (isset($allKelas) && !empty($allKelas)) {
+if (isset($kelas) && !empty($kelas)) {
     $totalAllExams = 0;
     $totalSelesaiExams = 0;
-    foreach ($allKelas as $k) {
+    foreach ($kelas as $k) {
         $totalAllExams += $k['total_exams'] ?? 0;
         $totalSelesaiExams += $k['selesai_exams'] ?? 0;
     }
