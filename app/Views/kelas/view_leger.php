@@ -48,6 +48,7 @@ if (!empty($sessions)) {
     }
 }
 $sessionName = $typeMap[$sessionType] ?? '';
+$isUlangan = stripos($sessionName, 'ulangan') !== false;
 $sort = $sort ?? 'alphabet';
 ?>
 
@@ -236,14 +237,18 @@ $sort = $sort ?? 'alphabet';
                 <th class="w-12" rowspan="2">RATA-RATA</th>
                 <th class="w-10" rowspan="2">RANKING</th>
                 <!-- Behaviors -->
+                <?php if (!$isUlangan): ?>
                 <th class="w-36" colspan="3">NILAI PERILAKU</th>
+                <?php endif; ?>
                 <!-- Attendance -->
                 <th class="w-30" colspan="3">ABSENSI</th>
             </tr>
             <tr>
+                <?php if (!$isUlangan): ?>
                 <th class="w-12 text-[8px]">SULUK</th>
                 <th class="w-12 text-[8px]">MUWATHOBAH</th>
                 <th class="w-12 text-[8px]">NADHOFAH</th>
+                <?php endif; ?>
                 <th class="w-10 text-[8px]">SAKIT</th>
                 <th class="w-10 text-[8px]">IZIN</th>
                 <th class="w-10 text-[8px]">ALPA</th>
@@ -282,9 +287,11 @@ $sort = $sort ?? 'alphabet';
                     <td class="font-bold bg-gray-50/50 text-indigo-600"><?= $scores['count'] > 0 ? number_format($scores['avg'], 2) : '-' ?></td>
                     <td class="font-black bg-indigo-50/30 text-indigo-700"><?= $rankings[$studentId] ?></td>
                     <!-- Behaviors -->
+                    <?php if (!$isUlangan): ?>
                     <td class="font-semibold"><?= $sVal ?></td>
                     <td class="font-semibold"><?= $mVal ?></td>
                     <td class="font-semibold"><?= $nVal ?></td>
+                    <?php endif; ?>
                     <!-- Absences -->
                     <td><?= $sakitVal ?></td>
                     <td><?= $izinVal ?></td>
@@ -299,7 +306,7 @@ $sort = $sort ?? 'alphabet';
                     <td><?= $subjectStats[$exam['exam_id']]['sum'] ?></td>
                 <?php endforeach; ?>
                 <!-- Student average/ranking column totals -->
-                <td colspan="9" class="bg-white" rowspan="4">
+                <td colspan="<?= $isUlangan ? '6' : '9' ?>" class="bg-white" rowspan="4">
                     <!-- Overall class average box (similar to the big 58,62 centered in sheet) -->
                     <div class="flex flex-col items-center justify-center py-2 h-full">
                         <span class="text-[8px] text-gray-400 font-bold uppercase tracking-wider">RATA-RATA KELAS</span>

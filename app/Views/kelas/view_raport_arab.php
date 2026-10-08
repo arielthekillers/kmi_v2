@@ -6,6 +6,16 @@ $islamicExams = [];
 $foreignExams = [];
 $generalExams = [];
 
+$isUlangan = false;
+if (isset($sessions) && isset($selected_session_id)) {
+    foreach ($sessions as $s) {
+        if ($s['id'] == $selected_session_id) {
+            $isUlangan = stripos($s['type'], 'uu') !== false || stripos($s['type'], 'ulangan') !== false;
+            break;
+        }
+    }
+}
+
 foreach ($leger['exams'] as $exam) {
     $cat = $exam['category'] ?? '';
     if ($cat === 'arabic') {
@@ -431,6 +441,7 @@ $leftRowsCount = count($leftPanelExams);
                         <td class="text-center text-sm font-semibold"><?= $overallAvg !== null ? terbilang_arab($overallAvg) : '-' ?></td>
                     </tr>
                     <!-- Behaviors -->
+                    <?php if (!$isUlangan): ?>
                     <?php
                     $sVal = $behavior && $behavior['suluk'] !== null ? $behavior['suluk'] : '';
                     $sText = $behavior && $behavior['suluk'] !== null ? terbilang_arab($behavior['suluk']) : '';
@@ -459,6 +470,7 @@ $leftRowsCount = count($leftPanelExams);
                         <td class="w-12 text-center font-bold"><?= $nVal ?></td>
                         <td class="text-center text-sm font-semibold"><?= $nText ?></td>
                     </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
