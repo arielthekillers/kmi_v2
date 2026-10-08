@@ -124,7 +124,7 @@ class GradeController extends Controller {
         $teachingMap = $scheduleModel->getAllAssignments($this->currentYear['id']);
 
         // Special subjects (is_special = 1) for the toggle
-        $subjectModel2 = new \App\Models\SubjectModel();
+        $subjectModel2 = new SubjectModel();
         $specialSubjects = $subjectModel2->getSpecialSubjects();
 
         $this->view('grades/index', [
@@ -525,6 +525,35 @@ class GradeController extends Controller {
         }
 
         $rekap = $model->getRekapRataRataKelas($activeSession['id'], $this->currentYear['id']);
+
+        if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+            $filename = "Rekapitulasi_Rata_Rata_Kelas_" . str_replace(' ', '_', $activeSession['type']) . "_" . date('Ymd_His') . ".csv";
+            header("Content-Type: text/csv");
+            header("Content-Disposition: attachment; filename=\"$filename\"");
+            
+            $output = fopen("php://output", "w");
+            fputcsv($output, ['No.', 'Kelas', 'Nilai Rata-Rata', 'Ranking']);
+            
+            $ranking = 1;
+            $prevValue = null;
+            $actualRank = 1;
+            foreach ($rekap as $idx => $r) {
+                $rata = $r['nilai_rata_rata'] !== null ? round($r['nilai_rata_rata'], 2) : 0;
+                if ($prevValue !== null && $rata < $prevValue) {
+                    $actualRank = $idx + 1;
+                }
+                $prevValue = $rata;
+                
+                fputcsv($output, [
+                    $idx + 1,
+                    $r['nama_kelas'],
+                    number_format($rata, 2, ',', '.'),
+                    $actualRank
+                ]);
+            }
+            fclose($output);
+            exit;
+        }
 
         $this->view('grades/rekap_rata_rata', [
             'rekap' => $rekap,

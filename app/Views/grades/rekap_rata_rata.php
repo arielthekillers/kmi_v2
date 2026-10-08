@@ -14,6 +14,9 @@ renderHeader($title ?? 'Rekapitulasi Nilai Rata-rata Kelas');
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <a href="?export=csv" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                <i class="ri-file-excel-line text-sm"></i> Download CSV
+            </a>
             <button onclick="window.print()" class="flex-1 md:flex-initial justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap">
                 <i class="ri-printer-line text-sm"></i> Cetak PDF
             </button>

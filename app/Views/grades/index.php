@@ -1,9 +1,16 @@
 <?php 
+/**
+ * @var array[] $kelas
+ * @var array[] $exams
+ * @var array $filters
+ * @var array $activeSession
+ * @var array $currentYear
+ */
 renderHeader("Koreksi Ujian"); 
 $isAdmin = (auth_get_role() === 'admin');
 
 $sessionComplete = false;
-if (isset($kelas) && !empty($kelas)) {
+if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
     $totalAllExams = 0;
     $totalSelesaiExams = 0;
     foreach ($kelas as $k) {
