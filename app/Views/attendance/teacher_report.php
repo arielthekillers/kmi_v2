@@ -1,6 +1,22 @@
 <?php renderHeader($title); ?>
 
 <style>
+/* Custom scrollbar for sticky table container */
+.table-scroll-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.table-scroll-container::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+.table-scroll-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 @media print {
     @page {
         size: A4 portrait;
@@ -60,6 +76,58 @@
     }
     .w-16 {
         width: 2.25rem !important;
+    }
+
+    /* Single Teacher Slip Printing Mode */
+    body.print-single-slip {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+    }
+    body.print-single-slip main,
+    body.print-single-slip nav,
+    body.print-single-slip header,
+    body.print-single-slip footer,
+    body.print-single-slip .no-print {
+        display: none !important;
+    }
+    body.print-single-slip #teacherDetailModal {
+        display: block !important;
+        position: static !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    body.print-single-slip #teacherDetailModal > div {
+        display: block !important;
+        min-height: auto !important;
+        padding: 0 !important;
+    }
+    body.print-single-slip #teacherDetailModal .fixed.inset-0 {
+        display: none !important;
+    }
+    body.print-single-slip #teacherDetailModal .transform {
+        transform: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.print-single-slip #teacherDetailModal .max-h-72 {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    body.print-single-slip .no-print-slip {
+        display: none !important;
+    }
+    body.print-single-slip .print-only-slip {
+        display: block !important;
+    }
+    body.print-single-slip #modalDetailsBody tr {
+        page-break-inside: avoid;
     }
 }
 </style>
@@ -134,7 +202,7 @@
     <!-- Summary Cards (Merged into 5 High-Level Cards) -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6 summary-cards-grid">
         <!-- 1. Total Jadwal -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
+        <div class="col-span-2 sm:col-span-1 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Jadwal</span>
                 <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -236,6 +304,25 @@
         </div>
     </div>
 
+    <?php
+    $countTotal = count($report);
+    $countAttention = 0;
+    $countLate = 0;
+    $countPerfect = 0;
+
+    foreach ($report as $r) {
+        if ((int)$r['tidak_hadir'] > 0 || (float)$r['kehadiran_pct'] < 75) {
+            $countAttention++;
+        }
+        if ((int)$r['terlambat'] > 0) {
+            $countLate++;
+        }
+        if ((float)$r['kehadiran_pct'] >= 100 && ($r['ketepatan_pct'] === null || (float)$r['ketepatan_pct'] >= 100) && (int)$r['terlambat'] === 0 && (int)$r['tidak_hadir'] === 0) {
+            $countPerfect++;
+        }
+    }
+    ?>
+
     <!-- Main Table Card -->
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -250,7 +337,28 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Quick Filter Tabs & Search Info -->
+        <div class="px-6 py-2.5 bg-gray-50/70 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs no-print">
+            <div class="flex items-center gap-1.5 flex-wrap" id="statusFilterTabs">
+                <button type="button" onclick="setStatusFilter('all')" data-filter="all" class="status-tab px-3 py-1 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-xs">
+                    Semua <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20"><?= $countTotal ?></span>
+                </button>
+                <button type="button" onclick="setStatusFilter('attention')" data-filter="attention" class="status-tab px-3 py-1 rounded-lg font-medium transition-all bg-white text-gray-600 border border-gray-200 hover:bg-gray-100">
+                    Perlu Perhatian <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-rose-100 text-rose-700 font-bold"><?= $countAttention ?></span>
+                </button>
+                <button type="button" onclick="setStatusFilter('late')" data-filter="late" class="status-tab px-3 py-1 rounded-lg font-medium transition-all bg-white text-gray-600 border border-gray-200 hover:bg-gray-100">
+                    Ada Terlambat <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 font-semibold"><?= $countLate ?></span>
+                </button>
+                <button type="button" onclick="setStatusFilter('perfect')" data-filter="perfect" class="status-tab px-3 py-1 rounded-lg font-medium transition-all bg-white text-gray-600 border border-gray-200 hover:bg-gray-100">
+                    Disiplin 100% <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-semibold"><?= $countPerfect ?></span>
+                </button>
+            </div>
+            <div id="filterCountIndicator" class="text-gray-500 font-medium text-[11px]">
+                Menampilkan <span id="visibleRowCount" class="font-bold text-gray-900"><?= $countTotal ?></span> pengajar
+            </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-[72vh] overflow-y-auto relative table-scroll-container">
             <?php
             $sort = $sort ?? '';
             $order = $order ?? 'desc';
@@ -266,7 +374,7 @@
             $nextTidakHadirOrder = ($sort === 'tidak_hadir' && $order === 'desc') ? 'asc' : 'desc';
             ?>
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50/95 backdrop-blur-sm sticky top-0 z-10 shadow-xs border-b border-gray-200">
                     <tr>
                         <!-- Nama Pengajar -->
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -281,9 +389,10 @@
                         </th>
 
                         <!-- Kolom Ikon 1: Total Jadwal (Ungu) -->
-                        <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Total Jadwal Sesi Mengajar">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=jadwal&order=' . $nextJadwalOrder) ?>" class="inline-flex items-center justify-center gap-1 group">
-                                <i class="ri-calendar-event-fill text-indigo-500 text-lg"></i>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Total Jadwal Sesi Mengajar">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=jadwal&order=' . $nextJadwalOrder) ?>" class="inline-flex items-center justify-center gap-1.5 group hover:text-indigo-600 transition-colors">
+                                <i class="ri-calendar-event-fill text-indigo-500 text-sm"></i>
+                                <span>Jadwal</span>
                                 <?php if ($sort === 'jadwal'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-xs text-indigo-600 font-bold"></i>
                                 <?php endif; ?>
@@ -291,9 +400,10 @@
                         </th>
 
                         <!-- Kolom Ikon 2: Hadir Tepat (Hijau) -->
-                        <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Hadir Tepat Waktu">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=tepat&order=' . $nextTepatOrder) ?>" class="inline-flex items-center justify-center gap-1 group">
-                                <i class="ri-checkbox-circle-fill text-emerald-500 text-lg"></i>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Hadir Tepat Waktu">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=tepat&order=' . $nextTepatOrder) ?>" class="inline-flex items-center justify-center gap-1.5 group hover:text-emerald-600 transition-colors">
+                                <i class="ri-checkbox-circle-fill text-emerald-500 text-sm"></i>
+                                <span>Tepat</span>
                                 <?php if ($sort === 'tepat'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-xs text-emerald-600 font-bold"></i>
                                 <?php endif; ?>
@@ -301,9 +411,10 @@
                         </th>
 
                         <!-- Kolom Ikon 3: Terlambat (Kuning) -->
-                        <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Hadir Terlambat (dengan Total Menit Keterlambatan)">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=terlambat&order=' . $nextTerlambatOrder) ?>" class="inline-flex items-center justify-center gap-1 group">
-                                <i class="ri-alert-fill text-amber-500 text-lg"></i>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Hadir Terlambat (dengan Total Menit Keterlambatan)">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=terlambat&order=' . $nextTerlambatOrder) ?>" class="inline-flex items-center justify-center gap-1.5 group hover:text-amber-600 transition-colors">
+                                <i class="ri-alert-fill text-amber-500 text-sm"></i>
+                                <span>Telat</span>
                                 <?php if ($sort === 'terlambat'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-xs text-amber-600 font-bold"></i>
                                 <?php endif; ?>
@@ -311,9 +422,10 @@
                         </th>
 
                         <!-- Kolom Ikon 4: Diganti (Biru) -->
-                        <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Diganti / Di-inval Guru Lain (Sakit/Izin)">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=diganti&order=' . $nextDigantiOrder) ?>" class="inline-flex items-center justify-center gap-1 group">
-                                <i class="ri-arrow-left-right-fill text-blue-500 text-lg"></i>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Diganti / Di-inval Guru Lain (Sakit/Izin)">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=diganti&order=' . $nextDigantiOrder) ?>" class="inline-flex items-center justify-center gap-1.5 group hover:text-blue-600 transition-colors">
+                                <i class="ri-arrow-left-right-fill text-blue-500 text-sm"></i>
+                                <span>Inval</span>
                                 <?php if ($sort === 'diganti'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-xs text-blue-600 font-bold"></i>
                                 <?php endif; ?>
@@ -321,9 +433,10 @@
                         </th>
 
                         <!-- Kolom Ikon 5: Tidak Hadir (Merah) -->
-                        <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Tidak Hadir / Alpha / Tanpa Keterangan">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=tidak_hadir&order=' . $nextTidakHadirOrder) ?>" class="inline-flex items-center justify-center gap-1 group">
-                                <i class="ri-close-circle-fill text-rose-500 text-lg"></i>
+                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Tidak Hadir / Alpha / Tanpa Keterangan">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=tidak_hadir&order=' . $nextTidakHadirOrder) ?>" class="inline-flex items-center justify-center gap-1.5 group hover:text-rose-600 transition-colors">
+                                <i class="ri-close-circle-fill text-rose-500 text-sm"></i>
+                                <span>Alpha</span>
                                 <?php if ($sort === 'tidak_hadir'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-xs text-rose-600 font-bold"></i>
                                 <?php endif; ?>
@@ -331,7 +444,7 @@
                         </th>
 
                         <!-- Kehadiran (%) -->
-                        <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Kehadiran dan Izin dari Total Jadwal">
+                        <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Kehadiran dan Izin dari Total Jadwal">
                             <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=kehadiran&order=' . $nextKehadiranOrder) ?>" class="hover:text-indigo-600 flex items-center justify-center gap-1.5 group select-none">
                                 Kehadiran (%)
                                 <?php if ($sort === 'kehadiran' || empty($sort)): ?>
@@ -343,7 +456,7 @@
                         </th>
 
                         <!-- Ketepatan Waktu (%) -->
-                        <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Ketepatan Sesi Saat Hadir (45 Menit per Jam Pelajaran)">
+                        <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Ketepatan Sesi Saat Hadir (45 Menit per Jam Pelajaran)">
                             <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=ketepatan&order=' . $nextKetepatanOrder) ?>" class="hover:text-indigo-600 flex items-center justify-center gap-1.5 group select-none">
                                 Ketepatan (%)
                                 <?php if ($sort === 'ketepatan'): ?>
@@ -355,7 +468,7 @@
                         </th>
 
                         <!-- Status -->
-                        <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=status&order=' . $nextStatusOrder) ?>" class="hover:text-indigo-600 flex items-center gap-1.5 group select-none">
                                 Status
                                 <?php if ($sort === 'status'): ?>
@@ -375,8 +488,16 @@
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($report as $r): ?>
-                        <tr class="hover:bg-gray-50 teacher-row transition-colors" data-name="<?= htmlspecialchars(strtolower($r['name'])) ?>">
+                        <?php foreach ($report as $r): 
+                            $isAttention = ((int)$r['tidak_hadir'] > 0 || (float)$r['kehadiran_pct'] < 75) ? '1' : '0';
+                            $isLate = ((int)$r['terlambat'] > 0) ? '1' : '0';
+                            $isPerfect = ((float)$r['kehadiran_pct'] >= 100 && ($r['ketepatan_pct'] === null || (float)$r['ketepatan_pct'] >= 100) && (int)$r['terlambat'] === 0 && (int)$r['tidak_hadir'] === 0) ? '1' : '0';
+                        ?>
+                        <tr class="hover:bg-gray-50 teacher-row transition-colors" 
+                            data-name="<?= htmlspecialchars(strtolower($r['name'])) ?>"
+                            data-attention="<?= $isAttention ?>"
+                            data-late="<?= $isLate ?>"
+                            data-perfect="<?= $isPerfect ?>">
                             <!-- Nama Pengajar -->
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 <button type="button" 
@@ -468,6 +589,14 @@
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <tr id="noFilterResultRow" style="display: none;">
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-400 text-sm">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="ri-user-search-line text-3xl text-gray-300 mb-1"></i>
+                                    <span>Tidak ada pengajar yang sesuai dengan filter atau kata kunci pencarian.</span>
+                                </div>
+                            </td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -485,6 +614,12 @@
 
         <!-- Modal Panel -->
         <div class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl sm:align-middle">
+            <!-- Print-only Official Slip Header -->
+            <div class="hidden print-only-slip mb-4 text-center border-b border-gray-300 pb-3">
+                <h2 class="text-base font-bold uppercase tracking-wider text-gray-900">Slip Rekapitulasi Kehadiran Pengajar</h2>
+                <p class="text-xs text-gray-600">Kuliyatul Mu'allimin Al-Islamiyah (KMI) • Periode: <?= date('d/m/Y', strtotime($startDate)) ?> s/d <?= date('d/m/Y', strtotime($endDate)) ?></p>
+            </div>
+
             <!-- Modal Header -->
             <div class="flex items-start justify-between border-b border-gray-100 pb-4 mb-4">
                 <div class="flex items-center gap-3.5">
@@ -501,9 +636,14 @@
                         </p>
                     </div>
                 </div>
-                <button type="button" onclick="closeTeacherModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="ri-close-line text-2xl"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="printTeacherSlip()" class="no-print-slip px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs">
+                        <i class="ri-printer-line text-sm"></i> Cetak Slip
+                    </button>
+                    <button type="button" onclick="closeTeacherModal()" class="no-print-slip text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Mini Summary in Modal (Merged into 5 Cards) -->
@@ -573,7 +713,10 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="mt-5 border-t border-gray-100 pt-3 flex justify-end">
+            <div class="mt-5 border-t border-gray-100 pt-3 flex justify-between items-center no-print-slip">
+                <button type="button" onclick="printTeacherSlip()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                    <i class="ri-printer-line text-sm"></i> Cetak Slip Pengajar
+                </button>
                 <button type="button" onclick="closeTeacherModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors">
                     Tutup
                 </button>
@@ -698,22 +841,72 @@ function closeTeacherModal() {
     document.getElementById('teacherDetailModal').classList.add('hidden');
 }
 
-// Client-side instant search for teacher name
+function printTeacherSlip() {
+    document.body.classList.add('print-single-slip');
+    window.print();
+}
+
+window.addEventListener('afterprint', () => {
+    document.body.classList.remove('print-single-slip');
+});
+
+// Client-side instant filter tabs & search
+let currentStatusFilter = 'all';
+
+function setStatusFilter(filter) {
+    currentStatusFilter = filter;
+    document.querySelectorAll('.status-tab').forEach(tab => {
+        if (tab.getAttribute('data-filter') === filter) {
+            tab.className = 'status-tab px-3 py-1 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-xs';
+        } else {
+            tab.className = 'status-tab px-3 py-1 rounded-lg font-medium transition-all bg-white text-gray-600 border border-gray-200 hover:bg-gray-100';
+        }
+    });
+    applyFilters();
+}
+
+function applyFilters() {
+    const searchInput = document.getElementById('teacherSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const rows = document.querySelectorAll('.teacher-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const isAttention = row.getAttribute('data-attention') === '1';
+        const isLate = row.getAttribute('data-late') === '1';
+        const isPerfect = row.getAttribute('data-perfect') === '1';
+
+        let matchesStatus = true;
+        if (currentStatusFilter === 'attention') matchesStatus = isAttention;
+        else if (currentStatusFilter === 'late') matchesStatus = isLate;
+        else if (currentStatusFilter === 'perfect') matchesStatus = isPerfect;
+
+        const matchesSearch = !query || name.includes(query);
+
+        if (matchesStatus && matchesSearch) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const noResultRow = document.getElementById('noFilterResultRow');
+    if (noResultRow) {
+        noResultRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+    }
+
+    const countElem = document.getElementById('visibleRowCount');
+    if (countElem) {
+        countElem.textContent = visibleCount;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('teacherSearch');
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('.teacher-row');
-            rows.forEach(row => {
-                const name = row.getAttribute('data-name') || '';
-                if (name.includes(query)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
+        searchInput.addEventListener('input', applyFilters);
     }
 });
 </script>
