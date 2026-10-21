@@ -363,9 +363,9 @@
             $sort = $sort ?? '';
             $order = $order ?? 'desc';
             
-            $nextKehadiranOrder = ($sort === 'kehadiran' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+            $nextKehadiranOrder = ($sort === 'kehadiran' && $order === 'desc') ? 'asc' : 'desc';
             $nextKetepatanOrder = ($sort === 'ketepatan' && $order === 'desc') ? 'asc' : 'desc';
-            $nextStatusOrder = ($sort === 'status' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+            $nextStatusOrder = ($sort === 'status' && $order === 'desc') ? 'asc' : 'desc';
             $nextNamaOrder = ($sort === 'nama' && $order === 'asc') ? 'desc' : 'asc';
             $nextJadwalOrder = ($sort === 'jadwal' && $order === 'desc') ? 'asc' : 'desc';
             $nextTepatOrder = ($sort === 'tepat' && $order === 'desc') ? 'asc' : 'desc';

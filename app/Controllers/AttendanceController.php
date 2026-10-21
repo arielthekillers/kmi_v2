@@ -308,49 +308,99 @@ class AttendanceController extends Controller {
         // Perform sorting if specified
         if (!empty($sort)) {
             uasort($data['report'], function($a, $b) use ($sort, $order) {
-                if ($sort === 'kehadiran') {
-                    $valA = $a['kehadiran_pct'] ?? 0;
-                    $valB = $b['kehadiran_pct'] ?? 0;
-                } elseif ($sort === 'ketepatan') {
-                    $valA = $a['ketepatan_pct'] ?? -1;
-                    $valB = $b['ketepatan_pct'] ?? -1;
-                } elseif ($sort === 'kepatuhan') {
-                    $valA = $a['pct'] ?? 0;
-                    $valB = $b['pct'] ?? 0;
-                } elseif ($sort === 'status') {
-                    $valA = $a['status_level'];
-                    $valB = $b['status_level'];
-                } elseif ($sort === 'nama') {
-                    $valA = strtolower($a['name'] ?? '');
-                    $valB = strtolower($b['name'] ?? '');
-                } elseif ($sort === 'jadwal') {
-                    $valA = $a['expected'] ?? 0;
-                    $valB = $b['expected'] ?? 0;
-                } elseif ($sort === 'tepat') {
-                    $valA = $a['hadir_tepat'] ?? 0;
-                    $valB = $b['hadir_tepat'] ?? 0;
-                } elseif ($sort === 'terlambat') {
-                    $valA = $a['terlambat'] ?? 0;
-                    $valB = $b['terlambat'] ?? 0;
-                } elseif ($sort === 'diganti') {
-                    $valA = $a['diganti'] ?? 0;
-                    $valB = $b['diganti'] ?? 0;
-                } elseif ($sort === 'tidak_hadir') {
-                    $valA = $a['tidak_hadir'] ?? 0;
-                    $valB = $b['tidak_hadir'] ?? 0;
-                } else {
-                    return 0;
-                }
+                $dir = ($order === 'asc') ? 1 : -1;
 
-                if ($valA == $valB) {
+                if ($sort === 'status') {
+                    // 1. Status level (4: Sangat Baik, 3: Baik, 2: Cukup, 1: Perlu Perhatian)
+                    if ($a['status_level'] !== $b['status_level']) {
+                        return ($a['status_level'] <=> $b['status_level']) * $dir;
+                    }
+                    // 2. Tie-breaker: Overall composite score
+                    $scoreA = $a['pct'] ?? 0;
+                    $scoreB = $b['pct'] ?? 0;
+                    if ($scoreA !== $scoreB) {
+                        return ($scoreA <=> $scoreB) * $dir;
+                    }
+                    // 3. Tie-breaker: Ketepatan waktu
+                    $ketA = $a['ketepatan_pct'] ?? -1;
+                    $ketB = $b['ketepatan_pct'] ?? -1;
+                    if ($ketA !== $ketB) {
+                        return ($ketA <=> $ketB) * $dir;
+                    }
+                    // 4. Tie-breaker: Kehadiran
+                    $kehA = $a['kehadiran_pct'] ?? 0;
+                    $kehB = $b['kehadiran_pct'] ?? 0;
+                    if ($kehA !== $kehB) {
+                        return ($kehA <=> $kehB) * $dir;
+                    }
                     return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
                 }
 
-                if ($order === 'asc') {
-                    return ($valA < $valB) ? -1 : 1;
-                } else {
-                    return ($valA > $valB) ? -1 : 1;
+                if ($sort === 'kehadiran') {
+                    $valA = $a['kehadiran_pct'] ?? 0;
+                    $valB = $b['kehadiran_pct'] ?? 0;
+                    if ($valA !== $valB) {
+                        return ($valA <=> $valB) * $dir;
+                    }
+                    // Secondary tie-breaker: Ketepatan
+                    $ketA = $a['ketepatan_pct'] ?? -1;
+                    $ketB = $b['ketepatan_pct'] ?? -1;
+                    if ($ketA !== $ketB) {
+                        return ($ketA <=> $ketB) * $dir;
+                    }
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
                 }
+
+                if ($sort === 'ketepatan') {
+                    $valA = $a['ketepatan_pct'] ?? -1;
+                    $valB = $b['ketepatan_pct'] ?? -1;
+                    if ($valA !== $valB) {
+                        return ($valA <=> $valB) * $dir;
+                    }
+                    // Secondary tie-breaker: Kehadiran
+                    $kehA = $a['kehadiran_pct'] ?? 0;
+                    $kehB = $b['kehadiran_pct'] ?? 0;
+                    if ($kehA !== $kehB) {
+                        return ($kehA <=> $kehB) * $dir;
+                    }
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+                }
+
+                if ($sort === 'nama') {
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '') * $dir;
+                }
+
+                $fieldMap = [
+                    'jadwal' => 'expected',
+                    'tepat' => 'hadir_tepat',
+                    'terlambat' => 'terlambat',
+                    'diganti' => 'diganti',
+                    'tidak_hadir' => 'tidak_hadir',
+                    'kepatuhan' => 'pct'
+                ];
+
+                $field = $fieldMap[$sort] ?? null;
+                if ($field) {
+                    $valA = $a[$field] ?? 0;
+                    $valB = $b[$field] ?? 0;
+                    if ($valA !== $valB) {
+                        return ($valA <=> $valB) * $dir;
+                    }
+                    // Secondary tie-breaker: Kehadiran then ketepatan
+                    $kehA = $a['kehadiran_pct'] ?? 0;
+                    $kehB = $b['kehadiran_pct'] ?? 0;
+                    if ($kehA !== $kehB) {
+                        return ($kehA <=> $kehB) * $dir;
+                    }
+                    $ketA = $a['ketepatan_pct'] ?? -1;
+                    $ketB = $b['ketepatan_pct'] ?? -1;
+                    if ($ketA !== $ketB) {
+                        return ($ketA <=> $ketB) * $dir;
+                    }
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+                }
+
+                return 0;
             });
         }
 
