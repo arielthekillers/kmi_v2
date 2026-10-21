@@ -366,6 +366,7 @@ class AttendanceModel extends Model {
                 'diganti' => 0,
                 'tidak_hadir' => 0,
                 'total_skor' => 0.0,
+                'total_skor_ketepatan' => 0.0,
                 'details' => []
             ];
         }
@@ -461,10 +462,12 @@ class AttendanceModel extends Model {
                                 if ($menit <= 0) $menit = 15; // default fallback if time not explicitly formatted
                                 
                                 // Fair calculation: deduction proportional to minutes late
-                                $score = max(0.0, ($hourInfo['duration'] - $menit) / $hourInfo['duration']);
+                                $duration = (!empty($hourInfo['duration']) && $hourInfo['duration'] > 0) ? $hourInfo['duration'] : 45;
+                                $score = max(0.0, ($duration - $menit) / $duration);
                                 $report[$tid]['terlambat']++;
                                 $report[$tid]['total_menit_terlambat'] += $menit;
                                 $report[$tid]['total_skor'] += $score;
+                                $report[$tid]['total_skor_ketepatan'] += $score;
 
                                 $report[$tid]['details'][] = [
                                     'date' => $cur,
@@ -484,6 +487,7 @@ class AttendanceModel extends Model {
                                 // Hadir Tepat
                                 $report[$tid]['hadir_tepat']++;
                                 $report[$tid]['total_skor'] += 1.0;
+                                $report[$tid]['total_skor_ketepatan'] += 1.0;
 
                                 $report[$tid]['details'][] = [
                                     'date' => $cur,
@@ -571,7 +575,7 @@ class AttendanceModel extends Model {
             $cur = date('Y-m-d', strtotime($cur . ' +1 day'));
         }
 
-        // 10. Compliance percentage and status badges
+        // 10. Kehadiran and Ketepatan Waktu percentages and status badges
         $globalStats = [
             'total_jadwal' => 0,
             'total_hadir_tepat' => 0,
@@ -579,32 +583,87 @@ class AttendanceModel extends Model {
             'total_menit_terlambat' => 0,
             'total_diganti' => 0,
             'total_tidak_hadir' => 0,
+            'avg_kehadiran' => 0,
+            'avg_ketepatan' => 0,
             'avg_kepatuhan' => 0
         ];
 
-        $sumPct = 0;
-        $countTeachers = 0;
+        $sumKehadiran = 0;
+        $countKehadiran = 0;
+        $sumKetepatan = 0;
+        $countKetepatan = 0;
 
         foreach ($report as &$r) {
+            // 1. Kehadiran (%) = (hadir_tepat + terlambat + diganti) / expected
+            $totalHadirIzin = $r['hadir_tepat'] + $r['terlambat'] + $r['diganti'];
             if ($r['expected'] > 0) {
-                $r['pct'] = min(100, max(0, round(($r['total_skor'] / $r['expected']) * 100)));
-                $sumPct += $r['pct'];
-                $countTeachers++;
+                $r['kehadiran_pct'] = min(100, max(0, round(($totalHadirIzin / $r['expected']) * 100)));
+                $sumKehadiran += $r['kehadiran_pct'];
+                $countKehadiran++;
             } else {
-                $r['pct'] = 0;
+                $r['kehadiran_pct'] = 0;
             }
 
-            if ($r['pct'] >= 85) {
+            // 2. Ketepatan Waktu (%) = total_skor_ketepatan / (hadir_tepat + terlambat)
+            $totalSesiHadir = $r['hadir_tepat'] + $r['terlambat'];
+            if ($totalSesiHadir > 0) {
+                $r['ketepatan_pct'] = min(100, max(0, round(($r['total_skor_ketepatan'] / $totalSesiHadir) * 100)));
+                $sumKetepatan += $r['ketepatan_pct'];
+                $countKetepatan++;
+            } else {
+                $r['ketepatan_pct'] = null; // Belum ada sesi hadir
+            }
+
+            // Kehadiran badge & bar styling
+            if ($r['kehadiran_pct'] >= 85) {
+                $r['kehadiran_bar_color'] = 'bg-emerald-500';
+                $r['kehadiran_text_color'] = 'text-emerald-700';
+            } elseif ($r['kehadiran_pct'] >= 70) {
+                $r['kehadiran_bar_color'] = 'bg-blue-500';
+                $r['kehadiran_text_color'] = 'text-blue-700';
+            } elseif ($r['kehadiran_pct'] >= 50) {
+                $r['kehadiran_bar_color'] = 'bg-amber-400';
+                $r['kehadiran_text_color'] = 'text-amber-700';
+            } else {
+                $r['kehadiran_bar_color'] = 'bg-rose-500';
+                $r['kehadiran_text_color'] = 'text-rose-700';
+            }
+
+            // Ketepatan badge & bar styling
+            if ($r['ketepatan_pct'] === null) {
+                $r['ketepatan_bar_color'] = 'bg-gray-300';
+                $r['ketepatan_text_color'] = 'text-gray-400';
+            } elseif ($r['ketepatan_pct'] >= 85) {
+                $r['ketepatan_bar_color'] = 'bg-emerald-500';
+                $r['ketepatan_text_color'] = 'text-emerald-700';
+            } elseif ($r['ketepatan_pct'] >= 70) {
+                $r['ketepatan_bar_color'] = 'bg-blue-500';
+                $r['ketepatan_text_color'] = 'text-blue-700';
+            } elseif ($r['ketepatan_pct'] >= 50) {
+                $r['ketepatan_bar_color'] = 'bg-amber-400';
+                $r['ketepatan_text_color'] = 'text-amber-700';
+            } else {
+                $r['ketepatan_bar_color'] = 'bg-rose-500';
+                $r['ketepatan_text_color'] = 'text-rose-700';
+            }
+
+            // Overall evaluation score (composite)
+            $scoreForStatus = ($r['ketepatan_pct'] !== null)
+                ? round(($r['kehadiran_pct'] * 0.5) + ($r['ketepatan_pct'] * 0.5))
+                : $r['kehadiran_pct'];
+            $r['pct'] = $scoreForStatus; // backward compatibility
+
+            if ($scoreForStatus >= 85) {
                 $r['status_level'] = 4;
                 $r['status_text'] = 'Sangat Baik';
                 $r['badge_color'] = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
                 $r['bar_color'] = 'bg-emerald-500';
-            } elseif ($r['pct'] >= 70) {
+            } elseif ($scoreForStatus >= 70) {
                 $r['status_level'] = 3;
                 $r['status_text'] = 'Baik';
                 $r['badge_color'] = 'bg-blue-50 text-blue-700 border border-blue-200';
                 $r['bar_color'] = 'bg-blue-500';
-            } elseif ($r['pct'] >= 50) {
+            } elseif ($scoreForStatus >= 50) {
                 $r['status_level'] = 2;
                 $r['status_text'] = 'Cukup';
                 $r['badge_color'] = 'bg-amber-50 text-amber-700 border border-amber-200';
@@ -625,12 +684,19 @@ class AttendanceModel extends Model {
         }
         unset($r);
 
-        $globalStats['avg_kepatuhan'] = $countTeachers > 0 ? round($sumPct / $countTeachers) : 0;
+        $globalStats['avg_kehadiran'] = $countKehadiran > 0 ? round($sumKehadiran / $countKehadiran) : 0;
+        $globalStats['avg_ketepatan'] = $countKetepatan > 0 ? round($sumKetepatan / $countKetepatan) : 0;
+        $globalStats['avg_kepatuhan'] = $globalStats['avg_kehadiran'];
 
-        // Default sort: highest compliance first, then name
+        // Default sort: highest kehadiran first, then ketepatan, then name
         uasort($report, function($a, $b) {
-            if ($a['pct'] !== $b['pct']) {
-                return $b['pct'] <=> $a['pct'];
+            if ($a['kehadiran_pct'] !== $b['kehadiran_pct']) {
+                return $b['kehadiran_pct'] <=> $a['kehadiran_pct'];
+            }
+            $ketA = $a['ketepatan_pct'] ?? -1;
+            $ketB = $b['ketepatan_pct'] ?? -1;
+            if ($ketA !== $ketB) {
+                return $ketB <=> $ketA;
             }
             return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
         });

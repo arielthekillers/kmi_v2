@@ -284,6 +284,8 @@ class AttendanceController extends Controller {
                 'total_menit_terlambat' => 0,
                 'total_diganti' => 0,
                 'total_tidak_hadir' => 0,
+                'avg_kehadiran' => 0,
+                'avg_ketepatan' => 0,
                 'avg_kepatuhan' => 0
             ];
 
@@ -295,6 +297,8 @@ class AttendanceController extends Controller {
                 $stats['total_menit_terlambat'] = $r['total_menit_terlambat'];
                 $stats['total_diganti'] = $r['diganti'];
                 $stats['total_tidak_hadir'] = $r['tidak_hadir'];
+                $stats['avg_kehadiran'] = $r['kehadiran_pct'];
+                $stats['avg_ketepatan'] = $r['ketepatan_pct'] ?? 0;
                 $stats['avg_kepatuhan'] = $r['pct'];
             }
 
@@ -304,9 +308,15 @@ class AttendanceController extends Controller {
         // Perform sorting if specified
         if (!empty($sort)) {
             uasort($data['report'], function($a, $b) use ($sort, $order) {
-                if ($sort === 'kepatuhan') {
-                    $valA = $a['pct'];
-                    $valB = $b['pct'];
+                if ($sort === 'kehadiran') {
+                    $valA = $a['kehadiran_pct'] ?? 0;
+                    $valB = $b['kehadiran_pct'] ?? 0;
+                } elseif ($sort === 'ketepatan') {
+                    $valA = $a['ketepatan_pct'] ?? -1;
+                    $valB = $b['ketepatan_pct'] ?? -1;
+                } elseif ($sort === 'kepatuhan') {
+                    $valA = $a['pct'] ?? 0;
+                    $valB = $b['pct'] ?? 0;
                 } elseif ($sort === 'status') {
                     $valA = $a['status_level'];
                     $valB = $b['status_level'];

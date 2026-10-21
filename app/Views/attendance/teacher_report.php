@@ -28,11 +28,11 @@
         border-color: #e5e7eb !important;
     }
 
-    /* Print layout for 5 summary cards in 1 row */
+    /* Print layout for 7 summary cards in 1 row */
     .summary-cards-grid {
         display: grid !important;
-        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-        gap: 0.35rem !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 0.25rem !important;
         margin-bottom: 0.75rem !important;
     }
     .summary-cards-grid .p-4 {
@@ -132,7 +132,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-6 summary-cards-grid">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6 summary-cards-grid">
         <!-- Total Jadwal -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
@@ -207,18 +207,36 @@
             </div>
         </div>
 
-        <!-- Rata-rata Kepatuhan -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between col-span-2 sm:col-span-1">
+        <!-- Rata-rata Kehadiran -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 bg-emerald-50/20 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kepatuhan</span>
-                <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs">
+                <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Kehadiran</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     %
                 </div>
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-900"><?= $globalStats['avg_kepatuhan'] ?>%</div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: <?= $globalStats['avg_kepatuhan'] ?>%"></div>
+                <div class="text-2xl font-bold text-emerald-800"><?= $globalStats['avg_kehadiran'] ?>%</div>
+                <div class="text-[11px] text-emerald-600/80 mt-0.5">Hadir &amp; Izin Resmi</div>
+                <div class="w-full bg-emerald-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: <?= $globalStats['avg_kehadiran'] ?>%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rata-rata Ketepatan Waktu -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 bg-blue-50/20 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-blue-800 uppercase tracking-wider">Ketepatan</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <i class="ri-timer-line text-base"></i>
+                </div>
+            </div>
+            <div>
+                <div class="text-2xl font-bold text-blue-800"><?= $globalStats['avg_ketepatan'] ?>%</div>
+                <div class="text-[11px] text-blue-600/80 mt-0.5">Dari sesi hadir (45m/jam)</div>
+                <div class="w-full bg-blue-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: <?= $globalStats['avg_ketepatan'] ?>%"></div>
                 </div>
             </div>
         </div>
@@ -243,7 +261,8 @@
             $sort = $sort ?? '';
             $order = $order ?? 'desc';
             
-            $nextKepatuhanOrder = ($sort === 'kepatuhan' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+            $nextKehadiranOrder = ($sort === 'kehadiran' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
+            $nextKetepatanOrder = ($sort === 'ketepatan' && $order === 'desc') ? 'asc' : 'desc';
             $nextStatusOrder = ($sort === 'status' && $order === 'desc') || empty($sort) ? 'asc' : 'desc';
             $nextNamaOrder = ($sort === 'nama' && $order === 'asc') ? 'desc' : 'asc';
             $nextJadwalOrder = ($sort === 'jadwal' && $order === 'desc') ? 'asc' : 'desc';
@@ -317,11 +336,23 @@
                             </a>
                         </th>
 
-                        <!-- Kepatuhan (%) -->
-                        <th class="px-6 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=kepatuhan&order=' . $nextKepatuhanOrder) ?>" class="hover:text-indigo-600 flex items-center justify-center gap-1.5 group select-none">
-                                Kepatuhan (%)
-                                <?php if ($sort === 'kepatuhan'): ?>
+                        <!-- Kehadiran (%) -->
+                        <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Kehadiran dan Izin dari Total Jadwal">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=kehadiran&order=' . $nextKehadiranOrder) ?>" class="hover:text-indigo-600 flex items-center justify-center gap-1.5 group select-none">
+                                Kehadiran (%)
+                                <?php if ($sort === 'kehadiran' || empty($sort)): ?>
+                                    <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-sm text-indigo-600 font-bold"></i>
+                                <?php else: ?>
+                                    <i class="ri-expand-up-down-line text-xs text-gray-300 group-hover:text-gray-400"></i>
+                                <?php endif; ?>
+                            </a>
+                        </th>
+
+                        <!-- Ketepatan Waktu (%) -->
+                        <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider" title="Persentase Ketepatan Sesi Saat Hadir (45 Menit per Jam Pelajaran)">
+                            <a href="<?= url('/attendance/teacher-report?start=' . $startDate . '&end=' . $endDate . '&sort=ketepatan&order=' . $nextKetepatanOrder) ?>" class="hover:text-indigo-600 flex items-center justify-center gap-1.5 group select-none">
+                                Ketepatan (%)
+                                <?php if ($sort === 'ketepatan'): ?>
                                     <i class="ri-arrow-<?= $order === 'desc' ? 'down' : 'up' ?>-s-line text-sm text-indigo-600 font-bold"></i>
                                 <?php else: ?>
                                     <i class="ri-expand-up-down-line text-xs text-gray-300 group-hover:text-gray-400"></i>
@@ -345,7 +376,7 @@
                 <tbody id="reportTableBody" class="bg-white divide-y divide-gray-200">
                     <?php if (empty($report)): ?>
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-gray-500 text-sm">
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500 text-sm">
                                 Tidak ada data jadwal atau absensi pada rentang tanggal ini.
                             </td>
                         </tr>
@@ -356,21 +387,23 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 <button type="button" 
                                         onclick='openTeacherModal(<?= json_encode([
-                                            "teacher_id" => $r["teacher_id"],
-                                            "name" => $r["name"],
-                                            "photo_url" => url(get_profile_picture_url($r["teacher_id"], $r["name"], $r["photo"])),
-                                            "expected" => $r["expected"],
-                                            "hadir_tepat" => $r["hadir_tepat"],
-                                            "terlambat" => $r["terlambat"],
-                                            "total_menit_terlambat" => $r["total_menit_terlambat"],
-                                            "diganti" => $r["diganti"],
-                                            "tidak_hadir" => $r["tidak_hadir"],
-                                            "pct" => $r["pct"],
-                                            "badge_color" => $r["badge_color"],
-                                            "status_text" => $r["status_text"],
-                                            "bar_color" => $r["bar_color"],
-                                            "details" => $r["details"] ?? []
-                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'
+                                             "teacher_id" => $r["teacher_id"],
+                                             "name" => $r["name"],
+                                             "photo_url" => url(get_profile_picture_url($r["teacher_id"], $r["name"], $r["photo"])),
+                                             "expected" => $r["expected"],
+                                             "hadir_tepat" => $r["hadir_tepat"],
+                                             "terlambat" => $r["terlambat"],
+                                             "total_menit_terlambat" => $r["total_menit_terlambat"],
+                                             "diganti" => $r["diganti"],
+                                             "tidak_hadir" => $r["tidak_hadir"],
+                                             "kehadiran_pct" => $r["kehadiran_pct"],
+                                             "ketepatan_pct" => $r["ketepatan_pct"],
+                                             "pct" => $r["pct"],
+                                             "badge_color" => $r["badge_color"],
+                                             "status_text" => $r["status_text"],
+                                             "bar_color" => $r["bar_color"],
+                                             "details" => $r["details"] ?? []
+                                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'
                                         class="flex items-center gap-3 text-indigo-600 font-semibold hover:text-indigo-900 transition-colors cursor-pointer text-left group">
                                     <img src="<?= url(get_profile_picture_url($r['teacher_id'], $r['name'], $r['photo'])) ?>" 
                                          alt="Avatar" 
@@ -409,14 +442,28 @@
                                 <?= $r['tidak_hadir'] ?>
                             </td>
 
-                            <!-- Kepatuhan (%) -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <!-- Kehadiran (%) -->
+                            <td class="px-5 py-4 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center">
-                                    <span class="text-sm font-bold text-gray-800 mr-2 w-10 text-right"><?= $r['pct'] ?>%</span>
-                                    <div class="w-20 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
-                                        <div class="<?= $r['bar_color'] ?> h-2 rounded-full transition-all duration-500" style="width: <?= $r['pct'] ?>%"></div>
+                                    <span class="text-sm font-bold <?= $r['kehadiran_text_color'] ?> mr-2 w-10 text-right"><?= $r['kehadiran_pct'] ?>%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
+                                        <div class="<?= $r['kehadiran_bar_color'] ?> h-2 rounded-full transition-all duration-500" style="width: <?= $r['kehadiran_pct'] ?>%"></div>
                                     </div>
                                 </div>
+                            </td>
+
+                            <!-- Ketepatan Waktu (%) -->
+                            <td class="px-5 py-4 whitespace-nowrap text-center">
+                                <?php if ($r['ketepatan_pct'] !== null): ?>
+                                <div class="flex items-center justify-center">
+                                    <span class="text-sm font-bold <?= $r['ketepatan_text_color'] ?> mr-2 w-10 text-right"><?= $r['ketepatan_pct'] ?>%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
+                                        <div class="<?= $r['ketepatan_bar_color'] ?> h-2 rounded-full transition-all duration-500" style="width: <?= $r['ketepatan_pct'] ?>%"></div>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <span class="text-xs text-gray-400 font-medium" title="Belum ada sesi kehadiran">-</span>
+                                <?php endif; ?>
                             </td>
 
                             <!-- Status Badge -->
@@ -449,9 +496,11 @@
                 <div class="flex items-center gap-3.5">
                     <img id="modalTeacherAvatar" src="" alt="Avatar" class="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-100 shadow-sm">
                     <div>
-                        <div class="flex items-center gap-2.5 flex-wrap">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <h3 class="text-xl font-bold text-gray-900" id="modalTeacherName">Nama Pengajar</h3>
                             <span id="modalStatusBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold">Status</span>
+                            <span id="modalKehadiranBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Kehadiran: 0%</span>
+                            <span id="modalKetepatanBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">Ketepatan: 0%</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-0.5">
                             Periode: <?= date('d/m/Y', strtotime($startDate)) ?> - <?= date('d/m/Y', strtotime($endDate)) ?>
@@ -464,7 +513,7 @@
             </div>
 
             <!-- Mini Summary in Modal -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-4">
                 <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200/70 text-center">
                     <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Total Jadwal</div>
                     <div class="text-lg font-bold text-gray-900 mt-0.5" id="modalTotalJadwal">0</div>
@@ -486,14 +535,25 @@
                     <div class="text-[10px] uppercase tracking-wider font-semibold text-rose-700">Tidak Hadir</div>
                     <div class="text-lg font-bold text-rose-700 mt-0.5" id="modalTidakHadir">0</div>
                 </div>
+                <div class="bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200 text-center">
+                    <div class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800">Kehadiran</div>
+                    <div class="text-lg font-bold text-emerald-800 mt-0.5" id="modalKehadiranVal">0%</div>
+                </div>
+                <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 text-center">
+                    <div class="text-[10px] uppercase tracking-wider font-semibold text-blue-800">Ketepatan</div>
+                    <div class="text-lg font-bold text-blue-800 mt-0.5" id="modalKetepatanVal">0%</div>
+                </div>
             </div>
 
             <!-- Fair Calculation Note -->
             <div class="bg-indigo-50/40 border border-indigo-100 rounded-lg p-2.5 mb-4 text-xs text-indigo-900 flex items-start gap-2">
                 <i class="ri-scales-3-line text-indigo-600 text-base mt-0.5 flex-shrink-0"></i>
                 <div class="leading-relaxed">
-                    <span class="font-bold">Sistem Penilaian Kepatuhan Transparan:</span>
-                    Keterlambatan dihitung secara proporsional sesuai sisa waktu mengajar dari total durasi jam pelajaran (45 menit). Guru yang terlambat sedikit tetap mendapatkan poin atas waktu yang ia gunakan di kelas.
+                    <span class="font-bold">Penilaian Transparan:</span>
+                    <ul class="list-disc list-inside mt-0.5 space-y-0.5 text-[11px] text-indigo-800">
+                        <li><strong>Kehadiran</strong>: Persentase kehadiran mengajar dan izin resmi tercatat dari total jadwal KBM.</li>
+                        <li><strong>Ketepatan Waktu</strong>: Persentase ketepatan dari sesi saat guru hadir di kelas. Berdasarkan durasi 45 menit per jam pelajaran (misal terlambat 15 menit = 67%).</li>
+                    </ul>
                 </div>
             </div>
 
@@ -564,7 +624,18 @@ function openTeacherModal(data) {
     
     const badge = document.getElementById('modalStatusBadge');
     badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ' + data.badge_color;
-    badge.textContent = data.status_text + ' (' + data.pct + '%)';
+    badge.textContent = data.status_text;
+
+    const bKehadiran = document.getElementById('modalKehadiranBadge');
+    bKehadiran.textContent = 'Kehadiran: ' + (data.kehadiran_pct !== undefined ? data.kehadiran_pct : 0) + '%';
+
+    const bKetepatan = document.getElementById('modalKetepatanBadge');
+    if (data.ketepatan_pct !== null && data.ketepatan_pct !== undefined) {
+        bKetepatan.textContent = 'Ketepatan: ' + data.ketepatan_pct + '%';
+        bKetepatan.style.display = 'inline-flex';
+    } else {
+        bKetepatan.textContent = 'Ketepatan: -';
+    }
 
     document.getElementById('modalTotalJadwal').textContent = data.expected;
     document.getElementById('modalHadirTepat').textContent = data.hadir_tepat;
@@ -572,6 +643,8 @@ function openTeacherModal(data) {
     document.getElementById('modalMenitTerlambat').textContent = (data.total_menit_terlambat || 0) + ' mnt';
     document.getElementById('modalDiganti').textContent = data.diganti;
     document.getElementById('modalTidakHadir').textContent = data.tidak_hadir;
+    document.getElementById('modalKehadiranVal').textContent = (data.kehadiran_pct !== undefined ? data.kehadiran_pct : 0) + '%';
+    document.getElementById('modalKetepatanVal').textContent = (data.ketepatan_pct !== null && data.ketepatan_pct !== undefined) ? (data.ketepatan_pct + '%') : '-';
 
     const tbody = document.getElementById('modalDetailsBody');
     tbody.innerHTML = '';
