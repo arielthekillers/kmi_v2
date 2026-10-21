@@ -266,6 +266,9 @@
                                     <a href="<?= url('/attendance/report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
                                         <i class="ri-file-chart-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Piket Keliling
                                     </a>
+                                    <a href="<?= url('/attendance/teacher-report') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-user-star-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Laporan Kehadiran Pengajar
+                                    </a>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -476,6 +479,9 @@
                     </a>
                     <a href="<?= url('/attendance/report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-file-chart-line mr-2"></i>Laporan Piket Keliling
+                    </a>
+                    <a href="<?= url('/attendance/teacher-report') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-user-star-line mr-2"></i>Laporan Kehadiran Pengajar
                     </a>
                 <?php endif; ?>
 

@@ -236,4 +236,124 @@ class AttendanceController extends Controller {
             ]
         ]);
     }
+
+    public function teacherReport() {
+        require_login();
+
+        $today = date('Y-m-d');
+
+        // Calculate Saturday (Sabtu) of the current KMI week (Sabtu - Kamis)
+        $w = (int)date('w'); // 0 (Sun) to 6 (Sat)
+        $daysToSub = ($w === 6) ? 0 : ($w + 1);
+        $defaultStart = date('Y-m-d', strtotime("-{$daysToSub} days"));
+
+        $startDate = $_GET['start'] ?? $defaultStart;
+        $endDate = $_GET['end'] ?? $today;
+
+        if ($startDate > $today) {
+            $startDate = $today;
+        }
+        if ($endDate > $today) {
+            $endDate = $today;
+        }
+
+        $academicYearId = $_GET['academic_year_id'] ?? get_active_academic_year_id();
+        $sort = $_GET['sort'] ?? '';
+        $order = $_GET['order'] ?? 'desc';
+
+        require_once __DIR__ . '/../../helpers/profile_helper.php';
+
+        $data = $this->attendanceModel->getTeacherReportStats($startDate, $endDate, $academicYearId);
+
+        // Access Control: Non-admins and Non-PBM only see their own report
+        $userRole = auth_get_role();
+        $userId = auth_get_user_id();
+        $canViewAll = ($userRole === 'admin' || auth_is_pbm());
+
+        if (!$canViewAll) {
+            $filteredReport = [];
+            if (isset($data['report'][$userId])) {
+                $filteredReport[$userId] = $data['report'][$userId];
+            }
+            $data['report'] = $filteredReport;
+
+            $stats = [
+                'total_jadwal' => 0,
+                'total_hadir_tepat' => 0,
+                'total_terlambat' => 0,
+                'total_menit_terlambat' => 0,
+                'total_diganti' => 0,
+                'total_tidak_hadir' => 0,
+                'avg_kepatuhan' => 0
+            ];
+
+            if (isset($filteredReport[$userId])) {
+                $r = $filteredReport[$userId];
+                $stats['total_jadwal'] = $r['expected'];
+                $stats['total_hadir_tepat'] = $r['hadir_tepat'];
+                $stats['total_terlambat'] = $r['terlambat'];
+                $stats['total_menit_terlambat'] = $r['total_menit_terlambat'];
+                $stats['total_diganti'] = $r['diganti'];
+                $stats['total_tidak_hadir'] = $r['tidak_hadir'];
+                $stats['avg_kepatuhan'] = $r['pct'];
+            }
+
+            $data['globalStats'] = $stats;
+        }
+
+        // Perform sorting if specified
+        if (!empty($sort)) {
+            uasort($data['report'], function($a, $b) use ($sort, $order) {
+                if ($sort === 'kepatuhan') {
+                    $valA = $a['pct'];
+                    $valB = $b['pct'];
+                } elseif ($sort === 'status') {
+                    $valA = $a['status_level'];
+                    $valB = $b['status_level'];
+                } elseif ($sort === 'nama') {
+                    $valA = strtolower($a['name'] ?? '');
+                    $valB = strtolower($b['name'] ?? '');
+                } elseif ($sort === 'jadwal') {
+                    $valA = $a['expected'] ?? 0;
+                    $valB = $b['expected'] ?? 0;
+                } elseif ($sort === 'tepat') {
+                    $valA = $a['hadir_tepat'] ?? 0;
+                    $valB = $b['hadir_tepat'] ?? 0;
+                } elseif ($sort === 'terlambat') {
+                    $valA = $a['terlambat'] ?? 0;
+                    $valB = $b['terlambat'] ?? 0;
+                } elseif ($sort === 'diganti') {
+                    $valA = $a['diganti'] ?? 0;
+                    $valB = $b['diganti'] ?? 0;
+                } elseif ($sort === 'tidak_hadir') {
+                    $valA = $a['tidak_hadir'] ?? 0;
+                    $valB = $b['tidak_hadir'] ?? 0;
+                } else {
+                    return 0;
+                }
+
+                if ($valA == $valB) {
+                    return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+                }
+
+                if ($order === 'asc') {
+                    return ($valA < $valB) ? -1 : 1;
+                } else {
+                    return ($valA > $valB) ? -1 : 1;
+                }
+            });
+        }
+
+        $this->view('attendance/teacher_report', [
+            'title' => 'Laporan Kehadiran Pengajar',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'report' => $data['report'],
+            'globalStats' => $data['globalStats'],
+            'sort' => $sort,
+            'order' => $order,
+            'canViewAll' => $canViewAll
+        ]);
+    }
 }
+

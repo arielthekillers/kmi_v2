@@ -133,6 +133,8 @@ class App
         $this->router->get('/attendance', ['App\Controllers\AttendanceController', 'index']);
         $this->router->post('/attendance/store', ['App\Controllers\AttendanceController', 'store']);
         $this->router->get('/attendance/report', ['App\Controllers\AttendanceController', 'report']);
+        $this->router->get('/attendance/teacher-report', ['App\Controllers\AttendanceController', 'teacherReport']);
+        $this->router->get('/teacher-attendance/report', ['App\Controllers\AttendanceController', 'teacherReport']);
 
         // Student Attendance Routes (Absensi Santri)
         $this->router->get('/student-attendance', ['App\Controllers\StudentAttendanceController', 'index']);
