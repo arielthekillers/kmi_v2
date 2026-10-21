@@ -28,11 +28,11 @@
         border-color: #e5e7eb !important;
     }
 
-    /* Print layout for 7 summary cards in 1 row */
+    /* Print layout for 5 summary cards in 1 row */
     .summary-cards-grid {
         display: grid !important;
-        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 0.25rem !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 0.35rem !important;
         margin-bottom: 0.75rem !important;
     }
     .summary-cards-grid .p-4 {
@@ -131,9 +131,9 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6 summary-cards-grid">
-        <!-- Total Jadwal -->
+    <!-- Summary Cards (Merged into 5 High-Level Cards) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6 summary-cards-grid">
+        <!-- 1. Total Jadwal -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Jadwal</span>
@@ -147,67 +147,61 @@
             </div>
         </div>
 
-        <!-- Hadir Tepat -->
+        <!-- 2. Hadir di Kelas (Gabungan Hadir Tepat & Terlambat) -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 bg-emerald-50/20 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Hadir Tepat</span>
+                <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Hadir di Kelas</span>
                 <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
                     <i class="ri-checkbox-circle-fill text-base"></i>
                 </div>
             </div>
             <div>
-                <div class="text-2xl font-bold text-emerald-700"><?= number_format($globalStats['total_hadir_tepat']) ?></div>
-                <div class="text-[11px] text-emerald-600/80 mt-0.5">
-                    <?= $globalStats['total_jadwal'] > 0 ? round(($globalStats['total_hadir_tepat'] / $globalStats['total_jadwal']) * 100) : 0 ?>% dari jadwal
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-bold text-emerald-800">
+                        <?= number_format($globalStats['total_hadir_tepat'] + $globalStats['total_terlambat']) ?>
+                    </span>
+                    <span class="text-xs text-emerald-600/80 font-medium">
+                        (<?= $globalStats['total_jadwal'] > 0 ? round((($globalStats['total_hadir_tepat'] + $globalStats['total_terlambat']) / $globalStats['total_jadwal']) * 100) : 0 ?>%)
+                    </span>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-emerald-100 flex items-center justify-between text-[11px]">
+                    <span class="text-emerald-700 font-semibold" title="Hadir Tepat Waktu">
+                        <i class="ri-check-line font-bold"></i> <?= number_format($globalStats['total_hadir_tepat']) ?> Tepat
+                    </span>
+                    <span class="text-amber-700 font-semibold" title="Total keterlambatan: <?= number_format($globalStats['total_menit_terlambat']) ?> menit">
+                        <i class="ri-time-line"></i> <?= number_format($globalStats['total_terlambat']) ?> Telat <span class="font-normal text-[10px] text-amber-600">(<?= number_format($globalStats['total_menit_terlambat']) ?>m)</span>
+                    </span>
                 </div>
             </div>
         </div>
 
-        <!-- Terlambat -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-100 bg-amber-50/20 flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Terlambat</span>
-                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                    <i class="ri-alert-fill text-base"></i>
-                </div>
-            </div>
-            <div>
-                <div class="text-2xl font-bold text-amber-700"><?= number_format($globalStats['total_terlambat']) ?></div>
-                <div class="text-[11px] text-amber-600/80 mt-0.5" title="Total keterlambatan">
-                    Total: <span class="font-semibold"><?= number_format($globalStats['total_menit_terlambat']) ?></span> mnt
-                </div>
-            </div>
-        </div>
-
-        <!-- Diganti (Inval) -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 bg-blue-50/20 flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-blue-700 uppercase tracking-wider">Diganti</span>
-                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                    <i class="ri-arrow-left-right-fill text-base"></i>
-                </div>
-            </div>
-            <div>
-                <div class="text-2xl font-bold text-blue-700"><?= number_format($globalStats['total_diganti']) ?></div>
-                <div class="text-[11px] text-blue-600/80 mt-0.5">Diisi guru inval/badal</div>
-            </div>
-        </div>
-
-        <!-- Tidak Hadir / Alpha -->
+        <!-- 3. Izin & Alpha (Gabungan Diganti / Inval & Tidak Hadir) -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-100 bg-rose-50/20 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Tidak Hadir</span>
+                <span class="text-xs font-semibold text-rose-800 uppercase tracking-wider">Izin &amp; Alpha</span>
                 <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                    <i class="ri-close-circle-fill text-base"></i>
+                    <i class="ri-user-unfollow-fill text-base"></i>
                 </div>
             </div>
             <div>
-                <div class="text-2xl font-bold text-rose-700"><?= number_format($globalStats['total_tidak_hadir']) ?></div>
-                <div class="text-[11px] text-rose-600/80 mt-0.5">Alpha / tanpa kabar</div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-bold text-gray-900">
+                        <?= number_format($globalStats['total_diganti'] + $globalStats['total_tidak_hadir']) ?>
+                    </span>
+                    <span class="text-xs text-gray-400 font-medium">sesi</span>
+                </div>
+                <div class="mt-2 pt-1.5 border-t border-rose-100 flex items-center justify-between text-[11px]">
+                    <span class="text-blue-700 font-semibold" title="Diisi guru inval/badal (Sakit/Izin Resmi)">
+                        <i class="ri-arrow-left-right-line"></i> <?= number_format($globalStats['total_diganti']) ?> Inval
+                    </span>
+                    <span class="text-rose-700 font-semibold" title="Alpha / tanpa kabar">
+                        <i class="ri-close-circle-line"></i> <?= number_format($globalStats['total_tidak_hadir']) ?> Alpha
+                    </span>
+                </div>
             </div>
         </div>
 
-        <!-- Rata-rata Kehadiran -->
+        <!-- 4. Rata-rata Kehadiran -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 bg-emerald-50/20 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Kehadiran</span>
@@ -224,7 +218,7 @@
             </div>
         </div>
 
-        <!-- Rata-rata Ketepatan Waktu -->
+        <!-- 5. Rata-rata Ketepatan Waktu -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 bg-blue-50/20 flex flex-col justify-between">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-blue-800 uppercase tracking-wider">Ketepatan</span>
@@ -512,36 +506,36 @@
                 </button>
             </div>
 
-            <!-- Mini Summary in Modal -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-4">
+            <!-- Mini Summary in Modal (Merged into 5 Cards) -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
                 <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200/70 text-center">
                     <div class="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Total Jadwal</div>
                     <div class="text-lg font-bold text-gray-900 mt-0.5" id="modalTotalJadwal">0</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">Sesi KBM</div>
                 </div>
                 <div class="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100 text-center">
-                    <div class="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Hadir Tepat</div>
-                    <div class="text-lg font-bold text-emerald-700 mt-0.5" id="modalHadirTepat">0</div>
-                </div>
-                <div class="bg-amber-50/50 p-2.5 rounded-lg border border-amber-100 text-center">
-                    <div class="text-[10px] uppercase tracking-wider font-semibold text-amber-700">Terlambat</div>
-                    <div class="text-lg font-bold text-amber-700 mt-0.5" id="modalTerlambat">0</div>
-                    <div class="text-[10px] text-amber-600 mt-0.5" id="modalMenitTerlambat">0 mnt</div>
-                </div>
-                <div class="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 text-center">
-                    <div class="text-[10px] uppercase tracking-wider font-semibold text-blue-700">Diganti</div>
-                    <div class="text-lg font-bold text-blue-700 mt-0.5" id="modalDiganti">0</div>
+                    <div class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800">Hadir di Kelas</div>
+                    <div class="text-lg font-bold text-emerald-800 mt-0.5" id="modalHadirTotal">0</div>
+                    <div class="text-[10px] text-emerald-700 mt-0.5 font-medium">
+                        <span id="modalHadirTepat">0</span> Tepat • <span id="modalTerlambat">0</span> Telat (<span id="modalMenitTerlambat">0m</span>)
+                    </div>
                 </div>
                 <div class="bg-rose-50/50 p-2.5 rounded-lg border border-rose-100 text-center">
-                    <div class="text-[10px] uppercase tracking-wider font-semibold text-rose-700">Tidak Hadir</div>
-                    <div class="text-lg font-bold text-rose-700 mt-0.5" id="modalTidakHadir">0</div>
+                    <div class="text-[10px] uppercase tracking-wider font-semibold text-rose-800">Izin &amp; Alpha</div>
+                    <div class="text-lg font-bold text-gray-900 mt-0.5" id="modalAbsenTotal">0</div>
+                    <div class="text-[10px] text-gray-600 mt-0.5 font-medium">
+                        <span class="text-blue-700" id="modalDiganti">0</span> Inval • <span class="text-rose-700" id="modalTidakHadir">0</span> Alpha
+                    </div>
                 </div>
                 <div class="bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200 text-center">
                     <div class="text-[10px] uppercase tracking-wider font-semibold text-emerald-800">Kehadiran</div>
                     <div class="text-lg font-bold text-emerald-800 mt-0.5" id="modalKehadiranVal">0%</div>
+                    <div class="text-[10px] text-emerald-600 mt-0.5">Hadir &amp; Izin</div>
                 </div>
                 <div class="bg-blue-50/70 p-2.5 rounded-lg border border-blue-200 text-center">
                     <div class="text-[10px] uppercase tracking-wider font-semibold text-blue-800">Ketepatan</div>
                     <div class="text-lg font-bold text-blue-800 mt-0.5" id="modalKetepatanVal">0%</div>
+                    <div class="text-[10px] text-blue-600 mt-0.5">Dari Sesi Hadir</div>
                 </div>
             </div>
 
@@ -637,10 +631,15 @@ function openTeacherModal(data) {
         bKetepatan.textContent = 'Ketepatan: -';
     }
 
+    const hadirTotal = (parseInt(data.hadir_tepat) || 0) + (parseInt(data.terlambat) || 0);
+    const absenTotal = (parseInt(data.diganti) || 0) + (parseInt(data.tidak_hadir) || 0);
+    document.getElementById('modalHadirTotal').textContent = hadirTotal;
+    document.getElementById('modalAbsenTotal').textContent = absenTotal;
+
     document.getElementById('modalTotalJadwal').textContent = data.expected;
     document.getElementById('modalHadirTepat').textContent = data.hadir_tepat;
     document.getElementById('modalTerlambat').textContent = data.terlambat;
-    document.getElementById('modalMenitTerlambat').textContent = (data.total_menit_terlambat || 0) + ' mnt';
+    document.getElementById('modalMenitTerlambat').textContent = (data.total_menit_terlambat || 0) + 'm';
     document.getElementById('modalDiganti').textContent = data.diganti;
     document.getElementById('modalTidakHadir').textContent = data.tidak_hadir;
     document.getElementById('modalKehadiranVal').textContent = (data.kehadiran_pct !== undefined ? data.kehadiran_pct : 0) + '%';
