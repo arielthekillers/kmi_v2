@@ -25,8 +25,11 @@ class App
         // Profile Routes
         $this->router->get('/profil', ['App\Controllers\ProfileController', 'index']);
         $this->router->post('/profil/simpan', ['App\Controllers\ProfileController', 'update']);
-        $this->router->get('/change-password', ['App\Controllers\ProfileController', 'changePassword']);
-        $this->router->post('/change-password/update', ['App\Controllers\ProfileController', 'updatePassword']);
+        $this->router->get('/settings/password', ['App\Controllers\SettingsController', 'adminPassword']);
+        $this->router->post('/settings/password/update', ['App\Controllers\SettingsController', 'updateAdminPassword']);
+        $this->router->get('/admin/password', ['App\Controllers\SettingsController', 'adminPassword']);
+        $this->router->get('/change-password', ['App\Controllers\SettingsController', 'adminPassword']);
+        $this->router->post('/change-password/update', ['App\Controllers\SettingsController', 'updateAdminPassword']);
 
         // Teacher Schedule
         $this->router->get('/jadwal-saya', ['App\Controllers\ScheduleController', 'mySchedule']);

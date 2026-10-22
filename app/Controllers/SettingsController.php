@@ -265,4 +265,80 @@ class SettingsController extends Controller {
         add_flash('Daftar motto/quotes berhasil diperbarui!', 'success');
         $this->redirect('/settings/tv/quotes');
     }
+
+    public function adminPassword() {
+        require_admin();
+        $db = \App\Core\Database::getInstance()->getConnection();
+        
+        $currentUserId = auth_get_user_id();
+        $stmt = $db->prepare("SELECT id, username, nama, role, updated_at FROM users WHERE id = ?");
+        $stmt->execute([$currentUserId]);
+        $currentUser = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // Fetch all admin accounts in case there are multiple
+        $adminStmt = $db->query("SELECT id, username, nama, updated_at FROM users WHERE role = 'admin' AND deleted_at IS NULL ORDER BY id ASC");
+        $allAdmins = $adminStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $this->view('settings/password', [
+            'title' => 'Settings - Ganti Password Admin',
+            'currentUser' => $currentUser,
+            'allAdmins' => $allAdmins
+        ]);
+    }
+
+    public function updateAdminPassword() {
+        require_admin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/settings/password');
+        }
+
+        csrf_validate_token();
+
+        $targetUserId = (int)($_POST['target_user_id'] ?? auth_get_user_id());
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        $db = \App\Core\Database::getInstance()->getConnection();
+        
+        // Target admin user
+        $stmt = $db->prepare("SELECT id, username, nama, password, role FROM users WHERE id = ? AND role = 'admin' AND deleted_at IS NULL");
+        $stmt->execute([$targetUserId]);
+        $targetUser = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$targetUser) {
+            add_flash('Akun admin tidak ditemukan.', 'error');
+            $this->redirect('/settings/password');
+        }
+
+        // Verify current password of the logged-in admin
+        $loggedInUserId = auth_get_user_id();
+        $loggedStmt = $db->prepare("SELECT password FROM users WHERE id = ?");
+        $loggedStmt->execute([$loggedInUserId]);
+        $loggedInUser = $loggedStmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$loggedInUser || !password_verify($currentPassword, $loggedInUser['password'])) {
+            add_flash('Password saat ini (password lama) tidak sesuai.', 'error');
+            $this->redirect('/settings/password');
+        }
+
+        if (strlen($newPassword) < 6) {
+            add_flash('Password baru minimal 6 karakter.', 'error');
+            $this->redirect('/settings/password');
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            add_flash('Konfirmasi password baru tidak cocok.', 'error');
+            $this->redirect('/settings/password');
+        }
+
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ?, updated_at = NOW() WHERE id = ?");
+        $upd->execute([$hashed, $newPassword, $targetUser['id']]);
+
+        log_activity("Admin mengubah password akun: {$targetUser['username']} (ID: {$targetUser['id']})");
+        add_flash("Password untuk akun {$targetUser['username']} berhasil diperbarui!", 'success');
+        $this->redirect('/settings/password');
+    }
 }
