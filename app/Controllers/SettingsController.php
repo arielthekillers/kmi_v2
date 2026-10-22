@@ -174,9 +174,8 @@ class SettingsController extends Controller {
 
         // Validate MIME
         $allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/x-m4a'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime  = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($file['tmp_name']);
 
         if (!in_array($mime, $allowedMimes)) {
             add_flash('Format tidak didukung. Gunakan MP3, OGG, WAV, atau M4A.', 'error');

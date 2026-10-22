@@ -86,9 +86,8 @@ class ProfileController extends Controller {
             $file = $_FILES['profile_picture'];
             
             $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mimeType = finfo_file($finfo, $file['tmp_name']);
-            finfo_close($finfo);
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $finfo->file($file['tmp_name']);
             
             if (!in_array($mimeType, $allowedTypes)) {
                 add_flash('Format file tidak didukung. Gunakan JPG, PNG, atau WebP.', 'error');
@@ -200,27 +199,22 @@ class ProfileController extends Controller {
         } elseif (strlen($newPassword) < 4) {
             $result = ['success' => false, 'message' => 'Password minimal 4 karakter'];
         } else {
-            require_once __DIR__ . '/../../helpers/file_helper.php';
-            $usersFile = __DIR__ . '/../../data/users.json';
-            $found = false;
-            
-            $updated = update_json_file($usersFile, function(&$users) use ($username, $newPassword, &$found) {
-                foreach ($users as $key => &$user) {
-                    if (isset($user['username']) && $user['username'] === $username) {
-                        $user['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-                        $user['updated_at'] = date('Y-m-d H:i:s');
-                        $found = true;
-                        break;
-                    }
-                }
-            });
+            try {
+                $db = \App\Core\Database::getInstance()->getConnection();
+                $stmt = $db->prepare("SELECT id FROM users WHERE username = ? AND deleted_at IS NULL");
+                $stmt->execute([$username]);
+                $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-            if (!$updated) {
-                $result = ['success' => false, 'message' => 'Gagal menyimpan file (Locked)'];
-            } elseif (!$found) {
-                $result = ['success' => false, 'message' => "User dengan username '$username' tidak ditemukan"];
-            } else {
-                $result = ['success' => true, 'message' => 'Password berhasil diubah!'];
+                if (!$user) {
+                    $result = ['success' => false, 'message' => "User dengan username '$username' tidak ditemukan"];
+                } else {
+                    $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+                    $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
+                    $upd->execute([$hashed, $newPassword, $user['id']]);
+                    $result = ['success' => true, 'message' => 'Password berhasil diubah!'];
+                }
+            } catch (\Exception $e) {
+                $result = ['success' => false, 'message' => 'Gagal mengubah password: ' . $e->getMessage()];
             }
         }
         
