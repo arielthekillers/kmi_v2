@@ -19,8 +19,8 @@ class AttendanceController extends Controller {
         
         $date = $_GET['date'] ?? date('Y-m-d');
         
-        // Check Permissions (Piket Keliling allowed)
-        if (!auth_is_piket_keliling_today($date) && auth_get_role() !== 'admin') {
+        // Check Permissions (Piket Keliling, PBM, & Admin allowed)
+        if (!auth_is_piket_keliling_today($date) && auth_get_role() !== 'admin' && !auth_is_pbm()) {
             add_flash('Anda tidak memiliki akses untuk mengelola absensi pada tanggal ini.', 'error');
             $this->redirect('/');
         }
@@ -83,8 +83,8 @@ class AttendanceController extends Controller {
         
         list($kelasId, $hour) = explode('|', $key);
 
-        // Permission Check
-        if (!auth_is_piket_keliling_today($date, $hour) && auth_get_role() !== 'admin') {
+        // Permission Check (Piket Keliling, PBM, & Admin allowed)
+        if (!auth_is_piket_keliling_today($date, $hour) && auth_get_role() !== 'admin' && !auth_is_pbm()) {
              add_flash('Access Denied: Anda tidak bertugas pada sesi ini.', 'error');
              $this->redirect('/attendance?date=' . urlencode($date));
         }
