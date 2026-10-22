@@ -337,6 +337,12 @@ class SettingsController extends Controller {
         $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ?, updated_at = NOW() WHERE id = ?");
         $upd->execute([$hashed, $newPassword, $targetUser['id']]);
 
+        // If the logged-in admin changed their own password, keep THIS computer logged in by updating its session hash.
+        // All other computers holding the old hash will be invalidated and logged out automatically.
+        if ($targetUser['id'] === $loggedInUserId && isset($_SESSION['user']) && is_array($_SESSION['user'])) {
+            $_SESSION['user']['password_hash'] = $hashed;
+        }
+
         log_activity("Admin mengubah password akun: {$targetUser['username']} (ID: {$targetUser['id']})");
         add_flash("Password untuk akun {$targetUser['username']} berhasil diperbarui!", 'success');
         $this->redirect('/settings/password');

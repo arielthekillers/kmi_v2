@@ -211,6 +211,9 @@ class ProfileController extends Controller {
                     $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
                     $upd = $db->prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?");
                     $upd->execute([$hashed, $newPassword, $user['id']]);
+                    if (isset($_SESSION['user']) && is_array($_SESSION['user']) && (($_SESSION['user']['id'] ?? null) == $user['id'] || ($_SESSION['user']['username'] ?? null) === $user['username'])) {
+                        $_SESSION['user']['password_hash'] = $hashed;
+                    }
                     $result = ['success' => true, 'message' => 'Password berhasil diubah!'];
                 }
             } catch (\Exception $e) {

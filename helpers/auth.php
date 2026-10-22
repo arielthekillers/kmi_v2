@@ -148,18 +148,7 @@ if (!function_exists('is_logged_in')) {
     function is_logged_in()
     {
         auth_start_session();
-        $u = $_SESSION['user'] ?? null;
-        if (is_null($u)) return false;
-        if (is_string($u)) {
-            // Only treat as logged-in if the string matches a known username
-            return (bool) find_user_by_username($u);
-        }
-        if (is_array($u)) {
-            $username = $u['username'] ?? null;
-            if ($username) return (bool) find_user_by_username($username);
-            return false;
-        }
-        return false;
+        return (auth_get_current_user() !== null);
     }
 }
 
@@ -268,18 +257,7 @@ if (!function_exists('auth_get_current_user')) {
         if (is_null($u)) return null;
 
         if (is_string($u)) {
-            $found = find_user_by_username($u);
-            if ($found) {
-                // Normalize to canonical array
-                $_SESSION['user'] = [
-                    'username' => $found['username'],
-                    'nama' => $found['nama'] ?? $found['username'],
-                    'role' => $found['role'] ?? 'admin',
-                    'password_hash' => $found['password'],
-                    'id' => $found['id'] ?? null
-                ];
-                return $_SESSION['user'];
-            }
+            // String format is legacy/unverified. Force logout so user logs in cleanly with hash.
             unset($_SESSION['user']);
             return null;
         }
@@ -289,8 +267,9 @@ if (!function_exists('auth_get_current_user')) {
             if ($username) {
                 $found = find_user_by_username($username);
                 if ($found) {
-                    // If session password hash exists, verify it matches database
-                    if (isset($u['password_hash']) && $found['password'] !== $u['password_hash']) {
+                    // Session MUST have a password hash and it MUST match the current database password.
+                    // When a password is reset, all sessions on other devices holding the old hash are immediately logged out.
+                    if (empty($u['password_hash']) || $found['password'] !== $u['password_hash']) {
                         unset($_SESSION['user']);
                         return null;
                     }
@@ -307,7 +286,8 @@ if (!function_exists('auth_get_current_user')) {
                 unset($_SESSION['user']);
                 return null;
             }
-            return $u;
+            unset($_SESSION['user']);
+            return null;
         }
 
         return null;
