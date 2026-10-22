@@ -232,6 +232,11 @@
                                      <a href="<?= url('/muwajjah') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
                                          <i class="ri-moon-clear-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Absensi Muwajjah
                                      </a>
+                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                                        <a href="<?= url('/leaves') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                            <i class="ri-user-unfollow-fill text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Izin Mengajar
+                                        </a>
+                                    <?php endif; ?>
                                      
                                      <div class="border-b border-gray-50 pb-2 mb-1"></div>
 
@@ -447,6 +452,11 @@
                     <a href="<?= url('/muwajjah') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-moon-clear-line mr-2"></i>Absensi Muwajjah
                     </a>
+                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                        <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
+                        </a>
+                    <?php endif; ?>
 
                     <a href="<?= url('/tanqih') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 mt-1">
                         <i class="ri-checkbox-circle-line mr-2"></i>Tanqih Idad
