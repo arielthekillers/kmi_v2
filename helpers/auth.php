@@ -388,7 +388,7 @@ if (!function_exists('auth_is_piket_keliling_today')) {
     function auth_is_piket_keliling_today($date = null, $hour = null)
     {
         $role = auth_get_role();
-        if ($role === 'admin' || (function_exists('auth_is_pbm') && auth_is_pbm())) return true; 
+        if ($role === 'admin') return true; 
         if ($role !== 'pengajar') return false;
 
         $userId = auth_get_user_id();

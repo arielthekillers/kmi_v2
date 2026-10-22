@@ -86,7 +86,8 @@
                                 ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-100' 
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
                             
-                            $isDetected = ($jam == ($currentDetectedHour ?? ''));
+                            $isUserAdmin = ($isAdmin ?? (auth_get_role() === 'admin'));
+                            $isDetected = ($selectedDate === date('Y-m-d') && $jam == ($currentDetectedHour ?? ''));
                         ?>
                             <a href="?date=<?= htmlspecialchars($selectedDate) ?>&jam=<?= $jam ?>" 
                                id="<?= $isActive ? 'active-jam-tab' : '' ?>"
@@ -98,6 +99,8 @@
                                     <span class="flex-shrink-0">Jam ke-<?= $jam ?></span>
                                     <?php if ($isDetected): ?>
                                         <span class="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse flex-shrink-0" title="Sedang Berlangsung"></span>
+                                    <?php elseif (!$isUserAdmin): ?>
+                                        <i class="ri-lock-line text-xs text-gray-400 flex-shrink-0" title="Terkunci (Hanya aktif saat jam berlangsung)"></i>
                                     <?php endif; ?>
                                 </div>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ml-2 <?= $badgeClass ?>">
@@ -117,6 +120,20 @@
                         Menampilkan <?= count($slotsByJam[$activeJam]) ?> kelas
                     </div>
                 </div>
+
+                <?php 
+                $isHourActive = ($selectedDate === date('Y-m-d') && $currentDetectedHour !== null && (int)$activeJam === (int)$currentDetectedHour);
+                ?>
+
+                <?php if (!$isUserAdmin && !$isHourActive): ?>
+                    <div class="mb-5 p-3.5 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-800 text-xs flex items-center gap-2.5 shadow-sm">
+                        <i class="ri-lock-2-line text-base text-amber-600 flex-shrink-0"></i>
+                        <div>
+                            <span class="font-bold">Jam pelajaran ini terkunci untuk pengeditan.</span>
+                            <span>Petugas piket keliling hanya dapat mencatat dan mengedit absensi saat jam pelajaran aktif berlangsung. Hanya Administrator yang dapat mengubah data di luar jam aktif.</span>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <?php foreach ($slotsByJam[$activeJam] as $slot): 
@@ -208,6 +225,13 @@
                                         class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-bold rounded-xl shadow-sm text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed">
                                      <i class="ri-close-circle-line mr-2 text-sm"></i>
                                      Bebas KBM
+                                 </button>
+                             <?php elseif (!$isUserAdmin && !$isHourActive): ?>
+                                 <button disabled 
+                                        class="w-full inline-flex justify-center items-center px-4 py-2.5 text-xs font-semibold rounded-xl text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                                        title="Hanya dapat dicatat/diedit saat jam pelajaran aktif berlangsung oleh petugas piket keliling atau Admin">
+                                     <i class="ri-lock-line mr-1.5 text-sm"></i>
+                                     <?= $hasRecord ? 'Terkunci (Selesai)' : 'Terkunci' ?>
                                  </button>
                              <?php else: ?>
                                  <button onclick="openAbsensiModal('<?= $slot['key'] ?>', <?= htmlspecialchars(json_encode($slot['kelas_name']), ENT_QUOTES) ?>, '<?= $slot['hour'] ?>', <?= htmlspecialchars(json_encode($slot['mapel_name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($slot['teacher_name']), ENT_QUOTES) ?>, '<?= $slot['pengajar_id'] ?>', <?= htmlspecialchars(json_encode($absensi), ENT_QUOTES, 'UTF-8') ?>)" 

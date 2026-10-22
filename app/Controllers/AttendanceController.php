@@ -18,9 +18,10 @@ class AttendanceController extends Controller {
         require_login();
         
         $date = $_GET['date'] ?? date('Y-m-d');
+        $isAdmin = (auth_get_role() === 'admin');
         
-        // Check Permissions (Piket Keliling, PBM, & Admin allowed)
-        if (!auth_is_piket_keliling_today($date) && auth_get_role() !== 'admin' && !auth_is_pbm()) {
+        // Check Permissions: Only Admin and Piket Keliling on this date are allowed
+        if (!$isAdmin && !auth_is_piket_keliling_today($date)) {
             add_flash('Anda tidak memiliki akses untuk mengelola absensi pada tanggal ini.', 'error');
             $this->redirect('/');
         }
@@ -52,7 +53,7 @@ class AttendanceController extends Controller {
         foreach ($hoursConfig as $row) {
             if ($row['type'] === 'jam') {
                 if ($currentTime >= $row['start'] && $currentTime <= $row['end']) {
-                    $currentHour = $row['value'];
+                    $currentHour = (int)$row['value'];
                     break;
                 }
             }
@@ -63,7 +64,8 @@ class AttendanceController extends Controller {
             'selectedDate' => $date,
             'schedule' => $schedule,
             'pengajarList' => $pengajarList,
-            'currentDetectedHour' => $currentHour
+            'currentDetectedHour' => $currentHour,
+            'isAdmin' => $isAdmin
         ]);
     }
 
@@ -83,10 +85,40 @@ class AttendanceController extends Controller {
         
         list($kelasId, $hour) = explode('|', $key);
 
-        // Permission Check (Piket Keliling, PBM, & Admin allowed)
-        if (!auth_is_piket_keliling_today($date, $hour) && auth_get_role() !== 'admin' && !auth_is_pbm()) {
-             add_flash('Access Denied: Anda tidak bertugas pada sesi ini.', 'error');
-             $this->redirect('/attendance?date=' . urlencode($date));
+        $isAdmin = (auth_get_role() === 'admin');
+
+        // Permission & Active Hour Check: Admin has full access anytime; Piket Keliling only during active lesson hour today
+        if (!$isAdmin) {
+            $today = date('Y-m-d');
+            if ($date !== $today) {
+                add_flash('Petugas piket keliling hanya dapat mencatat absensi pada hari ini.', 'error');
+                $this->redirect('/attendance?date=' . urlencode($date));
+            }
+
+            if (!auth_is_piket_keliling_today($date, $hour)) {
+                 add_flash('Access Denied: Anda tidak bertugas pada sesi ini.', 'error');
+                 $this->redirect('/attendance?date=' . urlencode($date));
+            }
+
+            // Determine if $hour is currently active
+            $settingModel = new \App\Models\SettingModel();
+            $hoursConfig = $settingModel->getTvHours();
+            $currentTime = date('H:i');
+            $currentHour = null;
+
+            foreach ($hoursConfig as $row) {
+                if ($row['type'] === 'jam') {
+                    if ($currentTime >= $row['start'] && $currentTime <= $row['end']) {
+                        $currentHour = (int)$row['value'];
+                        break;
+                    }
+                }
+            }
+
+            if ($currentHour === null || (int)$hour !== $currentHour) {
+                add_flash("Jam ke-{$hour} tidak sedang aktif berlangsung. Petugas piket hanya dapat mencatat absensi pada jam pelajaran yang sedang berjalan.", 'error');
+                $this->redirect('/attendance?date=' . urlencode($date) . '&jam=' . urlencode($hour));
+            }
         }
 
         $data = [
