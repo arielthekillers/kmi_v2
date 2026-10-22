@@ -232,7 +232,7 @@
                                      <a href="<?= url('/muwajjah') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
                                          <i class="ri-moon-clear-line text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Absensi Muwajjah
                                      </a>
-                                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                                    <?php if (auth_get_role() !== 'admin' && auth_is_pbm()): ?>
                                         <a href="<?= url('/leaves') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
                                             <i class="ri-user-unfollow-fill text-gray-400 group-hover/item:text-indigo-600 transition-colors"></i> Izin Mengajar
                                         </a>
@@ -431,11 +431,9 @@
                     <a href="<?= url('/student-attendance/pbm') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-group-line mr-2"></i>Petugas PBM
                     </a>
-                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
-                        <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
-                        </a>
-                    <?php endif; ?>
+                    <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
+                    </a>
                     <a href="<?= url('/academic-calendar') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-calendar-event-line mr-2"></i>Kalender Akademik
                     </a>
@@ -452,7 +450,7 @@
                     <a href="<?= url('/muwajjah') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                         <i class="ri-moon-clear-line mr-2"></i>Absensi Muwajjah
                     </a>
-                    <?php if (auth_get_role() === 'admin' || auth_is_pbm()): ?>
+                    <?php if (auth_get_role() !== 'admin' && auth_is_pbm()): ?>
                         <a href="<?= url('/leaves') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-user-unfollow-fill mr-2"></i>Izin Mengajar
                         </a>
