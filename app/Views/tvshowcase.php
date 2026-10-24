@@ -1323,49 +1323,45 @@
                     const targetText = slide.totalClasses ? `Seluruh Santri (${slide.totalClasses} Kelas)` : 'Seluruh Santri (Kelas 1 - 6)';
 
                     html = `
-                    <div class="h-full w-full rounded-2xl relative overflow-hidden flex flex-col justify-between p-6 sm:p-8 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-indigo-500/10 border-2 border-amber-200/80 backdrop-blur-sm shadow-inner group animate-fade-in-down">
-                        <!-- Subtle decorative background rings -->
-                        <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-amber-300/20 to-orange-400/10 blur-2xl pointer-events-none"></div>
-                        <div class="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-gradient-to-tr from-indigo-300/20 to-purple-400/10 blur-2xl pointer-events-none"></div>
-                        
+                    <div class="h-full w-full flex flex-col justify-between animate-fade-in-down">
                         <!-- Top Bar: Status Badges -->
-                        <div class="flex items-center justify-between z-10">
-                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs uppercase tracking-widest shadow-md shadow-amber-200">
+                        <div class="flex items-center justify-between">
+                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs uppercase tracking-wider shadow-sm">
                                 <span class="relative flex h-2 w-2">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                                     <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                                 </span>
                                 Dispensasi KBM Aktif
                             </div>
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-amber-200 text-amber-800 font-bold text-xs shadow-xs backdrop-blur-sm">
-                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200/80 text-slate-600 font-semibold text-xs">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 Agenda Kalender Akademik
                             </div>
                         </div>
 
                         <!-- Center Body: Big Event Name & Icons -->
-                        <div class="flex flex-col items-center justify-center text-center my-auto py-4 z-10">
-                            <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-xl shadow-amber-300/60 mb-4 transform group-hover:scale-105 transition-transform duration-300">
+                        <div class="flex flex-col items-center justify-center text-center my-auto py-6">
+                            <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-300/40 mb-4 transform transition-transform duration-300 hover:scale-105">
                                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                 </svg>
                             </div>
-                            <h1 class="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight leading-snug mb-2 max-w-xl">
+                            <h1 class="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight leading-snug mb-2 max-w-2xl">
                                 ${escapeHtml(eventName)}
                             </h1>
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-100/80 border border-amber-200 text-amber-900 font-bold text-xs uppercase tracking-wider mb-2">
+                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-amber-900 font-bold text-xs uppercase tracking-wider mb-2">
                                 <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 Kegiatan Belajar Mengajar (KBM) Bebas / Diliburkan
                             </div>
-                            <p class="text-xs sm:text-sm text-slate-500 max-w-md font-medium">
+                            <p class="text-xs sm:text-sm text-slate-500 max-w-lg font-medium">
                                 Seluruh santri dan pengajar diliburkan dari kegiatan belajar mengajar di kelas untuk mengikuti rangkaian agenda kegiatan.
                             </p>
                         </div>
 
                         <!-- Bottom Info Cards Grid -->
-                        <div class="grid grid-cols-3 gap-3 z-10">
-                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
                                 <div class="min-w-0">
@@ -1374,8 +1370,8 @@
                                 </div>
                             </div>
 
-                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                 </div>
                                 <div class="min-w-0">
@@ -1384,8 +1380,8 @@
                                 </div>
                             </div>
 
-                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                            <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
                                 <div class="min-w-0">
