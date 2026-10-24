@@ -584,8 +584,8 @@
                         </svg>
                     </div>
                     <div class="leading-tight">
-                        <div class="tracking-tight">Jadwal Pelajaran</div>
-                        <div class="text-[10px] font-normal text-indigo-100 tracking-wide -mt-1">Monitoring Proses
+                        <div id="schedule-header-title" class="tracking-tight">Jadwal Pelajaran</div>
+                        <div id="schedule-header-subtitle" class="text-[10px] font-normal text-indigo-100 tracking-wide -mt-1">Monitoring Proses
                             Belajar Mengajar</div>
                     </div>
                 </h2>
@@ -705,7 +705,11 @@
             piket: { syeikh: [], keliling: [] },
             hours_config: [],
             bgm_youtube: '',
-            muwajjah_stats: null
+            muwajjah_stats: null,
+            dispensations: [],
+            today_activities: [],
+            today_calendar_events: [],
+            is_friday: false
         };
 
         let slideInterval = null;
@@ -939,8 +943,66 @@
                 }
             }
 
-            if (activeHour && scheduleData[activeHour]) {
-                const items = scheduleData[activeHour];
+            const items = (activeHour && scheduleData[activeHour]) ? scheduleData[activeHour] : [];
+            const allDispensed = items.length > 0 && items.every(item => item.is_dispensation);
+            const someDispensed = items.some(item => item.is_dispensation);
+
+            // 1. If all classes in this active hour are dispensed: SHOW DEDICATED EVENT SLIDE(S)!
+            if (allDispensed) {
+                let matchingDisps = (appData.dispensations || []).filter(d => {
+                    if (d.is_full_day) return true;
+                    if (d.hours && d.hours.length > 0) {
+                        return d.hours.some(h => parseInt(activeHour) >= parseInt(h.hour_start) && parseInt(activeHour) <= parseInt(h.hour_end));
+                    }
+                    return false;
+                });
+
+                if (matchingDisps.length === 0 && items.length > 0) {
+                    const names = [...new Set(items.map(it => it.dispensation_name).filter(Boolean))];
+                    matchingDisps = names.map(n => ({
+                        name: n,
+                        is_full_day: true,
+                        kelas_ids: []
+                    }));
+                }
+
+                if (matchingDisps.length === 0) {
+                    matchingDisps = [{
+                        name: 'Kegiatan Pondok / Bebas KBM',
+                        is_full_day: true,
+                        kelas_ids: []
+                    }];
+                }
+
+                matchingDisps.forEach(disp => {
+                    slides.push({
+                        type: 'dispensation_event',
+                        hour: activeHour,
+                        name: disp.name,
+                        is_full_day: disp.is_full_day,
+                        totalClasses: items.length
+                    });
+                });
+                return slides;
+            }
+
+            // 2. Normal / Partial schedules
+            if (activeHour && items.length > 0) {
+                // If partial dispensation, also add an overview event slide to rotation
+                if (someDispensed) {
+                    const dispNames = [...new Set(items.filter(it => it.is_dispensation).map(it => it.dispensation_name).filter(Boolean))];
+                    dispNames.forEach(dName => {
+                        slides.push({
+                            type: 'dispensation_event',
+                            hour: activeHour,
+                            name: dName,
+                            is_full_day: false,
+                            isPartial: true,
+                            totalClasses: items.length
+                        });
+                    });
+                }
+
                 const groups = {};
                 items.forEach(item => {
                     const match = item.kelas.match(/^(\d+)/);
@@ -968,11 +1030,33 @@
                 });
             }
 
+            // 3. Fallback when no classes are active
             if (slides.length === 0) {
-                slides.push({
-                    type: 'empty',
-                    message: activeHour ? 'Tidak ada data untuk Jam Ke-' + activeHour : 'Tidak ada kegiatan KBM saat ini'
-                });
+                const todayDisps = appData.dispensations || [];
+                if (todayDisps.length > 0) {
+                    todayDisps.forEach(disp => {
+                        slides.push({
+                            type: 'dispensation_event',
+                            hour: activeHour || null,
+                            name: disp.name,
+                            is_full_day: disp.is_full_day,
+                            totalClasses: 0
+                        });
+                    });
+                } else if (appData.is_friday) {
+                    slides.push({
+                        type: 'dispensation_event',
+                        hour: null,
+                        name: 'Libur Mingguan (Jumat)',
+                        is_full_day: true,
+                        totalClasses: 0
+                    });
+                } else {
+                    slides.push({
+                        type: 'empty',
+                        message: activeHour ? 'Tidak ada data untuk Jam Ke-' + activeHour : 'Tidak ada kegiatan KBM saat ini'
+                    });
+                }
             }
 
             return slides;
@@ -1079,6 +1163,10 @@
                 appData.bgm_youtube = data.bgm_youtube || '';
                 appData.master_stats = data.master_stats || null;
                 appData.muwajjah_stats = data.muwajjah_stats || null;
+                appData.dispensations = data.dispensations || [];
+                appData.today_activities = data.today_activities || [];
+                appData.today_calendar_events = data.today_calendar_events || [];
+                appData.is_friday = data.is_friday || false;
 
                 const newSlides = processSlides(data.schedule_by_hour);
                 appData.activeSlides = newSlides;
@@ -1145,6 +1233,8 @@
         function renderCurrentSlide() {
             const container = document.getElementById('schedule-container');
             const badge = document.getElementById('schedule-hour-badge');
+            const headerTitle = document.getElementById('schedule-header-title');
+            const headerSubtitle = document.getElementById('schedule-header-subtitle');
 
             if (appData.activeSlides.length === 0) return;
 
@@ -1153,10 +1243,21 @@
             if (slide.type === 'schedule') {
                 const gradeLabel = slide.grade ? ` • Kelas ${slide.grade}` : '';
                 badge.textContent = `Jam Ke-${slide.hour}${gradeLabel} (${slide.page}/${slide.totalPages})`;
+                if (headerTitle) headerTitle.textContent = 'Jadwal Pelajaran';
+                if (headerSubtitle) headerSubtitle.textContent = 'Monitoring Proses Belajar Mengajar';
+            } else if (slide.type === 'dispensation_event') {
+                const hourLabel = slide.hour ? `Jam Ke-${slide.hour} • ` : '';
+                badge.textContent = `${hourLabel}Bebas KBM`;
+                if (headerTitle) headerTitle.textContent = 'Dispensasi KBM';
+                if (headerSubtitle) headerSubtitle.textContent = 'Agenda Kalender Akademik';
             } else if (slide.type === 'muwajjah_schedule') {
                 const gradeLabel = slide.grade ? ` • Kelas ${slide.grade}` : '';
                 badge.textContent = `Muwajjah${gradeLabel} (${slide.page}/${slide.totalPages})`;
+                if (headerTitle) headerTitle.textContent = 'Muwajjah Santri';
+                if (headerSubtitle) headerSubtitle.textContent = 'Monitoring Pendampingan Belajar Malam';
             } else if (slide.type === 'break') {
+                if (headerTitle) headerTitle.textContent = 'Waktu Istirahat';
+                if (headerSubtitle) headerSubtitle.textContent = 'Jeda Kegiatan Belajar Mengajar';
                 // Update badge for break time
                 if (slide.breakType === 'istirahat1') {
                     badge.textContent = 'Istirahat I (08:30 - 09:00)';
@@ -1167,6 +1268,8 @@
                 }
             } else {
                 badge.textContent = 'Info';
+                if (headerTitle) headerTitle.textContent = 'Informasi';
+                if (headerSubtitle) headerSubtitle.textContent = 'KMI Darussalam Bogor';
             }
 
             container.style.opacity = '0';
@@ -1213,6 +1316,86 @@
                             <div class="text-lg font-medium text-slate-500">${breakSubmessage}</div>
                         </div>
                     </div>`;
+                } else if (slide.type === 'dispensation_event') {
+                    const eventName = slide.name || 'Dispensasi KBM';
+                    const isFullDay = slide.is_full_day;
+                    const durasiText = isFullDay ? 'Seharian Penuh (Full Day)' : (slide.hour ? `Jam Ke-${slide.hour}` : 'Sesi Khusus');
+                    const targetText = slide.totalClasses ? `Seluruh Santri (${slide.totalClasses} Kelas)` : 'Seluruh Santri (Kelas 1 - 6)';
+
+                    html = `
+                    <div class="h-full w-full rounded-2xl relative overflow-hidden flex flex-col justify-between p-6 sm:p-8 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-indigo-500/10 border-2 border-amber-200/80 backdrop-blur-sm shadow-inner group animate-fade-in-down">
+                        <!-- Subtle decorative background rings -->
+                        <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-amber-300/20 to-orange-400/10 blur-2xl pointer-events-none"></div>
+                        <div class="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-gradient-to-tr from-indigo-300/20 to-purple-400/10 blur-2xl pointer-events-none"></div>
+                        
+                        <!-- Top Bar: Status Badges -->
+                        <div class="flex items-center justify-between z-10">
+                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs uppercase tracking-widest shadow-md shadow-amber-200">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                </span>
+                                Dispensasi KBM Aktif
+                            </div>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-amber-200 text-amber-800 font-bold text-xs shadow-xs backdrop-blur-sm">
+                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                Agenda Kalender Akademik
+                            </div>
+                        </div>
+
+                        <!-- Center Body: Big Event Name & Icons -->
+                        <div class="flex flex-col items-center justify-center text-center my-auto py-4 z-10">
+                            <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-xl shadow-amber-300/60 mb-4 transform group-hover:scale-105 transition-transform duration-300">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                            </div>
+                            <h1 class="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight leading-snug mb-2 max-w-xl">
+                                ${escapeHtml(eventName)}
+                            </h1>
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-100/80 border border-amber-200 text-amber-900 font-bold text-xs uppercase tracking-wider mb-2">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Kegiatan Belajar Mengajar (KBM) Bebas / Diliburkan
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-500 max-w-md font-medium">
+                                Seluruh santri dan pengajar diliburkan dari kegiatan belajar mengajar di kelas untuk mengikuti rangkaian agenda kegiatan.
+                            </p>
+                        </div>
+
+                        <!-- Bottom Info Cards Grid -->
+                        <div class="grid grid-cols-3 gap-3 z-10">
+                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Durasi Waktu</div>
+                                    <div class="text-xs font-black text-slate-700 truncate">${escapeHtml(durasiText)}</div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Kelas</div>
+                                    <div class="text-xs font-black text-slate-700 truncate">${escapeHtml(targetText)}</div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-white/80 border border-amber-200/80 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Presensi</div>
+                                    <div class="text-xs font-black text-emerald-700 truncate">Bebas KBM Otomatis</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
                 } else if (slide.type === 'empty') {
                     html = `<div class="flex h-full w-full flex-col items-center justify-center text-slate-400 gap-4">
                         <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -1270,7 +1453,12 @@
                             </div>`;
                         }
 
-                        if (item.status === 'substitute') {
+                        if (item.is_dispensation) {
+                            borderClass = 'border-amber-200 bg-gradient-to-br from-amber-50/70 to-white hover:border-amber-300';
+                            statusIcon = `<div class="bg-amber-100 p-1.5 rounded-full text-amber-600 shadow-sm z-10 relative" title="Bebas KBM">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>`;
+                        } else if (item.status === 'substitute') {
                             borderClass = 'border-amber-200 bg-amber-50'; // Override for substitute
                             statusIcon = `<div class="bg-amber-100 p-1.5 rounded-full text-amber-600 shadow-sm z-10 relative">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1301,41 +1489,75 @@
                             </div>`;
                         }
 
-                        html += `
-                        <div class="rounded-2xl border ${borderClass} p-4 flex flex-col justify-between h-[180px] relative overflow-hidden group transition-all duration-300 shadow-sm hover:shadow-lg">
-                            ${bgDecoration}
-                            
-                            <!-- Header: Class & Status -->
-                            <div class="flex justify-between items-start gap-3 relative z-10">
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-0.5 truncate">${escapeHtml(cleanKelas)}</div>
-                                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest truncate w-full" title="${escapeHtml(item.mapel)}">${escapeHtml(item.mapel)}</div>
-                                </div>
-                                <div class="flex-shrink-0">${statusIcon}</div>
-                            </div>
-                            
-                            <!-- Footer: Teacher Info -->
-                            <div class="mt-2 flex items-center gap-3 relative z-10">
-                                ${item.pengajar_profile ? `
-                                    <img src="${escapeHtml(item.pengajar_profile.profile_picture)}" 
-                                         alt="Photo" 
-                                         class="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0 ${item.is_substitute ? 'opacity-50' : ''}"
-                                         onerror="this.src='avatar.php?id=${escapeHtml(item.pengajar_profile.id)}'">
+                        let cardInnerContent = '';
+                        if (item.is_dispensation) {
+                            cardInnerContent = `
+                                <div class="flex justify-between items-start gap-3 relative z-10">
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex flex-col justify-center">
-                                            <!-- Badge Above Name -->
-                                            <div class="mb-0.5">
-                                                <span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${item.pengajar_profile.badge_color === 'blue' ? 'bg-blue-100 text-blue-700' :
-                                    item.pengajar_profile.badge_color === 'pink' ? 'bg-pink-100 text-pink-700' :
-                                        'bg-slate-100 text-slate-500'
-                                }">
-                                                    ${item.pengajar_profile.badge_text || 'UST/USTZH'}
-                                                </span>
+                                        <div class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-0.5 truncate">${escapeHtml(cleanKelas)}</div>
+                                        <div class="text-xs font-black text-amber-600 uppercase tracking-widest truncate w-full">BEBAS KBM</div>
+                                    </div>
+                                    <div class="flex-shrink-0">${statusIcon}</div>
+                                </div>
+                                
+                                <div class="mt-2 flex items-center gap-2.5 relative z-10 bg-amber-50/90 border border-amber-200/80 rounded-xl p-2 w-full">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-xs shadow-xs">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[9px] font-bold text-amber-800 uppercase tracking-wider">Dispensasi KBM</div>
+                                        <div class="text-xs font-black text-slate-700 truncate" title="${escapeHtml(item.dispensation_name || '')}">
+                                            ${escapeHtml(item.dispensation_name || 'Bebas KBM')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            cardInnerContent = `
+                                <!-- Header: Class & Status -->
+                                <div class="flex justify-between items-start gap-3 relative z-10">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-0.5 truncate">${escapeHtml(cleanKelas)}</div>
+                                        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest truncate w-full" title="${escapeHtml(item.mapel)}">${escapeHtml(item.mapel)}</div>
+                                    </div>
+                                    <div class="flex-shrink-0">${statusIcon}</div>
+                                </div>
+                                
+                                <!-- Footer: Teacher Info -->
+                                <div class="mt-2 flex items-center gap-3 relative z-10">
+                                    ${item.pengajar_profile ? `
+                                        <img src="${escapeHtml(item.pengajar_profile.profile_picture)}" 
+                                             alt="Photo" 
+                                             class="w-9 h-9 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0 ${item.is_substitute ? 'opacity-50' : ''}"
+                                             onerror="this.src='avatar.php?id=${escapeHtml(item.pengajar_profile.id)}'">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex flex-col justify-center">
+                                                <!-- Badge Above Name -->
+                                                <div class="mb-0.5">
+                                                    <span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${item.pengajar_profile.badge_color === 'blue' ? 'bg-blue-100 text-blue-700' :
+                                        item.pengajar_profile.badge_color === 'pink' ? 'bg-pink-100 text-pink-700' :
+                                            'bg-slate-100 text-slate-500'
+                                    }">
+                                                        ${item.pengajar_profile.badge_text || 'UST/USTZH'}
+                                                    </span>
+                                                </div>
+                                                
+                                                <!-- Name -->
+                                                <div class="text-sm font-bold text-slate-700 leading-snug truncate ${item.is_substitute ? 'line-through text-slate-400' : ''}">
+                                                    ${escapeHtml(item.pengajar_profile.nama_display)}
+                                                </div>
+                                                ${item.is_substitute && item.substitute_name ? `
+                                                <div class="text-xs font-bold text-blue-700 mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md truncate inline-flex items-center gap-1">
+                                                    <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                                    Diganti: ${escapeHtml(item.substitute_name)}
+                                                </div>
+                                                ` : ''}
                                             </div>
-                                            
-                                            <!-- Name -->
-                                            <div class="text-sm font-bold text-slate-700 leading-snug truncate ${item.is_substitute ? 'line-through text-slate-400' : ''}">
-                                                ${escapeHtml(item.pengajar_profile.nama_display)}
+                                        </div>
+                                    ` : `
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-bold text-slate-600 leading-snug line-clamp-2 ${item.is_substitute ? 'line-through text-slate-400' : ''}" title="${escapeHtml(item.pengajar)}">
+                                                ${escapeHtml(item.pengajar)}
                                             </div>
                                             ${item.is_substitute && item.substitute_name ? `
                                             <div class="text-xs font-bold text-blue-700 mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md truncate inline-flex items-center gap-1">
@@ -1344,23 +1566,17 @@
                                             </div>
                                             ` : ''}
                                         </div>
-                                    </div>
-                                ` : `
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-bold text-slate-600 leading-snug line-clamp-2 ${item.is_substitute ? 'line-through text-slate-400' : ''}" title="${escapeHtml(item.pengajar)}">
-                                            ${escapeHtml(item.pengajar)}
-                                        </div>
-                                        ${item.is_substitute && item.substitute_name ? `
-                                        <div class="text-xs font-bold text-blue-700 mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md truncate inline-flex items-center gap-1">
-                                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                            Diganti: ${escapeHtml(item.substitute_name)}
-                                        </div>
-                                        ` : ''}
-                                    </div>
-                                `}
-                            </div>
+                                    `}
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                        <div class="rounded-2xl border ${borderClass} p-4 flex flex-col justify-between h-[180px] relative overflow-hidden group transition-all duration-300 shadow-sm hover:shadow-lg">
+                            ${bgDecoration}
+                            ${cardInnerContent}
                         </div>
-                    `;
+                        `;
                     });
 
                     html += '</div>';
@@ -1377,12 +1593,26 @@
             if (!container) return;
 
             if (!list || list.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-40 text-slate-400/60">
-                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        <span class="text-sm">Belum ada data terbaru</span>
-                    </div>
-                `;
+                const activeDisp = (appData.dispensations && appData.dispensations.length > 0) ? appData.dispensations[0] : null;
+                if (activeDisp) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center p-6 text-center my-auto h-48 animate-fade-in-down">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3 shadow-xs">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <span class="text-xs font-black text-amber-800 uppercase tracking-wider mb-1">Dispensasi KBM Aktif</span>
+                            <span class="text-xs text-slate-700 font-bold line-clamp-2 mb-1">${escapeHtml(activeDisp.name)}</span>
+                            <span class="text-[10px] text-slate-400 font-medium">Bebas Verifikasi KBM</span>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-40 text-slate-400/60">
+                            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            <span class="text-sm">Belum ada data terbaru</span>
+                        </div>
+                    `;
+                }
                 return;
             }
 

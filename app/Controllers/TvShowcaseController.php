@@ -122,6 +122,47 @@ class TvShowcaseController extends Controller {
         $dayNameEnglish = date('D', strtotime($selectedDate));
         $dayNameIndo = $dayMap[$dayNameEnglish] ?? '';
 
+        $activityModel = new \App\Models\ActivityModel();
+        $dispensations = $activityModel->getDispensationsByDate($selectedDate);
+
+        $dayOfWeek = date('w', strtotime($selectedDate));
+        $isFriday = ($dayOfWeek == 5);
+
+        if ($isFriday) {
+            $kStmt = $pdo->prepare("SELECT id FROM kelas WHERE academic_year_id = ?");
+            $kStmt->execute([$yearId]);
+            $allKelasIds = array_map('intval', $kStmt->fetchAll(PDO::FETCH_COLUMN));
+            $dispensations[] = [
+                'id' => null,
+                'name' => 'Libur Mingguan (Jumat)',
+                'is_full_day' => true,
+                'kelas_ids' => $allKelasIds,
+                'hours' => []
+            ];
+        }
+
+        // Fetch detailed today activities for showcase
+        $actStmt = $pdo->prepare("
+            SELECT a.id, a.name, a.type, a.start_date, a.end_date, a.is_full_day,
+                   ace.kategori, ace.keterangan as calendar_keterangan
+            FROM school_activities a
+            LEFT JOIN academic_calendar_events ace ON a.academic_calendar_id = ace.id
+            WHERE ? BETWEEN a.start_date AND a.end_date
+            ORDER BY a.id DESC
+        ");
+        $actStmt->execute([$selectedDate]);
+        $todayActivities = $actStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch academic calendar events for today
+        $calStmt = $pdo->prepare("
+            SELECT id, keterangan, kategori, tanggal_mulai, tanggal_selesai
+            FROM academic_calendar_events
+            WHERE ? BETWEEN tanggal_mulai AND COALESCE(tanggal_selesai, tanggal_mulai)
+            ORDER BY id DESC
+        ");
+        $calStmt->execute([$selectedDate]);
+        $todayCalendarEvents = $calStmt->fetchAll(PDO::FETCH_ASSOC);
+
         $sql = "SELECT s.*, 
                        k.tingkat, k.abjad, k.legacy_id as kelas_legacy_id,
                        sub.nama as mapel_nama,
@@ -152,7 +193,7 @@ class TvShowcaseController extends Controller {
         }
 
         $dailySchedule = [];
-        $stats = ['total' => 0, 'verified' => 0, 'pending' => 0, 'justified' => 0];
+        $stats = ['total' => 0, 'verified' => 0, 'pending' => 0, 'justified' => 0, 'dispensation' => 0];
         $verificationsList = [];
 
         foreach ($schedulesRaw as $row) {
@@ -164,12 +205,45 @@ class TvShowcaseController extends Controller {
             $pengajarName = $row['teacher_nama'] ?? 'Unknown';
             
             $key = $kelasId . '|' . $hour;
+
+            // Check dispensation for this class and hour
+            $isDispensation = false;
+            $dispensationName = null;
+
+            if ($isFriday) {
+                $isDispensation = true;
+                $dispensationName = 'Libur Mingguan (Jumat)';
+            } else {
+                foreach ($dispensations as $disp) {
+                    if (in_array((int)$kelasId, $disp['kelas_ids'])) {
+                        if ($disp['is_full_day']) {
+                            $isDispensation = true;
+                            $dispensationName = $disp['name'];
+                            break;
+                        } else {
+                            foreach ($disp['hours'] as $h) {
+                                if ((int)$hour >= (int)$h['hour_start'] && (int)$hour <= (int)$h['hour_end']) {
+                                    $isDispensation = true;
+                                    $dispensationName = $disp['name'];
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             
             $tanqih = $tanqihLogs[$key] ?? null;
             $isTanqihVerified = !empty($tanqih);
             
             $stats['total']++;
-            if ($isTanqihVerified) {
+            if ($isDispensation) {
+                $stats['dispensation']++;
+                if ($isTanqihVerified) {
+                    $stats['verified']++;
+                    if (($tanqih['status'] ?? '') === 'justified') $stats['justified']++;
+                }
+            } elseif ($isTanqihVerified) {
                 $stats['verified']++;
                 if (($tanqih['status'] ?? '') === 'justified') $stats['justified']++;
                 
@@ -188,7 +262,7 @@ class TvShowcaseController extends Controller {
             }
             
             $att = $attendanceLogs[$key] ?? null;
-            $scheduleStatus = 'pending';
+            $scheduleStatus = $isDispensation ? 'dispensation' : 'pending';
             $isSubstitute = false;
             $isAbsen = !empty($att);
             $substituteName = null;
@@ -221,7 +295,9 @@ class TvShowcaseController extends Controller {
                 'status' => $scheduleStatus,
                 'verified' => $isAbsen,
                 'is_substitute' => $isSubstitute,
-                'substitute_name' => $substituteName
+                'substitute_name' => $substituteName,
+                'is_dispensation' => $isDispensation,
+                'dispensation_name' => $dispensationName
             ];
         }
 
@@ -327,10 +403,30 @@ class TvShowcaseController extends Controller {
             }
         }
 
+        $quotes = (new \App\Models\SettingModel())->get('tv_showcase_quotes', [
+            "Pancajiwa Pondok: Keikhlasan, Kesederhanaan, Berdikari, Ukhuwah Islamiyah, dan Kebebasan.",
+            "Motto Pondok: Berbudi tinggi, Berbadan sehat, Berpengetahuan luas, dan Berpikiran bebas.",
+            "إنّ تنفيذ التربية الخلقية والعقلية لا يكفي بمجرد الكلام، بل لا بدّ أن يكون بالقدوة الصالحة...",
+            "الوعي مبعث كلّ النجاح",
+            "من وعى انتبه",
+            "Think globally, act locally!"
+        ]);
+
+        if (!empty($dispensations)) {
+            $dispNames = array_unique(array_filter(array_column($dispensations, 'name')));
+            foreach ($dispNames as $dName) {
+                array_unshift($quotes, "📢 Agenda Hari Ini: " . $dName . " (Dispensasi KBM)");
+            }
+        }
+
         header('Content-Type: application/json');
         echo json_encode([
             'date' => $selectedDate,
             'day' => $dayNameIndo,
+            'is_friday' => $isFriday,
+            'dispensations' => $dispensations,
+            'today_activities' => $todayActivities,
+            'today_calendar_events' => $todayCalendarEvents,
             'schedule_by_hour' => $dailySchedule,
             'muwajjah_cards' => $muwajjahCards,
             'stats' => $stats,
@@ -353,14 +449,7 @@ class TvShowcaseController extends Controller {
             ],
             'hours_config' => (new \App\Models\SettingModel())->getTvHours(),
             'bgm_youtube' => (new \App\Models\SettingModel())->get('tv_showcase_bgm_youtube', ''),
-            'quotes' => (new \App\Models\SettingModel())->get('tv_showcase_quotes', [
-                "Pancajiwa Pondok: Keikhlasan, Kesederhanaan, Berdikari, Ukhuwah Islamiyah, dan Kebebasan.",
-                "Motto Pondok: Berbudi tinggi, Berbadan sehat, Berpengetahuan luas, dan Berpikiran bebas.",
-                "إنّ تنفيذ التربية الخلقية والعقلية لا يكفي بمجرد الكلام، بل لا بدّ أن يكون بالقدوة الصالحة...",
-                "الوعي مبعث كلّ النجاح",
-                "من وعى انتبه",
-                "Think globally, act locally!"
-            ])
+            'quotes' => $quotes
         ]);
         exit;
     }
