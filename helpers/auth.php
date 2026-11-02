@@ -559,6 +559,28 @@ if (!function_exists('auth_is_pbm')) {
     }
 }
 
+if (!function_exists('auth_is_smart_tap_officer')) {
+    /**
+     * Check if user is an authorized officer for Smart Tap module
+     */
+    function auth_is_smart_tap_officer() {
+        $role = auth_get_role();
+        if ($role === 'admin') return true;
+        
+        $userId = auth_get_user_id();
+        if (!$userId) return false;
+
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT id FROM smart_tap_officers WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            return (bool) $stmt->fetch();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('auth_can_manage_attendance')) {
     /**
      * Higher level check for Student Attendance module administration

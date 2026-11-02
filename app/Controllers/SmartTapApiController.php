@@ -1,0 +1,236 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Core\Controller;
+use App\Models\SmartTapDeviceModel;
+use App\Models\SmartTapEventModel;
+use App\Models\SmartTapCardModel;
+use App\Models\SmartTapPermissionModel;
+use App\Models\SmartTapLogModel;
+use App\Models\SmartTapExemptionModel;
+
+class SmartTapApiController extends Controller
+{
+    private $deviceModel;
+    private $eventModel;
+    private $cardModel;
+    private $permissionModel;
+    private $logModel;
+    private $exemptionModel;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->deviceModel = new SmartTapDeviceModel();
+        $this->eventModel = new SmartTapEventModel();
+        $this->cardModel = new SmartTapCardModel();
+        $this->permissionModel = new SmartTapPermissionModel();
+        $this->logModel = new SmartTapLogModel();
+        $this->exemptionModel = new SmartTapExemptionModel();
+    }
+
+    /**
+     * POST /api/smart-tap/pair
+     * 2FA Pairing endpoint: Client enters 6-digit pairing code to activate kiosk terminal.
+     */
+    public function pairDevice()
+    {
+        header('Content-Type: application/json');
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $code = trim($data['pairing_code'] ?? '');
+        if (empty($code)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kode pairing tidak boleh kosong'
+            ]);
+            exit;
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $device = $this->deviceModel->verifyAndPair($code, $ip);
+
+        if (!$device) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kode pairing salah atau sudah kedaluwarsa!'
+            ]);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Aktivasi perangkat berhasil!',
+            'device_token' => $device['device_token'],
+            'device' => [
+                'id' => $device['id'],
+                'code' => $device['device_code'],
+                'name' => $device['device_name'],
+                'pin_code' => $device['pin_code'] ?? '1234',
+                'location' => $device['location'] ?? ''
+            ]
+        ]);
+        exit;
+    }
+
+    private function getBearerToken()
+    {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
+
+        if (!empty($authHeader) && preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            return $matches[1];
+        }
+
+        return $_GET['token'] ?? ($_POST['token'] ?? null);
+    }
+
+    private function authenticateDevice()
+    {
+        $token = $this->getBearerToken();
+        if (empty($token)) {
+            header('Content-Type: application/json', true, 401);
+            echo json_encode(['error' => 'Missing device token']);
+            exit;
+        }
+
+        $device = $this->deviceModel->getDeviceByToken($token);
+        if (!$device) {
+            header('Content-Type: application/json', true, 403);
+            echo json_encode(['error' => 'Invalid or inactive device token']);
+            exit;
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $this->deviceModel->updateLastSync($device['id'], $ip);
+
+        return $device;
+    }
+
+    /**
+     * GET /api/smart-tap/sync-master
+     * Provides all master data for the offline client to cache locally.
+     */
+    public function syncMaster()
+    {
+        header('Content-Type: application/json');
+        $device = $this->authenticateDevice();
+
+        $today = date('Y-m-d');
+        $dayOfWeek = date('N'); // 1 (Mon) - 7 (Sun)
+
+        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today, $device['id']);
+        $permissions = $this->permissionModel->getActivePermissionsForDate($today);
+        $masterCards = $this->cardModel->getAllMasterForSync();
+
+        echo json_encode([
+            'success' => true,
+            'server_time' => date('Y-m-d H:i:s'),
+            'device' => [
+                'id' => $device['id'],
+                'code' => $device['device_code'],
+                'name' => $device['device_name'],
+                'pin_code' => $device['pin_code'],
+                'location' => $device['location']
+            ],
+            'today_events' => $events,
+            'today_permissions' => $permissions,
+            'exempted_teachers' => $this->exemptionModel->getExemptedUserIds(),
+            'students' => $masterCards['students'],
+            'teachers' => $masterCards['teachers'],
+            'total_registered_cards' => $masterCards['total_registered_cards']
+        ], JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    /**
+     * POST /api/smart-tap/sync-logs
+     * Receives attendance logs synced from offline client.
+     */
+    public function syncLogs()
+    {
+        header('Content-Type: application/json');
+        $device = $this->authenticateDevice();
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true);
+
+        if (!$data && !empty($_POST['logs'])) {
+            $data = is_array($_POST['logs']) ? $_POST : json_decode($_POST['logs'], true);
+        }
+
+        $logs = $data['logs'] ?? ($data ?? []);
+        if (!is_array($logs) || empty($logs)) {
+            echo json_encode(['success' => false, 'message' => 'No logs provided']);
+            exit;
+        }
+
+        $res = $this->logModel->syncBatchLogs($logs, $device['id']);
+
+        echo json_encode([
+            'success' => true,
+            'device_id' => $device['id'],
+            'synced' => $res['synced'],
+            'skipped' => $res['skipped'],
+            'errors' => $res['errors'],
+            'server_time' => date('Y-m-d H:i:s')
+        ]);
+        exit;
+    }
+
+    /**
+     * GET /api/smart-tap/live-data
+     * Realtime polling endpoint for admin web dashboard
+     */
+    public function liveData()
+    {
+        header('Content-Type: application/json');
+
+        $eventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
+        $date = $_GET['date'] ?? date('Y-m-d');
+
+        if (!$eventId) {
+            $dayOfWeek = date('N');
+            $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $date);
+            if (!empty($events)) {
+                $eventId = $events[0]['id'];
+            }
+        }
+
+        if (!$eventId) {
+            echo json_encode(['success' => false, 'message' => 'No active event today']);
+            exit;
+        }
+
+        $liveStatus = $this->logModel->getEventLiveStatus($eventId, $date);
+        $recentLogs = $this->logModel->getRecentLogs($eventId, $date, 15);
+
+        echo json_encode([
+            'success' => true,
+            'event' => $liveStatus['event'] ?? null,
+            'stats' => $liveStatus['stats'] ?? null,
+            'recent_logs' => $recentLogs,
+            'server_time' => date('H:i:s')
+        ]);
+        exit;
+    }
+
+    /**
+     * Ping endpoint
+     */
+    public function ping()
+    {
+        header('Content-Type: application/json');
+        $device = $this->authenticateDevice();
+        echo json_encode([
+            'success' => true,
+            'device' => $device['device_name'],
+            'server_time' => date('Y-m-d H:i:s')
+        ]);
+        exit;
+    }
+}
+

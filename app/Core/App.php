@@ -249,6 +249,41 @@ class App
         $this->router->get('/muwajjah/report', ['App\Controllers\MuwajjahController', 'report']);
         $this->router->get('/piket/muwajjah', ['App\Controllers\MuwajjahController', 'piketSchedule']);
         $this->router->post('/piket/muwajjah/update', ['App\Controllers\MuwajjahController', 'updatePiketSchedule']);
+
+        // Smart Tap RFID Attendance Routes
+        $this->router->get('/smart-tap/live', ['App\Controllers\SmartTapController', 'live']);
+        $this->router->get('/smart-tap/reports', ['App\Controllers\SmartTapController', 'reports']);
+        $this->router->get('/smart-tap/permissions', ['App\Controllers\SmartTapController', 'permissions']);
+        $this->router->get('/smart-tap/search-person', ['App\Controllers\SmartTapController', 'searchPerson']);
+        $this->router->post('/smart-tap/permissions/store', ['App\Controllers\SmartTapController', 'storePermission']);
+        $this->router->get('/smart-tap/permissions/delete', ['App\Controllers\SmartTapController', 'deletePermission']);
+        $this->router->post('/smart-tap/exemptions/store', ['App\Controllers\SmartTapController', 'storeExemption']);
+        $this->router->get('/smart-tap/exemptions/delete', ['App\Controllers\SmartTapController', 'deleteExemption']);
+        $this->router->get('/smart-tap/events', ['App\Controllers\SmartTapController', 'events']);
+        $this->router->post('/smart-tap/events/store', ['App\Controllers\SmartTapController', 'storeEvent']);
+        $this->router->get('/smart-tap/events/delete', ['App\Controllers\SmartTapController', 'deleteEvent']);
+        $this->router->get('/smart-tap/cards', ['App\Controllers\SmartTapController', 'cards']);
+        $this->router->post('/smart-tap/cards/pair', ['App\Controllers\SmartTapController', 'pairCard']);
+        $this->router->post('/smart-tap/cards/unpair', ['App\Controllers\SmartTapController', 'unpairCard']);
+        $this->router->get('/smart-tap/devices', ['App\Controllers\SmartTapController', 'devices']);
+        $this->router->post('/smart-tap/devices/store', ['App\Controllers\SmartTapController', 'storeDevice']);
+        $this->router->get('/smart-tap/devices/token', ['App\Controllers\SmartTapController', 'regenerateDeviceToken']);
+        $this->router->post('/smart-tap/devices/pairing-code', ['App\Controllers\SmartTapController', 'generatePairingCode']);
+        $this->router->get('/smart-tap/devices/pairing-code', ['App\Controllers\SmartTapController', 'generatePairingCode']);
+        $this->router->post('/smart-tap/devices/unpair', ['App\Controllers\SmartTapController', 'unpairDevice']);
+        $this->router->get('/smart-tap/devices/unpair', ['App\Controllers\SmartTapController', 'unpairDevice']);
+        $this->router->get('/smart-tap/devices/delete', ['App\Controllers\SmartTapController', 'deleteDevice']);
+        $this->router->get('/smart-tap/officers', ['App\Controllers\SmartTapController', 'officers']);
+        $this->router->post('/smart-tap/officers/update', ['App\Controllers\SmartTapController', 'updateOfficers']);
+        $this->router->get('/smart-tap/officers/delete', ['App\Controllers\SmartTapController', 'deleteOfficer']);
+
+        // Smart Tap Offline Sync & API Routes
+        $this->router->post('/api/smart-tap/pair', ['App\Controllers\SmartTapApiController', 'pairDevice']);
+        $this->router->get('/api/smart-tap/sync-master', ['App\Controllers\SmartTapApiController', 'syncMaster']);
+        $this->router->post('/api/smart-tap/sync-logs', ['App\Controllers\SmartTapApiController', 'syncLogs']);
+        $this->router->get('/api/smart-tap/live-data', ['App\Controllers\SmartTapApiController', 'liveData']);
+        $this->router->get('/api/smart-tap/ping', ['App\Controllers\SmartTapApiController', 'ping']);
+        $this->router->post('/api/smart-tap/ping', ['App\Controllers\SmartTapApiController', 'ping']);
     }
 
     public function run()
