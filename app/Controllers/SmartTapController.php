@@ -579,7 +579,7 @@ class SmartTapController extends Controller
             $stmt = $db->prepare("
                 SELECT u.id, u.nama, 'Pengajar / Guru' as subinfo, u.username as nis
                 FROM users u
-                WHERE u.deleted_at IS NULL AND u.role = 'pengajar' AND (u.nama LIKE ? OR u.username LIKE ?)
+                WHERE u.deleted_at IS NULL AND u.is_active = 1 AND u.role = 'pengajar' AND (u.nama LIKE ? OR u.username LIKE ?)
                 ORDER BY u.nama ASC
                 LIMIT 15
             ");

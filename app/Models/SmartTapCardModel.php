@@ -95,7 +95,7 @@ class SmartTapCardModel extends Model
             COUNT(*) as total, 
             SUM(CASE WHEN rfid_uid IS NOT NULL AND TRIM(rfid_uid) != '' THEN 1 ELSE 0 END) as paired,
             SUM(CASE WHEN rfid_uid IS NULL OR TRIM(rfid_uid) = '' THEN 1 ELSE 0 END) as unpaired
-        FROM users WHERE role = 'pengajar' AND deleted_at IS NULL")->fetch(PDO::FETCH_ASSOC);
+        FROM users WHERE role = 'pengajar' AND is_active = 1 AND deleted_at IS NULL")->fetch(PDO::FETCH_ASSOC);
 
         return [
             'students' => [
@@ -113,7 +113,7 @@ class SmartTapCardModel extends Model
 
     public function getTeachersList($search = '', $hasCard = null)
     {
-        $where = ["u.role = 'pengajar'", "u.deleted_at IS NULL"];
+        $where = ["u.role = 'pengajar'", "u.is_active = 1", "u.deleted_at IS NULL"];
         $params = [];
 
         if (!empty($search)) {
