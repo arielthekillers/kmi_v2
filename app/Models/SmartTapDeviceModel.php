@@ -83,6 +83,20 @@ class SmartTapDeviceModel extends Model
      *   3. Kiosk pairing        -> Kode Setup + kode 2FA, server menerbitkan token
      * ------------------------------------------------------------------ */
 
+    public function generatePairingCode($id)
+    {
+        $status = $this->startSetup($id);
+        return [
+            'code' => $status['setup_code'] ?? '',
+            'expires_at' => $status['setup_expires_at'] ?? date('Y-m-d H:i:s', time() + 3600)
+        ];
+    }
+
+    public function verifyAndPair($pairingCode, $ip = null)
+    {
+        return $this->findBySetupCode($pairingCode);
+    }
+
     const SETUP_TTL_MINUTES = 60;
     const PAIRING_TTL_MINUTES = 10;
     const MAX_PAIRING_ATTEMPTS = 5;
