@@ -31,8 +31,55 @@ class SmartTapApiController extends Controller
     }
 
     /**
+     * POST /api/smart-tap/handshake
+     * Step 2 Kiosk: Mengirim setup_code + info perangkat untuk validasi server & memicu kode 2FA di dashboard admin
+     */
+    public function handshake()
+    {
+        header('Content-Type: application/json');
+
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $setupCode = trim($data['setup_code'] ?? '');
+        $hostname = trim($data['hostname'] ?? '');
+
+        if (empty($setupCode)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kode Setup tidak boleh kosong'
+            ]);
+            exit;
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+        $device = $this->deviceModel->recordHandshake($setupCode, $ip, $hostname);
+
+        if (!$device) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Kode Setup salah, tidak aktif, atau sudah kedaluwarsa. Silakan periksa di kmi_v2.'
+            ]);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Handshake berhasil! Silakan lihat 6-digit Kode 2FA di Dashboard kmi_v2.',
+            'server_time' => date('Y-m-d H:i:s'),
+            'device' => [
+                'id' => $device['id'],
+                'code' => $device['device_code'],
+                'name' => $device['device_name'],
+                'location' => $device['location'] ?? ''
+            ]
+        ]);
+        exit;
+    }
+
+    /**
      * POST /api/smart-tap/pair
-     * 2FA Pairing endpoint: Client enters 6-digit pairing code to activate kiosk terminal.
+     * Step 3 Kiosk: Memasukkan 6-digit kode 2FA + setup_code untuk verifikasi akhir dan mendapatkan device token
      */
     public function pairDevice()
     {
@@ -41,29 +88,34 @@ class SmartTapApiController extends Controller
         $raw = file_get_contents('php://input');
         $data = json_decode($raw, true) ?: $_POST;
 
+        $setupCode = trim($data['setup_code'] ?? '');
         $code = trim($data['pairing_code'] ?? '');
-        if (empty($code)) {
+
+        if (empty($setupCode) || empty($code)) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Kode pairing tidak boleh kosong'
+                'message' => 'Kode Setup dan Kode Pairing 2FA harus diisi'
             ]);
             exit;
         }
 
         $ip = $_SERVER['REMOTE_ADDR'] ?? null;
-        $device = $this->deviceModel->verifyAndPair($code, $ip);
+        $result = $this->deviceModel->completePairing($setupCode, $code, $ip);
 
-        if (!$device) {
+        if (!$result['ok']) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Kode pairing salah atau sudah kedaluwarsa!'
+                'message' => $result['error'] ?? 'Gagal memverifikasi 2FA',
+                'attempts_left' => $result['attempts_left'] ?? 0
             ]);
             exit;
         }
 
+        $device = $result['device'];
+
         echo json_encode([
             'success' => true,
-            'message' => 'Aktivasi perangkat berhasil!',
+            'message' => 'Inisiasi dan pairing perangkat berhasil!',
             'device_token' => $device['device_token'],
             'device' => [
                 'id' => $device['id'],

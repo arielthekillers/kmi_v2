@@ -268,6 +268,9 @@ class App
         $this->router->get('/smart-tap/devices', ['App\Controllers\SmartTapController', 'devices']);
         $this->router->post('/smart-tap/devices/store', ['App\Controllers\SmartTapController', 'storeDevice']);
         $this->router->get('/smart-tap/devices/token', ['App\Controllers\SmartTapController', 'regenerateDeviceToken']);
+        $this->router->post('/smart-tap/devices/start-setup', ['App\Controllers\SmartTapController', 'startSetup']);
+        $this->router->get('/smart-tap/devices/setup-status', ['App\Controllers\SmartTapController', 'setupStatus']);
+        $this->router->post('/smart-tap/devices/cancel-setup', ['App\Controllers\SmartTapController', 'cancelSetup']);
         $this->router->post('/smart-tap/devices/pairing-code', ['App\Controllers\SmartTapController', 'generatePairingCode']);
         $this->router->get('/smart-tap/devices/pairing-code', ['App\Controllers\SmartTapController', 'generatePairingCode']);
         $this->router->post('/smart-tap/devices/unpair', ['App\Controllers\SmartTapController', 'unpairDevice']);
@@ -278,6 +281,7 @@ class App
         $this->router->get('/smart-tap/officers/delete', ['App\Controllers\SmartTapController', 'deleteOfficer']);
 
         // Smart Tap Offline Sync & API Routes
+        $this->router->post('/api/smart-tap/handshake', ['App\Controllers\SmartTapApiController', 'handshake']);
         $this->router->post('/api/smart-tap/pair', ['App\Controllers\SmartTapApiController', 'pairDevice']);
         $this->router->get('/api/smart-tap/sync-master', ['App\Controllers\SmartTapApiController', 'syncMaster']);
         $this->router->post('/api/smart-tap/sync-logs', ['App\Controllers\SmartTapApiController', 'syncLogs']);

@@ -435,6 +435,75 @@ class SmartTapController extends Controller
         $this->redirect('/smart-tap/devices');
     }
 
+    public function startSetup()
+    {
+        require_login();
+        header('Content-Type: application/json');
+
+        $id = (int)($_POST['id'] ?? ($_GET['id'] ?? 0));
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Device ID tidak valid']);
+            exit;
+        }
+
+        $device = $this->deviceModel->getDeviceById($id);
+        if (!$device) {
+            echo json_encode(['success' => false, 'message' => 'Perangkat tidak ditemukan']);
+            exit;
+        }
+
+        $status = $this->deviceModel->startSetup($id);
+        echo json_encode([
+            'success' => true,
+            'device' => [
+                'id' => $device['id'],
+                'code' => $device['device_code'],
+                'name' => $device['device_name'],
+                'location' => $device['location'] ?? ''
+            ],
+            'status' => $status
+        ]);
+        exit;
+    }
+
+    public function setupStatus()
+    {
+        require_login();
+        header('Content-Type: application/json');
+
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Device ID tidak valid']);
+            exit;
+        }
+
+        $status = $this->deviceModel->getSetupStatus($id);
+        if (!$status) {
+            echo json_encode(['success' => false, 'message' => 'Perangkat tidak ditemukan']);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'status' => $status
+        ]);
+        exit;
+    }
+
+    public function cancelSetup()
+    {
+        require_login();
+        header('Content-Type: application/json');
+
+        $id = (int)($_POST['id'] ?? ($_GET['id'] ?? 0));
+        if ($id) {
+            $this->deviceModel->cancelSetup($id);
+        }
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     public function generatePairingCode()
     {
         require_login();

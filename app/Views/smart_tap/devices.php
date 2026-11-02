@@ -242,15 +242,15 @@ $unpairedDevices = $totalDevices - $pairedDevices;
                                 </div>
                             </div>
 
-                            <!-- 2FA Pairing Action -->
+                            <!-- Inisiasi Perangkat Action -->
                             <div class="space-y-2 mb-4">
-                                <button type="button" onclick="requestPairingCode(<?= $d['id'] ?>, '<?= htmlspecialchars(addslashes($d['device_name'])) ?>')" class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition hover:shadow-md">
+                                <button type="button" onclick="startDeviceSetup(<?= $d['id'] ?>, '<?= htmlspecialchars(addslashes($d['device_name'])) ?>', '<?= htmlspecialchars(addslashes($d['device_code'])) ?>')" class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition hover:shadow-md">
                                     <i class="ri-shield-keyhole-line text-sm"></i>
-                                    <span>Buka Pairing / Generate Kode 2FA</span>
+                                    <span><?= $isPaired ? 'Inisiasi Ulang Perangkat' : 'Mulai Inisiasi Perangkat (Wizard)' ?></span>
                                 </button>
 
                                 <?php if ($isPaired): ?>
-                                    <a href="<?= url('/smart-tap/devices/unpair?id=' . $d['id']) ?>" onclick="return confirm('Putus hubungan (Unpair) perangkat ini? Perangkat harus di-pairing ulang dengan kode 2FA baru agar dapat digunakan kembali.')" class="text-rose-500 hover:text-rose-700 text-xs font-bold block text-center py-1 transition">
+                                    <a href="<?= url('/smart-tap/devices/unpair?id=' . $d['id']) ?>" onclick="return confirm('Putus hubungan (Unpair) perangkat ini? Perangkat harus di-pairing ulang dengan wizard setup agar dapat sync kembali.')" class="text-rose-500 hover:text-rose-700 text-xs font-bold block text-center py-1 transition">
                                         <i class="ri-link-unlink-m"></i> Putus Hubungan Perangkat Ini
                                     </a>
                                 <?php endif; ?>
@@ -338,47 +338,155 @@ $unpairedDevices = $totalDevices - $pairedDevices;
 </div>
 
 <!-- ============================================== -->
-<!-- MODAL 2: KODE PAIRING 2FA (AKTIVASI PERANGKAT) -->
+<!-- MODAL 2: WIZARD INISIASI PERANGKAT (KODE SETUP & 2FA) -->
 <!-- ============================================== -->
 <div id="modal-pairing" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-gray-100 overflow-hidden transform transition-all text-center p-6 space-y-5">
-        <div class="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
-            <i class="ri-shield-keyhole-line"></i>
-        </div>
-
-        <div>
-            <h3 class="text-lg font-black text-gray-900" id="pairing-device-title">Kode Pairing 2FA</h3>
-            <p class="text-xs text-gray-500 mt-1">Masukkan 6 digit kode ini pada layar aktivasi perangkat di lokasi pemasangan.</p>
-        </div>
-
-        <div class="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border-2 border-dashed border-indigo-300 rounded-2xl py-4 px-2">
-            <span class="text-[10px] text-indigo-700 font-bold uppercase tracking-wider block mb-1">KODE AKTIVASI:</span>
-            <div id="pairing-code-display" class="font-mono text-3xl font-black text-indigo-700 tracking-[0.25em] py-1 select-all">
-                ------
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden transform transition-all text-center p-6 space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2 text-left">
+                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                    <i class="ri-shield-keyhole-line"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-gray-900" id="wizard-device-name">Inisiasi Perangkat</h3>
+                    <p class="text-[11px] text-gray-500" id="wizard-device-code">MINI-PC</p>
+                </div>
             </div>
-            <div class="text-[11px] text-indigo-600 font-semibold mt-1 flex items-center justify-center gap-1">
-                <i class="ri-time-line"></i> Berlaku 15 Menit &bull; Sekali Pakai
+            <button type="button" onclick="closeSetupModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+
+        <!-- Stepper Indicator -->
+        <div class="flex items-center justify-between text-[11px] font-bold text-gray-400 px-2">
+            <span id="step-indicator-1" class="text-indigo-600 flex items-center gap-1">
+                <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
+                Siapkan
+            </span>
+            <span class="h-0.5 w-6 bg-gray-200" id="step-line-1"></span>
+            <span id="step-indicator-2" class="flex items-center gap-1 text-gray-400">
+                <span class="w-5 h-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px]">2</span>
+                Handshake
+            </span>
+            <span class="h-0.5 w-6 bg-gray-200" id="step-line-2"></span>
+            <span id="step-indicator-3" class="flex items-center gap-1 text-gray-400">
+                <span class="w-5 h-5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px]">3</span>
+                2FA
+            </span>
+        </div>
+
+        <!-- STAGE 1: MENUNGGU HANDSHAKE (Input URL & Setup Code di Kiosk) -->
+        <div id="stage-waiting-handshake" class="space-y-4 text-left">
+            <div class="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-900 leading-relaxed">
+                <span class="font-bold block text-indigo-950 mb-1"><i class="ri-information-line mr-1"></i>Langkah di Mesin Absensi Client:</span>
+                Buka aplikasi Smart Tap Kiosk, jalankan <strong>Wizard Inisiasi</strong>, lalu masukkan informasi koneksi berikut pada <strong>Step 2</strong>.
+            </div>
+
+            <!-- Server URL -->
+            <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">URL Endpoint Server:</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="wizard-server-url" readonly value="<?= rtrim(url('/'), '/') ?>" class="w-full text-xs font-mono bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-gray-800 select-all focus:outline-none">
+                    <button type="button" onclick="copyWizardVal('wizard-server-url', 'URL Server')" class="p-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-100 font-bold whitespace-nowrap">
+                        <i class="ri-file-copy-line"></i> Salin
+                    </button>
+                </div>
+            </div>
+
+            <!-- Setup Code -->
+            <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Kode Setup Perangkat:</label>
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border-2 border-dashed border-indigo-300 rounded-2xl p-4 text-center">
+                    <div id="wizard-setup-code" class="font-mono text-3xl font-black text-indigo-700 tracking-[0.25em] select-all">
+                        ---- ----
+                    </div>
+                    <div class="text-[11px] text-indigo-600 font-medium mt-1 flex items-center justify-center gap-1">
+                        <i class="ri-time-line"></i> Berlaku 60 Menit &bull; Sekali Pakai
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center text-xs text-amber-600 font-semibold flex items-center justify-center gap-2 pt-1">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                <span>Menunggu mesin absensi menghubungi server...</span>
             </div>
         </div>
 
-        <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/60 text-[11px] text-amber-900 text-left flex items-start gap-2">
-            <i class="ri-information-line text-base text-amber-600 flex-shrink-0 mt-0.5"></i>
-            <span>Begitu perangkat berhasil terhubung, kode ini otomatis hangus. Komputer lain tidak akan bisa masuk.</span>
+        <!-- STAGE 2: HANDSHAKE MASUK -> TAMPILKAN KODE 2FA -->
+        <div id="stage-waiting-pairing" class="space-y-4 hidden text-left">
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-center gap-2">
+                <i class="ri-checkbox-circle-fill text-emerald-600 text-lg flex-shrink-0"></i>
+                <div>
+                    <span class="font-bold">Mesin Terhubung!</span>
+                    <div class="text-[11px] text-emerald-700" id="wizard-handshake-meta">IP: 192.168.1.100</div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Masukkan Kode 2FA Ini di Kiosk:</span>
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100/60 border-2 border-dashed border-amber-300 rounded-2xl py-4 px-2 text-center">
+                    <div id="wizard-pairing-code" class="font-mono text-4xl font-black text-amber-600 tracking-[0.25em] select-all">
+                        ------
+                    </div>
+                    <div class="text-[11px] text-amber-700 font-medium mt-1">
+                        Berlaku 10 Menit &bull; Sisa Percobaan: <span id="wizard-attempts-left" class="font-bold">5</span>x
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-gray-500 text-center">
+                Ketik 6 digit kode di atas pada layar Step 3 Kiosk untuk menyelesaikan pairing.
+            </p>
         </div>
 
-        <button type="button" onclick="closePairingModal()" class="w-full py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-2xl transition shadow-sm">
-            Tutup Jendela
-        </button>
+        <!-- STAGE 3: SUKSES PAIRING -->
+        <div id="stage-paired" class="space-y-4 hidden text-center py-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto">
+                <i class="ri-check-line font-black"></i>
+            </div>
+            <div>
+                <h4 class="text-base font-bold text-gray-900">Inisiasi Selesai!</h4>
+                <p class="text-xs text-gray-500 mt-1">Perangkat berhasil dipairing dan token rahasia sudah tersimpan di client.</p>
+            </div>
+            <button type="button" onclick="window.location.reload()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold shadow-sm">
+                Selesai & Muat Ulang Halaman
+            </button>
+        </div>
+
+        <!-- STAGE 4: KEDALUWARSA ATAU TERKUNCI -->
+        <div id="stage-error" class="space-y-3 hidden text-center py-2">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl mx-auto">
+                <i class="ri-error-warning-line"></i>
+            </div>
+            <div class="text-xs text-rose-700 font-bold" id="wizard-error-msg">Sesi inisiasi telah berakhir.</div>
+            <button type="button" onclick="restartSetup()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl">
+                Mulai Ulang Inisiasi
+            </button>
+        </div>
+
+        <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+            <button type="button" onclick="cancelCurrentSetup()" class="text-rose-500 hover:text-rose-700 font-bold">
+                Batalkan Inisiasi
+            </button>
+            <button type="button" onclick="closeSetupModal()" class="text-gray-500 hover:text-gray-700 font-semibold">
+                Tutup
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-function requestPairingCode(deviceId, deviceName) {
-    document.getElementById('pairing-device-title').innerText = 'Kode Pairing: ' + deviceName;
-    document.getElementById('pairing-code-display').innerText = 'MEMUAT...';
+let activeSetupDeviceId = null;
+let setupPollingInterval = null;
+
+function startDeviceSetup(deviceId, deviceName, deviceCode) {
+    activeSetupDeviceId = deviceId;
+    document.getElementById('wizard-device-name').innerText = deviceName;
+    document.getElementById('wizard-device-code').innerText = deviceCode;
+
+    // Reset view
+    setWizardStage('waiting_handshake');
     document.getElementById('modal-pairing').classList.remove('hidden');
 
-    fetch('<?= url("/smart-tap/devices/pairing-code") ?>', {
+    fetch('<?= url("/smart-tap/devices/start-setup") ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -388,22 +496,133 @@ function requestPairingCode(deviceId, deviceName) {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success && data.pairing_code) {
-            const c = String(data.pairing_code);
-            document.getElementById('pairing-code-display').innerText = c.slice(0, 3) + ' ' + c.slice(3);
+        if (data.success && data.status) {
+            renderWizardStatus(data.status);
+            startSetupPolling();
         } else {
-            alert(data.message || 'Gagal generate kode pairing');
-            closePairingModal();
+            alert(data.message || 'Gagal memulai inisiasi');
+            closeSetupModal();
         }
     })
     .catch(err => {
         alert('Gagal menghubungi server: ' + err);
-        closePairingModal();
+        closeSetupModal();
     });
 }
 
-function closePairingModal() {
+function startSetupPolling() {
+    if (setupPollingInterval) clearInterval(setupPollingInterval);
+    setupPollingInterval = setInterval(() => {
+        if (!activeSetupDeviceId) return;
+        fetch('<?= url("/smart-tap/devices/setup-status?id=") ?>' + encodeURIComponent(activeSetupDeviceId), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.status) {
+                renderWizardStatus(data.status);
+            }
+        })
+        .catch(() => {});
+    }, 2500);
+}
+
+function renderWizardStatus(status) {
+    setWizardStage(status.stage);
+
+    if (status.setup_code) {
+        document.getElementById('wizard-setup-code').innerText = status.setup_code;
+    }
+
+    if (status.stage === 'waiting_pairing') {
+        const c = String(status.pairing_code || '------');
+        document.getElementById('wizard-pairing-code').innerText = c.length === 6 ? c.slice(0, 3) + ' ' + c.slice(3) : c;
+        document.getElementById('wizard-handshake-meta').innerText = 
+            `Komputer: ${status.handshake_hostname || 'Kiosk'} • IP: ${status.handshake_ip || '-'}`;
+        document.getElementById('wizard-attempts-left').innerText = status.attempts_left;
+    }
+
+    if (status.stage === 'paired') {
+        if (setupPollingInterval) clearInterval(setupPollingInterval);
+    }
+
+    if (status.stage === 'expired' || status.stage === 'locked') {
+        if (setupPollingInterval) clearInterval(setupPollingInterval);
+        document.getElementById('wizard-error-msg').innerText = 
+            status.stage === 'locked' ? 'Terlalu banyak percobaan kode 2FA salah. Sesi dikunci.' : 'Kode setup atau 2FA telah kedaluwarsa.';
+    }
+}
+
+function setWizardStage(stage) {
+    const s1 = document.getElementById('stage-waiting-handshake');
+    const s2 = document.getElementById('stage-waiting-pairing');
+    const s3 = document.getElementById('stage-paired');
+    const s4 = document.getElementById('stage-error');
+
+    s1.classList.add('hidden');
+    s2.classList.add('hidden');
+    s3.classList.add('hidden');
+    s4.classList.add('hidden');
+
+    const ind1 = document.getElementById('step-indicator-1');
+    const ind2 = document.getElementById('step-indicator-2');
+    const ind3 = document.getElementById('step-indicator-3');
+
+    if (stage === 'waiting_handshake') {
+        s1.classList.remove('hidden');
+        ind1.className = "text-indigo-600 flex items-center gap-1 font-bold";
+        ind2.className = "text-gray-400 flex items-center gap-1";
+        ind3.className = "text-gray-400 flex items-center gap-1";
+    } else if (stage === 'waiting_pairing') {
+        s2.classList.remove('hidden');
+        ind1.className = "text-emerald-600 flex items-center gap-1 font-bold";
+        ind2.className = "text-amber-600 flex items-center gap-1 font-bold";
+        ind3.className = "text-gray-400 flex items-center gap-1";
+    } else if (stage === 'paired') {
+        s3.classList.remove('hidden');
+        ind1.className = "text-emerald-600 flex items-center gap-1 font-bold";
+        ind2.className = "text-emerald-600 flex items-center gap-1 font-bold";
+        ind3.className = "text-emerald-600 flex items-center gap-1 font-bold";
+    } else {
+        s4.classList.remove('hidden');
+    }
+}
+
+function cancelCurrentSetup() {
+    if (!activeSetupDeviceId) return;
+    if (confirm('Batalkan inisiasi perangkat ini?')) {
+        fetch('<?= url("/smart-tap/devices/cancel-setup") ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'id=' + encodeURIComponent(activeSetupDeviceId)
+        }).finally(() => {
+            closeSetupModal();
+        });
+    }
+}
+
+function restartSetup() {
+    if (activeSetupDeviceId) {
+        const name = document.getElementById('wizard-device-name').innerText;
+        const code = document.getElementById('wizard-device-code').innerText;
+        startDeviceSetup(activeSetupDeviceId, name, code);
+    }
+}
+
+function copyWizardVal(id, label) {
+    const val = document.getElementById(id).value || document.getElementById(id).innerText;
+    navigator.clipboard.writeText(val).then(() => {
+        alert(label + ' berhasil disalin!');
+    });
+}
+
+function closeSetupModal() {
+    if (setupPollingInterval) clearInterval(setupPollingInterval);
     document.getElementById('modal-pairing').classList.add('hidden');
+    activeSetupDeviceId = null;
 }
 
 function openDeviceModal() {
