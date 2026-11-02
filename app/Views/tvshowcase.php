@@ -1102,7 +1102,8 @@
         }
 
         function scheduleNextFetch() {
-            const duration = 8000 + (Math.random() * 4000 - 2000);
+            // Interval 20 - 30 detik agar tidak memicu rate-limit / bot-protection Imunify360 di server hosting
+            const duration = 25000 + (Math.random() * 6000 - 3000);
             fetchTimeout = setTimeout(async () => {
                 await fetchData();
                 scheduleNextFetch();
@@ -1150,8 +1151,19 @@
             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             try {
-                const res = await fetch(API_URL, { signal: controller.signal });
+                const res = await fetch(API_URL, {
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
                 clearTimeout(timeoutId);
+
+                // Cek apakah response benar JSON (mencegah SyntaxError jika dicegat halaman verifikasi bot/HTML oleh hosting)
+                const contentType = res.headers.get('content-type') || '';
+                if (!res.ok || !contentType.includes('application/json')) {
+                    console.warn('API tv-data mengembalikan non-JSON (diduga verifikasi Imunify360/WAF). Status:', res.status);
+                    return;
+                }
+
                 const data = await res.json();
 
                 appData.stats = data.stats;
