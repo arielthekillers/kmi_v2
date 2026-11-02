@@ -10,8 +10,14 @@ class SmartTapCardModel extends Model
     public function getStudentsList($search = '', $hasCard = null, $page = 1, $limit = 50, $kelasId = null)
     {
         $offset = ($page - 1) * $limit;
-        $where = ["s.deleted_at IS NULL"];
-        $params = [$this->academic_year_id ?? 1];
+        $yearId = $this->academic_year_id ?? 1;
+
+        $where = [
+            "se.academic_year_id = ?",
+            "se.status = 'Active'",
+            "s.deleted_at IS NULL"
+        ];
+        $params = [$yearId];
 
         if (!empty($search)) {
             $where[] = "(s.nama LIKE ? OR s.nis LIKE ? OR s.rfid_uid LIKE ?)";
@@ -36,13 +42,8 @@ class SmartTapCardModel extends Model
         $sql = "SELECT s.id, s.nis, s.nama, s.gender, s.rfid_uid,
                        k.id as kelas_id,
                        CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as kelas_nama
-                FROM students s
-                LEFT JOIN student_enrollments se ON se.id = (
-                    SELECT se2.id FROM student_enrollments se2 
-                    WHERE se2.student_id = s.id 
-                    ORDER BY (se2.academic_year_id = ?) DESC, se2.id DESC 
-                    LIMIT 1
-                )
+                FROM student_enrollments se
+                INNER JOIN students s ON se.student_id = s.id
                 LEFT JOIN kelas k ON se.kelas_id = k.id
                 WHERE $whereClause
                 ORDER BY k.tingkat ASC, k.abjad ASC, s.nama ASC
@@ -55,8 +56,14 @@ class SmartTapCardModel extends Model
 
     public function getStudentsCount($search = '', $hasCard = null, $kelasId = null)
     {
-        $where = ["s.deleted_at IS NULL"];
-        $params = [];
+        $yearId = $this->academic_year_id ?? 1;
+
+        $where = [
+            "se.academic_year_id = ?",
+            "se.status = 'Active'",
+            "s.deleted_at IS NULL"
+        ];
+        $params = [$yearId];
 
         if (!empty($search)) {
             $where[] = "(s.nama LIKE ? OR s.nis LIKE ? OR s.rfid_uid LIKE ?)";
@@ -72,12 +79,15 @@ class SmartTapCardModel extends Model
         }
 
         if (!empty($kelasId)) {
-            $where[] = "EXISTS (SELECT 1 FROM student_enrollments se WHERE se.student_id = s.id AND se.kelas_id = ?)";
+            $where[] = "se.kelas_id = ?";
             $params[] = (int)$kelasId;
         }
 
         $whereClause = implode(" AND ", $where);
-        $sql = "SELECT COUNT(*) FROM students s WHERE $whereClause";
+        $sql = "SELECT COUNT(*)
+                FROM student_enrollments se
+                INNER JOIN students s ON se.student_id = s.id
+                WHERE $whereClause";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int)$stmt->fetchColumn();
@@ -85,11 +95,17 @@ class SmartTapCardModel extends Model
 
     public function getCardStats()
     {
-        $studentStats = $this->db->query("SELECT 
+        $yearId = $this->academic_year_id ?? 1;
+
+        $stmtS = $this->db->prepare("SELECT 
             COUNT(*) as total, 
-            SUM(CASE WHEN rfid_uid IS NOT NULL AND TRIM(rfid_uid) != '' THEN 1 ELSE 0 END) as paired,
-            SUM(CASE WHEN rfid_uid IS NULL OR TRIM(rfid_uid) = '' THEN 1 ELSE 0 END) as unpaired
-        FROM students WHERE deleted_at IS NULL")->fetch(PDO::FETCH_ASSOC);
+            SUM(CASE WHEN s.rfid_uid IS NOT NULL AND TRIM(s.rfid_uid) != '' THEN 1 ELSE 0 END) as paired,
+            SUM(CASE WHEN s.rfid_uid IS NULL OR TRIM(s.rfid_uid) = '' THEN 1 ELSE 0 END) as unpaired
+        FROM student_enrollments se
+        INNER JOIN students s ON se.student_id = s.id
+        WHERE se.academic_year_id = ? AND se.status = 'Active' AND s.deleted_at IS NULL");
+        $stmtS->execute([$yearId]);
+        $studentStats = $stmtS->fetch(PDO::FETCH_ASSOC);
 
         $teacherStats = $this->db->query("SELECT 
             COUNT(*) as total, 
@@ -249,15 +265,16 @@ class SmartTapCardModel extends Model
 
     public function getAllMasterForSync()
     {
-        // 1. All Students with RFID
+        // 1. All Active Students in Current Academic Year with RFID
         $stmtS = $this->db->prepare("
             SELECT s.id, s.nis, s.nama, 'student' as person_type, s.rfid_uid,
                    CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as info,
                    se.kelas_id
-            FROM students s
-            LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+            FROM student_enrollments se
+            INNER JOIN students s ON se.student_id = s.id
             LEFT JOIN kelas k ON se.kelas_id = k.id
-            WHERE s.deleted_at IS NULL AND s.rfid_uid IS NOT NULL AND s.rfid_uid != ''
+            WHERE se.academic_year_id = ? AND se.status = 'Active' 
+              AND s.deleted_at IS NULL AND s.rfid_uid IS NOT NULL AND s.rfid_uid != ''
         ");
         $stmtS->execute([$this->academic_year_id]);
         $students = $stmtS->fetchAll(PDO::FETCH_ASSOC);

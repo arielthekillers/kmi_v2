@@ -566,10 +566,11 @@ class SmartTapController extends Controller
         if ($type === 'student') {
             $stmt = $db->prepare("
                 SELECT s.id, s.nama, CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as subinfo, s.nis
-                FROM students s
-                LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                FROM student_enrollments se
+                INNER JOIN students s ON se.student_id = s.id
                 LEFT JOIN kelas k ON se.kelas_id = k.id
-                WHERE s.deleted_at IS NULL AND (s.nama LIKE ? OR s.nis LIKE ?)
+                WHERE se.academic_year_id = ? AND se.status = 'Active' 
+                  AND s.deleted_at IS NULL AND (s.nama LIKE ? OR s.nis LIKE ?)
                 ORDER BY s.nama ASC
                 LIMIT 15
             ");
