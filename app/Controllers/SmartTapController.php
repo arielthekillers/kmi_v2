@@ -248,11 +248,13 @@ class SmartTapController extends Controller
         $events = $this->eventModel->getAllEvents();
         $classes = $this->kelasModel->findAllActive();
         $devices = $this->deviceModel->getActiveDevices();
+        $todayHolidayInfo = $this->eventModel->getAcademicHolidayInfo(date('Y-m-d'));
 
         $this->view('smart_tap/events', [
             'events' => $events,
             'classes' => $classes,
-            'devices' => $devices
+            'devices' => $devices,
+            'todayHolidayInfo' => $todayHolidayInfo
         ]);
     }
 
@@ -296,7 +298,8 @@ class SmartTapController extends Controller
             'after_close_action' => $_POST['after_close_action'] ?? 'reject',
             'allow_any_device' => (isset($_POST['allow_any_device']) && $_POST['allow_any_device'] == '1') ? 1 : 0,
             'allowed_devices' => !empty($_POST['allowed_devices']) ? (is_array($_POST['allowed_devices']) ? implode(',', $_POST['allowed_devices']) : $_POST['allowed_devices']) : null,
-            'is_active' => isset($_POST['is_active']) ? 1 : 0
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+            'sync_academic_calendar' => isset($_POST['sync_academic_calendar']) ? (int)$_POST['sync_academic_calendar'] : (($category === 'office') ? 1 : 0)
         ];
 
         if (empty($data['name'])) {

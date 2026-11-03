@@ -2,6 +2,7 @@
 renderHeader("Smart Tap — Master Event & Pengaturan Jam Absen");
 
 $today = date('Y-m-d');
+$todayHolidayInfo = $todayHolidayInfo ?? (new \App\Models\SmartTapEventModel())->getAcademicHolidayInfo($today);
 $activeTab = $_GET['tab'] ?? 'all';
 
 // Categorize events
@@ -240,7 +241,7 @@ foreach ($events as $ev) {
                 <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
                     <i class="ri-building-line"></i>
                 </span>
-                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Presensi Kantor & Kedinasan (3 Event)</h3>
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Presensi Kantor & Kedinasan</h3>
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
                     Rutin Kerja &bull; Guru & Karyawan
                 </span>
@@ -249,6 +250,23 @@ foreach ($events as $ev) {
                 <i class="ri-add-line"></i> Tambah Event Kantor
             </button>
         </div>
+
+        <?php if (!empty($todayHolidayInfo['is_holiday'])): ?>
+            <div class="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-xs">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base flex-shrink-0">
+                        <i class="ri-calendar-close-line"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-amber-950">Status Akademik Hari Ini (<?= date('d M Y') ?>):</span>
+                        <span class="ml-1 font-medium"><?= htmlspecialchars($todayHolidayInfo['reason']) ?></span>
+                    </div>
+                </div>
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-white/80 border border-amber-200 text-amber-800 font-bold text-[11px] self-start sm:self-center shadow-xs">
+                    <i class="ri-shield-check-line text-amber-600"></i> Presensi Kantor Diliburkan Otomatis
+                </span>
+            </div>
+        <?php endif; ?>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <?php if (empty($officeEvents)): ?>
@@ -295,6 +313,13 @@ foreach ($events as $ev) {
                                     <div class="font-mono font-bold text-rose-600"><?= substr($ev['close_time'], 0, 5) ?></div>
                                 </div>
                             </div>
+
+                            <?php if (!empty($ev['sync_academic_calendar'])): ?>
+                                <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-[10px] font-bold text-indigo-700">
+                                    <i class="ri-calendar-check-line text-indigo-500 text-xs"></i>
+                                    <span>Sinkron Kalender KBM (Libur Jumat & Dispensasi)</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
@@ -639,6 +664,22 @@ foreach ($events as $ev) {
                 </select>
             </div>
 
+            <!-- Sinkronisasi Kalender Akademik & KBM -->
+            <div id="field_sync_academic" class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/70">
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" name="sync_academic_calendar" id="event_sync_academic" value="1" checked class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                            <i class="ri-calendar-check-line text-blue-600"></i>
+                            Sinkronkan dengan Kalender Akademik & KBM
+                        </span>
+                        <p class="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
+                            Otomatis meliburkan / menonaktifkan presensi ini pada <strong>hari Jumat</strong>, hari <strong>libur kalender akademik</strong>, serta agenda <strong>dispensasi KBM untuk seluruh kelas</strong>.
+                        </p>
+                    </div>
+                </label>
+            </div>
+
             <div class="flex items-center gap-3 pt-1">
                 <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
                     <input type="checkbox" name="is_active" id="event_is_active" value="1" checked class="rounded text-indigo-600 focus:ring-indigo-500">
@@ -716,6 +757,7 @@ function openEventModal(defaultCategory = 'sholat') {
     document.querySelectorAll('.dev-checkbox').forEach(cb => cb.checked = false);
 
     setCategoryRadio(defaultCategory);
+    document.getElementById('event_sync_academic').checked = (defaultCategory === 'office');
     document.getElementById('modal-event-title').innerText = 'Tambah Event Baru';
     document.getElementById('modal-event').classList.remove('hidden');
 }
@@ -736,11 +778,13 @@ function onCategoryChange(cat) {
         toggleEventType('daily');
         document.getElementById('event_target_type').value = 'teachers';
         document.getElementById('event_after_close_action').value = 'very_late';
+        document.getElementById('event_sync_academic').checked = true;
     } else { // sholat
         document.getElementById('event_type_select').value = 'daily';
         toggleEventType('daily');
         document.getElementById('event_target_type').value = 'all';
         document.getElementById('event_after_close_action').value = 'reject';
+        document.getElementById('event_sync_academic').checked = false;
     }
 }
 
@@ -755,6 +799,7 @@ function editEvent(ev) {
     document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
     document.getElementById('event_after_close_action').value = ev.after_close_action;
     document.getElementById('event_is_active').checked = ev.is_active == 1;
+    document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
 
     let cat = ev.category || 'sholat';
     if (!ev.category) {
@@ -790,6 +835,7 @@ function duplicateEvent(ev) {
     document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
     document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
     document.getElementById('event_after_close_action').value = ev.after_close_action;
+    document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
     toggleEventType('one_off');
     document.getElementById('modal-event-title').innerText = 'Gunakan Ulang Event: ' + ev.name;
 }
