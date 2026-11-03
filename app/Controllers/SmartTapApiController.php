@@ -248,7 +248,7 @@ class SmartTapApiController extends Controller
             $dayOfWeek = date('N');
             $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $date);
             if (!empty($events)) {
-                $eventId = $events[0]['id'];
+                $eventId = $this->findCurrentEventId($events);
             }
         }
 
@@ -273,6 +273,47 @@ class SmartTapApiController extends Controller
     /**
      * Ping endpoint
      */
+    /**
+     * Cari ID event yang paling relevan dengan waktu server saat ini
+     */
+    private function findCurrentEventId(array $events): int
+    {
+        if (empty($events)) return 0;
+        $currentTime = date('H:i:s');
+
+        // Pass 1: Sesi yang sedang buka resmi saat ini
+        foreach ($events as $ev) {
+            $open = $ev['open_time'] ?? '00:00:00';
+            $close = $ev['close_time'] ?? '23:59:59';
+            if ($currentTime >= $open && $currentTime <= $close) {
+                return (int)$ev['id'];
+            }
+        }
+
+        // Pass 2: Sesi yang baru saja selesai & mengizinkan very_late
+        $recentVeryLateId = 0;
+        foreach ($events as $ev) {
+            $close = $ev['close_time'] ?? '23:59:59';
+            $allowsVeryLate = ($ev['after_close_action'] ?? '') === 'very_late';
+            if ($currentTime > $close && $allowsVeryLate) {
+                $recentVeryLateId = (int)$ev['id'];
+            }
+        }
+        if ($recentVeryLateId > 0) {
+            return $recentVeryLateId;
+        }
+
+        // Pass 3: Sesi berikutnya hari ini
+        foreach ($events as $ev) {
+            $open = $ev['open_time'] ?? '00:00:00';
+            if ($currentTime < $open) {
+                return (int)$ev['id'];
+            }
+        }
+
+        return (int)$events[0]['id'];
+    }
+
     public function ping()
     {
         header('Content-Type: application/json');
@@ -302,7 +343,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.2.0';
+        $latestVersion = '1.2.1';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -310,7 +351,7 @@ class SmartTapApiController extends Controller
             'success' => true,
             'latest_version' => $latestVersion,
             'release_date' => '2026-11-03',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.0:\n- Dukungan Multi-Reader USB Scanner (Windows RawInput isolasi hardware)\n- Antrean tap presensi FIFO tanpa resiko karakter tertukar\n- Tampilan notifikasi Live Card Stack (beberapa kartu sekaligus)\n- Sinkronisasi presensi kategori Kantor dengan kalender akademik", 
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.1:\n- Perbaikan akurasi penjadwalan otomatis sesi (Auto-Schedule): Memprioritaskan jendela sesi buka resmi (Dzuhur/Ashar/dsb) dan mencegah sesi Subuh mengunci sesi lain\n- Dukungan Multi-Reader USB Scanner (Windows RawInput isolasi hardware)\n- Antrean tap presensi FIFO tanpa resiko karakter tertukar",
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false

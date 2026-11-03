@@ -51,7 +51,7 @@ class SmartTapController extends Controller
         $dayOfWeek = date('N');
         $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today);
 
-        $selectedEventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : (!empty($events) ? $events[0]['id'] : 0);
+        $selectedEventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : $this->findCurrentEventId($events);
         $liveData = $selectedEventId ? $this->logModel->getEventLiveStatus($selectedEventId, $today) : null;
         $recentLogs = $selectedEventId ? $this->logModel->getRecentLogs($selectedEventId, $today, 25) : [];
 
@@ -70,6 +70,47 @@ class SmartTapController extends Controller
     /**
      * Rekapitulasi & Laporan Kedisiplinan
      */
+    /**
+     * Cari ID event yang paling relevan dengan waktu server saat ini
+     */
+    private function findCurrentEventId(array $events): int
+    {
+        if (empty($events)) return 0;
+        $currentTime = date('H:i:s');
+
+        // Pass 1: Sesi yang sedang buka resmi saat ini
+        foreach ($events as $ev) {
+            $open = $ev['open_time'] ?? '00:00:00';
+            $close = $ev['close_time'] ?? '23:59:59';
+            if ($currentTime >= $open && $currentTime <= $close) {
+                return (int)$ev['id'];
+            }
+        }
+
+        // Pass 2: Sesi yang baru saja selesai & mengizinkan very_late
+        $recentVeryLateId = 0;
+        foreach ($events as $ev) {
+            $close = $ev['close_time'] ?? '23:59:59';
+            $allowsVeryLate = ($ev['after_close_action'] ?? '') === 'very_late';
+            if ($currentTime > $close && $allowsVeryLate) {
+                $recentVeryLateId = (int)$ev['id'];
+            }
+        }
+        if ($recentVeryLateId > 0) {
+            return $recentVeryLateId;
+        }
+
+        // Pass 3: Sesi berikutnya hari ini
+        foreach ($events as $ev) {
+            $open = $ev['open_time'] ?? '00:00:00';
+            if ($currentTime < $open) {
+                return (int)$ev['id'];
+            }
+        }
+
+        return (int)$events[0]['id'];
+    }
+
     public function reports()
     {
         require_login();
