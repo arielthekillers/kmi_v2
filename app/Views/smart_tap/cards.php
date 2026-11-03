@@ -45,7 +45,7 @@ $pairedPercent = ($totalCurrent > 0) ? round(($pairedCurrent / $totalCurrent) * 
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Pairing & Manajemen Kartu RFID</h1>
                     <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-                        Hubungkan UID kartu fisik RFID ke akun santri dan guru untuk digunakan pada terminal mini PC saat absensi sholat maupun kegiatan pondok.
+                        Hubungkan UID kartu fisik RFID ke akun santri dan guru untuk digunakan pada terminal perangkat saat absensi sholat maupun kegiatan pondok.
                     </p>
                 </div>
             </div>

@@ -306,7 +306,7 @@
                                     </a>
                                     <?php if (auth_get_role() === 'admin'): ?>
                                         <a href="<?= url('/smart-tap/devices') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
-                                            <i class="ri-device-line text-blue-500"></i> Titik Terminal (Mini PC)
+                                            <i class="ri-device-line text-blue-500"></i> Terminal (Device)
                                         </a>
                                         <a href="<?= url('/smart-tap/officers') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
                                             <i class="ri-user-star-line text-amber-600"></i> Petugas Smart Tap
@@ -554,7 +554,7 @@
                     </a>
                     <?php if (auth_get_role() === 'admin'): ?>
                         <a href="<?= url('/smart-tap/devices') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="ri-device-line mr-2 text-blue-500"></i>Titik Terminal (Mini PC)
+                            <i class="ri-device-line mr-2 text-blue-500"></i>Terminal (Device)
                         </a>
                         <a href="<?= url('/smart-tap/officers') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
                             <i class="ri-user-star-line mr-2 text-amber-500"></i>Petugas Smart Tap

@@ -1,5 +1,5 @@
 <?php
-renderHeader("Smart Tap — Titik Terminal & Perangkat Presensi");
+renderHeader("Smart Tap — Terminal (Device)");
 
 $totalDevices = count($devices);
 $pairedDevices = 0;
@@ -46,16 +46,16 @@ $unpairedDevices = $totalDevices - $pairedDevices;
                     <i class="ri-base-station-line"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Titik Terminal & Perangkat Presensi</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Terminal (Device)</h1>
                     <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-                        Kelola perangkat terminal absensi di berbagai titik (Masjid, Kantor, Gerbang, Aula) serta pengaturan token sinkronisasi data offline client.
+                        Kelola perangkat terminal presensi di berbagai titik (Masjid, Kantor, Gerbang, Aula) serta inisiasi sinkronisasi data offline terminal.
                     </p>
                 </div>
             </div>
 
             <!-- Right Action Button -->
             <div class="flex items-center gap-3 self-start lg:self-center flex-wrap">
-                <a href="<?= url('/smart-tap/download-client') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-indigo-50/50 text-gray-700 hover:text-indigo-700 text-sm font-semibold rounded-2xl border border-gray-200 hover:border-indigo-200 shadow-xs transition-all whitespace-nowrap" title="Unduh Aplikasi Client Kiosk untuk PC / Mini PC Terminal Presensi">
+                <a href="<?= url('/smart-tap/download-client') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-indigo-50/50 text-gray-700 hover:text-indigo-700 text-sm font-semibold rounded-2xl border border-gray-200 hover:border-indigo-200 shadow-xs transition-all whitespace-nowrap" title="Unduh Aplikasi Client Kiosk untuk Perangkat Terminal Presensi">
                     <i class="ri-download-cloud-2-line text-indigo-600 text-lg"></i>
                     <span>Unduh Kiosk Client (.exe)</span>
                 </a>
@@ -118,7 +118,7 @@ $unpairedDevices = $totalDevices - $pairedDevices;
                 </div>
                 <h3 class="text-base font-bold text-white">Sinkronisasi Database & Presensi Otomatis</h3>
                 <p class="text-xs text-indigo-200/90 max-w-2xl leading-relaxed">
-                    Setiap perangkat memerlukan <strong>Device Token</strong> untuk autentikasi API agar aplikasi client dapat mengunduh master kartu RFID dan mengirimkan rekaman tap absensi ke server secara otomatis.
+                    Setiap perangkat terminal terhubung secara aman menggunakan sistem inisiasi otomatis (2FA) agar dapat mengunduh master kartu dan menyinkronkan data presensi secara offline maupun online.
                 </p>
             </div>
 
@@ -227,23 +227,27 @@ $unpairedDevices = $totalDevices - $pairedDevices;
                                     </span>
                                 </div>
                                 
-                                <!-- Secret Token Display -->
-                                <div class="border-t border-gray-200/60 pt-3">
-                                    <div class="flex items-center justify-between text-[11px] text-gray-500 mb-1.5">
-                                        <span class="font-bold flex items-center gap-1">
-                                            <i class="ri-shield-keyhole-line text-indigo-500"></i> Device Token (Secret):
+                                <!-- Detail Teknis Token (Otomatis ditangani via Wizard 2FA) -->
+                                <details class="group/token border-t border-gray-200/60 pt-2 text-[11px]">
+                                    <summary class="cursor-pointer text-gray-400 hover:text-indigo-600 flex items-center justify-between font-semibold select-none py-1">
+                                        <span class="flex items-center gap-1">
+                                            <i class="ri-shield-keyhole-line text-xs text-indigo-500"></i> Token Autentikasi (Secret)
                                         </span>
+                                        <span class="text-[10px] text-gray-400 group-open/token:rotate-180 transition-transform">▼</span>
+                                    </summary>
+                                    <div class="mt-2 space-y-1.5 bg-gray-50/80 p-2.5 rounded-xl border border-gray-200/60">
+                                        <p class="text-[10px] text-gray-500 leading-tight">Token ini otomatis terpasang saat inisiasi 2FA. Salin manual hanya jika diperlukan.</p>
+                                        <div class="flex items-center gap-1.5">
+                                            <input type="password" value="<?= htmlspecialchars($d['device_token']) ?>" id="token-<?= $d['id'] ?>" readonly class="w-full text-[11px] font-mono bg-white border border-gray-200 rounded-lg py-1.5 px-2.5 text-gray-700 tracking-wider focus:outline-none">
+                                            <button type="button" onclick="copyToken('token-<?= $d['id'] ?>')" class="p-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition border border-indigo-100 flex-shrink-0" title="Salin Token">
+                                                <i class="ri-file-copy-line"></i>
+                                            </button>
+                                            <button type="button" onclick="toggleToken('token-<?= $d['id'] ?>', this)" class="p-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition border border-gray-200 flex-shrink-0" title="Lihat">
+                                                <i class="ri-eye-line"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <input type="password" value="<?= htmlspecialchars($d['device_token']) ?>" id="token-<?= $d['id'] ?>" readonly class="w-full text-xs font-mono bg-white border border-gray-200 rounded-xl py-2 px-3 text-gray-700 tracking-wider focus:outline-none">
-                                        <button type="button" onclick="copyToken('token-<?= $d['id'] ?>')" class="p-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition border border-indigo-100 flex-shrink-0" title="Salin Token">
-                                            <i class="ri-file-copy-line text-sm"></i>
-                                        </button>
-                                        <button type="button" onclick="toggleToken('token-<?= $d['id'] ?>', this)" class="p-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition border border-gray-200 flex-shrink-0" title="Lihat">
-                                            <i class="ri-eye-line text-sm"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                </details>
                             </div>
 
                             <!-- Inisiasi Perangkat Action -->
@@ -353,7 +357,7 @@ $unpairedDevices = $totalDevices - $pairedDevices;
                 </div>
                 <div>
                     <h3 class="text-sm font-black text-gray-900" id="wizard-device-name">Inisiasi Perangkat</h3>
-                    <p class="text-[11px] text-gray-500" id="wizard-device-code">MINI-PC</p>
+                    <p class="text-[11px] text-gray-500" id="wizard-device-code">TERMINAL</p>
                 </div>
             </div>
             <button type="button" onclick="closeSetupModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>

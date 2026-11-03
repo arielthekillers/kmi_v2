@@ -428,7 +428,7 @@ class SmartTapController extends Controller
     }
 
     /**
-     * Titik Terminal / Mini PC Devices
+     * Terminal (Device)
      */
     public function devices()
     {
@@ -463,7 +463,7 @@ class SmartTapController extends Controller
             $_SESSION['success'] = "Data perangkat berhasil diupdate.";
         } else {
             $this->deviceModel->createDevice($data);
-            $_SESSION['success'] = "Perangkat Mini PC baru berhasil didaftarkan.";
+            $_SESSION['success'] = "Perangkat Terminal baru berhasil didaftarkan.";
         }
 
         $this->redirect('/smart-tap/devices');
@@ -576,7 +576,7 @@ class SmartTapController extends Controller
         $id = (int)($_POST['id'] ?? ($_GET['id'] ?? 0));
         if ($id) {
             $this->deviceModel->unpairDevice($id);
-            $_SESSION['success'] = "Hubungan Mini PC berhasil diputus (Unpaired). Mesin harus dipairing ulang untuk dapat sync.";
+            $_SESSION['success'] = "Hubungan Terminal berhasil diputus (Unpaired). Mesin harus dipairing ulang untuk dapat sync.";
         }
         $this->redirect('/smart-tap/devices');
     }
