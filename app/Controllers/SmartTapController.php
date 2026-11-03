@@ -690,4 +690,60 @@ class SmartTapController extends Controller
         }
         $this->redirect('/smart-tap/officers');
     }
+
+    /**
+     * Unduh Aplikasi Kiosk Client (.exe atau ZIP)
+     */
+    public function downloadClient()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/');
+        }
+
+        $downloadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'downloads';
+        
+        // Prioritas unduhan: file EXE langsung atau zip installer
+        $files = [
+            'SmartTapKiosk.exe' => 'SmartTapKiosk.exe',
+            'SmartTapKiosk-Windows.zip' => 'SmartTapKiosk-Windows.zip',
+            'smart-tap-update.zip' => 'smart-tap-update.zip'
+        ];
+
+        $targetFile = null;
+        $downloadName = 'SmartTapKiosk.exe';
+
+        // Cek file mana yang ada
+        foreach ($files as $filename => $asName) {
+            $path = $downloadDir . DIRECTORY_SEPARATOR . $filename;
+            if (file_exists($path)) {
+                $targetFile = $path;
+                $downloadName = $asName;
+                break;
+            }
+        }
+
+        if (!$targetFile || !file_exists($targetFile)) {
+            add_flash('File installer Smart Tap Client belum tersedia di server. Silakan hubungi Administrator sistem.', 'error');
+            $this->redirect('/smart-tap/devices');
+        }
+
+        $mimeType = (substr($downloadName, -4) === '.zip') ? 'application/zip' : 'application/octet-stream';
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $mimeType);
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($targetFile));
+        
+        // Bersihkan output buffer sebelum kirim file
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        readfile($targetFile);
+        exit;
+    }
 }

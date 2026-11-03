@@ -276,6 +276,7 @@ class App
         $this->router->post('/smart-tap/devices/unpair', ['App\Controllers\SmartTapController', 'unpairDevice']);
         $this->router->get('/smart-tap/devices/unpair', ['App\Controllers\SmartTapController', 'unpairDevice']);
         $this->router->get('/smart-tap/devices/delete', ['App\Controllers\SmartTapController', 'deleteDevice']);
+        $this->router->get('/smart-tap/download-client', ['App\Controllers\SmartTapController', 'downloadClient']);
         $this->router->get('/smart-tap/officers', ['App\Controllers\SmartTapController', 'officers']);
         $this->router->post('/smart-tap/officers/update', ['App\Controllers\SmartTapController', 'updateOfficers']);
         $this->router->get('/smart-tap/officers/delete', ['App\Controllers\SmartTapController', 'deleteOfficer']);
@@ -283,6 +284,9 @@ class App
         // Smart Tap Offline Sync & API Routes
         $this->router->post('/api/smart-tap/handshake', ['App\Controllers\SmartTapApiController', 'handshake']);
         $this->router->post('/api/smart-tap/pair', ['App\Controllers\SmartTapApiController', 'pairDevice']);
+        $this->router->get('/api/smart-tap/version', ['App\Controllers\SmartTapApiController', 'version']);
+        $this->router->get('/api/smart-tap/download-update', ['App\Controllers\SmartTapApiController', 'downloadUpdate']);
+        $this->router->get('/downloads/smart-tap-update.zip', ['App\Controllers\SmartTapApiController', 'downloadUpdate']);
         $this->router->get('/api/smart-tap/sync-master', ['App\Controllers\SmartTapApiController', 'syncMaster']);
         $this->router->post('/api/smart-tap/sync-logs', ['App\Controllers\SmartTapApiController', 'syncLogs']);
         $this->router->get('/api/smart-tap/live-data', ['App\Controllers\SmartTapApiController', 'liveData']);

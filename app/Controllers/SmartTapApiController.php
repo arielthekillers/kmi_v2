@@ -284,5 +284,69 @@ class SmartTapApiController extends Controller
         ]);
         exit;
     }
+
+    /**
+     * GET /api/smart-tap/version
+     * Mengembalikan info versi rilis Smart Tap Kiosk Client terbaru
+     */
+    public function version()
+    {
+        header('Content-Type: application/json');
+
+        // Menentukan base url dinamis
+        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+        $base = $protocol . "://" . $host;
+        if ($scriptDir !== '/' && $scriptDir !== '\\' && !empty($scriptDir)) {
+            $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
+        }
+
+        $latestVersion = '1.1.0';
+        $updateZipUrl = $base . '/api/smart-tap/download-update';
+        $exeUrl = $base . '/smart-tap/download-client';
+
+        echo json_encode([
+            'success' => true,
+            'latest_version' => $latestVersion,
+            'release_date' => '2026-11-03',
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.1.0:\n- Sinkronisasi presensi kategori Kantor dengan kalender akademik & dispensasi KBM\n- Penyesuaian filter target absensi (santri, pengajar/pegawai, dan semua)\n- Fitur One-Click In-App Auto Update otomatis dari terminal\n- Tampilan instruksi inisiasi yang diperjelas",
+            'download_url' => $updateZipUrl,
+            'exe_download_url' => $exeUrl,
+            'mandatory' => false
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    /**
+     * GET /api/smart-tap/download-update
+     * Mengalirkan file zip patch smart-tap-update.zip
+     */
+    public function downloadUpdate()
+    {
+        $downloadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'downloads';
+        $targetFile = $downloadDir . DIRECTORY_SEPARATOR . 'smart-tap-update.zip';
+
+        if (!file_exists($targetFile)) {
+            header('HTTP/1.0 404 Not Found');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Berkas update tidak ditemukan di server']);
+            exit;
+        }
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="smart-tap-update.zip"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($targetFile));
+
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        readfile($targetFile);
+        exit;
+    }
 }
 
