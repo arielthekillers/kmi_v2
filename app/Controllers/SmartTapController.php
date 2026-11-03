@@ -225,6 +225,10 @@ class SmartTapController extends Controller
     public function events()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak. Modul Smart Tap hanya dapat diakses oleh Admin atau Petugas Smart Tap.', 'error');
+            $this->redirect('/');
+        }
 
         $events = $this->eventModel->getAllEvents();
         $classes = $this->kelasModel->findAllActive();
@@ -240,6 +244,10 @@ class SmartTapController extends Controller
     public function storeEvent()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/smart-tap/events');
+        }
 
         $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
         $eventType = $_POST['event_type'] ?? 'daily';
@@ -295,6 +303,11 @@ class SmartTapController extends Controller
     public function deleteEvent()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/smart-tap/events');
+        }
+
         $id = (int)($_GET['id'] ?? 0);
         if ($id) {
             $this->eventModel->deleteEvent($id);
@@ -309,6 +322,10 @@ class SmartTapController extends Controller
     public function cards()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak. Modul Smart Tap hanya dapat diakses oleh Admin atau Petugas Smart Tap.', 'error');
+            $this->redirect('/');
+        }
 
         $tab = $_GET['tab'] ?? 'students';
         $search = trim($_GET['search'] ?? '');
@@ -349,6 +366,11 @@ class SmartTapController extends Controller
     public function pairCard()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            header('Content-Type: application/json', true, 403);
+            echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
+            exit;
+        }
         header('Content-Type: application/json');
 
         $personType = $_POST['person_type'] ?? '';
@@ -372,6 +394,11 @@ class SmartTapController extends Controller
     public function unpairCard()
     {
         require_login();
+        if (!auth_is_smart_tap_officer()) {
+            header('Content-Type: application/json', true, 403);
+            echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
+            exit;
+        }
         header('Content-Type: application/json');
 
         $personType = $_POST['person_type'] ?? '';
