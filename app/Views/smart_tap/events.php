@@ -549,147 +549,163 @@ foreach ($events as $ev) {
 <!-- ============================================== -->
 <!-- MODAL CREATE / EDIT / DUPLICATE EVENT          -->
 <!-- ============================================== -->
-<div id="modal-event" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-100 overflow-hidden transform transition-all">
-        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg">
+<div id="modal-event" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden transform transition-all">
+        <!-- Header Sticky (Selalu Terlihat di Atas) -->
+        <div class="p-5 sm:px-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/70 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl shadow-xs">
                     <i class="ri-calendar-event-line"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-gray-900" id="modal-event-title">Tambah Event Absensi</h3>
-                    <p class="text-[11px] text-gray-500">Konfigurasi jam buka/tutup dan aturan presensi</p>
+                    <h3 class="text-base font-bold text-gray-900 tracking-tight" id="modal-event-title">Tambah Event Absensi</h3>
+                    <p class="text-[11px] text-gray-500">Konfigurasi jam buka/tutup dan aturan presensi Smart Tap</p>
                 </div>
             </div>
-            <button onclick="closeEventModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            <button type="button" onclick="closeEventModal()" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center text-xl transition leading-none">&times;</button>
         </div>
 
-        <form method="POST" action="<?= url('/smart-tap/events/store') ?>" class="p-6 space-y-4">
+        <!-- Form with 2-Column Grid Body -->
+        <form method="POST" action="<?= url('/smart-tap/events/store') ?>" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <input type="hidden" name="id" id="event_id">
 
-            <!-- Category Selector Pills -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategori Kegiatan</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-emerald-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-sholat">
-                        <input type="radio" name="category" value="sholat" checked onchange="onCategoryChange('sholat')" class="text-emerald-600 focus:ring-emerald-500 mb-1">
-                        <span class="text-emerald-800">Sholat 5 Waktu</span>
-                    </label>
-                    <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-blue-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-office">
-                        <input type="radio" name="category" value="office" onchange="onCategoryChange('office')" class="text-blue-600 focus:ring-blue-500 mb-1">
-                        <span class="text-blue-800">Kantor (Office)</span>
-                    </label>
-                    <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-amber-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-incidental">
-                        <input type="radio" name="category" value="incidental" onchange="onCategoryChange('incidental')" class="text-amber-600 focus:ring-amber-500 mb-1">
-                        <span class="text-amber-800">Insidental</span>
-                    </label>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Kegiatan / Event <span class="text-rose-500">*</span></label>
-                <input type="text" name="name" id="event_name" required placeholder="Contoh: Sholat Maghrib / Masuk Kantor Pagi / Upacara Bendera" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                <!-- Row 1: Kategori Kegiatan (Full Width 3 Kolom) -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Tipe Jadwal</label>
-                    <select name="event_type" id="event_type_select" onchange="toggleEventType(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
-                        <option value="daily">Rutin Harian (Tiap Hari)</option>
-                        <option value="one_off">Insidental (Tanggal Tertentu)</option>
-                    </select>
+                    <label class="block text-xs font-bold text-gray-700 mb-2">Kategori Kegiatan <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-emerald-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-sholat">
+                            <input type="radio" name="category" value="sholat" checked onchange="onCategoryChange('sholat')" class="text-emerald-600 focus:ring-emerald-500 mb-1">
+                            <span class="text-emerald-800">Sholat 5 Waktu</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-blue-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-office">
+                            <input type="radio" name="category" value="office" onchange="onCategoryChange('office')" class="text-blue-600 focus:ring-blue-500 mb-1">
+                            <span class="text-blue-800">Kantor (Office)</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 border rounded-2xl cursor-pointer hover:bg-amber-50/50 text-xs font-bold border-gray-200 transition text-center category-card" id="card-cat-incidental">
+                            <input type="radio" name="category" value="incidental" onchange="onCategoryChange('incidental')" class="text-amber-600 focus:ring-amber-500 mb-1">
+                            <span class="text-amber-800">Insidental</span>
+                        </label>
+                    </div>
                 </div>
-                <div id="field_event_date" class="hidden">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Acara</label>
-                    <input type="date" name="event_date" id="event_date" value="<?= $today ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
-                </div>
-                <div id="field_target_type">
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Peserta</label>
-                    <select name="target_type" id="event_target_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
-                        <option value="all">Santri & Pengajar (Semua)</option>
-                        <option value="students">Santri Saja</option>
-                        <option value="teachers">Pengajar / Pegawai Saja</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="bg-gray-50/70 p-4 rounded-2xl border border-gray-100 space-y-3">
-                <span class="block text-xs font-bold text-gray-800 uppercase tracking-wider">Konfigurasi Jam & Toleransi</span>
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-600 mb-1">Jam Buka Tap</label>
-                        <input type="time" name="open_time" id="event_open_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2.5">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-emerald-700 mb-1">Batas Tepat Waktu</label>
-                        <input type="time" name="start_time" id="event_start_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2.5">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-rose-600 mb-1">Jam Tutup Tap</label>
-                        <input type="time" name="close_time" id="event_close_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2.5">
-                    </div>
-                </div>
-            </div>
+                <!-- Row 2: 2 Kolom Seimbang -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- KOLOM KIRI: Informasi & Target Event -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Kegiatan / Event <span class="text-rose-500">*</span></label>
+                            <input type="text" name="name" id="event_name" required placeholder="Contoh: Sholat Maghrib / Masuk Kantor Pagi / Upacara" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                        </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1.5">Terminal / Titik Absensi yang Berlaku</label>
-                <div class="space-y-2 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-100">
-                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
-                        <input type="radio" name="allow_any_device" id="device_all_radio" value="1" checked onchange="toggleDeviceOptions(true)" class="text-indigo-600 focus:ring-indigo-500">
-                        <span>Semua Terminal (Fleksibel di seluruh titik)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
-                        <input type="radio" name="allow_any_device" id="device_specific_radio" value="0" onchange="toggleDeviceOptions(false)" class="text-indigo-600 focus:ring-indigo-500">
-                        <span>Hanya Berlaku di Terminal Tertentu:</span>
-                    </label>
-                    <div id="device_checkboxes_container" class="hidden pl-6 pt-2 space-y-1.5 border-t border-gray-200/60 mt-2">
-                        <?php foreach ($devices as $dev): ?>
-                            <label class="flex items-center gap-2 text-xs text-gray-600">
-                                <input type="checkbox" name="allowed_devices[]" value="<?= $dev['id'] ?>" class="dev-checkbox rounded text-indigo-600 focus:ring-indigo-500">
-                                <span><?= htmlspecialchars($dev['device_name']) ?> (<?= htmlspecialchars($dev['location'] ?: '-') ?>)</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Tipe Jadwal</label>
+                                <select name="event_type" id="event_type_select" onchange="toggleEventType(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                                    <option value="daily">Rutin Harian (Tiap Hari)</option>
+                                    <option value="one_off">Insidental (Tanggal Tertentu)</option>
+                                </select>
+                            </div>
+                            <div id="field_event_date" class="hidden">
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Acara</label>
+                                <input type="date" name="event_date" id="event_date" value="<?= $today ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                            </div>
+                            <div id="field_target_type">
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Peserta</label>
+                                <select name="target_type" id="event_target_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                                    <option value="all">Santri & Pengajar (Semua)</option>
+                                    <option value="students">Santri Saja</option>
+                                    <option value="teachers">Pengajar / Pegawai Saja</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sinkronisasi Kalender Akademik & KBM -->
+                        <div id="field_sync_academic" class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/70">
+                            <label class="flex items-start gap-2.5 cursor-pointer">
+                                <input type="checkbox" name="sync_academic_calendar" id="event_sync_academic" value="1" checked class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                                        <i class="ri-calendar-check-line text-blue-600"></i>
+                                        Sinkronkan Kalender Akademik & KBM
+                                    </span>
+                                    <p class="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
+                                        Otomatis meliburkan presensi ini pada <strong>hari Jumat</strong>, hari <strong>libur kalender akademik</strong>, serta saat ada agenda <strong>dispensasi KBM untuk seluruh kelas</strong>.
+                                    </p>
+                                </div>
                             </label>
-                        <?php endforeach; ?>
-                        <?php if (empty($devices)): ?>
-                            <div class="text-[11px] text-gray-400 italic">Belum ada terminal terdaftar.</div>
-                        <?php endif; ?>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
+                                <input type="checkbox" name="is_active" id="event_is_active" value="1" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Event Aktif</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- KOLOM KANAN: Waktu, Toleransi & Terminal -->
+                    <div class="space-y-4">
+                        <div class="bg-gray-50/80 p-4 rounded-2xl border border-gray-200/80 space-y-3">
+                            <span class="block text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="ri-time-line text-indigo-600"></i> Konfigurasi Jam & Toleransi
+                            </span>
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-600 mb-1">Jam Buka</label>
+                                    <input type="time" name="open_time" id="event_open_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2 font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-emerald-700 mb-1">Tepat Waktu</label>
+                                    <input type="time" name="start_time" id="event_start_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2 font-mono text-emerald-800 font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-rose-600 mb-1">Jam Tutup</label>
+                                    <input type="time" name="close_time" id="event_close_time" required class="w-full text-xs rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-2 font-mono text-rose-800 font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5">Aturan Ketika Lewat Jam Tutup</label>
+                            <select name="after_close_action" id="event_after_close_action" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                                <option value="reject">Tolak Absensi (Pintu ditutup, status Ghaib/Alpa)</option>
+                                <option value="very_late">Tetap Terima (Masuk status 'Sangat Terlambat')</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5">Terminal / Titik Absensi yang Berlaku</label>
+                            <div class="space-y-2 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-200/80">
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
+                                    <input type="radio" name="allow_any_device" id="device_all_radio" value="1" checked onchange="toggleDeviceOptions(true)" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span>Semua Terminal (Fleksibel di seluruh titik)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
+                                    <input type="radio" name="allow_any_device" id="device_specific_radio" value="0" onchange="toggleDeviceOptions(false)" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span>Hanya Berlaku di Terminal Tertentu:</span>
+                                </label>
+                                <div id="device_checkboxes_container" class="hidden pl-6 pt-2 space-y-1.5 border-t border-gray-200/60 mt-2 max-h-32 overflow-y-auto">
+                                    <?php foreach ($devices as $dev): ?>
+                                        <label class="flex items-center gap-2 text-xs text-gray-600">
+                                            <input type="checkbox" name="allowed_devices[]" value="<?= $dev['id'] ?>" class="dev-checkbox rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span><?= htmlspecialchars($dev['device_name']) ?> (<?= htmlspecialchars($dev['location'] ?: '-') ?>)</span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($devices)): ?>
+                                        <div class="text-[11px] text-gray-400 italic">Belum ada terminal terdaftar.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1.5">Aturan Ketika Lewat Jam Tutup</label>
-                <select name="after_close_action" id="event_after_close_action" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
-                    <option value="reject">Tolak Absensi (Pintu ditutup, status Ghaib/Alpa)</option>
-                    <option value="very_late">Tetap Terima (Masuk status 'Sangat Terlambat')</option>
-                </select>
-            </div>
-
-            <!-- Sinkronisasi Kalender Akademik & KBM -->
-            <div id="field_sync_academic" class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/70">
-                <label class="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" name="sync_academic_calendar" id="event_sync_academic" value="1" checked class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
-                    <div>
-                        <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-                            <i class="ri-calendar-check-line text-blue-600"></i>
-                            Sinkronkan dengan Kalender Akademik & KBM
-                        </span>
-                        <p class="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
-                            Otomatis meliburkan / menonaktifkan presensi ini pada <strong>hari Jumat</strong>, hari <strong>libur kalender akademik</strong>, serta agenda <strong>dispensasi KBM untuk seluruh kelas</strong>.
-                        </p>
-                    </div>
-                </label>
-            </div>
-
-            <div class="flex items-center gap-3 pt-1">
-                <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
-                    <input type="checkbox" name="is_active" id="event_is_active" value="1" checked class="rounded text-indigo-600 focus:ring-indigo-500">
-                    <span>Event Aktif</span>
-                </label>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
-                <button type="button" onclick="closeEventModal()" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
-                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm">Simpan Event</button>
+            <!-- Footer Sticky (Selalu Terlihat di Bawah) -->
+            <div class="p-4 sm:px-6 bg-gray-50/70 border-t border-gray-100 flex items-center justify-end gap-2.5 flex-shrink-0">
+                <button type="button" onclick="closeEventModal()" class="px-5 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-200/60 rounded-xl transition">Batal</button>
+                <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm shadow-indigo-200">Simpan Event</button>
             </div>
         </form>
     </div>
