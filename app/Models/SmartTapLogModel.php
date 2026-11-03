@@ -320,4 +320,53 @@ class SmartTapLogModel extends Model
         $stmt->execute($execParams);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Pindahkan catatan log dari satu event ke event lain untuk tanggal tertentu
+     * dan otomatis sesuaikan status ketepatan waktu dengan sesi tujuan
+     */
+    public function reassignEventLogs($fromEventId, $toEventId, $date = null)
+    {
+        $date = $date ?: date('Y-m-d');
+
+        // Ambil info jadwal event tujuan
+        $eventStmt = $this->db->prepare("SELECT open_time, start_time, close_time, after_close_action FROM smart_tap_events WHERE id = ?");
+        $eventStmt->execute([(int)$toEventId]);
+        $targetEvent = $eventStmt->fetch(PDO::FETCH_ASSOC);
+
+        // Ambil seluruh log yang tercatat di event asal pada tanggal tersebut
+        $logsStmt = $this->db->prepare("SELECT id, tapped_at FROM smart_tap_logs WHERE event_id = ? AND DATE(tapped_at) = ?");
+        $logsStmt->execute([(int)$fromEventId, $date]);
+        $logs = $logsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($logs)) {
+            return 0;
+        }
+
+        $updateStmt = $this->db->prepare("UPDATE smart_tap_logs SET event_id = ?, status = ? WHERE id = ?");
+        $count = 0;
+
+        foreach ($logs as $row) {
+            $status = 'on_time';
+            if ($targetEvent) {
+                $tapTime = date('H:i:s', strtotime($row['tapped_at']));
+                $startTime = $targetEvent['start_time'] ?? '00:00:00';
+                $closeTime = $targetEvent['close_time'] ?? '23:59:59';
+                $afterClose = $targetEvent['after_close_action'] ?? 'reject';
+
+                if ($tapTime <= $startTime) {
+                    $status = 'on_time';
+                } elseif ($tapTime <= $closeTime) {
+                    $status = 'late';
+                } else {
+                    $status = ($afterClose === 'very_late') ? 'very_late' : 'late';
+                }
+            }
+
+            $updateStmt->execute([(int)$toEventId, $status, (int)$row['id']]);
+            $count++;
+        }
+
+        return $count;
+    }
 }

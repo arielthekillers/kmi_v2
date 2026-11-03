@@ -252,6 +252,7 @@ class App
 
         // Smart Tap RFID Attendance Routes
         $this->router->get('/smart-tap/live', ['App\Controllers\SmartTapController', 'live']);
+        $this->router->post('/smart-tap/reassign-logs', ['App\Controllers\SmartTapController', 'reassignLogs']);
         $this->router->get('/smart-tap/reports', ['App\Controllers\SmartTapController', 'reports']);
         $this->router->get('/smart-tap/permissions', ['App\Controllers\SmartTapController', 'permissions']);
         $this->router->get('/smart-tap/search-person', ['App\Controllers\SmartTapController', 'searchPerson']);

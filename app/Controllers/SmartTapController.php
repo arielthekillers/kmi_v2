@@ -111,6 +111,31 @@ class SmartTapController extends Controller
         return (int)$events[0]['id'];
     }
 
+    /**
+     * Pindahkan catatan presensi dari satu event ke event lain jika terjadi salah pilih sesi
+     */
+    public function reassignLogs()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak. Modul Smart Tap hanya dapat diakses oleh Admin atau Petugas Smart Tap.', 'error');
+            $this->redirect('/');
+        }
+
+        $fromEventId = (int)($_POST['from_event_id'] ?? 0);
+        $toEventId = (int)($_POST['to_event_id'] ?? 0);
+        $date = $_POST['date'] ?? date('Y-m-d');
+
+        if ($fromEventId > 0 && $toEventId > 0 && $fromEventId !== $toEventId) {
+            $count = $this->logModel->reassignEventLogs($fromEventId, $toEventId, $date);
+            add_flash("Berhasil memindahkan {$count} data presensi ke sesi tujuan.", 'success');
+        } else {
+            add_flash('Sesi asal dan sesi tujuan harus berbeda.', 'error');
+        }
+
+        $this->redirect('/smart-tap/live?event_id=' . ($toEventId ?: $fromEventId));
+    }
+
     public function reports()
     {
         require_login();

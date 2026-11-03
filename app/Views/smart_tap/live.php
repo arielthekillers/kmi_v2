@@ -37,6 +37,11 @@ renderHeader("Smart Tap — Live Monitoring Kehadiran");
                     <?php endif; ?>
                 </select>
             </form>
+            <?php if (!empty($events) && count($events) > 1): ?>
+                <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.remove('hidden')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-sm" title="Pindahkan data presensi hari ini jika salah memilih sesi">
+                    <i class="ri-arrow-left-right-line"></i> Pindahkan Log
+                </button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -443,6 +448,59 @@ if (selectedEventId > 0) {
     }, 4000);
 }
 </script>
+
+
+<!-- Modal Pindahkan Log Presensi Hari Ini -->
+<div id="modal-reassign-logs" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="ri-arrow-left-right-line text-amber-600"></i> Pindahkan Log Presensi
+            </h3>
+            <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <i class="ri-close-line text-xl"></i>
+            </button>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">
+            Gunakan fitur ini jika operator mesin sebelumnya salah memilih sesi atau sesi terminal belum terkunci, sehingga log tercatat di sesi lain.
+        </p>
+        <form method="POST" action="<?= url('/smart-tap/reassign-logs') ?>" class="mt-4 space-y-4">
+            <input type="hidden" name="date" value="<?= $today ?>">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Dari Sesi Asal (Salah Catat):</label>
+                <select name="from_event_id" required class="w-full rounded-xl border-gray-300 shadow-sm text-sm py-2 px-3 bg-gray-50">
+                    <?php foreach ($events as $ev): ?>
+                        <option value="<?= $ev['id'] ?>" <?= $ev['id'] == $selectedEventId ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($ev['name']) ?> (<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Pindahkan ke Sesi Tujuan (Yang Seharusnya):</label>
+                <select name="to_event_id" required class="w-full rounded-xl border-gray-300 shadow-sm text-sm py-2 px-3 bg-gray-50">
+                    <?php foreach ($events as $ev): ?>
+                        <option value="<?= $ev['id'] ?>">
+                            <?= htmlspecialchars($ev['name']) ?> (<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[11px] text-amber-800 flex items-start gap-2">
+                <i class="ri-information-line text-base text-amber-600 flex-shrink-0 mt-0.5"></i>
+                <span>Status ketepatan waktu (Tepat Waktu / Terlambat) akan otomatis dihitung ulang menyesuaikan jam buka & batas waktu sesi tujuan.</span>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.add('hidden')" class="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-sm">
+                    Pindahkan Log Sekarang
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php
 renderFooter();
