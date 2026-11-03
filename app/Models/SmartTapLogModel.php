@@ -168,11 +168,19 @@ class SmartTapLogModel extends Model
         }
 
         if (in_array($event['target_type'], ['all', 'teachers'])) {
+            $exemptionModel = new \App\Models\SmartTapExemptionModel();
+            $exemptedUserIds = $exemptionModel->getExemptedUserIds($eventId, $event['category'] ?? null);
+
+            $exemptionFilter = "";
+            if (!empty($exemptedUserIds)) {
+                $exemptionFilter = " AND u.id NOT IN (" . implode(',', array_map('intval', $exemptedUserIds)) . ") ";
+            }
+
             $sqlT = "SELECT u.id, u.username as nis, u.nama, u.rfid_uid, 'teacher' as person_type,
                             'Pengajar / Guru' as subinfo, NULL as kelas_id
                      FROM users u
                      WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
-                     AND u.id NOT IN (SELECT user_id FROM smart_tap_exemptions)
+                     $exemptionFilter
                      ORDER BY u.nama ASC";
             $targetTeachers = $this->db->query($sqlT)->fetchAll(PDO::FETCH_ASSOC);
         }

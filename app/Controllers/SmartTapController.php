@@ -189,6 +189,21 @@ class SmartTapController extends Controller
 
         $userId = (int)($_POST['user_id'] ?? 0);
         $category = trim($_POST['category'] ?? 'Guru Senior');
+        $scope = trim($_POST['scope'] ?? 'all');
+        if (!in_array($scope, ['all', 'sholat', 'custom'])) {
+            $scope = 'all';
+        }
+
+        $eventIds = null;
+        if ($scope === 'custom') {
+            $postedEventIds = $_POST['event_ids'] ?? [];
+            if (is_array($postedEventIds)) {
+                $eventIds = implode(',', array_filter(array_map('intval', $postedEventIds)));
+            } elseif (is_string($postedEventIds)) {
+                $eventIds = trim($postedEventIds);
+            }
+        }
+
         $reason = trim($_POST['reason'] ?? '');
 
         if (!$userId) {
@@ -197,7 +212,7 @@ class SmartTapController extends Controller
         }
 
         $createdBy = $_SESSION['user_id'] ?? null;
-        $this->exemptionModel->addExemption($userId, $category, $reason, $createdBy);
+        $this->exemptionModel->addExemption($userId, $category, $scope, $eventIds, $reason, $createdBy);
 
         $_SESSION['success'] = "Guru berhasil ditetapkan sebagai Bebas Smart Tap (Dispensasi Tetap).";
         $this->redirect('/smart-tap/permissions?tab=exemptions');

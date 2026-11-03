@@ -1,6 +1,12 @@
 <?php
 renderHeader("Smart Tap — Manajemen Perizinan & Dispensasi Guru");
 $tab = $tab ?? 'permissions';
+$eventMap = [];
+if (!empty($events)) {
+    foreach ($events as $ev) {
+        $eventMap[$ev['id']] = $ev['name'];
+    }
+}
 ?>
 
 <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
@@ -128,15 +134,16 @@ $tab = $tab ?? 'permissions';
                                 <th class="py-3.5 px-5 w-12 text-center">No</th>
                                 <th class="py-3.5 px-5">Nama Pengajar / Guru</th>
                                 <th class="py-3.5 px-5">Kategori Dispensasi</th>
+                                <th class="py-3.5 px-5">Cakupan Pembebasan</th>
                                 <th class="py-3.5 px-5">Keterangan / Alasan</th>
                                 <th class="py-3.5 px-5">Tanggal Ditetapkan</th>
-                                <th class="py-3.5 px-5 text-center w-36">Aksi</th>
+                                <th class="py-3.5 px-5 text-center w-40">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php if (empty($exemptions)): ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-16 px-4">
+                                    <td colspan="7" class="text-center py-16 px-4">
                                         <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-3xl mb-3 shadow-inner">
                                             <i class="ri-user-unfollow-line"></i>
                                         </div>
@@ -172,20 +179,72 @@ $tab = $tab ?? 'permissions';
                                                 <?= htmlspecialchars($ex['category'] ?: 'Guru Senior') ?>
                                             </span>
                                         </td>
+                                        <td class="py-4 px-5">
+                                            <?php 
+                                            $scope = $ex['scope'] ?? 'all';
+                                            if ($scope === 'sholat'): ?>
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                    <i class="ri-moon-fill text-emerald-600 text-xs"></i>
+                                                    Khusus Sholat 5 Waktu
+                                                </span>
+                                            <?php elseif ($scope === 'custom'): 
+                                                $evIds = array_filter(array_map('trim', explode(',', $ex['event_ids'] ?? '')));
+                                                $evNames = [];
+                                                foreach ($evIds as $eid) {
+                                                    if (isset($eventMap[$eid])) {
+                                                        $evNames[] = $eventMap[$eid];
+                                                    }
+                                                }
+                                            ?>
+                                                <div class="space-y-1">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                                        <i class="ri-list-check text-blue-600 text-xs"></i>
+                                                        <?= count($evIds) ?> Event Tertentu
+                                                    </span>
+                                                    <?php if (!empty($evNames)): ?>
+                                                        <div class="text-[11px] text-gray-500 max-w-xs truncate" title="<?= htmlspecialchars(implode(', ', $evNames)) ?>">
+                                                            <?= htmlspecialchars(implode(', ', $evNames)) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                                                    <i class="ri-checkbox-circle-fill text-purple-600 text-xs"></i>
+                                                    Semua Jadwal Absensi
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="py-4 px-5 text-xs text-gray-600">
-                                            <?= htmlspecialchars($ex['reason'] ?: 'Bebas dari seluruh absensi smart tap.') ?>
+                                            <?= htmlspecialchars($ex['reason'] ?: '-') ?>
                                         </td>
                                         <td class="py-4 px-5 text-xs text-gray-500 font-medium">
                                             <?= date('d M Y', strtotime($ex['created_at'])) ?>
                                         </td>
                                         <td class="py-4 px-5 text-center">
-                                            <a href="<?= url('/smart-tap/exemptions/delete?id=' . $ex['id']) ?>" 
-                                               onclick="return confirm('Cabut dispensasi untuk <?= htmlspecialchars(addslashes($ex['nama'])) ?>? Guru ini akan kembali dikenakan kewajiban absensi smart tap.')" 
-                                               class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/70"
-                                               title="Cabut Dispensasi">
-                                                <i class="ri-delete-bin-line"></i>
-                                                <span>Cabut</span>
-                                            </a>
+                                            <div class="flex items-center justify-center gap-1.5">
+                                                <button type="button" 
+                                                        onclick='editExemption(<?= htmlspecialchars(json_encode([
+                                                            "id" => $ex["id"],
+                                                            "user_id" => $ex["user_id"],
+                                                            "nama" => $ex["nama_gelar"] ?: $ex["nama"],
+                                                            "category" => $ex["category"],
+                                                            "scope" => $ex["scope"] ?? "all",
+                                                            "event_ids" => $ex["event_ids"] ?? "",
+                                                            "reason" => $ex["reason"] ?? ""
+                                                        ]), ENT_QUOTES, "UTF-8") ?>)'
+                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100/70 rounded-xl transition border border-amber-200"
+                                                        title="Edit Aturan Dispensasi">
+                                                    <i class="ri-edit-line"></i>
+                                                    <span>Edit</span>
+                                                </button>
+                                                <a href="<?= url('/smart-tap/exemptions/delete?id=' . $ex['id']) ?>" 
+                                                   onclick="return confirm('Cabut dispensasi untuk <?= htmlspecialchars(addslashes($ex['nama'])) ?>? Guru ini akan kembali dikenakan kewajiban absensi smart tap.')" 
+                                                   class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/70"
+                                                   title="Cabut Dispensasi">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                    <span>Cabut</span>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -267,7 +326,7 @@ $tab = $tab ?? 'permissions';
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php if (empty($permissions)): ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-16 px-4">
+                                    <td colspan="7" class="text-center py-16 px-4">
                                         <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto text-3xl mb-3 shadow-inner">
                                             <i class="ri-file-shield-line"></i>
                                         </div>
@@ -442,58 +501,143 @@ $tab = $tab ?? 'permissions';
 <!-- MODAL 2: FORM TETAPKAN GURU BEBAS SMART TAP    -->
 <!-- ============================================== -->
 <div id="modal-exemption" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden transform transition-all">
-        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-100 overflow-hidden transform transition-all max-h-[92vh] flex flex-col">
+        <div class="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 flex-shrink-0">
             <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
                     <i class="ri-shield-star-line"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-gray-900">Tetapkan Guru Bebas Smart Tap</h3>
-                    <p class="text-[11px] text-gray-500">Dispensasi permanen untuk guru sepuh / pengasuh</p>
+                    <h3 id="modal-exemption-title" class="text-base font-bold text-gray-900">Tetapkan Guru Bebas Smart Tap</h3>
+                    <p id="modal-exemption-subtitle" class="text-[11px] text-gray-500">Dispensasi fleksibel untuk asatidz & pengasuh</p>
                 </div>
             </div>
             <button onclick="closeExemptionModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
         </div>
 
-        <form method="POST" action="<?= url('/smart-tap/exemptions/store') ?>" class="p-6 space-y-4">
+        <form method="POST" action="<?= url('/smart-tap/exemptions/store') ?>" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Pilih Pengajar / Guru <span class="text-rose-500">*</span></label>
-                <select name="user_id" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3">
+                <select name="user_id" id="exemption_user_id" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium text-gray-800">
                     <option value="">-- Pilih Guru / Asatidz --</option>
                     <?php 
                     $exemptedUserIds = array_column($exemptions ?? [], 'user_id');
                     foreach ($teachers as $t): 
                         $isAlreadyExempt = in_array($t['id'], $exemptedUserIds);
                     ?>
-                        <option value="<?= $t['id'] ?>" <?= $isAlreadyExempt ? 'disabled class="text-gray-400 bg-gray-50"' : '' ?>>
-                            <?= htmlspecialchars($t['nama']) ?> <?= $isAlreadyExempt ? '(Sudah Ditetapkan)' : '' ?>
+                        <option value="<?= $t['id'] ?>" data-exempt="<?= $isAlreadyExempt ? '1' : '0' ?>" <?= $isAlreadyExempt ? 'class="text-amber-800 font-semibold bg-amber-50/50"' : '' ?>>
+                            <?= htmlspecialchars($t['nama']) ?> <?= $isAlreadyExempt ? '(Sudah Ada - Klik untuk Ubah Aturan)' : '' ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategori Dispensasi</label>
-                <select name="category" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategori Status Dispensasi</label>
+                <select name="category" id="exemption_category" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium text-gray-800">
                     <option value="Guru Senior">Guru Senior (Asatidz Sepuh)</option>
                     <option value="Pimpinan / Pengasuh">Pimpinan / Dewan Pengasuh</option>
+                    <option value="Guru Laju / Domisili Luar">Guru Laju / Domisili Luar Pondok</option>
+                    <option value="Ibu Menyusui / Balita">Ibu Menyusui / Mengasuh Balita</option>
                     <option value="Tugas Khusus">Tugas Khusus / Luar</option>
                     <option value="Lainnya">Lainnya</option>
                 </select>
             </div>
 
+            <!-- Cakupan Pembebasan (Scope) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2">Cakupan Pembebasan (Scope) <span class="text-rose-500">*</span></label>
+                <div class="space-y-2">
+                    <!-- Option 1: Semua Absensi -->
+                    <label class="flex items-start gap-3 p-3 rounded-2xl border border-gray-200 hover:border-amber-300 hover:bg-amber-50/30 cursor-pointer transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/40">
+                        <input type="radio" name="scope" value="all" checked onchange="toggleCustomEventsContainer('all')" class="mt-1 text-amber-600 focus:ring-amber-500">
+                        <div>
+                            <div class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <i class="ri-checkbox-circle-fill text-purple-600"></i>
+                                <span>Semua Jadwal Absensi (Penuh)</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                                Bebas dari sholat berjamaah 5 waktu, piket kantor, rapat, dan seluruh event Smart Tap lainnya. Cocok untuk Kyai Sepuh & Pimpinan Pesantren.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Option 2: Khusus Sholat 5 Waktu -->
+                    <label class="flex items-start gap-3 p-3 rounded-2xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/30 cursor-pointer transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/40">
+                        <input type="radio" name="scope" value="sholat" onchange="toggleCustomEventsContainer('sholat')" class="mt-1 text-emerald-600 focus:ring-emerald-500">
+                        <div>
+                            <div class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <i class="ri-moon-fill text-emerald-600"></i>
+                                <span>Khusus Sholat 5 Waktu Berjamaah</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                                Bebas dari absensi sholat berjamaah (guru domisili luar/laju atau punya balita), namun <strong>tetap wajib tap</strong> pada jadwal piket kantor, rapat dinas, dan event non-sholat.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Option 3: Kustom Event Tertentu -->
+                    <label class="flex items-start gap-3 p-3 rounded-2xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/40">
+                        <input type="radio" name="scope" value="custom" onchange="toggleCustomEventsContainer('custom')" class="mt-1 text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <div class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <i class="ri-list-check text-blue-600"></i>
+                                <span>Pilih Event / Jadwal Tertentu (Kustom)</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                                Tentukan secara spesifik event-event apa saja yang dibebaskan untuk guru ini.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Checklist Event untuk Scope Custom -->
+            <div id="custom-events-container" class="space-y-2 hidden">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-gray-700">Daftar Event yang Dibebaskan</label>
+                    <div class="flex gap-2 text-[11px]">
+                        <button type="button" onclick="toggleAllEvents(true)" class="text-blue-600 hover:underline font-semibold">Pilih Semua</button>
+                        <span class="text-gray-300">|</span>
+                        <button type="button" onclick="toggleAllEvents(false)" class="text-gray-500 hover:underline">Hapus Semua</button>
+                    </div>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto p-3 bg-gray-50/70 border border-gray-200/80 rounded-2xl space-y-1.5">
+                    <?php if (empty($events)): ?>
+                        <div class="text-xs text-gray-400 text-center py-2">Belum ada master event yang dibuat.</div>
+                    <?php else: ?>
+                        <?php foreach ($events as $ev): ?>
+                            <label class="flex items-center justify-between p-2 rounded-xl hover:bg-white text-xs cursor-pointer border border-transparent hover:border-gray-200 transition">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="event_ids[]" value="<?= $ev['id'] ?>" class="text-blue-600 focus:ring-blue-500 rounded">
+                                    <span class="font-bold text-gray-800"><?= htmlspecialchars($ev['name']) ?></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold <?= ($ev['category'] ?? '') === 'sholat' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700' ?>">
+                                        <?= htmlspecialchars(ucfirst($ev['category'] ?? 'Event')) ?>
+                                    </span>
+                                    <span class="text-[11px] text-gray-400 font-mono">
+                                        <?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>
+                                    </span>
+                                </div>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Keterangan / Alasan (Opsional)</label>
-                <textarea name="reason" rows="2" placeholder="Contoh: Asatidz senior pesantren, dibebaskan dari seluruh smart tap sholat berjamaah." class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2 px-3"></textarea>
+                <textarea name="reason" id="exemption_reason" rows="2" placeholder="Contoh: Guru laju domisili di Parung, punya anak balita sehingga dibebaskan dari sholat Shubuh/Isya." class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2 px-3"></textarea>
             </div>
 
             <div class="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200/60 text-[11px] text-amber-900 flex items-start gap-2">
                 <i class="ri-shield-check-line text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
-                <span class="leading-relaxed">Guru yang ditetapkan akan otomatis dikeluarkan dari perhitungan presensi wajib dan tidak akan pernah terhitung sebagai Alpa/Ghaib.</span>
+                <span class="leading-relaxed">Sistem Smart Tap akan mengecualikan guru ini sesuai cakupan yang dipilih sehingga tidak akan terhitung <strong>Alpa/Ghaib</strong> pada jadwal terkait.</span>
             </div>
 
-            <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 flex-shrink-0">
                 <button type="button" onclick="closeExemptionModal()" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
                 <button type="submit" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition shadow-sm">
                     Simpan Dispensasi
@@ -514,10 +658,65 @@ function closePermissionModal() {
 
 // Modal Exemption
 function openExemptionModal() {
+    resetExemptionModal();
     document.getElementById('modal-exemption').classList.remove('hidden');
 }
 function closeExemptionModal() {
     document.getElementById('modal-exemption').classList.add('hidden');
+}
+
+function setExemptionScope(scopeVal) {
+    const radios = document.querySelectorAll('input[name="scope"]');
+    radios.forEach(r => {
+        r.checked = (r.value === scopeVal);
+    });
+    toggleCustomEventsContainer(scopeVal);
+}
+
+function toggleCustomEventsContainer(scopeVal) {
+    const container = document.getElementById('custom-events-container');
+    if (!container) return;
+    if (scopeVal === 'custom') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+function toggleAllEvents(check) {
+    document.querySelectorAll('input[name="event_ids[]"]').forEach(cb => {
+        cb.checked = check;
+    });
+}
+
+function editExemption(data) {
+    openExemptionModal();
+    document.getElementById('modal-exemption-title').innerText = 'Edit Dispensasi Guru';
+    document.getElementById('modal-exemption-subtitle').innerText = 'Perbarui aturan dan cakupan dispensasi guru';
+    
+    const userSelect = document.getElementById('exemption_user_id');
+    userSelect.value = data.user_id;
+
+    document.getElementById('exemption_category').value = data.category || 'Guru Senior';
+    document.getElementById('exemption_reason').value = data.reason || '';
+
+    const scope = data.scope || 'all';
+    setExemptionScope(scope);
+
+    const eventIds = (data.event_ids || '').split(',').map(s => s.trim());
+    document.querySelectorAll('input[name="event_ids[]"]').forEach(cb => {
+        cb.checked = eventIds.includes(cb.value);
+    });
+}
+
+function resetExemptionModal() {
+    document.getElementById('modal-exemption-title').innerText = 'Tetapkan Guru Bebas Smart Tap';
+    document.getElementById('modal-exemption-subtitle').innerText = 'Dispensasi fleksibel untuk asatidz & pengasuh';
+    document.getElementById('exemption_user_id').value = '';
+    document.getElementById('exemption_category').value = 'Guru Senior';
+    document.getElementById('exemption_reason').value = '';
+    setExemptionScope('all');
+    document.querySelectorAll('input[name="event_ids[]"]').forEach(cb => cb.checked = false);
 }
 
 let currentType = 'student';
