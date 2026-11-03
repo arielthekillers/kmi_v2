@@ -211,8 +211,12 @@ class SmartTapEventModel extends Model
 
     public function deleteEvent($id)
     {
+        // Hapus juga seluruh riwayat presensi yang terkait dengan event ini agar bersih dari database
+        $stmtLogs = $this->db->prepare("DELETE FROM smart_tap_logs WHERE event_id = ?");
+        $stmtLogs->execute([(int)$id]);
+
         $stmt = $this->db->prepare("DELETE FROM smart_tap_events WHERE id = ?");
-        return $stmt->execute([$id]);
+        return $stmt->execute([(int)$id]);
     }
 }
 
