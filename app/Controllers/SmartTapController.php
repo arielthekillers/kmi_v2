@@ -706,13 +706,13 @@ class SmartTapController extends Controller
         
         // Prioritas unduhan: file EXE langsung atau zip installer
         $files = [
-            'SmartTapKiosk.exe' => 'SmartTapKiosk.exe',
             'SmartTapKiosk-Windows.zip' => 'SmartTapKiosk-Windows.zip',
+            'SmartTapKiosk.exe' => 'SmartTapKiosk.exe',
             'smart-tap-update.zip' => 'smart-tap-update.zip'
         ];
 
         $targetFile = null;
-        $downloadName = 'SmartTapKiosk.exe';
+        $downloadName = 'SmartTapKiosk-Windows.zip';
 
         // Cek file mana yang ada
         foreach ($files as $filename => $asName) {
