@@ -241,29 +241,26 @@ class SmartTapApiController extends Controller
     {
         header('Content-Type: application/json');
 
-        $eventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
+        $eventIdParam = $_GET['event_id'] ?? 'all';
         $date = $_GET['date'] ?? date('Y-m-d');
+        $dayOfWeek = date('N');
+        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $date);
 
-        if (!$eventId) {
-            $dayOfWeek = date('N');
-            $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $date);
-            if (!empty($events)) {
-                $eventId = $this->findCurrentEventId($events);
-            }
+        $eventsWithStats = $this->logModel->getTodayEventsSummaryStats($events, $date);
+
+        $filterId = ($eventIdParam === 'all' || $eventIdParam === '0') ? null : (int)$eventIdParam;
+        $recentLogs = $this->logModel->getRecentLogs($filterId, $date, 50);
+
+        $totalAllTaps = 0;
+        foreach ($eventsWithStats as $evSt) {
+            $totalAllTaps += $evSt['total_hadir'];
         }
-
-        if (!$eventId) {
-            echo json_encode(['success' => false, 'message' => 'No active event today']);
-            exit;
-        }
-
-        $liveStatus = $this->logModel->getEventLiveStatus($eventId, $date);
-        $recentLogs = $this->logModel->getRecentLogs($eventId, $date, 15);
 
         echo json_encode([
             'success' => true,
-            'event' => $liveStatus['event'] ?? null,
-            'stats' => $liveStatus['stats'] ?? null,
+            'selected_event_id' => $eventIdParam,
+            'events_with_stats' => array_values($eventsWithStats),
+            'total_all_taps' => $totalAllTaps,
             'recent_logs' => $recentLogs,
             'server_time' => date('H:i:s')
         ]);

@@ -51,18 +51,27 @@ class SmartTapController extends Controller
         $dayOfWeek = date('N');
         $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today);
 
-        $selectedEventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : $this->findCurrentEventId($events);
-        $liveData = $selectedEventId ? $this->logModel->getEventLiveStatus($selectedEventId, $today) : null;
-        $recentLogs = $selectedEventId ? $this->logModel->getRecentLogs($selectedEventId, $today, 25) : [];
+        // Mode 'all' (default): tampilkan seluruh sesi aktif hari ini secara bersamaan
+        // atau spesifik ID event jika difilter
+        $selectedEventId = isset($_GET['event_id']) ? ($_GET['event_id'] === 'all' ? 'all' : (int)$_GET['event_id']) : 'all';
 
-        $classes = $this->kelasModel->findAllActive();
+        // Rekap ringkas kehadiran per event hari ini
+        $eventsWithStats = $this->logModel->getTodayEventsSummaryStats($events, $today);
+
+        $totalAllTaps = 0;
+        foreach ($eventsWithStats as $evSt) {
+            $totalAllTaps += $evSt['total_hadir'];
+        }
+
+        $filterId = ($selectedEventId === 'all') ? null : (int)$selectedEventId;
+        $recentLogs = $this->logModel->getRecentLogs($filterId, $today, 50);
 
         $this->view('smart_tap/live', [
             'events' => $events,
+            'eventsWithStats' => $eventsWithStats,
             'selectedEventId' => $selectedEventId,
-            'liveData' => $liveData,
+            'totalAllTaps' => $totalAllTaps,
             'recentLogs' => $recentLogs,
-            'classes' => $classes,
             'today' => $today
         ]);
     }

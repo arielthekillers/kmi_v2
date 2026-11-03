@@ -1,454 +1,249 @@
 <?php
-renderHeader("Smart Tap — Live Monitoring Kehadiran");
+/**
+ * Smart Tap - Modern Realtime Live Monitoring Feed
+ * Focused on incoming RFID taps, concurrent multi-session support, and zero clutter.
+ */
+renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
 ?>
 
-<div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+<div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6" id="live-monitoring-wrapper">
 
-    <!-- Top Navigation & Event Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <!-- Flash Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <i class="ri-checkbox-circle-fill text-xl text-emerald-600"></i>
+                <span class="text-sm font-semibold"><?= $_SESSION['success'] ?></span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    <!-- Minimalist Header Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs">
         <div>
             <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> LIVE MONITOR
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    Live Streaming
                 </span>
-                <span class="text-xs text-gray-500">Tanggal: <?= date('d M Y', strtotime($today)) ?></span>
+                <span class="text-xs text-gray-400 font-mono" id="server-clock-display">
+                    <?= date('d M Y') ?> &bull; <?= date('H:i:s') ?> WIB
+                </span>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 mt-1 flex items-center gap-2">
-                <i class="ri-radar-line text-indigo-600"></i> Smart Tap Realtime Monitoring
+            <h1 class="text-2xl font-black text-gray-900 mt-1 tracking-tight flex items-center gap-2">
+                <i class="ri-radar-fill text-indigo-600"></i> Smart Tap Live Monitor
             </h1>
-            <p class="text-sm text-gray-500">
-                Pantau kehadiran santri & dewan pengajar saat sesi berlangsung secara langsung.
-            </p>
         </div>
 
-        <!-- Event Selector -->
-        <div class="flex flex-wrap items-center gap-3">
-            <form method="GET" action="<?= url('/smart-tap/live') ?>" class="flex items-center gap-2">
-                <label for="event_id" class="text-sm font-medium text-gray-700 whitespace-nowrap">Pilih Event:</label>
-                <select name="event_id" id="event_id" onchange="this.form.submit()" class="rounded-xl border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 font-medium py-2 px-3 bg-gray-50">
-                    <?php if (empty($events)): ?>
-                        <option value="">Tidak ada event aktif hari ini</option>
-                    <?php else: ?>
-                        <?php foreach ($events as $ev): ?>
-                            <option value="<?= $ev['id'] ?>" <?= $ev['id'] == $selectedEventId ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($ev['name']) ?> (<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </form>
+        <!-- Quick Actions & Tools -->
+        <div class="flex items-center gap-2 flex-wrap">
             <?php if (!empty($events) && count($events) > 1): ?>
-                <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.remove('hidden')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-sm" title="Pindahkan data presensi hari ini jika salah memilih sesi">
+                <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.remove('hidden')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Pindahkan data presensi jika salah memilih sesi di terminal">
                     <i class="ri-arrow-left-right-line"></i> Pindahkan Log
                 </button>
             <?php endif; ?>
+
+            <!-- Audio Mute Toggle -->
+            <button type="button" id="btn-toggle-sound" onclick="toggleAudio()" class="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Nyalakan/Matikan Suara Beep">
+                <i class="ri-volume-mute-line text-sm" id="sound-icon"></i> <span id="sound-text">Mute</span>
+            </button>
+
+            <!-- Fullscreen TV Toggle -->
+            <button type="button" onclick="toggleFullScreen()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Mode TV Monitor / Layar Penuh">
+                <i class="ri-fullscreen-line text-sm"></i> Layar Penuh
+            </button>
         </div>
     </div>
 
-    <?php if (!$liveData): ?>
-        <div class="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
-            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
-                <i class="ri-calendar-event-line"></i>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900">Belum Ada Sesi / Event yang Dipilih</h3>
-            <p class="text-sm text-gray-500 max-w-md mx-auto mt-1">
-                Silakan buat event absensi baru pada menu Master Event atau pilih event aktif hari ini untuk mulai memantau.
-            </p>
-            <a href="<?= url('/smart-tap/events') ?>" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition">
-                <i class="ri-add-line"></i> Buka Pengaturan Event
+    <!-- Multi-Event Session Navigation Tabs -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <!-- Tab: Semua Sesi Aktif -->
+        <a href="<?= url('/smart-tap/live?event_id=all') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shadow-xs <?= $selectedEventId === 'all' ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
+            <i class="ri-apps-2-line"></i>
+            <span>Semua Sesi Aktif Hari Ini</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $selectedEventId === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' ?>">
+                <?= $totalAllTaps ?> Tap
+            </span>
+        </a>
+
+        <!-- Individual Events Tabs -->
+        <?php foreach ($eventsWithStats as $ev): 
+            $isSel = ($selectedEventId !== 'all' && (int)$selectedEventId === (int)$ev['id']);
+            $cat = $ev['category'] ?? 'sholat';
+            $icon = 'ri-time-line';
+            if ($cat === 'sholat') $icon = 'ri-moon-line';
+            elseif ($cat === 'office') $icon = 'ri-building-line';
+            elseif ($cat === 'incidental') $icon = 'ri-calendar-event-line';
+        ?>
+            <a href="<?= url('/smart-tap/live?event_id=' . $ev['id']) ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shadow-xs <?= $isSel ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
+                <i class="<?= $icon ?>"></i>
+                <span><?= htmlspecialchars($ev['name']) ?></span>
+                <span class="text-[11px] opacity-75 font-mono">(<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $isSel ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700' ?>">
+                    <?= $ev['total_hadir'] ?>
+                </span>
             </a>
-        </div>
-    <?php else: 
-        $ev = $liveData['event'];
-        $stats = $liveData['stats'];
-    ?>
+        <?php endforeach; ?>
+    </div>
 
-        <!-- Event Banner & Schedule Info -->
-        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div class="space-y-1">
-                <div class="text-indigo-300 text-xs font-semibold tracking-wider uppercase flex items-center gap-2">
-                    <i class="ri-time-line"></i> Sesi Berlangsung
-                </div>
-                <h2 class="text-2xl font-black tracking-tight text-white"><?= htmlspecialchars($ev['name']) ?></h2>
-                <p class="text-xs text-slate-300">
-                    Batas Tepat Waktu: <strong class="text-emerald-400"><?= substr($ev['start_time'], 0, 5) ?></strong> &bull; 
-                    Tutup Absen: <strong class="text-rose-400"><?= substr($ev['close_time'], 0, 5) ?></strong> &bull;
-                    Target: <span class="capitalize"><?= $ev['target_type'] == 'all' ? 'Santri & Pengajar' : ($ev['target_type'] == 'students' ? 'Santri Saja' : 'Pengajar Saja') ?></span>
-                </p>
-            </div>
-
-            <!-- Attendance Progress Ring / Bar -->
-            <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md px-5 py-3 rounded-xl border border-white/10">
-                <div>
-                    <div class="text-xs text-slate-300">Tingkat Kehadiran</div>
-                    <div class="text-3xl font-extrabold text-white" id="stat-percent"><?= $stats['percent_presence'] ?>%</div>
-                </div>
-                <div class="w-32 bg-white/20 rounded-full h-3 overflow-hidden">
-                    <div class="bg-emerald-400 h-3 rounded-full transition-all duration-500" id="stat-progress-bar" style="width: <?= min(100, $stats['percent_presence']) ?>%"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5 Stats Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            <!-- Total Target -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="ri-group-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-500 font-medium">Wajib Hadir</div>
-                    <div class="text-2xl font-black text-gray-900" id="stat-total"><?= $stats['total_wajib'] ?></div>
-                </div>
-            </div>
-
-            <!-- Hadir Tepat Waktu -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="ri-checkbox-circle-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-emerald-600 font-medium">Tepat Waktu</div>
-                    <div class="text-2xl font-black text-emerald-700" id="stat-ontime"><?= $stats['total_hadir_ontime'] ?></div>
-                </div>
-            </div>
-
-            <!-- Terlambat -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="ri-time-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-amber-600 font-medium">Terlambat</div>
-                    <div class="text-2xl font-black text-amber-700" id="stat-late"><?= $stats['total_terlambat'] ?></div>
-                </div>
-            </div>
-
-            <!-- Izin / Sakit -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="ri-hotel-bed-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-blue-600 font-medium">Izin / Sakit</div>
-                    <div class="text-2xl font-black text-blue-700" id="stat-permission"><?= $stats['total_izin'] ?></div>
-                </div>
-            </div>
-
-            <!-- Belum Hadir / Ghaib -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 col-span-2 sm:col-span-1">
-                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl flex-shrink-0">
-                    <i class="ri-close-circle-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-rose-600 font-medium">Belum Hadir</div>
-                    <div class="text-2xl font-black text-rose-700" id="stat-ghaib"><?= $stats['total_ghaib'] ?></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Left 2 Cols: Attendance Tabs & Lists (with Sweeping View) -->
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                <!-- Tabs -->
-                <div class="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl text-sm font-semibold">
-                        <button type="button" onclick="switchTab('ghaib')" id="tab-btn-ghaib" class="px-3.5 py-1.5 rounded-lg text-rose-700 bg-white shadow-sm transition-all flex items-center gap-1.5">
-                            <i class="ri-error-warning-line"></i> Belum Hadir <span class="bg-rose-100 text-rose-800 text-xs px-1.5 py-0.2 rounded-full font-bold"><?= count($liveData['ghaib']) ?></span>
-                        </button>
-                        <button type="button" onclick="switchTab('hadir')" id="tab-btn-hadir" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-1.5">
-                            <i class="ri-check-line"></i> Tepat Waktu <span class="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.2 rounded-full font-bold"><?= count($liveData['hadir']) ?></span>
-                        </button>
-                        <button type="button" onclick="switchTab('terlambat')" id="tab-btn-terlambat" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-1.5">
-                            <i class="ri-time-line"></i> Terlambat <span class="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.2 rounded-full font-bold"><?= count($liveData['terlambat']) ?></span>
-                        </button>
-                        <button type="button" onclick="switchTab('izin')" id="tab-btn-izin" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-1.5">
-                            <i class="ri-hotel-bed-line"></i> Izin/Sakit <span class="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.2 rounded-full font-bold"><?= count($liveData['izin']) ?></span>
-                        </button>
-                    </div>
-
-                    <!-- Quick Filter Search -->
-                    <div class="relative w-full sm:w-48">
-                        <input type="text" id="live-search" onkeyup="filterList()" placeholder="Cari nama / kelas..." class="w-full text-xs rounded-xl border-gray-200 pl-8 pr-3 py-2 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 transition">
-                        <i class="ri-search-line absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
-                    </div>
-                </div>
-
-                <!-- Tab Contents Container -->
-                <div class="p-4 flex-1 overflow-y-auto max-h-[600px]">
-
-                    <!-- TAB 1: BELUM HADIR (GHAIB) - PRIORITY FOR SWEEPING -->
-                    <div id="tab-ghaib" class="tab-pane space-y-2">
-                        <?php if (empty($liveData['ghaib'])): ?>
-                            <div class="text-center py-12 text-gray-400">
-                                <i class="ri-checkbox-circle-fill text-4xl text-emerald-500 mb-2 block"></i>
-                                <span class="text-sm font-semibold text-gray-700">Luar Biasa! Semua Telah Hadir</span>
-                                <p class="text-xs text-gray-400 mt-1">Tidak ada santri atau guru yang terlewat untuk event ini.</p>
-                            </div>
-                        <?php else: ?>
-                            <div class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200/60 mb-3 flex items-center gap-2">
-                                <i class="ri-information-line text-sm"></i>
-                                <span>Gunakan daftar ini untuk penyisiran (sweeping) kamar / asrama / area sekolah.</span>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="list-ghaib-container">
-                                <?php foreach ($liveData['ghaib'] as $g): ?>
-                                    <div class="person-card flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-rose-200 hover:bg-rose-50/30 transition-all bg-white"
-                                         data-name="<?= strtolower(htmlspecialchars($g['nama'])) ?>"
-                                         data-subinfo="<?= strtolower(htmlspecialchars($g['subinfo'] ?? '')) ?>">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                                                <?= mb_substr($g['nama'], 0, 1) ?>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($g['nama']) ?></div>
-                                                <div class="text-xs text-gray-500 mt-0.5">
-                                                    <?= htmlspecialchars($g['subinfo']) ?> &bull; <?= $g['person_type'] == 'student' ? 'NIS: ' . htmlspecialchars($g['nis']) : 'Pengajar' ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="text-[11px] font-bold text-rose-600 bg-rose-100/70 px-2.5 py-1 rounded-full whitespace-nowrap">
-                                            Alpa
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- TAB 2: HADIR TEPAT WAKTU -->
-                    <div id="tab-hadir" class="tab-pane hidden space-y-2">
-                        <?php if (empty($liveData['hadir'])): ?>
-                            <div class="text-center py-12 text-gray-400 text-sm">Belum ada peserta yang hadir tepat waktu.</div>
-                        <?php else: ?>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="list-hadir-container">
-                                <?php foreach ($liveData['hadir'] as $h): ?>
-                                    <div class="person-card flex items-center justify-between p-3 rounded-xl border border-emerald-100 bg-emerald-50/20"
-                                         data-name="<?= strtolower(htmlspecialchars($h['nama'])) ?>"
-                                         data-subinfo="<?= strtolower(htmlspecialchars($h['subinfo'] ?? '')) ?>">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                                                <?= mb_substr($h['nama'], 0, 1) ?>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($h['nama']) ?></div>
-                                                <div class="text-xs text-gray-500 mt-0.5">
-                                                    <?= htmlspecialchars($h['subinfo']) ?> &bull; Tap: <strong class="text-emerald-700"><?= date('H:i:s', strtotime($h['tapped_at'])) ?></strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                            Tepat Waktu
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- TAB 3: TERLAMBAT -->
-                    <div id="tab-terlambat" class="tab-pane hidden space-y-2">
-                        <?php if (empty($liveData['terlambat'])): ?>
-                            <div class="text-center py-12 text-gray-400 text-sm">Tidak ada yang terlambat. Bagus!</div>
-                        <?php else: ?>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="list-terlambat-container">
-                                <?php foreach ($liveData['terlambat'] as $t): ?>
-                                    <div class="person-card flex items-center justify-between p-3 rounded-xl border border-amber-200 bg-amber-50/20"
-                                         data-name="<?= strtolower(htmlspecialchars($t['nama'])) ?>"
-                                         data-subinfo="<?= strtolower(htmlspecialchars($t['subinfo'] ?? '')) ?>">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                                                <?= mb_substr($t['nama'], 0, 1) ?>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($t['nama']) ?></div>
-                                                <div class="text-xs text-gray-500 mt-0.5">
-                                                    <?= htmlspecialchars($t['subinfo']) ?> &bull; Tap: <strong class="text-amber-700"><?= date('H:i:s', strtotime($t['tapped_at'])) ?></strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                            Terlambat
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- TAB 4: IZIN / SAKIT -->
-                    <div id="tab-izin" class="tab-pane hidden space-y-2">
-                        <?php if (empty($liveData['izin'])): ?>
-                            <div class="text-center py-12 text-gray-400 text-sm">Tidak ada data izin atau sakit untuk event ini.</div>
-                        <?php else: ?>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="list-izin-container">
-                                <?php foreach ($liveData['izin'] as $iz): ?>
-                                    <div class="person-card flex items-center justify-between p-3 rounded-xl border border-blue-100 bg-blue-50/20"
-                                         data-name="<?= strtolower(htmlspecialchars($iz['nama'])) ?>"
-                                         data-subinfo="<?= strtolower(htmlspecialchars($iz['subinfo'] ?? '')) ?>">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center flex-shrink-0 capitalize">
-                                                <?= mb_substr($iz['permission_type'], 0, 1) ?>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900 leading-tight"><?= htmlspecialchars($iz['nama']) ?></div>
-                                                <div class="text-xs text-gray-500 mt-0.5">
-                                                    <?= htmlspecialchars($iz['subinfo']) ?> &bull; Ket: <span class="italic"><?= htmlspecialchars($iz['reason'] ?: '-') ?></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="text-[11px] font-bold text-blue-800 bg-blue-100 px-2.5 py-1 rounded-full uppercase whitespace-nowrap">
-                                            <?= htmlspecialchars($iz['permission_type']) ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Right 1 Col: Live Activity Stream (Recent Taps) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Tap Feed
-                    </h3>
-                    <span class="text-[11px] text-gray-400 font-medium" id="live-timer-badge">Auto-refresh 3s</span>
-                </div>
-
-                <div class="p-4 flex-1 overflow-y-auto max-h-[600px] space-y-3" id="recent-logs-feed">
-                    <?php if (empty($recentLogs)): ?>
-                        <div class="text-center py-16 text-gray-400 text-xs">
-                            <i class="ri-rfid-line text-3xl mb-1 block"></i>
-                            Menunggu tap kartu RFID masuk...
+    <!-- Active Sessions Quick Strip (Side-by-Side if Concurrent) -->
+    <?php if (!empty($eventsWithStats)): ?>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-<?= min(4, max(1, count($eventsWithStats))) ?> gap-4">
+            <?php foreach ($eventsWithStats as $ev): 
+                $isCurrentlyActive = (date('H:i:s') >= $ev['open_time'] && date('H:i:s') <= $ev['close_time']);
+                $cat = $ev['category'] ?? 'sholat';
+                $cardBorder = $isCurrentlyActive ? 'border-emerald-300 ring-2 ring-emerald-400/20 bg-gradient-to-br from-emerald-50/40 via-white to-white' : 'border-gray-200 bg-white';
+                $badgeBg = ($cat === 'office') ? 'bg-blue-100 text-blue-800' : (($cat === 'incidental') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800');
+            ?>
+                <div class="p-4 rounded-2xl border shadow-xs transition flex flex-col justify-between <?= $cardBorder ?>">
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider <?= $badgeBg ?>">
+                                <?= strtoupper($cat) ?>
+                            </span>
+                            <?php if ($isCurrentlyActive): ?>
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full animate-pulse">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Jam Buka
+                                </span>
+                            <?php else: ?>
+                                <span class="text-[10px] text-gray-400 font-mono">
+                                    <?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
-                    <?php else: ?>
-                        <?php foreach ($recentLogs as $log): ?>
-                            <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-sm transition">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                                        <?= mb_substr($log['person_name'], 0, 1) ?>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-gray-900 leading-tight"><?= htmlspecialchars($log['person_name']) ?></div>
-                                        <div class="text-[11px] text-gray-400 mt-0.5">
-                                            <?= htmlspecialchars($log['person_subinfo']) ?> &bull; Titik: <?= htmlspecialchars($log['device_name'] ?: 'Scanner USB') ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="text-right flex-shrink-0">
-                                    <div class="text-xs font-mono font-bold text-gray-700"><?= date('H:i:s', strtotime($log['tapped_at'])) ?></div>
-                                    <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full <?= $log['status'] == 'on_time' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?>">
-                                        <?= $log['status'] == 'on_time' ? 'Tepat Waktu' : 'Terlambat' ?>
-                                    </span>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+
+                        <h3 class="text-base font-black text-gray-900 mt-2 tracking-tight truncate" title="<?= htmlspecialchars($ev['name']) ?>">
+                            <?= htmlspecialchars($ev['name']) ?>
+                        </h3>
+                        <p class="text-[11px] text-gray-500 capitalize">
+                            Target: <?= $ev['target_type'] === 'all' ? 'Santri & Pengajar' : ($ev['target_type'] === 'students' ? 'Santri Saja' : 'Pengajar Saja') ?>
+                        </p>
+                    </div>
+
+                    <!-- 3 Stats Counters -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100 text-center">
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-semibold uppercase">Total Masuk</div>
+                            <div class="text-lg font-black text-gray-900" id="stat-total-<?= $ev['id'] ?>"><?= $ev['total_hadir'] ?></div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-emerald-600 font-semibold uppercase">Tepat</div>
+                            <div class="text-lg font-black text-emerald-600" id="stat-ontime-<?= $ev['id'] ?>"><?= $ev['on_time'] ?></div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-amber-600 font-semibold uppercase">Telat</div>
+                            <div class="text-lg font-black text-amber-600" id="stat-late-<?= $ev['id'] ?>"><?= $ev['late'] ?></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
+            <?php endforeach; ?>
         </div>
-
     <?php endif; ?>
 
-</div>
+    <!-- MAIN SPOTLIGHT: LIVE TAP ATTENDANCE FEED -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs flex flex-col overflow-hidden">
+        
+        <!-- Feed Top Controls -->
+        <div class="p-4 border-b border-gray-100 bg-gray-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-base shadow-xs">
+                    <i class="ri-rfid-line"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-gray-900 tracking-tight">Stream Riwayat Tap Masuk</h2>
+                    <p class="text-[11px] text-gray-500">Pembaruan otomatis tiap 3 detik &bull; Kartu terbaru muncul di paling atas</p>
+                </div>
+            </div>
 
-<script>
-// Tab Switching
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-    document.getElementById('tab-' + tabId).classList.remove('hidden');
+            <!-- Search in feed & Pause Button -->
+            <div class="flex items-center gap-2">
+                <div class="relative w-full sm:w-60">
+                    <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" id="feed-search" oninput="filterFeed(this.value)" placeholder="Cari nama santri / guru..." class="w-full text-xs rounded-xl border-gray-200 pl-8 pr-3 py-1.5 bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                </div>
+                <button type="button" id="btn-pause" onclick="togglePause()" class="px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs transition" title="Jeda pembaruan otomatis">
+                    <i class="ri-pause-line" id="pause-icon"></i> <span id="pause-text">Jeda</span>
+                </button>
+            </div>
+        </div>
 
-    const buttons = ['ghaib', 'hadir', 'terlambat', 'izin'];
-    buttons.forEach(id => {
-        const btn = document.getElementById('tab-btn-' + id);
-        if (id === tabId) {
-            btn.className = "px-3.5 py-1.5 rounded-lg text-indigo-700 bg-white shadow-sm transition-all flex items-center gap-1.5 font-bold";
-        } else {
-            btn.className = "px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-1.5 font-medium";
-        }
-    });
-}
+        <!-- Feed List Container -->
+        <div id="live-feed-container" class="divide-y divide-gray-100 p-2 sm:p-4 space-y-2 max-h-[750px] overflow-y-auto">
+            <?php if (empty($recentLogs)): ?>
+                <div id="feed-empty-state" class="text-center py-16 text-gray-400">
+                    <div class="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto text-3xl mb-3 shadow-inner">
+                        <i class="ri-rfid-line animate-pulse"></i>
+                    </div>
+                    <div class="font-bold text-gray-700 text-sm">Menunggu Tap Kartu...</div>
+                    <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                        Belum ada kartu presensi yang di-tap untuk sesi ini hari ini. Silakan tempelkan kartu RFID pada mesin terminal.
+                    </p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($recentLogs as $log): 
+                    $tapTime = date('H:i:s', strtotime($log['tapped_at']));
+                    $isOntime = ($log['status'] === 'on_time');
+                    $statusBadge = $isOntime ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+                    $statusIcon = $isOntime ? 'ri-checkbox-circle-fill text-emerald-600' : 'ri-time-fill text-amber-600';
+                    $statusText = $isOntime ? 'Tepat Waktu' : 'Terlambat';
+                    
+                    $cat = $log['event_category'] ?? 'sholat';
+                    $evBadge = ($cat === 'office') ? 'bg-blue-50 text-blue-700 border-blue-200' : (($cat === 'incidental') ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
 
-// Live Filtering
-function filterList() {
-    const q = document.getElementById('live-search').value.toLowerCase();
-    document.querySelectorAll('.person-card').forEach(card => {
-        const name = card.getAttribute('data-name') || '';
-        const sub = card.getAttribute('data-subinfo') || '';
-        if (name.includes(q) || sub.includes(q)) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-// Periodic Polling
-const selectedEventId = <?= (int)($selectedEventId ?? 0) ?>;
-if (selectedEventId > 0) {
-    setInterval(() => {
-        fetch('<?= url('/api/smart-tap/live-data?event_id=') ?>' + selectedEventId)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.success) return;
-                
-                // Update stats
-                if (data.stats) {
-                    document.getElementById('stat-total').innerText = data.stats.total_wajib;
-                    document.getElementById('stat-ontime').innerText = data.stats.total_hadir_ontime;
-                    document.getElementById('stat-late').innerText = data.stats.total_terlambat;
-                    document.getElementById('stat-permission').innerText = data.stats.total_izin;
-                    document.getElementById('stat-ghaib').innerText = data.stats.total_ghaib;
-                    document.getElementById('stat-percent').innerText = data.stats.percent_presence + '%';
-                    document.getElementById('stat-progress-bar').style.width = Math.min(100, data.stats.percent_presence) + '%';
-                }
-
-                // Render recent logs if available
-                if (data.recent_logs && data.recent_logs.length > 0) {
-                    const container = document.getElementById('recent-logs-feed');
-                    let html = '';
-                    data.recent_logs.forEach(log => {
-                        const isOntime = log.status === 'on_time';
-                        const badgeClass = isOntime ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
-                        const badgeText = isOntime ? 'Tepat Waktu' : 'Terlambat';
-                        const initial = (log.person_name || '?').charAt(0);
-                        const tapTime = (log.tapped_at || '').split(' ')[1] || '';
-
-                        html += `
-                            <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-sm transition">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                                        ${initial}
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-gray-900 leading-tight">${log.person_name}</div>
-                                        <div class="text-[11px] text-gray-400 mt-0.5">
-                                            ${log.person_subinfo || '-'} &bull; Titik: ${log.device_name || 'Scanner USB'}
-                                        </div>
-                                    </div>
+                    // Random color avatar
+                    $avatarColors = ['bg-indigo-600', 'bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-rose-600', 'bg-amber-600', 'bg-teal-600'];
+                    $colorIndex = abs(crc32($log['person_name'])) % count($avatarColors);
+                    $avatarColor = $avatarColors[$colorIndex];
+                ?>
+                    <div class="feed-item p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-slate-50/80 border border-gray-100 shadow-xs transition-all flex items-center justify-between gap-4" data-name="<?= strtolower(htmlspecialchars($log['person_name'])) ?>">
+                        <!-- Left: Avatar & Info -->
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            <div class="w-12 h-12 rounded-2xl <?= $avatarColor ?> text-white font-black text-lg flex items-center justify-center flex-shrink-0 shadow-sm uppercase">
+                                <?= mb_substr($log['person_name'], 0, 1) ?>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-base font-black text-gray-900 truncate">
+                                        <?= htmlspecialchars($log['person_name']) ?>
+                                    </h4>
+                                    <!-- Event Badge (Penting jika 2 event berjalan bersamaan) -->
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-wider <?= $evBadge ?>">
+                                        <?= htmlspecialchars($log['event_name'] ?? 'Sesi Umum') ?>
+                                    </span>
                                 </div>
-                                <div class="text-right flex-shrink-0">
-                                    <div class="text-xs font-mono font-bold text-gray-700">${tapTime}</div>
-                                    <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeClass}">
-                                        ${badgeText}
+                                <div class="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                    <span class="font-medium text-gray-700"><?= htmlspecialchars($log['person_subinfo'] ?: '-') ?></span>
+                                    <span>&bull;</span>
+                                    <span class="font-mono text-gray-400">ID: <?= htmlspecialchars($log['person_identifier'] ?: $log['card_uid']) ?></span>
+                                    <span>&bull;</span>
+                                    <span class="text-gray-400 flex items-center gap-1">
+                                        <i class="ri-computer-line text-xs"></i> <?= htmlspecialchars($log['device_name'] ?: 'Scanner USB') ?>
                                     </span>
                                 </div>
                             </div>
-                        `;
-                    });
-                    container.innerHTML = html;
-                }
-            })
-            .catch(err => console.log('Polling err:', err));
-    }, 4000);
-}
-</script>
+                        </div>
 
+                        <!-- Right: Time & Big Status Badge -->
+                        <div class="flex items-center gap-4 flex-shrink-0 text-right">
+                            <div>
+                                <div class="text-base font-mono font-black text-gray-900 leading-tight"><?= $tapTime ?></div>
+                                <div class="text-[10px] text-gray-400">WIB</div>
+                            </div>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black <?= $statusBadge ?> shadow-xs">
+                                <i class="<?= $statusIcon ?> text-sm"></i>
+                                <?= $statusText ?>
+                            </span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
 <!-- Modal Pindahkan Log Presensi Hari Ini -->
 <div id="modal-reassign-logs" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -470,7 +265,7 @@ if (selectedEventId > 0) {
                 <label class="block text-xs font-semibold text-gray-700 mb-1">Dari Sesi Asal (Salah Catat):</label>
                 <select name="from_event_id" required class="w-full rounded-xl border-gray-300 shadow-sm text-sm py-2 px-3 bg-gray-50">
                     <?php foreach ($events as $ev): ?>
-                        <option value="<?= $ev['id'] ?>" <?= $ev['id'] == $selectedEventId ? 'selected' : '' ?>>
+                        <option value="<?= $ev['id'] ?>" <?= ($selectedEventId !== 'all' && $ev['id'] == $selectedEventId) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($ev['name']) ?> (<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)
                         </option>
                     <?php endforeach; ?>
@@ -502,7 +297,214 @@ if (selectedEventId > 0) {
     </div>
 </div>
 
+<!-- Audio element for Tap Beep -->
+<audio id="tap-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT18A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A/38A" type="audio/wav">
+</audio>
+
+<script>
+let currentEventFilter = '<?= $selectedEventId ?>';
+let isPaused = false;
+let audioEnabled = false;
+let lastKnownTopLogId = <?= !empty($recentLogs) ? (int)$recentLogs[0]['id'] : 0 ?>;
+
+// Sound toggle
+function toggleAudio() {
+    audioEnabled = !audioEnabled;
+    const icon = document.getElementById('sound-icon');
+    const text = document.getElementById('sound-text');
+    if (audioEnabled) {
+        icon.className = 'ri-volume-up-line text-sm text-indigo-600';
+        text.innerText = 'Sound On';
+        // Play small dummy sound to satisfy browser user gesture
+        playBeep();
+    } else {
+        icon.className = 'ri-volume-mute-line text-sm';
+        text.innerText = 'Mute';
+    }
+}
+
+function playBeep() {
+    if (!audioEnabled) return;
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    } catch (e) {}
+}
+
+// Pause toggle
+function togglePause() {
+    isPaused = !isPaused;
+    const icon = document.getElementById('pause-icon');
+    const text = document.getElementById('pause-text');
+    if (isPaused) {
+        icon.className = 'ri-play-line';
+        text.innerText = 'Lanjut';
+    } else {
+        icon.className = 'ri-pause-line';
+        text.innerText = 'Jeda';
+    }
+}
+
+// Fullscreen Toggle
+function toggleFullScreen() {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// Feed Quick Search
+function filterFeed(val) {
+    val = val.toLowerCase().trim();
+    const items = document.querySelectorAll('.feed-item');
+    items.forEach(el => {
+        const name = el.getAttribute('data-name') || '';
+        if (!val || name.includes(val)) {
+            el.style.display = 'flex';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+// Color palette generator based on name
+function getAvatarColor(name) {
+    const colors = ['bg-indigo-600', 'bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-rose-600', 'bg-amber-600', 'bg-teal-600'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % colors.length;
+    return colors[idx];
+}
+
+// Realtime AJAX Polling every 3 seconds
+setInterval(function() {
+    if (isPaused) return;
+
+    const url = '<?= url("/api/smart-tap/live-data") ?>?event_id=' + encodeURIComponent(currentEventFilter) + '&date=<?= $today ?>';
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Update clock
+            if (data.server_time) {
+                document.getElementById('server-clock-display').innerHTML = '<?= date("d M Y") ?> &bull; ' + data.server_time + ' WIB';
+            }
+
+            // Update session counter cards
+            if (data.events_with_stats) {
+                data.events_with_stats.forEach(ev => {
+                    const elTotal = document.getElementById('stat-total-' + ev.id);
+                    const elOntime = document.getElementById('stat-ontime-' + ev.id);
+                    const elLate = document.getElementById('stat-late-' + ev.id);
+                    if (elTotal) elTotal.innerText = ev.total_hadir;
+                    if (elOntime) elOntime.innerText = ev.on_time;
+                    if (elLate) elLate.innerText = ev.late;
+                });
+            }
+
+            // Update feed items
+            const logs = data.recent_logs || [];
+            if (logs.length > 0) {
+                // Check if newest log is new
+                const topId = parseInt(logs[0].id);
+                if (topId > lastKnownTopLogId) {
+                    playBeep();
+                    lastKnownTopLogId = topId;
+                }
+
+                const container = document.getElementById('live-feed-container');
+                let html = '';
+
+                logs.forEach(log => {
+                    const tapTime = (log.tapped_at || '').substr(11, 8);
+                    const isOntime = (log.status === 'on_time');
+                    const statusBadge = isOntime ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+                    const statusIcon = isOntime ? 'ri-checkbox-circle-fill text-emerald-600' : 'ri-time-fill text-amber-600';
+                    const statusText = isOntime ? 'Tepat Waktu' : 'Terlambat';
+
+                    const cat = log.event_category || 'sholat';
+                    const evBadge = (cat === 'office') ? 'bg-blue-50 text-blue-700 border-blue-200' : ((cat === 'incidental') ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+
+                    const avatarColor = getAvatarColor(log.person_name || 'Santri');
+                    const initial = (log.person_name || 'S').substr(0, 1).toUpperCase();
+
+                    html += `
+                        <div class="feed-item p-3.5 sm:p-4 rounded-2xl bg-white hover:bg-slate-50/80 border border-gray-100 shadow-xs transition-all flex items-center justify-between gap-4" data-name="${(log.person_name || '').toLowerCase()}">
+                            <!-- Left: Avatar & Info -->
+                            <div class="flex items-center gap-3.5 min-w-0">
+                                <div class="w-12 h-12 rounded-2xl ${avatarColor} text-white font-black text-lg flex items-center justify-center flex-shrink-0 shadow-sm uppercase">
+                                    ${initial}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="text-base font-black text-gray-900 truncate">
+                                            ${log.person_name || 'Tidak Diketahui'}
+                                        </h4>
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-black border uppercase tracking-wider ${evBadge}">
+                                            ${log.event_name || 'Sesi Umum'}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                        <span class="font-medium text-gray-700">${log.person_subinfo || '-'}</span>
+                                        <span>&bull;</span>
+                                        <span class="font-mono text-gray-400">ID: ${log.person_identifier || log.card_uid}</span>
+                                        <span>&bull;</span>
+                                        <span class="text-gray-400 flex items-center gap-1">
+                                            <i class="ri-computer-line text-xs"></i> ${log.device_name || 'Scanner USB'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Time & Big Status Badge -->
+                            <div class="flex items-center gap-4 flex-shrink-0 text-right">
+                                <div>
+                                    <div class="text-base font-mono font-black text-gray-900 leading-tight">${tapTime}</div>
+                                    <div class="text-[10px] text-gray-400">WIB</div>
+                                </div>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black ${statusBadge} shadow-xs">
+                                    <i class="${statusIcon} text-sm"></i>
+                                    ${statusText}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+                // Re-apply current search query if user was typing
+                const searchVal = document.getElementById('feed-search').value;
+                if (searchVal) {
+                    filterFeed(searchVal);
+                }
+            }
+        })
+        .catch(err => console.log('Polling err:', err));
+}, 3000);
+</script>
+
 <?php
 renderFooter();
 ?>
-

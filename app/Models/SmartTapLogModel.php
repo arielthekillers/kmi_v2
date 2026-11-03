@@ -107,7 +107,8 @@ class SmartTapLogModel extends Model
                     ELSE '-'
                 END as person_subinfo,
                 d.device_name,
-                e.name as event_name
+                e.name as event_name,
+                COALESCE(e.category, 'sholat') as event_category
                 FROM smart_tap_logs l
                 LEFT JOIN smart_tap_events e ON l.event_id = e.id
                 LEFT JOIN smart_tap_devices d ON l.device_id = d.id
@@ -123,6 +124,41 @@ class SmartTapLogModel extends Model
         $stmt = $this->db->prepare($sql);
         $stmt->execute($execParams);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Hitung ringkasan statistik (hadir, tepat waktu, telat) per event hari ini
+     */
+    public function getTodayEventsSummaryStats(array $events, $date = null)
+    {
+        $date = $date ?: date('Y-m-d');
+        $sql = "SELECT event_id,
+                       COUNT(*) as total_hadir,
+                       SUM(CASE WHEN status = 'on_time' THEN 1 ELSE 0 END) as on_time,
+                       SUM(CASE WHEN status IN ('late', 'very_late') THEN 1 ELSE 0 END) as late
+                FROM smart_tap_logs
+                WHERE DATE(tapped_at) = ?
+                GROUP BY event_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$date]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $lookup = [];
+        foreach ($rows as $r) {
+            $lookup[$r['event_id']] = [
+                'total_hadir' => (int)$r['total_hadir'],
+                'on_time' => (int)$r['on_time'],
+                'late' => (int)$r['late']
+            ];
+        }
+
+        $result = [];
+        foreach ($events as $ev) {
+            $id = $ev['id'];
+            $st = $lookup[$id] ?? ['total_hadir' => 0, 'on_time' => 0, 'late' => 0];
+            $result[$id] = array_merge($ev, $st);
+        }
+        return $result;
     }
 
     /**
