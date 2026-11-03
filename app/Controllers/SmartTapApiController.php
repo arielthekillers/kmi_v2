@@ -302,7 +302,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.1.0';
+        $latestVersion = '1.2.0';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -310,7 +310,7 @@ class SmartTapApiController extends Controller
             'success' => true,
             'latest_version' => $latestVersion,
             'release_date' => '2026-11-03',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.1.0:\n- Sinkronisasi presensi kategori Kantor dengan kalender akademik & dispensasi KBM\n- Penyesuaian filter target absensi (santri, pengajar/pegawai, dan semua)\n- Fitur One-Click In-App Auto Update otomatis dari terminal\n- Tampilan instruksi inisiasi yang diperjelas",
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.0:\n- Dukungan Multi-Reader USB Scanner (Windows RawInput isolasi hardware)\n- Antrean tap presensi FIFO tanpa resiko karakter tertukar\n- Tampilan notifikasi Live Card Stack (beberapa kartu sekaligus)\n- Sinkronisasi presensi kategori Kantor dengan kalender akademik", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false
