@@ -3,7 +3,7 @@
  * Smart Tap - Modern Realtime Live Monitoring Feed
  * Focused on incoming RFID taps, concurrent multi-session support, and zero clutter.
  */
-renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
+renderHeader("Smart Tap Realtime Monitoring");
 ?>
 
 <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6" id="live-monitoring-wrapper">
