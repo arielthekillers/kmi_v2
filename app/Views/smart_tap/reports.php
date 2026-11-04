@@ -32,31 +32,31 @@ $summary = $summary ?? [
         </button>
     </div>
 
-    <!-- Filter Form -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:hidden">
-        <form method="GET" action="<?= url('/smart-tap/reports') ?>" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Mulai</label>
-                <input type="date" name="start_date" value="<?= htmlspecialchars($startDate) ?>" class="w-full text-sm rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+    <!-- Compact Filter Bar (1 Baris) -->
+    <div class="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-gray-100 print:hidden">
+        <form method="GET" action="<?= url('/smart-tap/reports') ?>" class="flex flex-col md:flex-row md:items-center gap-2.5 sm:gap-3">
+            <!-- Tanggal Mulai s/d Sampai -->
+            <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                <span class="text-xs font-semibold text-gray-500 flex items-center gap-1 shrink-0">
+                    <i class="ri-calendar-2-line text-indigo-500"></i> Periode:
+                </span>
+                <input type="date" name="start_date" value="<?= htmlspecialchars($startDate) ?>" class="bg-transparent text-xs text-gray-800 border-none p-0 focus:ring-0 focus:outline-none">
+                <span class="text-xs text-gray-400 font-medium">s/d</span>
+                <input type="date" name="end_date" value="<?= htmlspecialchars($endDate) ?>" class="bg-transparent text-xs text-gray-800 border-none p-0 focus:ring-0 focus:outline-none">
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Sampai</label>
-                <input type="date" name="end_date" value="<?= htmlspecialchars($endDate) ?>" class="w-full text-sm rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Kategori Peserta</label>
-                <select name="target_type" class="w-full text-sm rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+            <!-- Kategori Peserta -->
+            <div class="w-full md:w-48 shrink-0">
+                <select name="target_type" class="w-full text-xs font-medium text-gray-700 rounded-xl border border-gray-200 bg-gray-50 py-2 px-3 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="all" <?= $targetType == 'all' ? 'selected' : '' ?>>Semua (Santri & Guru)</option>
                     <option value="students" <?= $targetType == 'students' ? 'selected' : '' ?>>Santri Saja</option>
                     <option value="teachers" <?= $targetType == 'teachers' ? 'selected' : '' ?>>Pengajar Saja</option>
                 </select>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Event Tertentu</label>
-                <select name="event_id" class="w-full text-sm rounded-xl border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+            <!-- Event Tertentu -->
+            <div class="w-full md:flex-1">
+                <select name="event_id" class="w-full text-xs font-medium text-gray-700 rounded-xl border border-gray-200 bg-gray-50 py-2 px-3 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua Kegiatan / Event</option>
                     <?php foreach ($events as $ev): ?>
                         <option value="<?= $ev['id'] ?>" <?= $eventId == $ev['id'] ? 'selected' : '' ?>>
@@ -66,13 +66,14 @@ $summary = $summary ?? [
                 </select>
             </div>
 
-            <div class="sm:col-span-2 lg:col-span-4 flex justify-end gap-2 pt-2">
-                <a href="<?= url('/smart-tap/reports') ?>" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium rounded-xl hover:bg-gray-100 transition">
-                    Reset Filter
-                </a>
-                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">
-                    <i class="ri-filter-line mr-1"></i> Terapkan Filter
+            <!-- Tombol Filter & Reset -->
+            <div class="flex items-center gap-2 shrink-0 md:ml-auto">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                    <i class="ri-filter-3-line"></i> Terapkan
                 </button>
+                <a href="<?= url('/smart-tap/reports') ?>" title="Reset Filter" class="inline-flex items-center justify-center px-3 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                    <i class="ri-refresh-line sm:mr-1"></i> <span class="hidden sm:inline">Reset</span>
+                </a>
             </div>
         </form>
     </div>
