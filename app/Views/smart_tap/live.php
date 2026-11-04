@@ -59,64 +59,103 @@ renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
         </div>
     </div>
 
-    <!-- Multi-Event Session Navigation Tabs (Wrap & Tanpa Horizontal Scroll) -->
-    <div class="flex flex-wrap items-center gap-2 py-1">
-        <!-- Tab: Semua Sesi Aktif -->
-        <a href="<?= url('/smart-tap/live?event_id=all') ?>" id="tab-event-all" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs <?= $selectedEventId === 'all' ? 'session-tab-active bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
-            <i class="ri-apps-2-line"></i>
-            <span>Semua Sesi Aktif Hari Ini</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $selectedEventId === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' ?>">
-                <?= $totalAllTaps ?> Tap
-            </span>
-        </a>
-
-        <!-- Individual Events Tabs -->
-        <?php foreach ($eventsWithStats as $ev): 
-            $isSel = ($selectedEventId !== 'all' && (int)$selectedEventId === (int)$ev['id']);
-            $cat = $ev['category'] ?? 'sholat';
-            $icon = 'ri-time-line';
-            if ($cat === 'sholat') $icon = 'ri-moon-line';
-            elseif ($cat === 'office') $icon = 'ri-building-line';
-            elseif ($cat === 'incidental') $icon = 'ri-calendar-event-line';
-        ?>
-            <a href="<?= url('/smart-tap/live?event_id=' . $ev['id']) ?>" id="tab-event-<?= $ev['id'] ?>" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs <?= $isSel ? 'session-tab-active bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
-                <i class="<?= $icon ?>"></i>
-                <span><?= htmlspecialchars($ev['name']) ?></span>
-                <span class="text-[11px] opacity-75 font-mono">(<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $isSel ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700' ?>">
-                    <?= $ev['total_hadir'] ?>
-                </span>
-            </a>
-        <?php endforeach; ?>
-    </div>
-
-    <!-- Active Sessions Quick Strip (Side-by-Side if Concurrent) -->
+    <!-- Interactive Session Cards (Klik Card untuk Memantau Sesi) -->
     <?php if (!empty($eventsWithStats)): ?>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-<?= min(4, max(1, count($eventsWithStats))) ?> gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-<?= min(4, count($eventsWithStats) + 1) ?> gap-4">
+            
+            <!-- Master Card: Semua Sesi Aktif Hari Ini -->
+            <?php 
+                $isAllSel = ($selectedEventId === 'all');
+                $masterBorder = $isAllSel 
+                    ? 'border-indigo-600 ring-2 ring-indigo-500/30 bg-gradient-to-br from-indigo-50/50 via-white to-white shadow-md' 
+                    : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-xs';
+            ?>
+            <a href="<?= url('/smart-tap/live?event_id=all') ?>" class="p-4 rounded-2xl border transition-all flex flex-col justify-between group cursor-pointer <?= $masterBorder ?>" title="Klik untuk memantau stream semua sesi secara serentak">
+                <div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider <?= $isAllSel ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700' ?>">
+                            SEMUA SESI
+                        </span>
+                        <?php if ($isAllSel): ?>
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                                <i class="ri-check-line"></i> Sedang Dipantau
+                            </span>
+                        <?php else: ?>
+                            <span class="text-[10px] text-gray-400 font-medium group-hover:text-indigo-600 transition">
+                                Klik pantau <i class="ri-arrow-right-line"></i>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <h3 class="text-base font-black text-gray-900 mt-2 tracking-tight flex items-center gap-1.5 group-hover:text-indigo-600 transition">
+                        <i class="ri-apps-2-line text-indigo-600"></i> Semua Sesi Hari Ini
+                    </h3>
+                    <p class="text-[11px] text-gray-500">
+                        Pantau seluruh tap masuk dari seluruh sesi
+                    </p>
+                </div>
+
+                <!-- 3 Stats Counters -->
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100 text-center">
+                    <div>
+                        <div class="text-[10px] text-gray-400 font-semibold uppercase">Total Masuk</div>
+                        <div class="text-lg font-black text-indigo-600"><?= $totalAllTaps ?></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-emerald-600 font-semibold uppercase">Tepat</div>
+                        <div class="text-lg font-black text-emerald-600"><?= $totalAllOnTime ?? 0 ?></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-amber-600 font-semibold uppercase">Telat</div>
+                        <div class="text-lg font-black text-amber-600"><?= $totalAllLate ?? 0 ?></div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Individual Event Cards -->
             <?php foreach ($eventsWithStats as $ev): 
                 $isCurrentlyActive = (date('H:i:s') >= $ev['open_time'] && date('H:i:s') <= $ev['close_time']);
+                $isSel = ($selectedEventId !== 'all' && (int)$selectedEventId === (int)$ev['id']);
                 $cat = $ev['category'] ?? 'sholat';
-                $cardBorder = $isCurrentlyActive ? 'border-emerald-300 ring-2 ring-emerald-400/20 bg-gradient-to-br from-emerald-50/40 via-white to-white' : 'border-gray-200 bg-white';
+
+                // Tautan klik: jika sudah terpilih, klik lagi mengembalikan ke 'all'
+                $cardUrl = $isSel ? url('/smart-tap/live?event_id=all') : url('/smart-tap/live?event_id=' . $ev['id']);
+
+                if ($isSel) {
+                    $cardBorder = 'border-indigo-600 ring-2 ring-indigo-500/30 bg-gradient-to-br from-indigo-50/40 via-white to-white shadow-md';
+                } elseif ($isCurrentlyActive) {
+                    $cardBorder = 'border-emerald-300 ring-2 ring-emerald-400/20 bg-gradient-to-br from-emerald-50/40 via-white to-white hover:border-emerald-400 hover:shadow-xs';
+                } else {
+                    $cardBorder = 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-xs';
+                }
+
                 $badgeBg = ($cat === 'office') ? 'bg-blue-100 text-blue-800' : (($cat === 'incidental') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800');
             ?>
-                <div class="p-4 rounded-2xl border shadow-xs transition flex flex-col justify-between <?= $cardBorder ?>">
+                <a href="<?= $cardUrl ?>" class="p-4 rounded-2xl border transition-all flex flex-col justify-between group cursor-pointer <?= $cardBorder ?>" title="Klik untuk memantau stream sesi ini">
                     <div>
                         <div class="flex items-center justify-between gap-2">
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider <?= $badgeBg ?>">
                                 <?= strtoupper($cat) ?>
                             </span>
-                            <?php if ($isCurrentlyActive): ?>
-                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full animate-pulse">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Jam Buka
-                                </span>
-                            <?php else: ?>
-                                <span class="text-[10px] text-gray-400 font-mono">
-                                    <?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>
-                                </span>
-                            <?php endif; ?>
+
+                            <div class="flex items-center gap-1.5">
+                                <?php if ($isSel): ?>
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                                        <i class="ri-check-line"></i> Sedang Dipantau
+                                    </span>
+                                <?php elseif ($isCurrentlyActive): ?>
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full animate-pulse">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Jam Buka
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-[10px] text-gray-400 font-mono">
+                                        <?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
-                        <h3 class="text-base font-black text-gray-900 mt-2 tracking-tight truncate" title="<?= htmlspecialchars($ev['name']) ?>">
+                        <h3 class="text-base font-black text-gray-900 mt-2 tracking-tight truncate group-hover:text-indigo-600 transition" title="<?= htmlspecialchars($ev['name']) ?>">
                             <?= htmlspecialchars($ev['name']) ?>
                         </h3>
                         <p class="text-[11px] text-gray-500 capitalize">
@@ -139,7 +178,7 @@ renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
                             <div class="text-lg font-black text-amber-600" id="stat-late-<?= $ev['id'] ?>"><?= $ev['late'] ?></div>
                         </div>
                     </div>
-                </div>
+                </a>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

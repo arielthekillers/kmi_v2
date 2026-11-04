@@ -59,8 +59,12 @@ class SmartTapController extends Controller
         $eventsWithStats = $this->logModel->getTodayEventsSummaryStats($events, $today);
 
         $totalAllTaps = 0;
+        $totalAllOnTime = 0;
+        $totalAllLate = 0;
         foreach ($eventsWithStats as $evSt) {
-            $totalAllTaps += $evSt['total_hadir'];
+            $totalAllTaps += (int)($evSt['total_hadir'] ?? 0);
+            $totalAllOnTime += (int)($evSt['on_time'] ?? 0);
+            $totalAllLate += (int)($evSt['late'] ?? 0);
         }
 
         $filterId = ($selectedEventId === 'all') ? null : (int)$selectedEventId;
@@ -71,6 +75,8 @@ class SmartTapController extends Controller
             'eventsWithStats' => $eventsWithStats,
             'selectedEventId' => $selectedEventId,
             'totalAllTaps' => $totalAllTaps,
+            'totalAllOnTime' => $totalAllOnTime,
+            'totalAllLate' => $totalAllLate,
             'recentLogs' => $recentLogs,
             'today' => $today
         ]);
