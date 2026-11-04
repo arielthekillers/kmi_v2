@@ -309,52 +309,282 @@ class SmartTapLogModel extends Model
      */
     public function getRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null)
     {
+        $res = $this->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId, $classId);
+        return $res['rows'];
+    }
+
+    /**
+     * Rekapitulasi Komprehensif: Menggabungkan Target Baseline (Pengajar/Santri),
+     * Log Absensi Masuk (Tepat Waktu & Terlambat), serta Dispensasi/Izin Resmi.
+     * Menghasilkan KPI Summary Cards & Tabel Lengkap (termasuk yang Tidak Hadir / Alpa).
+     */
+    public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null)
+    {
+        // 1. Ambil detail event jika event_id dipilih
+        $event = null;
+        if (!empty($eventId)) {
+            $stmtEv = $this->db->prepare("SELECT * FROM smart_tap_events WHERE id = ?");
+            $stmtEv->execute([(int)$eventId]);
+            $event = $stmtEv->fetch(PDO::FETCH_ASSOC);
+        }
+
+        // Tentukan target tipe efektif:
+        $effectiveTarget = $targetType;
+        if ($event) {
+            if ($event['target_type'] === 'teachers') {
+                $effectiveTarget = 'teachers';
+            } elseif ($event['target_type'] === 'students') {
+                $effectiveTarget = 'students';
+            }
+        }
+
+        $participants = [];
+
+        // 2. Ambil data Pengajar jika target mencakup 'all' atau 'teachers'
+        if (in_array($effectiveTarget, ['all', 'teachers'])) {
+            $exemptionModel = new \App\Models\SmartTapExemptionModel();
+            $exemptedUserIds = $exemptionModel->getExemptedUserIds($eventId, $event['category'] ?? null);
+
+            $exemptionFilter = "";
+            if (!empty($exemptedUserIds)) {
+                $exemptionFilter = " AND u.id NOT IN (" . implode(',', array_map('intval', $exemptedUserIds)) . ") ";
+            }
+
+            $sqlTeachers = "SELECT u.id, u.username as identifier, u.nama as name, 'teacher' as person_type,
+                                   'Pengajar / Guru' as subinfo, tp.nip, tp.phone
+                            FROM users u
+                            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+                            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
+                            $exemptionFilter
+                            ORDER BY u.nama ASC";
+            $teachers = $this->db->query($sqlTeachers)->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($teachers as $t) {
+                $key = 'teacher_' . $t['id'];
+                $participants[$key] = [
+                    'person_type' => 'teacher',
+                    'person_id' => (int)$t['id'],
+                    'name' => $t['name'],
+                    'identifier' => $t['identifier'] ?: ($t['nip'] ?: '-'),
+                    'subinfo' => 'Pengajar / Guru',
+                    'count_on_time' => 0,
+                    'count_late' => 0,
+                    'count_very_late' => 0,
+                    'total_attendance' => 0,
+                    'has_permission' => false,
+                    'permission_type' => null,
+                    'permission_reason' => null,
+                    'status' => 'absent'
+                ];
+            }
+        }
+
+        // 3. Ambil data Santri jika target mencakup 'all' atau 'students'
+        if (in_array($effectiveTarget, ['all', 'students'])) {
+            $classFilter = "";
+            $pClass = [];
+
+            $targetClasses = [];
+            if (!empty($classId)) {
+                $targetClasses = [(int)$classId];
+            } elseif ($event && !empty($event['target_classes'])) {
+                $targetClasses = array_map('intval', explode(',', $event['target_classes']));
+            }
+
+            if (!empty($targetClasses)) {
+                $placeholders = implode(',', array_fill(0, count($targetClasses), '?'));
+                $classFilter = " AND se.kelas_id IN ($placeholders) ";
+                $pClass = $targetClasses;
+            }
+
+            $sqlStudents = "SELECT s.id, s.nis as identifier, s.nama as name, 'student' as person_type,
+                                   CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as subinfo,
+                                   se.kelas_id
+                            FROM students s
+                            INNER JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                            LEFT JOIN kelas k ON se.kelas_id = k.id
+                            WHERE s.deleted_at IS NULL $classFilter
+                            ORDER BY k.tingkat ASC, k.abjad ASC, s.nama ASC";
+
+            $stmtS = $this->db->prepare($sqlStudents);
+            $stmtS->execute(array_merge([$this->academic_year_id], $pClass));
+            $students = $stmtS->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($students as $s) {
+                $key = 'student_' . $s['id'];
+                $participants[$key] = [
+                    'person_type' => 'student',
+                    'person_id' => (int)$s['id'],
+                    'name' => $s['name'],
+                    'identifier' => $s['identifier'] ?: '-',
+                    'subinfo' => $s['subinfo'] ?: 'Santri',
+                    'count_on_time' => 0,
+                    'count_late' => 0,
+                    'count_very_late' => 0,
+                    'total_attendance' => 0,
+                    'has_permission' => false,
+                    'permission_type' => null,
+                    'permission_reason' => null,
+                    'status' => 'absent'
+                ];
+            }
+        }
+
+        // 4. Ambil catatan log presensi pada rentang tanggal & event
         $whereL = ["DATE(l.tapped_at) BETWEEN ? AND ?"];
         $paramsL = [$startDate, $endDate];
 
-        if ($targetType !== 'all') {
+        if ($effectiveTarget !== 'all') {
             $whereL[] = "l.person_type = ?";
-            $paramsL[] = $targetType === 'students' ? 'student' : 'teacher';
+            $paramsL[] = $effectiveTarget === 'students' ? 'student' : 'teacher';
         }
 
         if ($eventId) {
             $whereL[] = "l.event_id = ?";
-            $paramsL[] = $eventId;
+            $paramsL[] = (int)$eventId;
         }
 
         $whereClauseL = implode(" AND ", $whereL);
 
-        // Aggregation per person
-        $sql = "SELECT l.person_type, l.person_id,
-                       CASE 
-                           WHEN l.person_type = 'student' THEN s.nama
-                           WHEN l.person_type = 'teacher' THEN u.nama
-                       END as name,
-                       CASE 
-                           WHEN l.person_type = 'student' THEN s.nis
-                           WHEN l.person_type = 'teacher' THEN u.username
-                       END as identifier,
-                       CASE 
-                           WHEN l.person_type = 'student' THEN CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, ''))
-                           WHEN l.person_type = 'teacher' THEN 'Pengajar / Guru'
-                       END as subinfo,
-                       COUNT(CASE WHEN l.status = 'on_time' THEN 1 END) as count_on_time,
-                       COUNT(CASE WHEN l.status = 'late' THEN 1 END) as count_late,
-                       COUNT(CASE WHEN l.status = 'very_late' THEN 1 END) as count_very_late,
-                       COUNT(CASE WHEN l.status != 'rejected' THEN 1 END) as total_attendance
-                FROM smart_tap_logs l
-                LEFT JOIN students s ON l.person_type = 'student' AND l.person_id = s.id
-                LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
-                LEFT JOIN kelas k ON se.kelas_id = k.id
-                LEFT JOIN users u ON l.person_type = 'teacher' AND l.person_id = u.id
-                WHERE $whereClauseL
-                GROUP BY l.person_type, l.person_id
-                ORDER BY count_late DESC, count_very_late DESC, total_attendance DESC";
+        $sqlLogs = "SELECT l.person_type, l.person_id,
+                           COUNT(CASE WHEN l.status = 'on_time' THEN 1 END) as count_on_time,
+                           COUNT(CASE WHEN l.status = 'late' THEN 1 END) as count_late,
+                           COUNT(CASE WHEN l.status = 'very_late' THEN 1 END) as count_very_late,
+                           COUNT(CASE WHEN l.status != 'rejected' THEN 1 END) as total_attendance,
+                           CASE 
+                               WHEN l.person_type = 'student' THEN s.nama
+                               WHEN l.person_type = 'teacher' THEN u.nama
+                           END as fallback_name,
+                           CASE 
+                               WHEN l.person_type = 'student' THEN s.nis
+                               WHEN l.person_type = 'teacher' THEN u.username
+                           END as fallback_identifier,
+                           CASE 
+                               WHEN l.person_type = 'student' THEN CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, ''))
+                               WHEN l.person_type = 'teacher' THEN 'Pengajar / Guru'
+                           END as fallback_subinfo
+                    FROM smart_tap_logs l
+                    LEFT JOIN students s ON l.person_type = 'student' AND l.person_id = s.id
+                    LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
+                    LEFT JOIN kelas k ON se.kelas_id = k.id
+                    LEFT JOIN users u ON l.person_type = 'teacher' AND l.person_id = u.id
+                    WHERE $whereClauseL
+                    GROUP BY l.person_type, l.person_id";
 
-        $execParams = array_merge([$this->academic_year_id], $paramsL);
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($execParams);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmtLogs = $this->db->prepare($sqlLogs);
+        $stmtLogs->execute(array_merge([$this->academic_year_id], $paramsL));
+        $logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($logs as $log) {
+            $key = $log['person_type'] . '_' . $log['person_id'];
+            if (!isset($participants[$key])) {
+                $participants[$key] = [
+                    'person_type' => $log['person_type'],
+                    'person_id' => (int)$log['person_id'],
+                    'name' => $log['fallback_name'] ?: 'Tanpa Nama',
+                    'identifier' => $log['fallback_identifier'] ?: '-',
+                    'subinfo' => $log['fallback_subinfo'] ?: '-',
+                    'count_on_time' => 0,
+                    'count_late' => 0,
+                    'count_very_late' => 0,
+                    'total_attendance' => 0,
+                    'has_permission' => false,
+                    'permission_type' => null,
+                    'permission_reason' => null,
+                    'status' => 'absent'
+                ];
+            }
+
+            $participants[$key]['count_on_time'] = (int)$log['count_on_time'];
+            $participants[$key]['count_late'] = (int)$log['count_late'];
+            $participants[$key]['count_very_late'] = (int)$log['count_very_late'];
+            $participants[$key]['total_attendance'] = (int)$log['total_attendance'];
+        }
+
+        // 5. Ambil data perizinan & dispensasi yang beririsan dengan tanggal laporan
+        $sqlPerms = "SELECT person_type, person_id, permission_type, reason, event_ids, start_date, end_date
+                     FROM smart_tap_permissions
+                     WHERE start_date <= ? AND end_date >= ?";
+        $stmtPerms = $this->db->prepare($sqlPerms);
+        $stmtPerms->execute([$endDate, $startDate]);
+        $perms = $stmtPerms->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($perms as $p) {
+            if ($eventId && !empty($p['event_ids'])) {
+                $allowedEvents = explode(',', $p['event_ids']);
+                if (!in_array((string)$eventId, $allowedEvents)) {
+                    continue;
+                }
+            }
+
+            $key = $p['person_type'] . '_' . $p['person_id'];
+            if (isset($participants[$key])) {
+                $participants[$key]['has_permission'] = true;
+                $participants[$key]['permission_type'] = $p['permission_type'];
+                $participants[$key]['permission_reason'] = $p['reason'];
+            }
+        }
+
+        // 6. Hitung Status Kedisiplinan & Summary KPI
+        $summary = [
+            'total_target' => count($participants),
+            'total_hadir' => 0,
+            'total_ontime' => 0,
+            'total_late' => 0,
+            'total_izin' => 0,
+            'total_tidak_hadir' => 0,
+            'percent_presence' => 0,
+            'sum_taps_ontime' => 0,
+            'sum_taps_late' => 0,
+            'sum_taps_total' => 0
+        ];
+
+        foreach ($participants as &$p) {
+            $totalLate = $p['count_late'] + $p['count_very_late'];
+            $summary['sum_taps_ontime'] += $p['count_on_time'];
+            $summary['sum_taps_late'] += $totalLate;
+            $summary['sum_taps_total'] += $p['total_attendance'];
+
+            if ($p['total_attendance'] > 0) {
+                $summary['total_hadir']++;
+                if ($totalLate == 0) {
+                    $p['status'] = 'ontime';
+                    $summary['total_ontime']++;
+                } else {
+                    $p['status'] = 'late';
+                    $summary['total_late']++;
+                }
+            } elseif ($p['has_permission']) {
+                $p['status'] = 'permission';
+                $summary['total_izin']++;
+            } else {
+                $p['status'] = 'absent';
+                $summary['total_tidak_hadir']++;
+            }
+        }
+        unset($p);
+
+        if ($summary['total_target'] > 0) {
+            $summary['percent_presence'] = round(($summary['total_hadir'] / $summary['total_target']) * 100, 1);
+        }
+
+        // 7. Urutkan: Terlambat -> Tidak Hadir -> Izin -> Tepat Waktu, lalu Nama ASC
+        $rows = array_values($participants);
+        usort($rows, function ($a, $b) {
+            $rank = ['late' => 1, 'absent' => 2, 'permission' => 3, 'ontime' => 4];
+            $rankA = $rank[$a['status']] ?? 9;
+            $rankB = $rank[$b['status']] ?? 9;
+
+            if ($rankA !== $rankB) {
+                return $rankA <=> $rankB;
+            }
+            return strcmp($a['name'], $b['name']);
+        });
+
+        return [
+            'summary' => $summary,
+            'rows' => $rows
+        ];
     }
 
     /**

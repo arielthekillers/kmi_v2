@@ -159,7 +159,9 @@ class SmartTapController extends Controller
         $eventId = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
 
         $events = $this->eventModel->getAllEvents();
-        $recap = $this->logModel->getRecapReport($startDate, $endDate, $targetType, $eventId);
+        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId);
+        $summary = $recapData['summary'];
+        $recap = $recapData['rows'];
 
         $this->view('smart_tap/reports', [
             'startDate' => $startDate,
@@ -167,7 +169,8 @@ class SmartTapController extends Controller
             'targetType' => $targetType,
             'eventId' => $eventId,
             'events' => $events,
-            'recap' => $recap
+            'recap' => $recap,
+            'summary' => $summary
         ]);
     }
 
