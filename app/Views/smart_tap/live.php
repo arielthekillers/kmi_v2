@@ -23,39 +23,27 @@ renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
     <?php endif; ?>
 
     <!-- Minimalist Header Bar -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs">
         <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 mb-1">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                     Live Streaming
                 </span>
-                <span class="text-xs text-gray-400 font-mono" id="server-clock-display">
-                    <?= date('d M Y') ?> &bull; <?= date('H:i:s') ?> WIB
-                </span>
             </div>
-            <h1 class="text-2xl font-black text-gray-900 mt-1 tracking-tight flex items-center gap-2">
+            <h1 class="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
                 <i class="ri-radar-fill text-indigo-600"></i> Smart Tap Live Monitor
             </h1>
         </div>
 
-        <!-- Quick Actions & Tools -->
-        <div class="flex items-center gap-2 flex-wrap">
-            <?php if (!empty($events) && count($events) > 1): ?>
-                <button type="button" onclick="document.getElementById('modal-reassign-logs').classList.remove('hidden')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Pindahkan data presensi jika salah memilih sesi di terminal">
-                    <i class="ri-arrow-left-right-line"></i> Pindahkan Log
-                </button>
-            <?php endif; ?>
-
-            <!-- Audio Mute Toggle -->
-            <button type="button" id="btn-toggle-sound" onclick="toggleAudio()" class="px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Nyalakan/Matikan Suara Beep">
-                <i class="ri-volume-mute-line text-sm" id="sound-icon"></i> <span id="sound-text">Mute</span>
-            </button>
-
-            <!-- Fullscreen TV Toggle -->
-            <button type="button" onclick="toggleFullScreen()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs" title="Mode TV Monitor / Layar Penuh">
-                <i class="ri-fullscreen-line text-sm"></i> Layar Penuh
-            </button>
+        <!-- Tanggal & Jam di Sebelah Kanan -->
+        <div class="flex items-center sm:justify-end">
+            <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 font-mono text-xs font-semibold text-gray-700 shadow-xs">
+                <i class="ri-calendar-2-line text-indigo-600 text-sm"></i>
+                <span id="server-clock-display">
+                    <?= date('d M Y') ?> &bull; <?= date('H:i:s') ?> WIB
+                </span>
+            </div>
         </div>
     </div>
 
