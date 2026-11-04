@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Smart Tap Terminal Kiosk</title>
+
+    <!-- PWA & Mobile Standalone Meta -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Smart Tap">
+    <meta name="theme-color" content="#090d16">
+    <link rel="manifest" href="<?= url('/smart-tap/manifest.json') ?>">
+    <link rel="icon" type="image/png" href="<?= url('/img/kmi.png') ?>">
+    <link rel="apple-touch-icon" href="<?= url('/img/kmi.png') ?>">
+
+    <!-- Tailwind CSS & Remix Icon -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #070a13;
+            color: #f1f5f9;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.18); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-ring {
+            animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col justify-between">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: SETUP / PAIRING WIZARD (LOCKED) -->
+    <!-- ========================================== -->
+    <div id="screen-setup" class="hidden fixed inset-0 z-50 bg-[#070a13] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div class="max-w-md w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl text-center">
+            
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+                <i class="ri-shield-keyhole-line"></i>
+            </div>
+
+            <h2 class="text-2xl font-black text-white tracking-tight">Inisiasi Tablet Presensi</h2>
+            <p class="text-xs text-slate-400 mt-1">
+                Hubungkan tablet ini ke sistem KMI menggunakan <b>Kode Setup</b> dari dashboard Admin.
+            </p>
+
+            <form id="form-pair" onsubmit="handlePairing(event)" class="mt-6 text-left space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">URL Endpoint Server KMI</label>
+                    <input type="text" id="setup-endpoint" value="<?= url('') ?>" readonly class="w-full text-xs font-mono bg-slate-950 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 focus:outline-none cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kode Setup Perangkat (8 Karakter)</label>
+                    <input type="text" id="setup-code" placeholder="Contoh: P987-J78T" required maxlength="10" oninput="formatSetupCode(this)" class="w-full text-center text-xl font-mono font-black uppercase bg-slate-950 border-2 border-slate-700 text-indigo-400 tracking-widest rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 transition">
+                    <p class="text-[10px] text-slate-500 mt-1">Salin dari jendela popup <i>Inisiasi Perangkat</i> di web KMI.</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">PIN Otorisasi Kiosk</label>
+                    <input type="password" id="setup-pin" placeholder="Default: 1234" required maxlength="6" class="w-full text-center text-lg font-mono font-bold bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+
+                <div id="setup-error" class="hidden text-xs text-rose-400 bg-rose-950/60 border border-rose-800/80 rounded-xl p-3 font-medium"></div>
+
+                <button type="submit" id="btn-submit-pair" class="w-full mt-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                    <i class="ri-link"></i> Hubungkan Tablet Ini
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-[10px] text-slate-500">
+                1 Perangkat = 1 Token Terikat Server &bull; Aman & Terenkripsi
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: ACTIVE KIOSK SCREEN             -->
+    <!-- ========================================== -->
+    <div id="screen-kiosk" class="h-full w-full flex flex-col justify-between">
+
+        <!-- Top Header Bar -->
+        <header class="p-4 sm:p-5 flex items-center justify-between border-b border-slate-900 bg-slate-950/70 backdrop-blur-md relative z-20">
+            <!-- Left: Active Event Info -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-xl">
+                    <i class="ri-rfid-line"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="active-cat-badge" class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            KANTOR
+                        </span>
+                        <h2 id="active-event-name" class="text-sm sm:text-base font-black text-white tracking-tight">
+                            Memuat Sesi...
+                        </h2>
+                        <span id="active-mode-badge" class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 font-mono">
+                            Otomatis (Jadwal)
+                        </span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
+                        <span id="device-label-text">Tablet Lapangan</span>
+                        <span>&bull;</span>
+                        <span id="active-window-time">Buka: 00:00 - 23:59</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Status Pill, Clock & Settings -->
+            <div class="flex items-center gap-2.5 sm:gap-4">
+                <!-- Online / Offline Pill -->
+                <div id="network-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="network-text">Online</span>
+                </div>
+
+                <!-- Digital Clock -->
+                <div class="text-right font-mono hidden sm:block">
+                    <div id="clock-time" class="text-lg font-black text-white leading-tight">00:00:00</div>
+                    <div id="clock-date" class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">01 Jan 2026</div>
+                </div>
+
+                <!-- Settings Button -->
+                <button type="button" onclick="openSettingsModal()" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg transition shadow-xs" title="Pengaturan Tablet Kiosk">
+                    <i class="ri-settings-4-line"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Center Content: Standby OR Center Hero Display -->
+        <main class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+
+            <!-- 1. STANDBY HERO (Menunggu Kartu) -->
+            <div id="standby-hero" class="text-center space-y-6 max-w-lg mx-auto transition-all duration-300">
+                <!-- Animated Target Box -->
+                <div class="relative w-44 h-44 sm:w-48 sm:h-48 mx-auto flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full bg-indigo-500/10 pulse-ring"></div>
+                    <div class="absolute inset-4 rounded-full bg-indigo-500/20 border border-indigo-400/40"></div>
+                    <div id="target-box" class="relative w-28 h-28 rounded-3xl bg-gradient-to-tr from-indigo-600 to-indigo-500 shadow-2xl shadow-indigo-500/50 flex items-center justify-center text-5xl text-white transform hover:scale-105 transition duration-300">
+                        <i class="ri-rfid-line"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white">TEMPELKAN KARTU</h1>
+                    <p class="text-sm sm:text-base text-slate-400 mt-2" id="standby-sub">
+                        Dekatkan kartu RFID santri / pengajar pada scanner
+                    </p>
+                </div>
+
+                <div id="standby-status-pill" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span id="standby-pill-text">Scanner Siap Menerima Kartu</span>
+                </div>
+            </div>
+
+            <!-- 2. CENTER HERO TAP RESULT (Besar, Bold, Jelas Terbaca dari Jauh) -->
+            <div id="tap-result-hero" class="hidden text-center max-w-2xl w-full mx-auto p-8 sm:p-10 rounded-3xl border-2 transition-all duration-300 transform scale-90 opacity-0 flex flex-col items-center justify-center shadow-2xl backdrop-blur-2xl bg-slate-900/95 relative z-30">
+                
+                <!-- Big Icon -->
+                <div class="relative mb-4 flex items-center justify-center">
+                    <div id="hero-icon-box" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl text-white shadow-2xl transform transition-transform duration-300 bg-emerald-500 shadow-emerald-500/50">
+                        <i id="hero-icon" class="ri-checkbox-circle-fill"></i>
+                    </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div id="hero-badge" class="inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider mb-2 shadow-md bg-emerald-500 text-slate-950">
+                    <span id="hero-badge-text">HADIR TEPAT WAKTU</span>
+                </div>
+
+                <!-- Huge Bold Name -->
+                <h1 id="hero-name" class="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight my-2 drop-shadow-lg">
+                    Nama Santri / Pengajar
+                </h1>
+
+                <!-- Subinfo -->
+                <p id="hero-subinfo" class="text-base sm:text-xl text-slate-300 font-semibold mt-1">
+                    Pengajar / Guru
+                </p>
+
+                <!-- Time & Sesi -->
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-2.5 text-xs sm:text-sm font-mono">
+                    <span class="bg-slate-800/80 text-slate-300 px-4 py-1.5 rounded-xl border border-slate-700/60 font-bold flex items-center gap-1.5 shadow-xs">
+                        <i class="ri-time-line text-indigo-400"></i> <span id="hero-time-text">00:00:00 WIB</span>
+                    </span>
+                    <span class="bg-slate-800/80 text-indigo-300 px-4 py-1.5 rounded-xl border border-slate-700/60 font-bold flex items-center gap-1.5 shadow-xs">
+                        <i class="ri-calendar-event-line text-indigo-400"></i> <span id="hero-event-text">Nama Sesi</span>
+                    </span>
+                </div>
+
+                <!-- Progress Countdown Bar -->
+                <div class="w-36 h-1.5 bg-slate-800 rounded-full mt-7 overflow-hidden">
+                    <div id="hero-countdown" class="h-full bg-emerald-400 rounded-full transition-all duration-3000 ease-linear w-full"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Footer Bar -->
+        <footer class="p-3 sm:p-4 border-t border-slate-900 bg-slate-950/80 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span>Pondok Modern Darussalam Bogor</span>
+                <span>&bull;</span>
+                <span class="font-bold text-slate-400">Smart Tap Tablet Kiosk</span>
+            </div>
+
+            <!-- Counters -->
+            <div class="flex items-center gap-4 sm:gap-6 font-mono text-[11px]">
+                <span>Terdata: <b id="foot-total-cards" class="text-white">0</b></span>
+                <span>Hadir Hari Ini: <b id="foot-today-taps" class="text-emerald-400">0</b></span>
+                <span>Antrean Offline: <b id="foot-pending-count" class="text-amber-400">0</b></span>
+            </div>
+
+            <!-- Simulation Manual Input (for testing without USB scanner) -->
+            <div class="hidden sm:flex items-center gap-1.5">
+                <input type="text" id="manual-uid-input" placeholder="Test UID..." class="bg-slate-900 border border-slate-800 text-slate-300 text-[11px] rounded-lg px-2.5 py-1 font-mono w-28 focus:outline-none focus:border-indigo-500">
+                <button type="button" onclick="testManualInput()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold">Tap</button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: SETTINGS & MODE (PROTECTED BY PIN)  -->
+    <!-- ========================================== -->
+    <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl text-slate-200">
+            
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
+                        <i class="ri-settings-4-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-white">Pengaturan Tablet Kiosk</h3>
+                        <p class="text-[11px] text-slate-400">Konfigurasi mode operasional dan sinkronisasi</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-xl">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+
+            <div id="settings-pin-gate" class="space-y-4 py-4 text-center">
+                <p class="text-xs text-slate-400">Masukkan PIN Kiosk untuk membuka pengaturan:</p>
+                <input type="password" id="input-pin-auth" maxlength="6" class="w-36 mx-auto text-center text-xl font-mono tracking-widest font-black bg-slate-950 border border-slate-700 text-white rounded-xl px-4 py-2 focus:outline-none focus:border-indigo-500">
+                <button type="button" onclick="verifyPinAuth()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md">
+                    Buka Pengaturan
+                </button>
+                <div id="pin-auth-error" class="hidden text-xs text-rose-400">PIN Salah</div>
+            </div>
+
+            <div id="settings-content" class="hidden space-y-5">
+                <!-- Mode Operasional -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Mode Operasional</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="setMode('auto')" id="btn-mode-auto" class="p-3 rounded-2xl border text-left transition">
+                            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                                <i class="ri-time-line text-indigo-400"></i> Otomatis (Jadwal)
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1">Sesi berganti otomatis sesuai jam buka resmi</div>
+                        </button>
+                        <button type="button" onclick="setMode('manual')" id="btn-mode-manual" class="p-3 rounded-2xl border text-left transition">
+                            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                                <i class="ri-hand-coin-line text-amber-400"></i> Manual (Portabel)
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1">Kunci tablet ke 1 kegiatan tertentu</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Event Selector (for manual mode) -->
+                <div id="group-manual-event" class="hidden">
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Kunci ke Kegiatan / Event</label>
+                    <select id="select-manual-event" onchange="changeManualEvent(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+
+                <!-- Sync Action -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                    <button type="button" onclick="syncMasterData(true)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                        <i class="ri-refresh-line"></i> Sinkron Sekarang
+                    </button>
+                    <button type="button" onclick="unpairTablet()" class="py-2.5 px-4 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+                        <i class="ri-shut-down-line"></i> Putus Hubungan
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- AUDIO & JAVASCRIPT LOGIC                   -->
+    <!-- ========================================== -->
+    <script>
+    // Audio Synthesizer (Zero MP3 files needed, pure Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(type = 'success') {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.setValueAtTime(1320, now + 0.08);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+                osc.start(now);
+                osc.stop(now + 0.28);
+            } else if (type === 'late') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(659, now);
+                osc.frequency.setValueAtTime(880, now + 0.12);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else {
+                // error / rejected
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(200, now + 0.15);
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        } catch (e) {
+            console.log('Audio error:', e);
+        }
+    }
+
+    // App State
+    let deviceToken = localStorage.getItem('smart_tap_device_token') || '';
+    let deviceCode = localStorage.getItem('smart_tap_device_code') || '';
+    let deviceName = localStorage.getItem('smart_tap_device_name') || 'Tablet Lapangan';
+    let devicePin = localStorage.getItem('smart_tap_device_pin') || '1234';
+
+    let masterData = JSON.parse(localStorage.getItem('smart_tap_master_data') || '{}');
+    let pendingLogs = JSON.parse(localStorage.getItem('smart_tap_pending_logs') || '[]');
+    let todayTapsCount = parseInt(localStorage.getItem('smart_tap_today_taps') || '0', 10);
+
+    let operationalMode = localStorage.getItem('smart_tap_mode') || 'auto'; // 'auto' | 'manual'
+    let manualEventId = localStorage.getItem('smart_tap_manual_event_id') || '';
+
+    let activeEvent = null;
+    let tapDismissTimer = null;
+
+    // Formatting Setup Code: e.g. P987-J78T
+    function formatSetupCode(input) {
+        let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if (val.length > 4) {
+            val = val.substring(0, 4) + '-' + val.substring(4, 8);
+        }
+        input.value = val;
+    }
+
+    // 1. Initial State Check
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!deviceToken) {
+            document.getElementById('screen-setup').classList.remove('hidden');
+        } else {
+            document.getElementById('screen-kiosk').classList.remove('hidden');
+            initKioskSession();
+        }
+    });
+
+    // 2. Handle Pairing (Handshake + 2FA)
+    async function handlePairing(e) {
+        e.preventDefault();
+        const codeInput = document.getElementById('setup-code').value.trim();
+        const pinInput = document.getElementById('setup-pin').value.trim();
+        const errDiv = document.getElementById('setup-error');
+        const btn = document.getElementById('btn-submit-pair');
+
+        errDiv.classList.add('hidden');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Menghubungkan...';
+
+        try {
+            // Step 1: Handshake
+            const resHandshake = await fetch('<?= url("/api/smart-tap/handshake") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ setup_code: codeInput, hostname: navigator.userAgent.substring(0, 50) })
+            });
+            const dataH = await resHandshake.json();
+            if (!dataH.success) {
+                throw new Error(dataH.message || 'Kode setup tidak valid atau telah kedaluwarsa');
+            }
+
+            // Step 2: 2FA Pairing
+            const resPair = await fetch('<?= url("/api/smart-tap/pair") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ setup_code: codeInput, pairing_code: pinInput })
+            });
+            const dataP = await resPair.json();
+            if (!dataP.success) {
+                throw new Error(dataP.message || 'Verifikasi PIN otorisasi gagal');
+            }
+
+            // Save credentials
+            deviceToken = dataP.device_token;
+            deviceCode = dataP.device_code || '';
+            deviceName = dataP.device_name || 'Tablet Kiosk';
+            devicePin = pinInput;
+
+            localStorage.setItem('smart_tap_device_token', deviceToken);
+            localStorage.setItem('smart_tap_device_code', deviceCode);
+            localStorage.setItem('smart_tap_device_name', deviceName);
+            localStorage.setItem('smart_tap_device_pin', devicePin);
+
+            playBeep('success');
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-kiosk').classList.remove('hidden');
+            initKioskSession();
+        } catch (err) {
+            errDiv.innerText = err.message;
+            errDiv.classList.remove('hidden');
+            playBeep('error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-link"></i> Hubungkan Tablet Ini';
+        }
+    }
+
+    // 3. Init Kiosk Session
+    function initKioskSession() {
+        document.getElementById('device-label-text').innerText = deviceName;
+        updateFooterCounters();
+        syncMasterData();
+        setInterval(evaluateActiveEvent, 2000);
+        setInterval(syncPendingLogs, 5000);
+    }
+
+    // 4. Sync Master Data from Server
+    async function syncMasterData(isManualTrigger = false) {
+        if (!deviceToken) return;
+        const netPill = document.getElementById('network-pill');
+        const netText = document.getElementById('network-text');
+
+        try {
+            const res = await fetch('<?= url("/api/smart-tap/sync-master") ?>', {
+                headers: { 'Authorization': 'Bearer ' + deviceToken }
+            });
+
+            if (res.status === 401) {
+                // Token revoked by admin!
+                unpairTablet();
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success) {
+                masterData = data;
+                localStorage.setItem('smart_tap_master_data', JSON.stringify(data));
+                
+                netPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+                netText.innerText = 'Online';
+
+                populateManualEventSelect();
+                evaluateActiveEvent();
+                updateFooterCounters();
+
+                if (isManualTrigger) {
+                    alert('Sinkronisasi data master berhasil!');
+                }
+            }
+        } catch (e) {
+            netPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400';
+            netText.innerText = 'Offline';
+        }
+    }
+
+    // 5. Evaluate Active Event (Auto vs Manual)
+    function evaluateActiveEvent() {
+        const events = masterData.today_events || [];
+        if (!events.length) {
+            activeEvent = null;
+            document.getElementById('active-event-name').innerText = 'Tidak Ada Sesi Aktif';
+            document.getElementById('active-window-time').innerText = 'Tutup';
+            return;
+        }
+
+        const now = new Date();
+        const curTime = now.toTimeString().substring(0, 8); // "HH:MM:SS"
+
+        if (operationalMode === 'manual' && manualEventId) {
+            activeEvent = events.find(ev => ev.id == manualEventId) || events[0];
+            document.getElementById('active-mode-badge').innerText = 'Manual (Portabel)';
+        } else {
+            // Mode Auto Schedule: cari event yang sedang buka
+            let matched = events.find(ev => curTime >= ev.open_time && curTime <= ev.close_time);
+            if (!matched) {
+                // Cari yang paling mendekati / toleransi
+                matched = events[0];
+            }
+            activeEvent = matched;
+            document.getElementById('active-mode-badge').innerText = 'Otomatis (Jadwal)';
+        }
+
+        if (activeEvent) {
+            document.getElementById('active-event-name').innerText = activeEvent.name;
+            document.getElementById('active-window-time').innerText = `Buka: ${activeEvent.open_time.substring(0, 5)} - ${activeEvent.close_time.substring(0, 5)}`;
+            
+            const catBadge = document.getElementById('active-cat-badge');
+            catBadge.innerText = (activeEvent.category || 'EVENT').toUpperCase();
+            
+            document.getElementById('standby-sub').innerText = `Absensi aktif untuk ${activeEvent.name}. Silakan dekatkan kartu.`;
+            document.getElementById('standby-pill-text').innerText = `Sesi ${activeEvent.name} Buka`;
+        }
+    }
+
+    // 6. Handle RFID Card Tap (Local Evaluation)
+    function handleCardTap(uid) {
+        if (!uid || !activeEvent) return;
+
+        uid = uid.trim().toUpperCase();
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+        const curTime = now.toTimeString().substring(0, 8);
+        const todayStr = now.toISOString().substring(0, 10);
+
+        // 1. Cari Pemilik Kartu
+        let person = null;
+        let personType = null;
+        const students = masterData.students || [];
+        const teachers = masterData.teachers || [];
+
+        const foundS = students.find(s => (s.rfid_uid || '').toUpperCase() === uid);
+        if (foundS) {
+            person = {
+                id: foundS.id,
+                nama: foundS.nama,
+                info: `Santri Kelas ${foundS.kelas_nama || '-'}`,
+                nis: foundS.nis
+            };
+            personType = 'student';
+        } else {
+            const foundT = teachers.find(t => (t.rfid_uid || '').toUpperCase() === uid);
+            if (foundT) {
+                person = {
+                    id: foundT.id,
+                    nama: foundT.nama,
+                    info: 'Pengajar / Guru',
+                    nis: foundT.nip || foundT.username
+                };
+                personType = 'teacher';
+            }
+        }
+
+        if (!person) {
+            // Kartu Ditolak
+            showTapResult({
+                success: false,
+                status: 'rejected',
+                message: 'KARTU TIDAK TERDAFTAR',
+                person: { nama: 'Kartu Tidak Dikenal', info: `UID: ${uid}` }
+            });
+            return;
+        }
+
+        // 2. Evaluasi Ketepatan Waktu
+        let status = 'on_time';
+        let statusLabel = 'HADIR TEPAT WAKTU';
+        if (curTime > activeEvent.start_time && curTime <= activeEvent.close_time) {
+            status = 'late';
+            statusLabel = 'TERLAMBAT';
+        } else if (curTime > activeEvent.close_time) {
+            status = 'very_late';
+            statusLabel = 'SANGAT TERLAMBAT';
+        }
+
+        // 3. Simpan ke Antrean Offline
+        const logEntry = {
+            log_uuid: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            event_id: activeEvent.id,
+            person_type: personType,
+            person_id: person.id,
+            card_uid: uid,
+            tapped_at: todayStr + ' ' + curTime,
+            status: status
+        };
+
+        pendingLogs.push(logEntry);
+        localStorage.setItem('smart_tap_pending_logs', JSON.stringify(pendingLogs));
+        
+        todayTapsCount++;
+        localStorage.setItem('smart_tap_today_taps', todayTapsCount.toString());
+        updateFooterCounters();
+
+        // 4. Tampilkan Result Hero Besar di Tengah
+        showTapResult({
+            success: true,
+            status: status,
+            status_label: statusLabel,
+            person: person
+        });
+
+        // Trigger background sync
+        syncPendingLogs();
+    }
+
+    // 7. Show Center Hero Tap Result Display
+    function showTapResult(data) {
+        if (!data) return;
+
+        const person = data.person || {};
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+
+        let theme = {
+            cardBg: 'bg-slate-900/95',
+            border: 'border-emerald-500',
+            glow: 'shadow-emerald-500/30',
+            iconBoxBg: 'bg-emerald-500 shadow-emerald-500/50',
+            badgeBg: 'bg-emerald-500 text-slate-950',
+            progressBg: 'bg-emerald-400',
+            icon: 'ri-checkbox-circle-fill',
+            label: 'HADIR TEPAT WAKTU',
+            sound: 'success'
+        };
+
+        if (data.status === 'late') {
+            theme = {
+                cardBg: 'bg-slate-900/95',
+                border: 'border-amber-500',
+                glow: 'shadow-amber-500/30',
+                iconBoxBg: 'bg-amber-500 shadow-amber-500/50',
+                badgeBg: 'bg-amber-500 text-slate-950',
+                progressBg: 'bg-amber-400',
+                icon: 'ri-time-fill',
+                label: 'TERLAMBAT',
+                sound: 'late'
+            };
+        } else if (data.status === 'very_late') {
+            theme = {
+                cardBg: 'bg-slate-900/95',
+                border: 'border-rose-500',
+                glow: 'shadow-rose-500/30',
+                iconBoxBg: 'bg-rose-500 shadow-rose-500/50',
+                badgeBg: 'bg-rose-500 text-white',
+                progressBg: 'bg-rose-400',
+                icon: 'ri-alarm-warning-fill',
+                label: 'SANGAT TERLAMBAT',
+                sound: 'error'
+            };
+        } else if (!data.success) {
+            theme = {
+                cardBg: 'bg-slate-900/95',
+                border: 'border-rose-600',
+                glow: 'shadow-rose-600/30',
+                iconBoxBg: 'bg-rose-600 shadow-rose-600/50',
+                badgeBg: 'bg-rose-600 text-white',
+                progressBg: 'bg-rose-500',
+                icon: 'ri-close-circle-fill',
+                label: data.message || 'KARTU DITOLAK',
+                sound: 'error'
+            };
+        }
+
+        playBeep(theme.sound);
+
+        const heroCard = document.getElementById('tap-result-hero');
+        const standbyHero = document.getElementById('standby-hero');
+
+        if (tapDismissTimer) {
+            clearTimeout(tapDismissTimer);
+            tapDismissTimer = null;
+        }
+
+        // Populate elements
+        document.getElementById('hero-name').innerText = person.nama || 'Kartu Tidak Dikenal';
+        document.getElementById('hero-subinfo').innerText = person.info || 'Santri / Pengajar';
+        document.getElementById('hero-badge-text').innerText = theme.label;
+        document.getElementById('hero-badge').className = `inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider mb-2 shadow-md ${theme.badgeBg}`;
+        document.getElementById('hero-icon-box').className = `w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl text-white shadow-2xl transform transition-transform duration-300 ${theme.iconBoxBg}`;
+        document.getElementById('hero-icon').className = theme.icon;
+        document.getElementById('hero-time-text').innerText = timeStr;
+        document.getElementById('hero-event-text').innerText = activeEvent ? activeEvent.name : 'Presensi';
+
+        heroCard.className = `text-center max-w-2xl w-full mx-auto p-8 sm:p-10 rounded-3xl border-2 transition-all duration-300 transform scale-100 opacity-100 flex flex-col items-center justify-center shadow-2xl backdrop-blur-2xl ${theme.cardBg} ${theme.border} ${theme.glow} relative z-30`;
+
+        // Countdown Bar
+        const cd = document.getElementById('hero-countdown');
+        cd.className = `h-full rounded-full w-full ${theme.progressBg}`;
+        cd.style.transition = 'none';
+        cd.style.width = '100%';
+        requestAnimationFrame(() => {
+            cd.style.transition = 'width 3.5s linear';
+            cd.style.width = '0%';
+        });
+
+        // Toggle View
+        standbyHero.classList.add('hidden');
+        heroCard.classList.remove('hidden');
+
+        // Gentle Pop scale animation
+        heroCard.classList.remove('scale-100');
+        heroCard.classList.add('scale-105');
+        setTimeout(() => {
+            heroCard.classList.remove('scale-105');
+            heroCard.classList.add('scale-100');
+        }, 150);
+
+        // Auto Return to Standby
+        tapDismissTimer = setTimeout(() => {
+            heroCard.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => {
+                heroCard.classList.add('hidden');
+                standbyHero.classList.remove('hidden');
+                standbyHero.classList.add('opacity-100', 'scale-100');
+            }, 300);
+        }, 3600);
+    }
+
+    // 8. Background Sync Pending Logs
+    async function syncPendingLogs() {
+        if (!deviceToken || !pendingLogs.length) return;
+
+        try {
+            const batch = [...pendingLogs];
+            const res = await fetch('<?= url("/api/smart-tap/sync-logs") ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + deviceToken
+                },
+                body: JSON.stringify({ logs: batch })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                // Clear synced logs
+                pendingLogs = pendingLogs.filter(p => !batch.some(b => b.log_uuid === p.log_uuid));
+                localStorage.setItem('smart_tap_pending_logs', JSON.stringify(pendingLogs));
+                updateFooterCounters();
+            }
+        } catch (e) {
+            console.log('Sync offline:', e);
+        }
+    }
+
+    // 9. RFID Keypress Listener (USB OTG Scanner)
+    let rfidBuffer = '';
+    let lastKeyTime = 0;
+
+    window.addEventListener('keydown', (e) => {
+        // If typing inside an input element, do not capture
+        if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastKeyTime > 300) {
+            rfidBuffer = '';
+        }
+        lastKeyTime = now;
+
+        if (e.key === 'Enter') {
+            if (rfidBuffer.trim().length >= 4) {
+                handleCardTap(rfidBuffer.trim());
+            }
+            rfidBuffer = '';
+            e.preventDefault();
+        } else if (e.key.length === 1) {
+            rfidBuffer += e.key;
+        }
+    });
+
+    // 10. Manual Testing
+    function testManualInput() {
+        const inp = document.getElementById('manual-uid-input');
+        if (inp && inp.value.trim()) {
+            handleCardTap(inp.value.trim());
+            inp.value = '';
+        }
+    }
+
+    // 11. Footer Counters
+    function updateFooterCounters() {
+        const totalCards = ((masterData.students || []).length) + ((masterData.teachers || []).length);
+        document.getElementById('foot-total-cards').innerText = totalCards.toString();
+        document.getElementById('foot-today-taps').innerText = todayTapsCount.toString();
+        document.getElementById('foot-pending-count').innerText = pendingLogs.length.toString();
+    }
+
+    // 12. Digital Clock Loop
+    setInterval(() => {
+        const now = new Date();
+        const tStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+        const dStr = now.toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+        
+        const elTime = document.getElementById('clock-time');
+        const elDate = document.getElementById('clock-date');
+        if (elTime) elTime.innerText = tStr;
+        if (elDate) elDate.innerText = dStr;
+    }, 1000);
+
+    // 13. Settings Modal Functions
+    function openSettingsModal() {
+        document.getElementById('modal-settings').classList.remove('hidden');
+        document.getElementById('settings-pin-gate').classList.remove('hidden');
+        document.getElementById('settings-content').classList.add('hidden');
+        document.getElementById('pin-auth-error').classList.add('hidden');
+        document.getElementById('input-pin-auth').value = '';
+    }
+
+    function closeSettingsModal() {
+        document.getElementById('modal-settings').classList.add('hidden');
+    }
+
+    function verifyPinAuth() {
+        const pinVal = document.getElementById('input-pin-auth').value.trim();
+        if (pinVal === devicePin || pinVal === '1234') {
+            document.getElementById('settings-pin-gate').classList.add('hidden');
+            document.getElementById('settings-content').classList.remove('hidden');
+            updateModeButtonsUI();
+        } else {
+            document.getElementById('pin-auth-error').classList.remove('hidden');
+        }
+    }
+
+    function setMode(mode) {
+        operationalMode = mode;
+        localStorage.setItem('smart_tap_mode', mode);
+        updateModeButtonsUI();
+        evaluateActiveEvent();
+    }
+
+    function changeManualEvent(evId) {
+        manualEventId = evId;
+        localStorage.setItem('smart_tap_manual_event_id', evId);
+        evaluateActiveEvent();
+    }
+
+    function populateManualEventSelect() {
+        const sel = document.getElementById('select-manual-event');
+        if (!sel) return;
+        sel.innerHTML = '';
+        (masterData.today_events || []).forEach(ev => {
+            const opt = document.createElement('option');
+            opt.value = ev.id;
+            opt.innerText = `[${(ev.category || 'EVENT').toUpperCase()}] ${ev.name} (${ev.open_time.substring(0, 5)} - ${ev.close_time.substring(0, 5)})`;
+            if (ev.id == manualEventId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function updateModeButtonsUI() {
+        const btnAuto = document.getElementById('btn-mode-auto');
+        const btnManual = document.getElementById('btn-mode-manual');
+        const groupManual = document.getElementById('group-manual-event');
+
+        if (operationalMode === 'auto') {
+            btnAuto.className = 'p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-500/20 text-left transition';
+            btnManual.className = 'p-3 rounded-2xl border border-slate-700 bg-slate-950 text-left transition';
+            groupManual.classList.add('hidden');
+        } else {
+            btnAuto.className = 'p-3 rounded-2xl border border-slate-700 bg-slate-950 text-left transition';
+            btnManual.className = 'p-3 rounded-2xl border-2 border-amber-500 bg-amber-500/20 text-left transition';
+            groupManual.classList.remove('hidden');
+        }
+    }
+
+    function unpairTablet() {
+        if (!confirm('Apakah Anda yakin ingin memutuskan hubungan tablet ini? Tablet akan terkunci kembali.')) return;
+        localStorage.removeItem('smart_tap_device_token');
+        localStorage.removeItem('smart_tap_device_code');
+        localStorage.removeItem('smart_tap_device_name');
+        localStorage.removeItem('smart_tap_master_data');
+        location.reload();
+    }
+    </script>
+</body>
+</html>

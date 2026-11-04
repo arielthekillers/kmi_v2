@@ -830,4 +830,45 @@ class SmartTapController extends Controller
         readfile($targetFile);
         exit;
     }
+
+    /**
+     * Smart Tap PWA Tablet Kiosk (Standalone Mobile/Tablet Terminal)
+     */
+    public function kiosk()
+    {
+        $this->view('smart_tap/kiosk');
+    }
+
+    /**
+     * Web App Manifest for PWA Kiosk
+     */
+    public function kioskManifest()
+    {
+        header('Content-Type: application/manifest+json; charset=utf-8');
+        echo json_encode([
+            'name' => 'Smart Tap Kiosk - Pondok Modern Darussalam Bogor',
+            'short_name' => 'Smart Tap',
+            'description' => 'Terminal Presensi Mandiri Santri & Pengajar Smart Tap',
+            'start_url' => url('/smart-tap/kiosk'),
+            'display' => 'standalone',
+            'orientation' => 'landscape',
+            'background_color' => '#0b0f19',
+            'theme_color' => '#4f46e5',
+            'icons' => [
+                [
+                    'src' => url('/img/kmi.png'),
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ],
+                [
+                    'src' => url('/img/kmi.png'),
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ]
+            ]
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
 }

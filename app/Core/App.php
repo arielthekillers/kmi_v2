@@ -282,6 +282,10 @@ class App
         $this->router->post('/smart-tap/officers/update', ['App\Controllers\SmartTapController', 'updateOfficers']);
         $this->router->get('/smart-tap/officers/delete', ['App\Controllers\SmartTapController', 'deleteOfficer']);
 
+        // Smart Tap PWA Tablet Kiosk Routes
+        $this->router->get('/smart-tap/kiosk', ['App\Controllers\SmartTapController', 'kiosk']);
+        $this->router->get('/smart-tap/manifest.json', ['App\Controllers\SmartTapController', 'kioskManifest']);
+
         // Smart Tap Offline Sync & API Routes
         $this->router->post('/api/smart-tap/handshake', ['App\Controllers\SmartTapApiController', 'handshake']);
         $this->router->post('/api/smart-tap/pair', ['App\Controllers\SmartTapApiController', 'pairDevice']);
