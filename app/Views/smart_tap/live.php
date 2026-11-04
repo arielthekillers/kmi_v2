@@ -59,10 +59,10 @@ renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
         </div>
     </div>
 
-    <!-- Multi-Event Session Navigation Tabs -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <!-- Multi-Event Session Navigation Tabs (Wrap & Tanpa Horizontal Scroll) -->
+    <div class="flex flex-wrap items-center gap-2 py-1">
         <!-- Tab: Semua Sesi Aktif -->
-        <a href="<?= url('/smart-tap/live?event_id=all') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shadow-xs <?= $selectedEventId === 'all' ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
+        <a href="<?= url('/smart-tap/live?event_id=all') ?>" id="tab-event-all" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs <?= $selectedEventId === 'all' ? 'session-tab-active bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
             <i class="ri-apps-2-line"></i>
             <span>Semua Sesi Aktif Hari Ini</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $selectedEventId === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700' ?>">
@@ -79,7 +79,7 @@ renderHeader("Smart Tap Realtime Monitoring", "smart_tap");
             elseif ($cat === 'office') $icon = 'ri-building-line';
             elseif ($cat === 'incidental') $icon = 'ri-calendar-event-line';
         ?>
-            <a href="<?= url('/smart-tap/live?event_id=' . $ev['id']) ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shadow-xs <?= $isSel ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
+            <a href="<?= url('/smart-tap/live?event_id=' . $ev['id']) ?>" id="tab-event-<?= $ev['id'] ?>" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs <?= $isSel ? 'session-tab-active bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200' ?>">
                 <i class="<?= $icon ?>"></i>
                 <span><?= htmlspecialchars($ev['name']) ?></span>
                 <span class="text-[11px] opacity-75 font-mono">(<?= substr($ev['open_time'], 0, 5) ?> - <?= substr($ev['close_time'], 0, 5) ?>)</span>
