@@ -410,7 +410,7 @@ class GradeModel extends Model {
 
         if (empty($sessions)) {
             // Seed default sessions for this academic year
-            $defaultTypes = ['UUPT', 'UPT', 'UUAT', 'UAT'];
+            $defaultTypes = ['UUPT', 'UPT', 'UUAT', 'UAT', 'USA'];
             foreach ($defaultTypes as $type) {
                 $insert = $this->db->prepare("INSERT INTO exam_sessions (academic_year_id, type, is_open, is_active) VALUES (?, ?, 0, 0)");
                 $insert->execute([$academicYearId, $type]);

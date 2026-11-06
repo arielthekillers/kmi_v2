@@ -5,10 +5,11 @@ $typeMap = [
     'UUPT' => 'Ulangan Umum Pertengahan Tahun',
     'UPT'  => 'Ujian Pertengahan Tahun',
     'UUAT' => 'Ulangan Umum Akhir Tahun',
-    'UAT'  => 'Ujian Akhir Tahun'
+    'UAT'  => 'Ujian Akhir Tahun',
+    'USA'  => 'Ujian Siswa Akhir'
 ];
 $semesterMap = [
-    'UUPT' => 1, 'UPT' => 1, 'UUAT' => 2, 'UAT' => 2
+    'UUPT' => 1, 'UPT' => 1, 'UUAT' => 2, 'UAT' => 2, 'USA' => 2
 ];
 
 $teacherMap = [];

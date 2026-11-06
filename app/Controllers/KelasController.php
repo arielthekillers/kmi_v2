@@ -345,7 +345,7 @@ class KelasController extends Controller {
                 $stmtSession = $db->prepare("SELECT type FROM exam_sessions WHERE id = ?");
                 $stmtSession->execute([$sessionId]);
                 $sessionType = $stmtSession->fetchColumn();
-                if ($sessionType === 'UUAT' || $sessionType === 'UAT') {
+                if ($sessionType === 'UUAT' || $sessionType === 'UAT' || $sessionType === 'USA') {
                     $semester = 2;
                 }
             }
@@ -601,7 +601,7 @@ class KelasController extends Controller {
             $stmtSession = $db->prepare("SELECT type FROM exam_sessions WHERE id = ?");
             $stmtSession->execute([$sessionId]);
             $sessionType = $stmtSession->fetchColumn();
-            if ($sessionType === 'UUAT' || $sessionType === 'UAT') {
+            if ($sessionType === 'UUAT' || $sessionType === 'UAT' || $sessionType === 'USA') {
                 $semester = 2;
             }
         }
@@ -739,7 +739,8 @@ class KelasController extends Controller {
             'UUPT' => 'Ulangan Umum Pertengahan Tahun',
             'UPT' => 'Ujian Pertengahan Tahun',
             'UUAT' => 'Ulangan Umum Akhir Tahun',
-            'UAT' => 'Ujian Akhir Tahun'
+            'UAT' => 'Ujian Akhir Tahun',
+            'USA' => 'Ujian Siswa Akhir'
         ];
         $sessionName = $typeMap[$sessionType] ?? $sessionType;
 

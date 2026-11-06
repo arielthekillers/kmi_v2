@@ -666,7 +666,8 @@
                     'UUPT': 'Ulangan Umum Pertengahan Tahun',
                     'UPT': 'Ujian Pertengahan Tahun',
                     'UUAT': 'Ulangan Umum Akhir Tahun',
-                    'UAT': 'Ujian Akhir Tahun'
+                    'UAT': 'Ujian Akhir Tahun',
+                    'USA': 'Ujian Siswa Akhir'
                 };
                 const sessName = typeMap[appData.session.type] || appData.session.type;
                 sessionTitle.textContent = sessName;
