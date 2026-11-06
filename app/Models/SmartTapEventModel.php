@@ -99,19 +99,28 @@ class SmartTapEventModel extends Model
 
     public function getActiveEventsForToday($dayOfWeek, $dateStr, $deviceId = null)
     {
+        // Auto-heal legacy or unconfigured event rows in database
+        try {
+            $this->db->exec("UPDATE smart_tap_events SET days_of_week = '1,2,3,4,5,6,7' WHERE days_of_week IS NULL OR TRIM(days_of_week) = ''");
+            $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 1 WHERE allow_any_device IS NULL");
+            $this->db->exec("UPDATE smart_tap_events SET sync_academic_calendar = 0 WHERE category = 'sholat' OR LOWER(name) LIKE '%sholat%'");
+        } catch (\Exception $e) {
+            // Ignore if restricted
+        }
+
         // $dayOfWeek: 1 (Mon) - 7 (Sun)
         $deviceFilter = "";
         $params = [$dayOfWeek, $dateStr];
 
         if (!empty($deviceId)) {
-            $deviceFilter = "AND (allow_any_device = 1 OR FIND_IN_SET(?, allowed_devices) > 0)";
+            $deviceFilter = "AND (allow_any_device IS NULL OR allow_any_device = 1 OR FIND_IN_SET(?, allowed_devices) > 0)";
             $params[] = $deviceId;
         }
 
         $sql = "SELECT * FROM smart_tap_events 
                 WHERE is_active = 1 
                 AND (
-                    (event_type = 'daily' AND FIND_IN_SET(?, days_of_week) > 0)
+                    (event_type = 'daily' AND (days_of_week IS NULL OR TRIM(days_of_week) = '' OR FIND_IN_SET(?, days_of_week) > 0))
                     OR 
                     (event_type = 'one_off' AND event_date = ?)
                 )
@@ -125,9 +134,10 @@ class SmartTapEventModel extends Model
         $holidayInfo = null;
         $activeEvents = [];
         foreach ($allEvents as $ev) {
-            $syncAcademic = isset($ev['sync_academic_calendar']) 
+            $isSholat = ($ev['category'] ?? '') === 'sholat' || stripos($ev['name'] ?? '', 'sholat') !== false;
+            $syncAcademic = !$isSholat && (isset($ev['sync_academic_calendar']) 
                 ? (int)$ev['sync_academic_calendar'] 
-                : (($ev['category'] ?? '') === 'office' ? 1 : 0);
+                : (($ev['category'] ?? '') === 'office' ? 1 : 0));
 
             if ($syncAcademic) {
                 if ($holidayInfo === null) {
