@@ -6,3 +6,4 @@ INSERT INTO exam_sessions (academic_year_id, type, is_open, is_active, use_bayan
 SELECT id, 'USA', 0, 0, 1
 FROM academic_years
 WHERE id NOT IN (SELECT academic_year_id FROM exam_sessions WHERE type = 'USA');
+

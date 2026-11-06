@@ -20,3 +20,4 @@ CREATE TABLE IF NOT EXISTS `smart_tap_attendance_waivers` (
   KEY `idx_waiver_ay` (`academic_year_id`),
   KEY `idx_waiver_event` (`event_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
