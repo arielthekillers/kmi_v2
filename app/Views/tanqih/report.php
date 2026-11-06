@@ -84,6 +84,67 @@
     .text-xs {
         font-size: 9px !important;
     }
+
+    /* Single Teacher Slip Printing Mode */
+    body.print-single-slip {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+    }
+    body.print-single-slip main,
+    body.print-single-slip nav,
+    body.print-single-slip header,
+    body.print-single-slip footer,
+    body.print-single-slip aside,
+    body.print-single-slip #sidebar,
+    body.print-single-slip .no-print {
+        display: none !important;
+    }
+    body.print-single-slip #teacherDetailModal {
+        display: block !important;
+        position: static !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    body.print-single-slip #teacherDetailModal > div {
+        display: block !important;
+        min-height: auto !important;
+        padding: 0 !important;
+    }
+    body.print-single-slip #teacherDetailModal .fixed.inset-0 {
+        display: none !important;
+    }
+    body.print-single-slip #teacherDetailModal .transform {
+        transform: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.print-single-slip #teacherDetailModal .max-h-72 {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    body.print-single-slip .no-print-slip {
+        display: none !important;
+    }
+    body.print-single-slip .print-only-slip {
+        display: block !important;
+    }
+    body.print-single-slip #modalDetailsTable tr {
+        page-break-inside: avoid;
+    }
+    body.print-single-slip .grid.grid-cols-2.sm\:grid-cols-4 {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    body:not(.print-single-slip) #teacherDetailModal {
+        display: none !important;
+    }
 }
 </style>
 
@@ -415,18 +476,35 @@
 
         <!-- Modal Panel -->
         <div class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl sm:align-middle">
+            <!-- Print-only Official Slip Header -->
+            <div class="hidden print-only-slip mb-4 text-center border-b border-gray-300 pb-3">
+                <h2 class="text-base font-bold uppercase tracking-wider text-gray-900">Slip Rekapitulasi Tanqih Idad Pengajar</h2>
+                <p class="text-xs text-gray-600">Kuliyatul Mu'allimin Al-Islamiyah (KMI) • Periode: <?= date('d/m/Y', strtotime($startDate)) ?> s/d <?= date('d/m/Y', strtotime($endDate)) ?></p>
+            </div>
+
             <!-- Modal Header -->
             <div class="flex items-start justify-between border-b border-gray-100 pb-4 mb-4">
-                <div>
-                    <div class="flex items-center gap-3">
-                        <h3 class="text-xl font-bold text-gray-900" id="modalTeacherName">Nama Pengajar</h3>
-                        <span id="modalStatusBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">Status</span>
+                <div class="flex items-center gap-3.5">
+                    <div id="modalTeacherAvatar" class="w-11 h-11 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center flex-shrink-0 ring-2 ring-indigo-200">
+                        U
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Laporan Tanqih Idad periode <?= date('d/m/Y', strtotime($startDate)) ?> - <?= date('d/m/Y', strtotime($endDate)) ?></p>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xl font-bold text-gray-900" id="modalTeacherName">Nama Pengajar</h3>
+                            <span id="modalStatusBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold">Status</span>
+                            <span id="modalTanqihPercentBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Tanqih: 0%</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">Laporan Tanqih Idad periode <?= date('d/m/Y', strtotime($startDate)) ?> - <?= date('d/m/Y', strtotime($endDate)) ?></p>
+                    </div>
                 </div>
-                <button type="button" onclick="closeTeacherModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="ri-close-line text-2xl"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="printTeacherSlip()" class="no-print-slip px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs">
+                        <i class="ri-printer-line text-sm"></i> Cetak Slip
+                    </button>
+                    <button type="button" onclick="closeTeacherModal()" class="no-print-slip text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Summary Cards -->
@@ -482,8 +560,29 @@
                 </div>
             </div>
 
-            <div class="mt-5 text-right">
-                <button type="button" onclick="closeTeacherModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+            <!-- Print-only Signature Section -->
+            <div class="hidden print-only-slip mt-8 pt-4">
+                <div class="flex justify-between text-xs text-gray-700">
+                    <div class="text-center w-48">
+                        <p>Pengajar Bersangkutan,</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline" id="modalSignatureTeacherName">( Nama Pengajar )</p>
+                    </div>
+                    <div class="text-center w-48">
+                        <p>Bogor, <?= date('d F Y') ?></p>
+                        <p>Bagian Tanqih Idad,</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline">( Petugas / Direktur KMI )</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mt-5 border-t border-gray-100 pt-3 flex justify-between items-center no-print-slip">
+                <button type="button" onclick="printTeacherSlip()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                    <i class="ri-printer-line text-sm"></i> Cetak Slip Pengajar
+                </button>
+                <button type="button" onclick="closeTeacherModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors">
                     Tutup
                 </button>
             </div>
@@ -494,9 +593,22 @@
 <script>
 function openTeacherModal(data) {
     document.getElementById('modalTeacherName').textContent = data.name;
+
+    // Set Avatar Initials
+    const parts = (data.name || '').trim().split(/\s+/);
+    const initials = parts.slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
+    const avatarEl = document.getElementById('modalTeacherAvatar');
+    if (avatarEl) avatarEl.textContent = initials || 'U';
+
     const badge = document.getElementById('modalStatusBadge');
-    badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + data.badge_color;
-    badge.textContent = data.status_text + ' (' + data.pct + '%)';
+    badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ' + data.badge_color;
+    badge.textContent = data.status_text;
+
+    const pctBadge = document.getElementById('modalTanqihPercentBadge');
+    if (pctBadge) pctBadge.textContent = 'Tanqih: ' + data.pct + '%';
+
+    const sigEl = document.getElementById('modalSignatureTeacherName');
+    if (sigEl) sigEl.textContent = '( ' + data.name + ' )';
 
     document.getElementById('modalStatTotal').textContent = data.expected;
     document.getElementById('modalStatVerified').textContent = data.verified;
@@ -566,6 +678,15 @@ function closeTeacherModal() {
     document.getElementById('teacherDetailModal').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
 }
+
+function printTeacherSlip() {
+    document.body.classList.add('print-single-slip');
+    window.print();
+}
+
+window.addEventListener('afterprint', () => {
+    document.body.classList.remove('print-single-slip');
+});
 
 function escapeHtml(text) {
     if (!text) return '';
