@@ -22,10 +22,12 @@ class SmartTapController extends Controller
     private $officerModel;
     private $exemptionModel;
     private $kelasModel;
+    private $db;
 
     public function __construct()
     {
         parent::__construct();
+        $this->db = \App\Core\Database::getInstance()->getConnection();
         $this->eventModel = new SmartTapEventModel();
         $this->deviceModel = new SmartTapDeviceModel();
         $this->cardModel = new SmartTapCardModel();
@@ -335,7 +337,8 @@ class SmartTapController extends Controller
         $todayHolidayInfo = $this->eventModel->getAcademicHolidayInfo(date('Y-m-d'));
 
         // Ambil daftar guru / pengajar aktif untuk pilihan target personil
-        $stmtT = $this->db->query("
+        $db = $this->db ?? \App\Core\Database::getInstance()->getConnection();
+        $stmtT = $db->query("
             SELECT u.id, u.nama, u.username, tp.nip, tp.gender,
                    CASE 
                        WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
@@ -346,7 +349,7 @@ class SmartTapController extends Controller
             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
             ORDER BY u.nama ASC
         ");
-        $teachers = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
+        $teachers = $stmtT ? $stmtT->fetchAll(\PDO::FETCH_ASSOC) : [];
 
         $this->view('smart_tap/events', [
             'events' => $events,
