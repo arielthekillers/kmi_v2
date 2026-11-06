@@ -344,6 +344,12 @@ class SmartTapApiController extends Controller
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
+        $today = date('Y-m-d');
+        $dayOfWeek = (int)date('N');
+        $rawEvents = $this->eventModel->getAllEvents();
+        $activeEventsToday = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today);
+        $academicHoliday = $this->eventModel->getAcademicHolidayInfo($today);
+
         echo json_encode([
             'success' => true,
             'latest_version' => $latestVersion,
@@ -351,7 +357,16 @@ class SmartTapApiController extends Controller
             'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.4:\n- Pemisahan Cerdas Sesi Sholat Jumat (Putra) & Sholat Dzuhur (Putri) secara otomatis saat tap kartu\n- Validasi target gender dan penugasan guru per-sesi\n- Sinkronisasi otomatis struktur tabel lokal SQLite\n- UI Center Hero Display font besar", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
-            'mandatory' => false
+            'mandatory' => false,
+            'diagnostic' => [
+                'server_date' => $today,
+                'day_of_week' => $dayOfWeek,
+                'holiday_info' => $academicHoliday,
+                'all_events_count' => count($rawEvents),
+                'active_events_count' => count($activeEventsToday),
+                'raw_events' => $rawEvents,
+                'active_today' => $activeEventsToday
+            ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
     }
