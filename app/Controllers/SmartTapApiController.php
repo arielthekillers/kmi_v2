@@ -340,15 +340,15 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.2.3';
+        $latestVersion = '1.2.4';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
         echo json_encode([
             'success' => true,
             'latest_version' => $latestVersion,
-            'release_date' => '2026-11-04',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.3:\n- UI Redesign: Tampilan nama hasil absen kini muncul di TENGAH LAYAR dengan font besar dan tebal, jelas terbaca dari jarak jauh tanpa menunduk\n- Perbaikan Mode Manual (Portabel): Menghubungkan pemilihan event manual dari antarmuka ke seluruh pembaca RFID scanner fisik USB\n- Penjadwalan otomatis sesi (Auto-Schedule) presisi", 
+            'release_date' => '2026-11-06',
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.4:\n- Pemisahan Cerdas Sesi Sholat Jumat (Putra) & Sholat Dzuhur (Putri) secara otomatis saat tap kartu\n- Validasi target gender dan penugasan guru per-sesi\n- Sinkronisasi otomatis struktur tabel lokal SQLite\n- UI Center Hero Display font besar", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false
