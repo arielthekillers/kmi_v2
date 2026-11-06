@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS `smart_tap_events` (
   `days_of_week` varchar(50) DEFAULT '1,2,3,4,5,6,7',
   `target_type` enum('all','students','teachers') DEFAULT 'all',
   `target_classes` text DEFAULT NULL,
+  `target_teachers` text DEFAULT NULL,
+  `target_gender` enum('all','L','P') NOT NULL DEFAULT 'all',
   `open_time` time NOT NULL,
   `start_time` time NOT NULL,
   `close_time` time NOT NULL,

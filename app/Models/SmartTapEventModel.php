@@ -155,9 +155,9 @@ class SmartTapEventModel extends Model
     {
         $sql = "INSERT INTO smart_tap_events (
             name, category, event_type, event_date, days_of_week, target_type, target_classes,
-            open_time, start_time, close_time, after_close_action, allow_any_device,
+            target_teachers, target_gender, open_time, start_time, close_time, after_close_action, allow_any_device,
             allowed_devices, is_active, sync_academic_calendar
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -168,6 +168,8 @@ class SmartTapEventModel extends Model
             $data['days_of_week'] ?? '1,2,3,4,5,6,7',
             $data['target_type'] ?? 'all',
             !empty($data['target_classes']) ? (is_array($data['target_classes']) ? implode(',', $data['target_classes']) : $data['target_classes']) : null,
+            !empty($data['target_teachers']) ? (is_array($data['target_teachers']) ? implode(',', $data['target_teachers']) : $data['target_teachers']) : null,
+            in_array($data['target_gender'] ?? '', ['all', 'L', 'P']) ? $data['target_gender'] : 'all',
             $data['open_time'],
             $data['start_time'],
             $data['close_time'],
@@ -184,7 +186,7 @@ class SmartTapEventModel extends Model
     {
         $sql = "UPDATE smart_tap_events SET 
             name = ?, category = ?, event_type = ?, event_date = ?, days_of_week = ?, target_type = ?, target_classes = ?,
-            open_time = ?, start_time = ?, close_time = ?, after_close_action = ?, allow_any_device = ?,
+            target_teachers = ?, target_gender = ?, open_time = ?, start_time = ?, close_time = ?, after_close_action = ?, allow_any_device = ?,
             allowed_devices = ?, is_active = ?, sync_academic_calendar = ?
             WHERE id = ?";
 
@@ -197,6 +199,8 @@ class SmartTapEventModel extends Model
             $data['days_of_week'] ?? '1,2,3,4,5,6,7',
             $data['target_type'] ?? 'all',
             !empty($data['target_classes']) ? (is_array($data['target_classes']) ? implode(',', $data['target_classes']) : $data['target_classes']) : null,
+            !empty($data['target_teachers']) ? (is_array($data['target_teachers']) ? implode(',', $data['target_teachers']) : $data['target_teachers']) : null,
+            in_array($data['target_gender'] ?? '', ['all', 'L', 'P']) ? $data['target_gender'] : 'all',
             $data['open_time'],
             $data['start_time'],
             $data['close_time'],

@@ -160,10 +160,12 @@ foreach ($events as $ev) {
             </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
             <?php 
             $prayerIcons = [
                 'subuh' => ['ri-sun-foggy-line', 'from-blue-600 to-indigo-700'],
+                'jumat' => ['ri-community-line', 'from-emerald-600 to-teal-700'],
+                'jum\'at' => ['ri-community-line', 'from-emerald-600 to-teal-700'],
                 'dzuhur' => ['ri-sun-fill', 'from-amber-500 to-amber-600'],
                 'ashar' => ['ri-sun-line', 'from-orange-500 to-amber-600'],
                 'maghrib' => ['ri-moon-foggy-line', 'from-rose-500 to-indigo-800'],
@@ -179,19 +181,58 @@ foreach ($events as $ev) {
                     }
                 }
                 $iconData = $prayerIcons[$nameKey] ?? ['ri-moon-line', 'from-indigo-600 to-indigo-700'];
+
+                // Day badges
+                $daysArr = !empty($ev['days_of_week']) ? explode(',', $ev['days_of_week']) : ['1','2','3','4','5','6','7'];
+                sort($daysArr);
+                $daysStr = implode(',', $daysArr);
+                if (count($daysArr) === 7) {
+                    $dayText = 'Tiap Hari';
+                    $dayBadge = 'bg-gray-100 text-gray-600';
+                } elseif ($daysStr === '5') {
+                    $dayText = 'Khusus Jumat';
+                    $dayBadge = 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold';
+                } elseif ($daysStr === '1,2,3,4,6,7') {
+                    $dayText = 'Sabtu – Kamis';
+                    $dayBadge = 'bg-amber-50 text-amber-700 border border-amber-200 font-bold';
+                } else {
+                    $dayMap = [1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 7 => 'Ahd'];
+                    $labels = [];
+                    foreach ($daysArr as $d) {
+                        if (isset($dayMap[$d])) $labels[] = $dayMap[$d];
+                    }
+                    $dayText = implode(', ', $labels);
+                    $dayBadge = 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+                }
             ?>
                 <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-xs hover:shadow-md transition flex flex-col justify-between relative group">
                     <div>
                         <!-- Header -->
-                        <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br <?= $iconData[1] ?> text-white flex items-center justify-center text-sm shadow-xs">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br <?= $iconData[1] ?> text-white flex items-center justify-center text-sm shadow-xs flex-shrink-0">
                                     <i class="<?= $iconData[0] ?>"></i>
                                 </div>
                                 <h4 class="font-bold text-gray-900 text-sm leading-tight"><?= htmlspecialchars($ev['name']) ?></h4>
                             </div>
 
                             <span class="w-2.5 h-2.5 rounded-full <?= $ev['is_active'] ? 'bg-emerald-500 shadow-xs shadow-emerald-200' : 'bg-gray-300' ?>" title="<?= $ev['is_active'] ? 'Aktif' : 'Non-Aktif' ?>"></span>
+                        </div>
+
+                        <!-- Day & Gender Indicator -->
+                        <div class="mb-2.5 flex items-center gap-1.5 flex-wrap">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] <?= $dayBadge ?>">
+                                <i class="ri-calendar-line text-[10px]"></i> <?= $dayText ?>
+                            </span>
+                            <?php if (($ev['target_gender'] ?? 'all') === 'L'): ?>
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-bold" title="Khusus Jamaah Putra">
+                                    <i class="ri-men-line text-[10px]"></i> Putra
+                                </span>
+                            <?php elseif (($ev['target_gender'] ?? 'all') === 'P'): ?>
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-bold" title="Khusus Jamaah Putri">
+                                    <i class="ri-women-line text-[10px]"></i> Putri
+                                </span>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Compact Time Badges -->
@@ -419,9 +460,25 @@ foreach ($events as $ev) {
                                         <div class="text-[11px] text-gray-400"><?= $ev['after_close_action'] === 'very_late' ? 'Toleransi: Terima Sangat Telat' : 'Toleransi: Tolak Total' ?></div>
                                     </td>
                                     <td class="py-3.5 px-4">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $ev['target_type'] == 'all' ? 'bg-indigo-50 text-indigo-700' : ($ev['target_type'] == 'students' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700') ?>">
-                                            <?= $ev['target_type'] == 'all' ? 'Santri & Guru' : ($ev['target_type'] == 'students' ? 'Santri Saja' : 'Pengajar Saja') ?>
-                                        </span>
+                                        <div class="flex flex-col gap-1 items-start">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $ev['target_type'] == 'all' ? 'bg-indigo-50 text-indigo-700' : ($ev['target_type'] == 'students' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700') ?>">
+                                                <?= $ev['target_type'] == 'all' ? 'Santri & Guru' : ($ev['target_type'] == 'students' ? 'Santri Saja' : 'Pengajar Saja') ?>
+                                            </span>
+                                            <?php if (!empty($ev['target_teachers'])): 
+                                                $tIds = array_filter(explode(',', $ev['target_teachers']));
+                                            ?>
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="Kewajiban Khusus <?= count($tIds) ?> Guru">
+                                                    <i class="ri-user-star-line text-[10px]"></i> <?= count($tIds) ?> Guru Tertentu
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($ev['target_classes'])): 
+                                                $cIds = array_filter(explode(',', $ev['target_classes']));
+                                            ?>
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title="<?= count($cIds) ?> Kelas Santri">
+                                                    <i class="ri-team-line text-[10px]"></i> <?= count($cIds) ?> Kelas
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <td class="py-3.5 px-4 font-mono text-xs">
                                         <span class="text-gray-700 font-bold"><?= substr($ev['open_time'], 0, 5) ?></span>
@@ -610,14 +667,154 @@ foreach ($events as $ev) {
                                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Acara</label>
                                 <input type="date" name="event_date" id="event_date" value="<?= $today ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
                             </div>
-                            <div id="field_target_type">
+                        </div>
+
+                        <!-- Target Peserta & Target Gender -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Peserta</label>
-                                <select name="target_type" id="event_target_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                                <select name="target_type" id="event_target_type" onchange="toggleTargetType(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
                                     <option value="all">Santri & Pengajar (Semua)</option>
                                     <option value="students">Santri Saja</option>
                                     <option value="teachers">Pengajar / Pegawai Saja</option>
                                 </select>
                             </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Gender / Jamaah</label>
+                                <select name="target_gender" id="event_target_gender" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+                                    <option value="all">Semua Jamaah (Putra & Putri)</option>
+                                    <option value="L">Khusus Putra / Laki-laki (Sholat Jumat)</option>
+                                    <option value="P">Khusus Putri / Perempuan (Dzuhur Jumat Putri)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Target Khusus Pengajar / Guru (Checklist Personil) -->
+                        <div id="field_target_teachers_box" class="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-indigo-950">
+                                    <i class="ri-user-star-line text-indigo-600 mr-1"></i> Kewajiban Absen Pengajar / Guru
+                                </label>
+                                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full" id="teacher-selected-count">
+                                    Semua Guru Wajib
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-4 text-xs">
+                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
+                                    <input type="radio" name="teacher_target_mode" id="teacher_mode_all" value="all" checked onchange="toggleTeacherTargetMode('all')" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span>Seluruh Dewan Guru</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
+                                    <input type="radio" name="teacher_target_mode" id="teacher_mode_specific" value="specific" onchange="toggleTeacherTargetMode('specific')" class="text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-indigo-700 font-bold">Hanya Guru Tertentu (Checklist)</span>
+                                </label>
+                            </div>
+
+                            <div id="teacher_checklist_container" class="hidden space-y-2 pt-2 border-t border-indigo-100">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="relative flex-1">
+                                        <i class="ri-search-line absolute left-2.5 top-2 text-gray-400 text-xs"></i>
+                                        <input type="text" id="teacher_search_input" oninput="filterTeacherChecklist(this.value)" placeholder="Cari nama Ustadz / Ustadzah..." class="w-full text-[11px] pl-7 pr-3 py-1.5 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white">
+                                    </div>
+                                    <div class="flex items-center gap-1 text-[10px]">
+                                        <button type="button" onclick="selectAllTeachers(true)" class="px-2 py-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-bold">Pilih Semua</button>
+                                        <button type="button" onclick="selectAllTeachers(false)" class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg font-bold">Batal Semua</button>
+                                    </div>
+                                </div>
+
+                                <div class="max-h-40 overflow-y-auto space-y-1 pr-1 bg-white p-2 rounded-xl border border-indigo-100" id="teacher_checklist_list">
+                                    <?php foreach ($teachers as $t): ?>
+                                        <label class="flex items-center justify-between p-1.5 hover:bg-indigo-50/50 rounded-lg cursor-pointer text-xs teacher-item" data-name="<?= strtolower(htmlspecialchars(($t['nama_gelar'] ?? '') . ' ' . ($t['nama'] ?? ''))) ?>">
+                                            <div class="flex items-center gap-2">
+                                                <input type="checkbox" name="target_teachers[]" value="<?= $t['id'] ?>" onchange="updateTeacherSelectedCount()" class="target-teacher-cb rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-medium text-gray-800 text-[11px]"><?= htmlspecialchars($t['nama_gelar'] ?? $t['nama']) ?></span>
+                                            </div>
+                                            <span class="text-[10px] text-gray-400 font-mono"><?= htmlspecialchars($t['nip'] ?: $t['username']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <p class="text-[10px] text-indigo-700/80 leading-tight">
+                                    *Hanya guru yang dicentang yang wajib hadir dan terkena rekap presensi. Guru lainnya tidak akan kena kewajiban absen.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Target Khusus Kelas Santri (Hanya muncul jika target = all atau students) -->
+                        <div id="field_target_classes_box" class="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-blue-950">
+                                    <i class="ri-team-line text-blue-600 mr-1"></i> Kewajiban Absen Santri (Kelas)
+                                </label>
+                                <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full" id="class-selected-count">
+                                    Semua Kelas Wajib
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-4 text-xs">
+                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
+                                    <input type="radio" name="class_target_mode" id="class_mode_all" value="all" checked onchange="toggleClassTargetMode('all')" class="text-blue-600 focus:ring-blue-500">
+                                    <span>Seluruh Kelas Santri</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
+                                    <input type="radio" name="class_target_mode" id="class_mode_specific" value="specific" onchange="toggleClassTargetMode('specific')" class="text-blue-600 focus:ring-blue-500">
+                                    <span class="text-blue-700 font-bold">Hanya Kelas Tertentu</span>
+                                </label>
+                            </div>
+
+                            <div id="class_checklist_container" class="hidden space-y-2 pt-2 border-t border-blue-100">
+                                <div class="flex items-center justify-end gap-1 text-[10px]">
+                                    <button type="button" onclick="selectAllClasses(true)" class="px-2 py-1 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg font-bold">Pilih Semua</button>
+                                    <button type="button" onclick="selectAllClasses(false)" class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg font-bold">Batal Semua</button>
+                                </div>
+                                <div class="max-h-36 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-1.5 pr-1 bg-white p-2 rounded-xl border border-blue-100">
+                                    <?php foreach ($classes as $c): ?>
+                                        <label class="flex items-center gap-1.5 p-1.5 hover:bg-blue-50/50 rounded-lg cursor-pointer text-xs border border-gray-100">
+                                            <input type="checkbox" name="target_classes[]" value="<?= $c['id'] ?>" onchange="updateClassSelectedCount()" class="target-class-cb rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5">
+                                            <span class="font-medium text-gray-800 text-[11px]"><?= htmlspecialchars(($c['tingkat'] ?? '') . ' ' . ($c['abjad'] ?? '')) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hari Berlaku Rutin (Untuk Jadwal Harian) -->
+                        <div id="field_days_of_week" class="p-3.5 bg-gray-50/80 rounded-2xl border border-gray-200/80 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-gray-700">
+                                    <i class="ri-calendar-line text-indigo-600 mr-1"></i> Hari Aktif Rutin <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="flex items-center gap-1.5 text-[10px] font-semibold">
+                                    <button type="button" onclick="setDaysPreset('all')" class="text-indigo-600 hover:underline">Semua Hari</button>
+                                    <span class="text-gray-300">&bull;</span>
+                                    <button type="button" onclick="setDaysPreset('no_friday')" class="text-amber-600 hover:underline" title="Sabtu s/d Kamis (Cocok untuk Sholat Dzuhur)">Tanpa Jumat</button>
+                                    <span class="text-gray-300">&bull;</span>
+                                    <button type="button" onclick="setDaysPreset('friday_only')" class="text-emerald-600 hover:underline" title="Khusus Hari Jumat (Cocok untuk Sholat Jumat)">Khusus Jumat</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1">
+                                <?php
+                                $dayList = [
+                                    1 => 'Sen',
+                                    2 => 'Sel',
+                                    3 => 'Rab',
+                                    4 => 'Kam',
+                                    5 => 'Jum',
+                                    6 => 'Sab',
+                                    7 => 'Ahd'
+                                ];
+                                foreach ($dayList as $num => $dayName):
+                                    $isJum = ($num === 5);
+                                ?>
+                                    <label class="flex flex-col items-center justify-center p-1.5 rounded-xl border border-gray-200 cursor-pointer hover:bg-white transition text-center select-none bg-white/70" id="day-lbl-<?= $num ?>">
+                                        <input type="checkbox" name="days_of_week[]" value="<?= $num ?>" checked class="day-checkbox rounded text-indigo-600 focus:ring-indigo-500 mb-1 w-3.5 h-3.5">
+                                        <span class="text-[11px] font-bold <?= $isJum ? 'text-emerald-700 font-extrabold' : 'text-gray-700' ?>"><?= $dayName ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                            <p class="text-[10px] text-gray-400 leading-tight">
+                                <em>Panduan Sholat Jumat:</em> Atur <strong>Sholat Dzuhur</strong> dengan preset <u>Tanpa Jumat</u>, lalu buat event baru <strong>Sholat Jumat</strong> dengan preset <u>Khusus Jumat</u>.
+                            </p>
                         </div>
 
                         <!-- Sinkronisasi Kalender Akademik & KBM -->
@@ -759,6 +956,109 @@ function switchTab(tab) {
 }
 
 // Modal Form Logic
+function setDaysPreset(type) {
+    document.querySelectorAll('.day-checkbox').forEach(cb => {
+        const val = parseInt(cb.value);
+        if (type === 'all') {
+            cb.checked = true;
+        } else if (type === 'no_friday') {
+            cb.checked = (val !== 5); // 1,2,3,4,6,7
+        } else if (type === 'friday_only') {
+            cb.checked = (val === 5); // 5 only
+        }
+    });
+}
+
+// Target Audience Handlers
+function toggleTargetType(val) {
+    const boxTeachers = document.getElementById('field_target_teachers_box');
+    const boxClasses = document.getElementById('field_target_classes_box');
+    if (val === 'teachers') {
+        boxTeachers.classList.remove('hidden');
+        boxClasses.classList.add('hidden');
+    } else if (val === 'students') {
+        boxTeachers.classList.add('hidden');
+        boxClasses.classList.remove('hidden');
+    } else { // all
+        boxTeachers.classList.remove('hidden');
+        boxClasses.classList.remove('hidden');
+    }
+}
+
+function toggleTeacherTargetMode(mode) {
+    const container = document.getElementById('teacher_checklist_container');
+    if (mode === 'specific') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelectorAll('.target-teacher-cb').forEach(cb => cb.checked = false);
+    }
+    updateTeacherSelectedCount();
+}
+
+function updateTeacherSelectedCount() {
+    const isAll = document.getElementById('teacher_mode_all').checked;
+    const badge = document.getElementById('teacher-selected-count');
+    if (isAll) {
+        badge.innerText = 'Semua Guru Wajib';
+        badge.className = 'text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full';
+    } else {
+        let count = 0;
+        document.querySelectorAll('.target-teacher-cb:checked').forEach(() => count++);
+        badge.innerText = `${count} Guru Terpilih`;
+        badge.className = 'text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full';
+    }
+}
+
+function selectAllTeachers(check) {
+    document.querySelectorAll('.target-teacher-cb').forEach(cb => {
+        // Hanya centang yang sedang terlihat (tidak tersembunyi karena search)
+        const parent = cb.closest('.teacher-item');
+        if (!parent || parent.style.display !== 'none') {
+            cb.checked = check;
+        }
+    });
+    updateTeacherSelectedCount();
+}
+
+function filterTeacherChecklist(query) {
+    query = (query || '').toLowerCase().trim();
+    document.querySelectorAll('.teacher-item').forEach(item => {
+        const name = item.getAttribute('data-name') || '';
+        item.style.display = name.includes(query) ? '' : 'none';
+    });
+}
+
+function toggleClassTargetMode(mode) {
+    const container = document.getElementById('class_checklist_container');
+    if (mode === 'specific') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelectorAll('.target-class-cb').forEach(cb => cb.checked = false);
+    }
+    updateClassSelectedCount();
+}
+
+function updateClassSelectedCount() {
+    const isAll = document.getElementById('class_mode_all').checked;
+    const badge = document.getElementById('class-selected-count');
+    if (isAll) {
+        badge.innerText = 'Semua Kelas Wajib';
+        badge.className = 'text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full';
+    } else {
+        let count = 0;
+        document.querySelectorAll('.target-class-cb:checked').forEach(() => count++);
+        badge.innerText = `${count} Kelas Terpilih`;
+        badge.className = 'text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full';
+    }
+}
+
+function selectAllClasses(check) {
+    document.querySelectorAll('.target-class-cb').forEach(cb => cb.checked = check);
+    updateClassSelectedCount();
+}
+
 function openEventModal(defaultCategory = 'sholat') {
     document.getElementById('event_id').value = '';
     document.getElementById('event_name').value = '';
@@ -767,12 +1067,22 @@ function openEventModal(defaultCategory = 'sholat') {
     document.getElementById('event_start_time').value = '04:30';
     document.getElementById('event_close_time').value = '05:00';
     document.getElementById('event_after_close_action').value = 'reject';
+    document.getElementById('event_target_gender').value = 'all';
     document.getElementById('event_is_active').checked = true;
     document.getElementById('device_all_radio').checked = true;
     toggleDeviceOptions(true);
     document.querySelectorAll('.dev-checkbox').forEach(cb => cb.checked = false);
 
+    setDaysPreset('all');
     setCategoryRadio(defaultCategory);
+
+    // Reset Target Personil
+    document.getElementById('teacher_mode_all').checked = true;
+    toggleTeacherTargetMode('all');
+    document.getElementById('class_mode_all').checked = true;
+    toggleClassTargetMode('all');
+    toggleTargetType(document.getElementById('event_target_type').value);
+
     document.getElementById('event_sync_academic').checked = (defaultCategory === 'office');
     document.getElementById('modal-event-title').innerText = 'Tambah Event Baru';
     document.getElementById('modal-event').classList.remove('hidden');
@@ -802,6 +1112,7 @@ function onCategoryChange(cat) {
         document.getElementById('event_after_close_action').value = 'reject';
         document.getElementById('event_sync_academic').checked = false;
     }
+    toggleTargetType(document.getElementById('event_target_type').value);
 }
 
 function editEvent(ev) {
@@ -810,12 +1121,47 @@ function editEvent(ev) {
     document.getElementById('event_type_select').value = ev.event_type;
     document.getElementById('event_date').value = ev.event_date || '<?= $today ?>';
     document.getElementById('event_target_type').value = ev.target_type;
+    document.getElementById('event_target_gender').value = ev.target_gender || 'all';
     document.getElementById('event_open_time').value = (ev.open_time || '').substr(0, 5);
     document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
     document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
     document.getElementById('event_after_close_action').value = ev.after_close_action;
     document.getElementById('event_is_active').checked = ev.is_active == 1;
     document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
+
+    const days = (ev.days_of_week || '1,2,3,4,5,6,7').split(',').map(d => d.trim());
+    document.querySelectorAll('.day-checkbox').forEach(cb => {
+        cb.checked = days.includes(cb.value);
+    });
+
+    // Target Teachers (Khusus Personil Tertentu)
+    const targetTeachers = (ev.target_teachers || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (targetTeachers.length > 0) {
+        document.getElementById('teacher_mode_specific').checked = true;
+        toggleTeacherTargetMode('specific');
+        document.querySelectorAll('.target-teacher-cb').forEach(cb => {
+            cb.checked = targetTeachers.includes(cb.value);
+        });
+    } else {
+        document.getElementById('teacher_mode_all').checked = true;
+        toggleTeacherTargetMode('all');
+    }
+    updateTeacherSelectedCount();
+
+    // Target Classes (Khusus Kelas Tertentu)
+    const targetClasses = (ev.target_classes || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (targetClasses.length > 0) {
+        document.getElementById('class_mode_specific').checked = true;
+        toggleClassTargetMode('specific');
+        document.querySelectorAll('.target-class-cb').forEach(cb => {
+            cb.checked = targetClasses.includes(cb.value);
+        });
+    } else {
+        document.getElementById('class_mode_all').checked = true;
+        toggleClassTargetMode('all');
+    }
+    updateClassSelectedCount();
+    toggleTargetType(ev.target_type || 'all');
 
     let cat = ev.category || 'sholat';
     if (!ev.category) {
@@ -847,11 +1193,47 @@ function duplicateEvent(ev) {
     document.getElementById('event_type_select').value = 'one_off';
     document.getElementById('event_date').value = '<?= $today ?>';
     document.getElementById('event_target_type').value = ev.target_type;
+    document.getElementById('event_target_gender').value = ev.target_gender || 'all';
     document.getElementById('event_open_time').value = (ev.open_time || '').substr(0, 5);
     document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
     document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
     document.getElementById('event_after_close_action').value = ev.after_close_action;
     document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
+
+    const days = (ev.days_of_week || '1,2,3,4,5,6,7').split(',').map(d => d.trim());
+    document.querySelectorAll('.day-checkbox').forEach(cb => {
+        cb.checked = days.includes(cb.value);
+    });
+
+    // Target Teachers
+    const targetTeachers = (ev.target_teachers || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (targetTeachers.length > 0) {
+        document.getElementById('teacher_mode_specific').checked = true;
+        toggleTeacherTargetMode('specific');
+        document.querySelectorAll('.target-teacher-cb').forEach(cb => {
+            cb.checked = targetTeachers.includes(cb.value);
+        });
+    } else {
+        document.getElementById('teacher_mode_all').checked = true;
+        toggleTeacherTargetMode('all');
+    }
+    updateTeacherSelectedCount();
+
+    // Target Classes
+    const targetClasses = (ev.target_classes || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (targetClasses.length > 0) {
+        document.getElementById('class_mode_specific').checked = true;
+        toggleClassTargetMode('specific');
+        document.querySelectorAll('.target-class-cb').forEach(cb => {
+            cb.checked = targetClasses.includes(cb.value);
+        });
+    } else {
+        document.getElementById('class_mode_all').checked = true;
+        toggleClassTargetMode('all');
+    }
+    updateClassSelectedCount();
+    toggleTargetType(ev.target_type || 'all');
+
     toggleEventType('one_off');
     document.getElementById('modal-event-title').innerText = 'Gunakan Ulang Event: ' + ev.name;
 }

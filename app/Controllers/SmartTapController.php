@@ -334,9 +334,24 @@ class SmartTapController extends Controller
         $devices = $this->deviceModel->getActiveDevices();
         $todayHolidayInfo = $this->eventModel->getAcademicHolidayInfo(date('Y-m-d'));
 
+        // Ambil daftar guru / pengajar aktif untuk pilihan target personil
+        $stmtT = $this->db->query("
+            SELECT u.id, u.nama, u.username, tp.nip, tp.gender,
+                   CASE 
+                       WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
+                       ELSE CONCAT('Al-Ustadz ', u.nama)
+                   END as nama_gelar
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
+            ORDER BY u.nama ASC
+        ");
+        $teachers = $stmtT->fetchAll(\PDO::FETCH_ASSOC);
+
         $this->view('smart_tap/events', [
             'events' => $events,
             'classes' => $classes,
+            'teachers' => $teachers,
             'devices' => $devices,
             'todayHolidayInfo' => $todayHolidayInfo
         ]);
@@ -375,7 +390,9 @@ class SmartTapController extends Controller
             'event_date' => !empty($_POST['event_date']) ? $_POST['event_date'] : null,
             'days_of_week' => !empty($_POST['days_of_week']) ? (is_array($_POST['days_of_week']) ? implode(',', $_POST['days_of_week']) : $_POST['days_of_week']) : '1,2,3,4,5,6,7',
             'target_type' => $_POST['target_type'] ?? 'all',
-            'target_classes' => !empty($_POST['target_classes']) ? $_POST['target_classes'] : null,
+            'target_classes' => !empty($_POST['target_classes']) ? (is_array($_POST['target_classes']) ? implode(',', $_POST['target_classes']) : $_POST['target_classes']) : null,
+            'target_teachers' => !empty($_POST['target_teachers']) ? (is_array($_POST['target_teachers']) ? implode(',', $_POST['target_teachers']) : $_POST['target_teachers']) : null,
+            'target_gender' => in_array($_POST['target_gender'] ?? '', ['all', 'L', 'P']) ? $_POST['target_gender'] : 'all',
             'open_time' => $_POST['open_time'] ?? '04:00',
             'start_time' => $_POST['start_time'] ?? '04:30',
             'close_time' => $_POST['close_time'] ?? '05:00',

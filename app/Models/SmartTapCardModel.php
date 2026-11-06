@@ -232,7 +232,7 @@ class SmartTapCardModel extends Model
 
         // Check student
         $stmtS = $this->db->prepare("
-            SELECT s.id, s.nis, s.nama, 'student' as person_type, s.rfid_uid,
+            SELECT s.id, s.nis, s.nama, 'student' as person_type, s.rfid_uid, s.gender,
                    CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as info,
                    se.kelas_id
             FROM students s
@@ -248,6 +248,7 @@ class SmartTapCardModel extends Model
         // Check teacher
         $stmtT = $this->db->prepare("
             SELECT u.id, u.username as nis, u.nama, 'teacher' as person_type, u.rfid_uid,
+                   CASE WHEN tp.gender = 'Perempuan' THEN 'P' ELSE 'L' END as gender,
                    'Pengajar / Guru' as info,
                    NULL as kelas_id,
                    tp.profile_picture
@@ -267,7 +268,7 @@ class SmartTapCardModel extends Model
     {
         // 1. All Active Students in Current Academic Year with RFID
         $stmtS = $this->db->prepare("
-            SELECT s.id, s.nis, s.nama, 'student' as person_type, s.rfid_uid,
+            SELECT s.id, s.nis, s.nama, 'student' as person_type, s.rfid_uid, s.gender,
                    CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as info,
                    se.kelas_id
             FROM student_enrollments se
@@ -282,6 +283,7 @@ class SmartTapCardModel extends Model
         // 2. All Teachers with RFID
         $stmtT = $this->db->query("
             SELECT u.id, u.username as nis, u.nama, 'teacher' as person_type, u.rfid_uid,
+                   CASE WHEN tp.gender = 'Perempuan' THEN 'P' ELSE 'L' END as gender,
                    'Pengajar / Guru' as info,
                    NULL as kelas_id,
                    tp.profile_picture

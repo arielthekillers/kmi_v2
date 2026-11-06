@@ -189,13 +189,18 @@ class SmartTapLogModel extends Model
                 $pClass = $classes;
             }
 
+            $genderFilterS = "";
+            if (!empty($event['target_gender']) && $event['target_gender'] !== 'all') {
+                $genderFilterS = " AND s.gender = " . $this->db->quote($event['target_gender']) . " ";
+            }
+
             $sqlS = "SELECT s.id, s.nis, s.nama, s.rfid_uid, 'student' as person_type,
                             CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as subinfo,
                             se.kelas_id
                      FROM students s
                      INNER JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
                      LEFT JOIN kelas k ON se.kelas_id = k.id
-                     WHERE s.deleted_at IS NULL $classFilter
+                     WHERE s.deleted_at IS NULL $classFilter $genderFilterS
                      ORDER BY k.tingkat ASC, k.abjad ASC, s.nama ASC";
 
             $stmtS = $this->db->prepare($sqlS);
@@ -212,11 +217,29 @@ class SmartTapLogModel extends Model
                 $exemptionFilter = " AND u.id NOT IN (" . implode(',', array_map('intval', $exemptedUserIds)) . ") ";
             }
 
+            $genderFilterT = "";
+            if (!empty($event['target_gender']) && $event['target_gender'] !== 'all') {
+                if ($event['target_gender'] === 'L') {
+                    $genderFilterT = " AND (tp.gender = 'Laki-laki' OR tp.gender = 'L' OR tp.gender IS NULL) ";
+                } elseif ($event['target_gender'] === 'P') {
+                    $genderFilterT = " AND (tp.gender = 'Perempuan' OR tp.gender = 'P') ";
+                }
+            }
+
+            $targetTeacherFilter = "";
+            if (!empty($event['target_teachers'])) {
+                $teacherIds = array_filter(array_map('intval', explode(',', $event['target_teachers'])));
+                if (!empty($teacherIds)) {
+                    $targetTeacherFilter = " AND u.id IN (" . implode(',', $teacherIds) . ") ";
+                }
+            }
+
             $sqlT = "SELECT u.id, u.username as nis, u.nama, u.rfid_uid, 'teacher' as person_type,
                             'Pengajar / Guru' as subinfo, NULL as kelas_id
                      FROM users u
+                     LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                      WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
-                     $exemptionFilter
+                     $exemptionFilter $genderFilterT $targetTeacherFilter
                      ORDER BY u.nama ASC";
             $targetTeachers = $this->db->query($sqlT)->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -350,12 +373,29 @@ class SmartTapLogModel extends Model
                 $exemptionFilter = " AND u.id NOT IN (" . implode(',', array_map('intval', $exemptedUserIds)) . ") ";
             }
 
+            $genderFilterT = "";
+            if ($event && !empty($event['target_gender']) && $event['target_gender'] !== 'all') {
+                if ($event['target_gender'] === 'L') {
+                    $genderFilterT = " AND (tp.gender = 'Laki-laki' OR tp.gender = 'L' OR tp.gender IS NULL) ";
+                } elseif ($event['target_gender'] === 'P') {
+                    $genderFilterT = " AND (tp.gender = 'Perempuan' OR tp.gender = 'P') ";
+                }
+            }
+
+            $targetTeacherFilter = "";
+            if ($event && !empty($event['target_teachers'])) {
+                $teacherIds = array_filter(array_map('intval', explode(',', $event['target_teachers'])));
+                if (!empty($teacherIds)) {
+                    $targetTeacherFilter = " AND u.id IN (" . implode(',', $teacherIds) . ") ";
+                }
+            }
+
             $sqlTeachers = "SELECT u.id, u.username as identifier, u.nama as name, 'teacher' as person_type,
                                    'Pengajar / Guru' as subinfo, tp.nip, tp.phone
                             FROM users u
                             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
-                            $exemptionFilter
+                            $exemptionFilter $genderFilterT $targetTeacherFilter
                             ORDER BY u.nama ASC";
             $teachers = $this->db->query($sqlTeachers)->fetchAll(PDO::FETCH_ASSOC);
 
@@ -397,13 +437,18 @@ class SmartTapLogModel extends Model
                 $pClass = $targetClasses;
             }
 
+            $genderFilterS = "";
+            if ($event && !empty($event['target_gender']) && $event['target_gender'] !== 'all') {
+                $genderFilterS = " AND s.gender = " . $this->db->quote($event['target_gender']) . " ";
+            }
+
             $sqlStudents = "SELECT s.id, s.nis as identifier, s.nama as name, 'student' as person_type,
                                    CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as subinfo,
                                    se.kelas_id
                             FROM students s
                             INNER JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
                             LEFT JOIN kelas k ON se.kelas_id = k.id
-                            WHERE s.deleted_at IS NULL $classFilter
+                            WHERE s.deleted_at IS NULL $classFilter $genderFilterS
                             ORDER BY k.tingkat ASC, k.abjad ASC, s.nama ASC";
 
             $stmtS = $this->db->prepare($sqlStudents);

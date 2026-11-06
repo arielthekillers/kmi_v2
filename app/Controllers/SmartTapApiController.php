@@ -243,7 +243,7 @@ class SmartTapApiController extends Controller
 
         $eventIdParam = $_GET['event_id'] ?? 'all';
         $date = $_GET['date'] ?? date('Y-m-d');
-        $dayOfWeek = date('N');
+        $dayOfWeek = (int)date('N', strtotime($date));
         $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $date);
 
         $eventsWithStats = $this->logModel->getTodayEventsSummaryStats($events, $date);

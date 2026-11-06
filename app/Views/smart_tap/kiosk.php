@@ -586,13 +586,67 @@
             return;
         }
 
+        // Cek Kesesuaian Gender & Auto-Match Event (Misal Hari Jumat: Putra -> Sholat Jumat, Putri -> Sholat Dzuhur)
+        const personGender = (foundS ? foundS.gender : (foundT ? foundT.gender : 'L')) || 'L';
+        let currentTapEvent = activeEvent;
+        const allTodayEvents = masterData.today_events || [];
+
+        // Cari apakah ada sesi aktif saat ini yang khusus sesuai gender orang ini
+        const specificGenderEvent = allTodayEvents.find(ev => {
+            const evG = ev.target_gender || 'all';
+            return evG === personGender && (curTime >= ev.open_time && curTime <= ev.close_time);
+        });
+        if (specificGenderEvent) {
+            currentTapEvent = specificGenderEvent;
+        }
+
+        // Validasi jika event saat ini memiliki batasan gender dan tidak cocok
+        const evRequiredGender = currentTapEvent.target_gender || 'all';
+        if (evRequiredGender !== 'all' && evRequiredGender !== personGender) {
+            showTapResult({
+                success: false,
+                status: 'rejected',
+                message: evRequiredGender === 'L' ? 'SESI INI KHUSUS PUTRA' : 'SESI INI KHUSUS PUTRI',
+                person: person
+            });
+            return;
+        }
+
+        // Validasi Daftar Guru Khusus (Target Teachers pada event insidental)
+        if (personType === 'teacher' && currentTapEvent.target_teachers) {
+            const allowedTeachers = currentTapEvent.target_teachers.split(',').map(s => s.trim());
+            if (!allowedTeachers.includes(person.id.toString())) {
+                showTapResult({
+                    success: false,
+                    status: 'rejected',
+                    message: 'BUKAN PESERTA RESMI SESI INI',
+                    person: person
+                });
+                return;
+            }
+        }
+
+        // Validasi Daftar Kelas Khusus (Target Classes pada event insidental)
+        if (personType === 'student' && currentTapEvent.target_classes && foundS && foundS.kelas_id) {
+            const allowedClasses = currentTapEvent.target_classes.split(',').map(s => s.trim());
+            if (!allowedClasses.includes(foundS.kelas_id.toString())) {
+                showTapResult({
+                    success: false,
+                    status: 'rejected',
+                    message: 'BUKAN KELAS PESERTA SESI INI',
+                    person: person
+                });
+                return;
+            }
+        }
+
         // 2. Evaluasi Ketepatan Waktu
         let status = 'on_time';
         let statusLabel = 'HADIR TEPAT WAKTU';
-        if (curTime > activeEvent.start_time && curTime <= activeEvent.close_time) {
+        if (curTime > currentTapEvent.start_time && curTime <= currentTapEvent.close_time) {
             status = 'late';
             statusLabel = 'TERLAMBAT';
-        } else if (curTime > activeEvent.close_time) {
+        } else if (curTime > currentTapEvent.close_time) {
             status = 'very_late';
             statusLabel = 'SANGAT TERLAMBAT';
         }
@@ -600,7 +654,7 @@
         // 3. Simpan ke Antrean Offline
         const logEntry = {
             log_uuid: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-            event_id: activeEvent.id,
+            event_id: currentTapEvent.id,
             person_type: personType,
             person_id: person.id,
             card_uid: uid,
@@ -900,3 +954,4 @@
     </script>
 </body>
 </html>
+
