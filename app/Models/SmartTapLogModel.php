@@ -284,10 +284,15 @@ class SmartTapLogModel extends Model
             }
         }
 
+        // 3.5. Cek apakah ada Waiver / Pengecualian Presensi (Udzur Cuaca / Libur Perpulangan)
+        $waiverModel = new \App\Models\SmartTapWaiverModel();
+        $activeWaiver = $waiverModel->getActiveWaiver($eventId, $event['category'] ?? null, $date);
+
         // 4. Build Attendance Lists
         $listHadir = [];
         $listTerlambat = [];
         $listIzin = [];
+        $listWaived = [];
         $listGhaib = [];
 
         $allTargets = array_merge($targetStudents, $targetTeachers);
@@ -312,25 +317,39 @@ class SmartTapLogModel extends Model
                     'permission_type' => $perm['permission_type'],
                     'reason' => $perm['reason']
                 ]);
+            } elseif ($activeWaiver) {
+                // Sesi ini terkena Udzur Cuaca / Libur: TIDAK dianggap Ghaib!
+                $listWaived[] = array_merge($t, [
+                    'waiver_title' => $activeWaiver['title'],
+                    'waiver_reason' => $activeWaiver['reason_type']
+                ]);
             } else {
                 $listGhaib[] = $t;
             }
         }
 
+        $isWaived = !empty($activeWaiver);
         return [
             'event' => $event,
             'date' => $date,
+            'is_waived' => $isWaived,
+            'waiver' => $activeWaiver,
             'stats' => [
                 'total_wajib' => count($allTargets),
                 'total_hadir_ontime' => count($listHadir),
                 'total_terlambat' => count($listTerlambat),
                 'total_izin' => count($listIzin),
+                'total_waived' => count($listWaived),
                 'total_ghaib' => count($listGhaib),
-                'percent_presence' => count($allTargets) > 0 ? round(((count($listHadir) + count($listTerlambat)) / count($allTargets)) * 100, 1) : 0
+                'is_waived' => $isWaived,
+                'waiver_title' => $activeWaiver['title'] ?? null,
+                'waiver_reason' => $activeWaiver['reason_type'] ?? null,
+                'percent_presence' => $isWaived ? 100.0 : (count($allTargets) > 0 ? round(((count($listHadir) + count($listTerlambat)) / count($allTargets)) * 100, 1) : 0)
             ],
             'hadir' => $listHadir,
             'terlambat' => $listTerlambat,
             'izin' => $listIzin,
+            'waived' => $listWaived,
             'ghaib' => $listGhaib
         ];
     }
@@ -585,6 +604,13 @@ class SmartTapLogModel extends Model
             }
         }
 
+        // 5.5. Cek apakah ada Waiver (Pengecualian / Udzur Presensi) untuk tanggal ini
+        $waiverModel = new \App\Models\SmartTapWaiverModel();
+        $dateWaiver = null;
+        if ($startDate === $endDate) {
+            $dateWaiver = $waiverModel->getActiveWaiver($eventId, $event['category'] ?? null, $startDate);
+        }
+
         // 6. Hitung Status Kedisiplinan & Summary KPI
         $summary = [
             'total_target' => count($participants),
@@ -592,8 +618,11 @@ class SmartTapLogModel extends Model
             'total_ontime' => 0,
             'total_late' => 0,
             'total_izin' => 0,
+            'total_waived' => 0,
             'total_tidak_hadir' => 0,
             'percent_presence' => 0,
+            'is_waived' => !empty($dateWaiver),
+            'waiver_title' => $dateWaiver['title'] ?? null,
             'sum_taps_ontime' => 0,
             'sum_taps_late' => 0,
             'sum_taps_total' => 0
@@ -617,6 +646,11 @@ class SmartTapLogModel extends Model
             } elseif ($p['has_permission']) {
                 $p['status'] = 'permission';
                 $summary['total_izin']++;
+            } elseif ($dateWaiver) {
+                // Sesi pada tanggal ini dibebaskan karena Udzur / Libur
+                $p['status'] = 'waived';
+                $p['waiver_title'] = $dateWaiver['title'];
+                $summary['total_waived']++;
             } else {
                 $p['status'] = 'absent';
                 $summary['total_tidak_hadir']++;
@@ -625,13 +659,18 @@ class SmartTapLogModel extends Model
         unset($p);
 
         if ($summary['total_target'] > 0) {
-            $summary['percent_presence'] = round(($summary['total_hadir'] / $summary['total_target']) * 100, 1);
+            $effectiveTarget = $summary['total_target'] - $summary['total_waived'];
+            if ($effectiveTarget > 0) {
+                $summary['percent_presence'] = round(($summary['total_hadir'] / $effectiveTarget) * 100, 1);
+            } else {
+                $summary['percent_presence'] = 100.0; // 100% jika semua waived
+            }
         }
 
-        // 7. Urutkan: Terlambat -> Tidak Hadir -> Izin -> Tepat Waktu, lalu Nama ASC
+        // 7. Urutkan: Terlambat -> Tidak Hadir -> Izin -> Udzur/Waived -> Tepat Waktu, lalu Nama ASC
         $rows = array_values($participants);
         usort($rows, function ($a, $b) {
-            $rank = ['late' => 1, 'absent' => 2, 'permission' => 3, 'ontime' => 4];
+            $rank = ['late' => 1, 'absent' => 2, 'permission' => 3, 'waived' => 4, 'ontime' => 5];
             $rankA = $rank[$a['status']] ?? 9;
             $rankB = $rank[$b['status']] ?? 9;
 

@@ -34,22 +34,39 @@ if (!empty($events)) {
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
+    <?php
+    $headerIcon = 'ri-hotel-bed-line';
+    $headerBg = 'bg-indigo-100 text-indigo-700';
+    $headerTitle = 'Perizinan Santri & Pengajar';
+    $headerSubtitle = 'Catat santri dan guru yang sedang sakit di klinik atau izin keluar resmi agar otomatis terbebas dari Alpa pada jadwal Smart Tap.';
+
+    if ($tab === 'exemptions') {
+        $headerIcon = 'ri-shield-star-line';
+        $headerBg = 'bg-amber-100 text-amber-700';
+        $headerTitle = 'Guru Bebas Smart Tap';
+        $headerSubtitle = 'Daftar guru senior & pimpinan pondok yang dibebaskan permanen dari seluruh kewajiban absensi smart tap agar tidak terhitung Alpa/Ghaib.';
+    } elseif ($tab === 'waivers') {
+        $headerIcon = 'ri-umbrella-line';
+        $headerBg = 'bg-cyan-100 text-cyan-700';
+        $headerTitle = 'Udzur & Libur Presensi Massal';
+        $headerSubtitle = 'Buku jurnal pengecualian absensi berbasis tanggal. Bebaskan presensi saat hujan deras, perpulangan santri libur semester, atau agenda pondok agar tidak terhitung Alpa.';
+    }
+    ?>
+
     <!-- Master Header & Tab Card -->
     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <!-- Left Info -->
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-2xl <?= $tab === 'exemptions' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700' ?> flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
-                    <i class="<?= $tab === 'exemptions' ? 'ri-shield-star-line' : 'ri-hotel-bed-line' ?>"></i>
+                <div class="w-12 h-12 rounded-2xl <?= $headerBg ?> flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
+                    <i class="<?= $headerIcon ?>"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
-                        <?= $tab === 'exemptions' ? 'Guru Bebas Smart Tap' : 'Perizinan Santri & Pengajar' ?>
+                        <?= $headerTitle ?>
                     </h1>
                     <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-                        <?= $tab === 'exemptions' 
-                            ? 'Daftar guru senior & pimpinan pondok yang dibebaskan permanen dari seluruh kewajiban absensi smart tap agar tidak terhitung Alpa/Ghaib.' 
-                            : 'Catat santri dan guru yang sedang sakit di klinik atau izin keluar resmi agar otomatis terbebas dari Alpa pada jadwal Smart Tap.' ?>
+                        <?= $headerSubtitle ?>
                     </p>
                 </div>
             </div>
@@ -60,6 +77,11 @@ if (!empty($events)) {
                     <button onclick="openExemptionModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-sm font-bold rounded-2xl shadow-sm shadow-amber-200 transition-all hover:shadow-md">
                         <i class="ri-user-add-line text-base"></i>
                         <span>Tetapkan Guru Bebas</span>
+                    </button>
+                <?php elseif ($tab === 'waivers'): ?>
+                    <button onclick="openWaiverModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white text-sm font-bold rounded-2xl shadow-sm shadow-cyan-200 transition-all hover:shadow-md">
+                        <i class="ri-add-line text-base"></i>
+                        <span>Catat Udzur / Libur Baru</span>
                     </button>
                 <?php else: ?>
                     <button onclick="openPermissionModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-bold rounded-2xl shadow-sm shadow-indigo-200 transition-all hover:shadow-md">
@@ -87,6 +109,15 @@ if (!empty($events)) {
                 <span>Guru Bebas Smart Tap (Senior / Pengasuh)</span>
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold <?= $tab === 'exemptions' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-500' ?>">
                     <?= count($exemptions) ?>
+                </span>
+            </a>
+
+            <a href="<?= url('/smart-tap/permissions?tab=waivers') ?>" 
+               class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap <?= $tab === 'waivers' ? 'bg-cyan-50 text-cyan-800 border border-cyan-200/80 shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' ?>">
+                <i class="ri-umbrella-line text-sm text-cyan-600"></i>
+                <span>Udzur & Libur Massal</span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold <?= $tab === 'waivers' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-500' ?>">
+                    <?= count($waivers ?? []) ?>
                 </span>
             </a>
         </div>
@@ -245,6 +276,159 @@ if (!empty($events)) {
                                                     <span>Cabut</span>
                                                 </a>
                                             </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    <?php elseif ($tab === 'waivers'): ?>
+        <!-- ======================================================== -->
+        <!-- TAB 3: UDZUR & LIBUR PRESENSI MASSAL (CUACA / PERPULANGAN) -->
+        <!-- ======================================================== -->
+        <div class="space-y-6">
+            <!-- Notice Banner -->
+            <div class="bg-gradient-to-r from-cyan-50 via-cyan-50/60 to-blue-50 border border-cyan-200/80 rounded-3xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-10 h-10 rounded-2xl bg-cyan-100/80 text-cyan-800 flex items-center justify-center text-xl flex-shrink-0 mt-0.5 shadow-inner">
+                        <i class="ri-umbrella-line"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-cyan-950">Jurnal Pengecualian Presensi Berbasis Tanggal (Kekal & Transparan)</h4>
+                        <p class="text-xs text-cyan-800/90 mt-0.5 leading-relaxed max-w-3xl">
+                            Catatan di bawah membebaskan kewajiban presensi pada tanggal & sesi tertentu (misal: <strong>Hujan Deras</strong> atau <strong>Libur Perpulangan Santri</strong>). Sistem secara otomatis mengecualikan sesi tersebut sehingga santri/guru <strong>tidak terhitung Alpa</strong>. Rekapitulasi masa lalu tetap konsisten dan kekal.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="text-xs text-cyan-700 bg-white/80 px-3.5 py-2 rounded-xl border border-cyan-200/60 font-semibold self-start md:self-center whitespace-nowrap">
+                    <i class="ri-history-line text-cyan-600 mr-1"></i> Data Historis Terkunci
+                </div>
+            </div>
+
+            <!-- Waivers Table Card -->
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-100 bg-gray-50/60 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                                <th class="py-4 px-5">Nama & Alasan Udzur</th>
+                                <th class="py-4 px-5">Rentang Tanggal</th>
+                                <th class="py-4 px-5">Ruang Lingkup Event</th>
+                                <th class="py-4 px-5">Sasaran / Target</th>
+                                <th class="py-4 px-5">Dibuat Oleh</th>
+                                <th class="py-4 px-5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 text-sm">
+                            <?php if (empty($waivers)): ?>
+                                <tr>
+                                    <td colspan="6" class="py-12 text-center text-gray-400">
+                                        <div class="w-14 h-14 rounded-2xl bg-cyan-50 text-cyan-500 flex items-center justify-center text-2xl mx-auto mb-3">
+                                            <i class="ri-sun-cloudy-line"></i>
+                                        </div>
+                                        <p class="font-bold text-gray-700 text-sm">Belum Ada Pengecualian / Udzur</p>
+                                        <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                                            Jika terjadi hujan lebat atau libur perpulangan santri, klik tombol <strong>Catat Udzur / Libur Baru</strong> di atas.
+                                        </p>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php 
+                                $today = date('Y-m-d');
+                                foreach ($waivers as $w): 
+                                    $reasonMap = [
+                                        'hujan_cuaca' => ['label' => 'Hujan Deras / Cuaca', 'color' => 'bg-cyan-50 text-cyan-800 border-cyan-200', 'icon' => 'ri-rainy-line'],
+                                        'libur_perpulangan' => ['label' => 'Perpulangan Santri (Libur)', 'color' => 'bg-purple-50 text-purple-800 border-purple-200', 'icon' => 'ri-home-4-line'],
+                                        'kegiatan_pondok' => ['label' => 'Kegiatan / Lomba Pondok', 'color' => 'bg-emerald-50 text-emerald-800 border-emerald-200', 'icon' => 'ri-trophy-line'],
+                                        'darurat_teknis' => ['label' => 'Gangguan Teknis / Listrik', 'color' => 'bg-amber-50 text-amber-800 border-amber-200', 'icon' => 'ri-flashlight-line'],
+                                        'libur_kbm' => ['label' => 'Libur KBM Kelas', 'color' => 'bg-blue-50 text-blue-800 border-blue-200', 'icon' => 'ri-book-open-line'],
+                                        'lainnya' => ['label' => 'Lainnya', 'color' => 'bg-gray-100 text-gray-700 border-gray-200', 'icon' => 'ri-information-line']
+                                    ];
+                                    $reasonMeta = $reasonMap[$w['reason_type']] ?? $reasonMap['lainnya'];
+                                    $isActiveNow = ($today >= $w['start_date'] && $today <= $w['end_date']);
+                                    $isUpcoming = ($today < $w['start_date']);
+                                ?>
+                                    <tr class="hover:bg-cyan-50/20 transition-colors">
+                                        <td class="py-4 px-5">
+                                            <div class="flex items-start gap-2.5">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border <?= $reasonMeta['color'] ?> flex-shrink-0 mt-0.5">
+                                                    <i class="<?= $reasonMeta['icon'] ?>"></i>
+                                                    <?= $reasonMeta['label'] ?>
+                                                </span>
+                                                <div>
+                                                    <span class="font-bold text-gray-900 block"><?= htmlspecialchars($w['title']) ?></span>
+                                                    <?php if (!empty($w['description'])): ?>
+                                                        <span class="text-xs text-gray-500 line-clamp-1 mt-0.5"><?= htmlspecialchars($w['description']) ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-5">
+                                            <div class="space-y-1">
+                                                <div class="text-xs font-semibold text-gray-800">
+                                                    <?= date('d M Y', strtotime($w['start_date'])) ?>
+                                                    <?php if ($w['start_date'] !== $w['end_date']): ?>
+                                                        <span class="text-gray-400 font-normal">s/d</span> <?= date('d M Y', strtotime($w['end_date'])) ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div>
+                                                    <?php if ($isActiveNow): ?>
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Sedang Aktif
+                                                        </span>
+                                                    <?php elseif ($isUpcoming): ?>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                                                            Mendatang
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">
+                                                            Selesai
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-5 text-xs">
+                                            <?php if ($w['scope'] === 'all_events'): ?>
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                                                    <i class="ri-checkbox-multiple-line text-purple-600"></i> Seluruh Presensi (KBM & Sholat)
+                                                </span>
+                                            <?php elseif ($w['scope'] === 'category'): ?>
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                                    <i class="ri-folder-line text-blue-600"></i> Kategori: <?= htmlspecialchars(ucfirst($w['target_category'])) ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                                    <i class="ri-bookmark-line text-indigo-600"></i> <?= htmlspecialchars($w['event_name'] ?: 'Event ID: ' . $w['event_id']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-5 text-xs text-gray-700">
+                                            <?php if ($w['target_audience'] === 'all'): ?>
+                                                <span class="font-semibold text-gray-900">Santri & Guru</span>
+                                            <?php elseif ($w['target_audience'] === 'students'): ?>
+                                                <span class="font-semibold text-indigo-700">Santri Saja</span>
+                                            <?php else: ?>
+                                                <span class="font-semibold text-amber-700">Dewan Guru Saja</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="py-4 px-5 text-xs text-gray-500">
+                                            <div><?= htmlspecialchars($w['creator_name'] ?: 'Admin') ?></div>
+                                            <div class="text-[10px] text-gray-400"><?= date('d/m/Y H:i', strtotime($w['created_at'])) ?></div>
+                                        </td>
+                                        <td class="py-4 px-5 text-center">
+                                            <a href="<?= url('/smart-tap/waivers/delete?id=' . $w['id']) ?>" 
+                                               onclick="return confirm('Hapus catatan pengecualian <?= htmlspecialchars(addslashes($w['title'])) ?>? Kewajiban presensi pada sesi tersebut akan kembali normal.')" 
+                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition border border-rose-200/70"
+                                               title="Hapus Pengecualian">
+                                                <i class="ri-delete-bin-line"></i>
+                                                <span>Hapus</span>
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -647,7 +831,200 @@ if (!empty($events)) {
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- MODAL 3: FORM CATAT UDZUR / LIBUR PRESENSI     -->
+<!-- ============================================== -->
+<div id="modal-waiver" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col transform transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-cyan-50/80 to-blue-50/40 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-lg">
+                    <i class="ri-umbrella-line"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Catat Udzur / Libur Presensi Massal</h3>
+                    <p class="text-[11px] text-gray-500">Pengecualian berbasis tanggal (kekal di riwayat laporan)</p>
+                </div>
+            </div>
+            <button onclick="closeWaiverModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+
+        <form method="POST" action="<?= url('/smart-tap/waivers/store') ?>" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
+            <?= csrf_token_field() ?>
+
+            <!-- Preset Buttons -->
+            <div>
+                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Pilihan Cepat (Preset Template):</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="applyWaiverPreset('hujan')" class="p-2.5 rounded-xl border border-cyan-200 hover:bg-cyan-50 text-left transition flex flex-col items-start gap-1">
+                        <span class="text-xs font-bold text-cyan-900 flex items-center gap-1">🌧️ Hujan Deras</span>
+                        <span class="text-[10px] text-cyan-600">Sholat di Kamar</span>
+                    </button>
+                    <button type="button" onclick="applyWaiverPreset('perpulangan')" class="p-2.5 rounded-xl border border-purple-200 hover:bg-purple-50 text-left transition flex flex-col items-start gap-1">
+                        <span class="text-xs font-bold text-purple-900 flex items-center gap-1">🏠 Libur Pulang</span>
+                        <span class="text-[10px] text-purple-600">Perpulangan Santri</span>
+                    </button>
+                    <button type="button" onclick="applyWaiverPreset('teknis')" class="p-2.5 rounded-xl border border-amber-200 hover:bg-amber-50 text-left transition flex flex-col items-start gap-1">
+                        <span class="text-xs font-bold text-amber-900 flex items-center gap-1">⚡ Mati Lampu</span>
+                        <span class="text-[10px] text-amber-600">Gangguan Mesin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama / Judul Pengecualian <span class="text-rose-500">*</span></label>
+                <input type="text" name="title" id="waiver_title" required placeholder="Contoh: Sholat Subuh di Kamar (Hujan Deras)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+            </div>
+
+            <!-- Reason Type & Target Audience Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategori Alasan <span class="text-rose-500">*</span></label>
+                    <select name="reason_type" id="waiver_reason_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                        <option value="hujan_cuaca">🌧️ Hujan Deras / Cuaca Ekstrem</option>
+                        <option value="libur_perpulangan">🏠 Perpulangan Santri (Libur Semester)</option>
+                        <option value="kegiatan_pondok">🏆 Kegiatan / Lomba / Acara Pondok</option>
+                        <option value="darurat_teknis">⚡ Gangguan Teknis / Mati Lampu</option>
+                        <option value="libur_kbm">📚 Libur KBM Kelas</option>
+                        <option value="lainnya">📝 Alasan Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Sasaran / Target <span class="text-rose-500">*</span></label>
+                    <select name="target_audience" id="waiver_target_audience" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                        <option value="all">Semua (Santri & Guru)</option>
+                        <option value="students">Khusus Santri Saja</option>
+                        <option value="teachers">Khusus Dewan Guru Saja</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date Range Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Mulai Tanggal <span class="text-rose-500">*</span></label>
+                    <input type="date" name="start_date" id="waiver_start_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Sampai Tanggal <span class="text-rose-500">*</span></label>
+                    <input type="date" name="end_date" id="waiver_end_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                </div>
+            </div>
+
+            <!-- Scope -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Ruang Lingkup Presensi Yang Dibebaskan <span class="text-rose-500">*</span></label>
+                <select name="scope" id="waiver_scope" onchange="toggleWaiverScope(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                    <option value="all_events">Semua Presensi (KBM, Sholat & Kantor)</option>
+                    <option value="category">Berdasarkan Kategori Presensi</option>
+                    <option value="specific_event">Khusus 1 Event / Jadwal Tertentu Saja</option>
+                </select>
+            </div>
+
+            <!-- Category Selector (Conditional) -->
+            <div id="waiver_category_container" class="hidden">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Pilih Kategori Yang Dibebaskan</label>
+                <select name="target_category" id="waiver_target_category" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                    <option value="sholat">Sholat 5 Waktu di Masjid</option>
+                    <option value="office">Presensi Kantor (Office)</option>
+                    <option value="incidental">Event Insidental</option>
+                </select>
+            </div>
+
+            <!-- Specific Event Selector (Conditional) -->
+            <div id="waiver_event_container" class="hidden">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Pilih Event / Jadwal Tertentu</label>
+                <select name="event_id" id="waiver_event_id" class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2.5 px-3 font-medium text-gray-800">
+                    <option value="">-- Pilih Jadwal Event --</option>
+                    <?php if (!empty($events)): ?>
+                        <?php foreach ($events as $ev): ?>
+                            <option value="<?= $ev['id'] ?>">
+                                <?= htmlspecialchars($ev['name']) ?> (<?= htmlspecialchars(ucfirst($ev['category'] ?? 'Event')) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Keterangan Tambahan (Opsional)</label>
+                <textarea name="description" id="waiver_description" rows="2" placeholder="Catatan resmi pengasuhan santri..." class="w-full text-xs rounded-2xl border-gray-200 focus:border-cyan-500 focus:ring-cyan-500 py-2 px-3"></textarea>
+            </div>
+
+            <div class="bg-cyan-50/80 p-3.5 rounded-2xl border border-cyan-200/60 text-[11px] text-cyan-900 flex items-start gap-2">
+                <i class="ri-shield-check-line text-cyan-600 text-base mt-0.5 flex-shrink-0"></i>
+                <span class="leading-relaxed">Sistem akan otomatis mengecualikan sesi di atas sehingga santri/guru <strong>tidak tercatat Alpa</strong>. Nilai kedisiplinan tetap adil dan terjaga.</span>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 flex-shrink-0">
+                <button type="button" onclick="closeWaiverModal()" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
+                <button type="submit" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl transition shadow-sm">
+                    Simpan Pengecualian
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+// Modal Waiver
+function openWaiverModal() {
+    document.getElementById('modal-waiver').classList.remove('hidden');
+}
+function closeWaiverModal() {
+    document.getElementById('modal-waiver').classList.add('hidden');
+}
+function toggleWaiverScope(scope) {
+    const catBox = document.getElementById('waiver_category_container');
+    const evBox = document.getElementById('waiver_event_container');
+    if (scope === 'category') {
+        catBox.classList.remove('hidden');
+        evBox.classList.add('hidden');
+    } else if (scope === 'specific_event') {
+        catBox.classList.add('hidden');
+        evBox.classList.remove('hidden');
+    } else {
+        catBox.classList.add('hidden');
+        evBox.classList.add('hidden');
+    }
+}
+function applyWaiverPreset(type) {
+    const today = new Date().toISOString().split('T')[0];
+    const startInput = document.getElementById('waiver_start_date');
+    const endInput = document.getElementById('waiver_end_date');
+    const scopeSelect = document.getElementById('waiver_scope');
+    const reasonSelect = document.getElementById('waiver_reason_type');
+    const titleInput = document.getElementById('waiver_title');
+    const audienceSelect = document.getElementById('waiver_target_audience');
+    const catSelect = document.getElementById('waiver_target_category');
+
+    startInput.value = today;
+    endInput.value = today;
+
+    if (type === 'hujan') {
+        titleInput.value = 'Sholat di Kamar / Asrama (Hujan Deras)';
+        reasonSelect.value = 'hujan_cuaca';
+        audienceSelect.value = 'all';
+        scopeSelect.value = 'category';
+        catSelect.value = 'sholat';
+        toggleWaiverScope('category');
+    } else if (type === 'perpulangan') {
+        titleInput.value = 'Perpulangan Santri (Libur Pulang ke Rumah)';
+        reasonSelect.value = 'libur_perpulangan';
+        audienceSelect.value = 'students';
+        scopeSelect.value = 'all_events';
+        toggleWaiverScope('all_events');
+    } else if (type === 'teknis') {
+        titleInput.value = 'Gangguan Mesin Presensi / Mati Lampu';
+        reasonSelect.value = 'darurat_teknis';
+        audienceSelect.value = 'all';
+        scopeSelect.value = 'all_events';
+        toggleWaiverScope('all_events');
+    }
+}
 // Modal Permission
 function openPermissionModal() {
     document.getElementById('modal-permission').classList.remove('hidden');

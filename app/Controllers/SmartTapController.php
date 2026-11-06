@@ -21,6 +21,7 @@ class SmartTapController extends Controller
     private $logModel;
     private $officerModel;
     private $exemptionModel;
+    private $waiverModel;
     private $kelasModel;
     private $db;
 
@@ -35,6 +36,7 @@ class SmartTapController extends Controller
         $this->logModel = new SmartTapLogModel();
         $this->officerModel = new SmartTapOfficerModel();
         $this->exemptionModel = new SmartTapExemptionModel();
+        $this->waiverModel = new \App\Models\SmartTapWaiverModel();
         $this->kelasModel = new KelasModel();
     }
 
@@ -203,6 +205,7 @@ class SmartTapController extends Controller
 
         $permissions = $this->permissionModel->getPermissions($filters);
         $exemptions = $this->exemptionModel->getAll();
+        $waivers = $this->waiverModel->getAll();
         $events = $this->eventModel->getAllEvents();
         $classes = $this->kelasModel->findAllActive();
 
@@ -213,6 +216,7 @@ class SmartTapController extends Controller
             'tab' => $tab,
             'permissions' => $permissions,
             'exemptions' => $exemptions,
+            'waivers' => $waivers,
             'teachers' => $teachers,
             'events' => $events,
             'classes' => $classes,
@@ -318,6 +322,74 @@ class SmartTapController extends Controller
             $_SESSION['success'] = "Dispensasi guru berhasil dihapus. Guru kembali dikenakan kewajiban absensi.";
         }
         $this->redirect('/smart-tap/permissions?tab=exemptions');
+    }
+
+    /**
+     * Simpan Pengecualian / Udzur Presensi Massal (Cuaca, Libur Perpulangan, dll)
+     */
+    public function storeWaiver()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/smart-tap/permissions?tab=waivers');
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        $reasonType = $_POST['reason_type'] ?? 'lainnya';
+        $scope = $_POST['scope'] ?? 'all_events';
+        $targetCategory = !empty($_POST['target_category']) ? $_POST['target_category'] : null;
+        $eventId = !empty($_POST['event_id']) ? (int)$_POST['event_id'] : null;
+        $targetAudience = $_POST['target_audience'] ?? 'all';
+        $targetClasses = !empty($_POST['target_classes']) ? (is_array($_POST['target_classes']) ? implode(',', $_POST['target_classes']) : $_POST['target_classes']) : null;
+        $startDate = $_POST['start_date'] ?? date('Y-m-d');
+        $endDate = !empty($_POST['end_date']) ? $_POST['end_date'] : $startDate;
+        $description = trim($_POST['description'] ?? '');
+
+        if (empty($title)) {
+            $_SESSION['error'] = "Judul pengecualian presensi wajib diisi.";
+            $this->redirect('/smart-tap/permissions?tab=waivers');
+        }
+
+        if ($startDate > $endDate) {
+            $endDate = $startDate;
+        }
+
+        $this->waiverModel->store([
+            'title' => $title,
+            'reason_type' => $reasonType,
+            'scope' => $scope,
+            'target_category' => $targetCategory,
+            'event_id' => $eventId,
+            'target_audience' => $targetAudience,
+            'target_classes' => $targetClasses,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'description' => $description,
+            'created_by' => $_SESSION['user_id'] ?? null
+        ]);
+
+        $_SESSION['success'] = "Pengecualian presensi / Udzur berhasil disimpan.";
+        $this->redirect('/smart-tap/permissions?tab=waivers');
+    }
+
+    /**
+     * Hapus Pengecualian Presensi
+     */
+    public function deleteWaiver()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/smart-tap/permissions?tab=waivers');
+        }
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id) {
+            $this->waiverModel->delete($id);
+            $_SESSION['success'] = "Pengecualian presensi berhasil dihapus.";
+        }
+        $this->redirect('/smart-tap/permissions?tab=waivers');
     }
 
     /**

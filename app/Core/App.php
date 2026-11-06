@@ -260,6 +260,8 @@ class App
         $this->router->get('/smart-tap/permissions/delete', ['App\Controllers\SmartTapController', 'deletePermission']);
         $this->router->post('/smart-tap/exemptions/store', ['App\Controllers\SmartTapController', 'storeExemption']);
         $this->router->get('/smart-tap/exemptions/delete', ['App\Controllers\SmartTapController', 'deleteExemption']);
+        $this->router->post('/smart-tap/waivers/store', ['App\Controllers\SmartTapController', 'storeWaiver']);
+        $this->router->get('/smart-tap/waivers/delete', ['App\Controllers\SmartTapController', 'deleteWaiver']);
         $this->router->get('/smart-tap/events', ['App\Controllers\SmartTapController', 'events']);
         $this->router->post('/smart-tap/events/store', ['App\Controllers\SmartTapController', 'storeEvent']);
         $this->router->post('/smart-tap/events/update-participants', ['App\Controllers\SmartTapController', 'updateParticipants']);
