@@ -141,6 +141,28 @@ class SmartTapEventModel extends Model
             $activeEvents[] = $ev;
         }
 
+        // Khusus Hari Jumat (dayOfWeek == 5):
+        // Jika ada Sholat Jumat (target_gender == 'L' atau nama Sholat Jumat),
+        // maka Sholat Dzuhur otomatis dialihkan khusus Jamaah Putri ('P')
+        // sedangkan Jamaah Putra otomatis ke Sholat Jumat ('L')
+        if ((int)$dayOfWeek === 5) {
+            $hasJumat = false;
+            foreach ($activeEvents as $ev) {
+                if (($ev['category'] ?? '') === 'sholat' && (stripos($ev['name'], 'Jumat') !== false || ($ev['target_gender'] ?? '') === 'L')) {
+                    $hasJumat = true;
+                    break;
+                }
+            }
+            if ($hasJumat) {
+                foreach ($activeEvents as &$ev) {
+                    if (($ev['category'] ?? '') === 'sholat' && stripos($ev['name'], 'Dzuhur') !== false && ($ev['target_gender'] ?? 'all') === 'all') {
+                        $ev['target_gender'] = 'P';
+                    }
+                }
+                unset($ev);
+            }
+        }
+
         return $activeEvents;
     }
 

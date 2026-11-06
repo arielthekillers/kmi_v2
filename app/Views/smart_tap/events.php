@@ -356,9 +356,19 @@ foreach ($events as $ev) {
                             </div>
 
                             <?php if (!empty($ev['sync_academic_calendar'])): ?>
-                                <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center gap-1.5 text-[10px] font-bold text-indigo-700">
-                                    <i class="ri-calendar-check-line text-indigo-500 text-xs"></i>
-                                    <span>Sinkron Kalender KBM (Libur Jumat & Dispensasi)</span>
+                                <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px]">
+                                    <span class="font-bold text-indigo-700 flex items-center gap-1">
+                                        <i class="ri-calendar-check-line text-indigo-500"></i> Ikuti Kalender KBM
+                                    </span>
+                                    <button type="button" onclick='openDirectParticipantModal(<?= json_encode($ev) ?>)' class="font-bold px-2 py-0.5 rounded-md <?= !empty($ev['target_teachers']) ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' ?>">
+                                        <i class="ri-user-star-line"></i> <?= !empty($ev['target_teachers']) ? count(array_filter(explode(',', $ev['target_teachers']))) . ' Staf Khusus' : 'Semua Staf' ?>
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-end text-[10px]">
+                                    <button type="button" onclick='openDirectParticipantModal(<?= json_encode($ev) ?>)' class="font-bold px-2 py-0.5 rounded-md <?= !empty($ev['target_teachers']) ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' ?>">
+                                        <i class="ri-user-star-line"></i> <?= !empty($ev['target_teachers']) ? count(array_filter(explode(',', $ev['target_teachers']))) . ' Staf Khusus' : 'Semua Staf' ?>
+                                    </button>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -623,8 +633,14 @@ foreach ($events as $ev) {
         </div>
 
         <!-- Form with 2-Column Grid Body -->
-        <form method="POST" action="<?= url('/smart-tap/events/store') ?>" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <form method="POST" action="<?= url('/smart-tap/events/store') ?>" id="form_event_main" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <input type="hidden" name="id" id="event_id">
+            <input type="hidden" name="event_type" id="hidden_event_type" value="daily">
+            <input type="hidden" name="target_type" id="hidden_target_type" value="all">
+            <input type="hidden" name="target_gender" id="hidden_target_gender" value="all">
+            <input type="hidden" name="days_of_week" id="hidden_days_of_week" value="1,2,3,4,5,6,7">
+            <input type="hidden" name="target_teachers" id="hidden_target_teachers" value="">
+            <input type="hidden" name="target_classes" id="hidden_target_classes" value="">
 
             <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
                 <!-- Row 1: Kategori Kegiatan (Full Width 3 Kolom) -->
@@ -648,199 +664,149 @@ foreach ($events as $ev) {
 
                 <!-- Row 2: 2 Kolom Seimbang -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <!-- KOLOM KIRI: Informasi & Target Event -->
+                    <!-- KOLOM KIRI: Disesuaikan per Kategori -->
                     <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Kegiatan / Event <span class="text-rose-500">*</span></label>
-                            <input type="text" name="name" id="event_name" required placeholder="Contoh: Sholat Maghrib / Masuk Kantor Pagi / Upacara" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
+                        <!-- ========================= -->
+                        <!-- A. VIEW KHUSUS SHOLAT     -->
+                        <!-- ========================= -->
+                        <div id="view-sholat" class="space-y-3.5">
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Tipe Jadwal</label>
-                                <select name="event_type" id="event_type_select" onchange="toggleEventType(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
-                                    <option value="daily">Rutin Harian (Tiap Hari)</option>
-                                    <option value="one_off">Insidental (Tanggal Tertentu)</option>
-                                </select>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Pilih Waktu Sholat <span class="text-rose-500">*</span></label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button type="button" onclick="selectSholatPreset('Subuh')" class="sholat-pill px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition text-center">Subuh</button>
+                                    <button type="button" onclick="selectSholatPreset('Dzuhur')" class="sholat-pill px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition text-center">Dzuhur</button>
+                                    <button type="button" onclick="selectSholatPreset('Ashar')" class="sholat-pill px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition text-center">Ashar</button>
+                                    <button type="button" onclick="selectSholatPreset('Maghrib')" class="sholat-pill px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition text-center">Maghrib</button>
+                                    <button type="button" onclick="selectSholatPreset('Isya')" class="sholat-pill px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition text-center">Isya</button>
+                                    <button type="button" onclick="selectSholatPreset('Jumat')" class="sholat-pill px-2.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50/50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition text-center">🕌 Sholat Jumat</button>
+                                </div>
                             </div>
-                            <div id="field_event_date" class="hidden">
-                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Acara</label>
-                                <input type="date" name="event_date" id="event_date" value="<?= $today ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Jadwal Sholat</label>
+                                <input type="text" name="name" id="sholat_name" required placeholder="Contoh: Sholat Subuh" class="w-full text-xs rounded-2xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 py-2.5 px-3 font-medium">
+                            </div>
+
+                            <!-- Smart Note Sholat -->
+                            <div id="sholat_smart_banner" class="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-[11px] text-emerald-900 leading-relaxed">
+                                <span class="font-bold flex items-center gap-1.5 mb-0.5">
+                                    <i class="ri-information-line text-emerald-600"></i> Aturan Rutin Sholat 5 Waktu
+                                </span>
+                                <span id="sholat_smart_text">
+                                    Berjalan 24 jam penuh setiap hari untuk seluruh santri & ustadz.
+                                </span>
                             </div>
                         </div>
 
-                        <!-- Target Peserta & Target Gender -->
-                        <div class="grid grid-cols-2 gap-3">
+                        <!-- ========================= -->
+                        <!-- B. VIEW KHUSUS KANTOR     -->
+                        <!-- ========================= -->
+                        <div id="view-office" class="hidden space-y-3.5">
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-gray-700">Nama Presensi Kantor <span class="text-rose-500">*</span></label>
+                                    <div class="flex items-center gap-1.5 text-[10px]">
+                                        <button type="button" onclick="setOfficePreset('Masuk Kantor Pagi', '06:45', '07:15', '07:45')" class="text-blue-600 hover:underline font-bold">+ Pagi</button>
+                                        <span class="text-gray-300">&bull;</span>
+                                        <button type="button" onclick="setOfficePreset('Pulang Kantor Sore', '15:30', '16:00', '17:00')" class="text-blue-600 hover:underline font-bold">+ Sore</button>
+                                    </div>
+                                </div>
+                                <input type="text" name="office_name" id="office_name" placeholder="Contoh: Masuk Kantor Pagi / Piket Siang" class="w-full text-xs rounded-2xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 py-2.5 px-3 font-medium">
+                            </div>
+
+                            <!-- Opsi Kalender Akademik -->
+                            <div class="p-3 bg-blue-50/70 rounded-2xl border border-blue-200">
+                                <label class="flex items-start gap-2 cursor-pointer">
+                                    <input type="checkbox" name="sync_academic_calendar" id="office_sync_academic" value="1" checked class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
+                                    <div>
+                                        <span class="text-xs font-bold text-blue-950 flex items-center gap-1">
+                                            <i class="ri-calendar-check-line text-blue-600"></i> Ikuti Kalender Akademik KBM
+                                        </span>
+                                        <p class="text-[11px] text-blue-800/80 mt-0.5 leading-tight">
+                                            Otomatis libur saat santri/KBM libur (libur kalender akademik & dispensasi KBM). Hilangkan centang jika staf kantor tetap wajib hadir saat KBM santri libur.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Peserta Wajib Staf (Ringkas via Popup) -->
+                            <div class="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-indigo-950 block">Kewajiban Presensi Staf</span>
+                                    <span class="text-[11px] text-indigo-700 font-semibold truncate block" id="office-participant-label">
+                                        Seluruh Dewan Guru & Staf (Default)
+                                    </span>
+                                </div>
+                                <button type="button" onclick="openParticipantModalFromForm('office')" class="flex-shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1">
+                                    <i class="ri-user-settings-line"></i> Atur Staf Khusus
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ========================= -->
+                        <!-- C. VIEW KHUSUS INSIDENTAL -->
+                        <!-- ========================= -->
+                        <div id="view-incidental" class="hidden space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Acara / Kegiatan <span class="text-rose-500">*</span></label>
+                                <input type="text" name="incidental_name" id="incidental_name" placeholder="Contoh: Upacara Bendera / Rapat Pleno Guru" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium">
+                            </div>
+
+                            <!-- Pilihan Waktu Pelaksanaan -->
+                            <div class="p-3 bg-gray-50/80 rounded-2xl border border-gray-200 space-y-2.5">
+                                <label class="block text-xs font-bold text-gray-700">Waktu Pelaksanaan</label>
+                                <div class="flex items-center gap-4 text-xs font-medium">
+                                    <label class="flex items-center gap-1.5 cursor-pointer">
+                                        <input type="radio" name="incidental_time_mode" id="inc_time_one_off" value="one_off" checked onchange="toggleIncidentalTimeMode('one_off')" class="text-amber-600 focus:ring-amber-500">
+                                        <span>Satu Kali (Tanggal Tertentu)</span>
+                                    </label>
+                                    <label class="flex items-center gap-1.5 cursor-pointer">
+                                        <input type="radio" name="incidental_time_mode" id="inc_time_daily" value="daily" onchange="toggleIncidentalTimeMode('daily')" class="text-amber-600 focus:ring-amber-500">
+                                        <span>Rutin Mingguan</span>
+                                    </label>
+                                </div>
+
+                                <div id="box_incidental_date">
+                                    <input type="date" name="event_date" id="incidental_date_input" value="<?= $today ?>" class="w-full text-xs rounded-xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2 px-3 font-medium bg-white">
+                                </div>
+
+                                <div id="box_incidental_days" class="hidden space-y-1.5">
+                                    <div class="grid grid-cols-7 gap-1">
+                                        <?php
+                                        $dayNames = [1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 7 => 'Ahd'];
+                                        foreach ($dayNames as $num => $dName):
+                                        ?>
+                                            <label class="flex flex-col items-center justify-center p-1.5 rounded-xl border border-gray-200 cursor-pointer hover:bg-white transition text-center select-none bg-white">
+                                                <input type="checkbox" value="<?= $num ?>" checked onchange="syncIncidentalDays()" class="incidental-day-cb rounded text-amber-600 focus:ring-amber-500 mb-1 w-3.5 h-3.5">
+                                                <span class="text-[11px] font-bold text-gray-700"><?= $dName ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Target Peserta Dropdown -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Peserta</label>
-                                <select name="target_type" id="event_target_type" onchange="toggleTargetType(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
-                                    <option value="all">Santri & Pengajar (Semua)</option>
+                                <select id="incidental_target_type_select" onchange="onIncidentalTargetTypeChange(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium">
+                                    <option value="all">Santri & Guru (Semua)</option>
                                     <option value="students">Santri Saja</option>
                                     <option value="teachers">Pengajar / Pegawai Saja</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Target Gender / Jamaah</label>
-                                <select name="target_gender" id="event_target_gender" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3 font-medium">
-                                    <option value="all">Semua Jamaah (Putra & Putri)</option>
-                                    <option value="L">Khusus Putra / Laki-laki (Sholat Jumat)</option>
-                                    <option value="P">Khusus Putri / Perempuan (Dzuhur Jumat Putri)</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <!-- Target Khusus Pengajar / Guru (Checklist Personil) -->
-                        <div id="field_target_teachers_box" class="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2.5">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-bold text-indigo-950">
-                                    <i class="ri-user-star-line text-indigo-600 mr-1"></i> Kewajiban Absen Pengajar / Guru
-                                </label>
-                                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full" id="teacher-selected-count">
-                                    Semua Guru Wajib
-                                </span>
-                            </div>
-
-                            <div class="flex items-center gap-4 text-xs">
-                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                                    <input type="radio" name="teacher_target_mode" id="teacher_mode_all" value="all" checked onchange="toggleTeacherTargetMode('all')" class="text-indigo-600 focus:ring-indigo-500">
-                                    <span>Seluruh Dewan Guru</span>
-                                </label>
-                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                                    <input type="radio" name="teacher_target_mode" id="teacher_mode_specific" value="specific" onchange="toggleTeacherTargetMode('specific')" class="text-indigo-600 focus:ring-indigo-500">
-                                    <span class="text-indigo-700 font-bold">Hanya Guru Tertentu (Checklist)</span>
-                                </label>
-                            </div>
-
-                            <div id="teacher_checklist_container" class="hidden space-y-2 pt-2 border-t border-indigo-100">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="relative flex-1">
-                                        <i class="ri-search-line absolute left-2.5 top-2 text-gray-400 text-xs"></i>
-                                        <input type="text" id="teacher_search_input" oninput="filterTeacherChecklist(this.value)" placeholder="Cari nama Ustadz / Ustadzah..." class="w-full text-[11px] pl-7 pr-3 py-1.5 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white">
-                                    </div>
-                                    <div class="flex items-center gap-1 text-[10px]">
-                                        <button type="button" onclick="selectAllTeachers(true)" class="px-2 py-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-bold">Pilih Semua</button>
-                                        <button type="button" onclick="selectAllTeachers(false)" class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg font-bold">Batal Semua</button>
-                                    </div>
-                                </div>
-
-                                <div class="max-h-40 overflow-y-auto space-y-1 pr-1 bg-white p-2 rounded-xl border border-indigo-100" id="teacher_checklist_list">
-                                    <?php foreach ($teachers as $t): ?>
-                                        <label class="flex items-center justify-between p-1.5 hover:bg-indigo-50/50 rounded-lg cursor-pointer text-xs teacher-item" data-name="<?= strtolower(htmlspecialchars(($t['nama_gelar'] ?? '') . ' ' . ($t['nama'] ?? ''))) ?>">
-                                            <div class="flex items-center gap-2">
-                                                <input type="checkbox" name="target_teachers[]" value="<?= $t['id'] ?>" onchange="updateTeacherSelectedCount()" class="target-teacher-cb rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
-                                                <span class="font-medium text-gray-800 text-[11px]"><?= htmlspecialchars($t['nama_gelar'] ?? $t['nama']) ?></span>
-                                            </div>
-                                            <span class="text-[10px] text-gray-400 font-mono"><?= htmlspecialchars($t['nip'] ?: $t['username']) ?></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                                <p class="text-[10px] text-indigo-700/80 leading-tight">
-                                    *Hanya guru yang dicentang yang wajib hadir dan terkena rekap presensi. Guru lainnya tidak akan kena kewajiban absen.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Target Khusus Kelas Santri (Hanya muncul jika target = all atau students) -->
-                        <div id="field_target_classes_box" class="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2.5">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-bold text-blue-950">
-                                    <i class="ri-team-line text-blue-600 mr-1"></i> Kewajiban Absen Santri (Kelas)
-                                </label>
-                                <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full" id="class-selected-count">
-                                    Semua Kelas Wajib
-                                </span>
-                            </div>
-
-                            <div class="flex items-center gap-4 text-xs">
-                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                                    <input type="radio" name="class_target_mode" id="class_mode_all" value="all" checked onchange="toggleClassTargetMode('all')" class="text-blue-600 focus:ring-blue-500">
-                                    <span>Seluruh Kelas Santri</span>
-                                </label>
-                                <label class="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                                    <input type="radio" name="class_target_mode" id="class_mode_specific" value="specific" onchange="toggleClassTargetMode('specific')" class="text-blue-600 focus:ring-blue-500">
-                                    <span class="text-blue-700 font-bold">Hanya Kelas Tertentu</span>
-                                </label>
-                            </div>
-
-                            <div id="class_checklist_container" class="hidden space-y-2 pt-2 border-t border-blue-100">
-                                <div class="flex items-center justify-end gap-1 text-[10px]">
-                                    <button type="button" onclick="selectAllClasses(true)" class="px-2 py-1 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg font-bold">Pilih Semua</button>
-                                    <button type="button" onclick="selectAllClasses(false)" class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg font-bold">Batal Semua</button>
-                                </div>
-                                <div class="max-h-36 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-1.5 pr-1 bg-white p-2 rounded-xl border border-blue-100">
-                                    <?php foreach ($classes as $c): ?>
-                                        <label class="flex items-center gap-1.5 p-1.5 hover:bg-blue-50/50 rounded-lg cursor-pointer text-xs border border-gray-100">
-                                            <input type="checkbox" name="target_classes[]" value="<?= $c['id'] ?>" onchange="updateClassSelectedCount()" class="target-class-cb rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5">
-                                            <span class="font-medium text-gray-800 text-[11px]"><?= htmlspecialchars(($c['tingkat'] ?? '') . ' ' . ($c['abjad'] ?? '')) ?></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hari Berlaku Rutin (Untuk Jadwal Harian) -->
-                        <div id="field_days_of_week" class="p-3.5 bg-gray-50/80 rounded-2xl border border-gray-200/80 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-bold text-gray-700">
-                                    <i class="ri-calendar-line text-indigo-600 mr-1"></i> Hari Aktif Rutin <span class="text-rose-500">*</span>
-                                </label>
-                                <div class="flex items-center gap-1.5 text-[10px] font-semibold">
-                                    <button type="button" onclick="setDaysPreset('all')" class="text-indigo-600 hover:underline">Semua Hari</button>
-                                    <span class="text-gray-300">&bull;</span>
-                                    <button type="button" onclick="setDaysPreset('no_friday')" class="text-amber-600 hover:underline" title="Sabtu s/d Kamis (Cocok untuk Sholat Dzuhur)">Tanpa Jumat</button>
-                                    <span class="text-gray-300">&bull;</span>
-                                    <button type="button" onclick="setDaysPreset('friday_only')" class="text-emerald-600 hover:underline" title="Khusus Hari Jumat (Cocok untuk Sholat Jumat)">Khusus Jumat</button>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-7 gap-1">
-                                <?php
-                                $dayList = [
-                                    1 => 'Sen',
-                                    2 => 'Sel',
-                                    3 => 'Rab',
-                                    4 => 'Kam',
-                                    5 => 'Jum',
-                                    6 => 'Sab',
-                                    7 => 'Ahd'
-                                ];
-                                foreach ($dayList as $num => $dayName):
-                                    $isJum = ($num === 5);
-                                ?>
-                                    <label class="flex flex-col items-center justify-center p-1.5 rounded-xl border border-gray-200 cursor-pointer hover:bg-white transition text-center select-none bg-white/70" id="day-lbl-<?= $num ?>">
-                                        <input type="checkbox" name="days_of_week[]" value="<?= $num ?>" checked class="day-checkbox rounded text-indigo-600 focus:ring-indigo-500 mb-1 w-3.5 h-3.5">
-                                        <span class="text-[11px] font-bold <?= $isJum ? 'text-emerald-700 font-extrabold' : 'text-gray-700' ?>"><?= $dayName ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                            <p id="days_hint_text" class="text-[10px] text-gray-500 leading-tight">
-                                <em>Panduan Sholat Jumat:</em> Atur <strong>Sholat Dzuhur</strong> dengan preset <u>Tanpa Jumat</u>, lalu buat event baru <strong>Sholat Jumat</strong> dengan preset <u>Khusus Jumat</u>.
-                            </p>
-                        </div>
-
-                        <!-- Sinkronisasi Kalender Akademik & KBM -->
-                        <div id="field_sync_academic" class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/70">
-                            <label class="flex items-start gap-2.5 cursor-pointer">
-                                <input type="checkbox" name="sync_academic_calendar" id="event_sync_academic" value="1" checked class="mt-0.5 rounded text-blue-600 focus:ring-blue-500">
-                                <div>
-                                    <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-                                        <i class="ri-calendar-check-line text-blue-600"></i>
-                                        Sinkronkan Kalender Akademik & KBM (Override Hari Libur)
+                            <!-- Peserta Wajib Khusus (Ringkas via Popup) -->
+                            <div class="p-3 bg-amber-50/70 rounded-2xl border border-amber-200 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-amber-950 block">Kewajiban Khusus</span>
+                                    <span class="text-[11px] text-amber-800 font-semibold truncate block" id="incidental-participant-label">
+                                        Seluruh Peserta Sesuai Target
                                     </span>
-                                    <p class="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
-                                        Jika dicentang: Presensi otomatis diliburkan saat ada <strong>libur kalender akademik</strong> atau agenda <strong>dispensasi KBM</strong>.
-                                        <span class="block text-amber-800 mt-1 font-medium bg-amber-50 p-1.5 rounded-lg border border-amber-200/60">
-                                            💡 <strong>Catatan:</strong> Jika staf kantor / guru tetap wajib masuk bekerja saat KBM santri libur (misal libur hari Kamis/libur semester), <u>jangan centang (uncheck)</u> opsi ini.
-                                        </span>
-                                    </p>
                                 </div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center gap-2 pt-1">
-                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
-                                <input type="checkbox" name="is_active" id="event_is_active" value="1" checked class="rounded text-indigo-600 focus:ring-indigo-500">
-                                <span>Event Aktif</span>
-                            </label>
+                                <button type="button" onclick="openParticipantModalFromForm('incidental')" class="flex-shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1">
+                                    <i class="ri-user-search-line"></i> Pilih Peserta Tertentu
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -898,6 +864,13 @@ foreach ($events as $ev) {
                                 </div>
                             </div>
                         </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
+                                <input type="checkbox" name="is_active" id="event_is_active" value="1" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Event Ini Aktif</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -911,8 +884,149 @@ foreach ($events as $ev) {
     </div>
 </div>
 
+<!-- ============================================================== -->
+<!-- POPUP MODAL TERPISAH: PILIH PESERTA WAJIB (GURU & KELAS SANTRI)  -->
+<!-- ============================================================== -->
+<div id="modal-target-participants" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden animate-scale-up">
+        <!-- Header -->
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/60">
+            <div>
+                <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <i class="ri-user-star-line text-indigo-600"></i> Pilih Peserta Wajib Presensi
+                </h3>
+                <p class="text-xs text-gray-500 mt-0.5">Peserta yang dicentang wajib hadir. Yang tidak dicentang tidak akan kena kewajiban absen.</p>
+            </div>
+            <button type="button" onclick="closeParticipantModal()" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center text-lg">&times;</button>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="px-5 pt-3 border-b border-gray-100 flex items-center gap-4 text-xs font-bold" id="popup-tab-bar">
+            <button type="button" onclick="switchPopupTab('teachers')" id="popup-tab-teachers-btn" class="pb-2.5 border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-1.5">
+                <i class="ri-user-tie-line"></i> Dewan Guru & Staf
+                <span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full" id="popup-badge-teacher-count">0 Terpilih</span>
+            </button>
+            <button type="button" onclick="switchPopupTab('classes')" id="popup-tab-classes-btn" class="pb-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-700 flex items-center gap-1.5">
+                <i class="ri-team-line"></i> Kelas Santri
+                <span class="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full" id="popup-badge-class-count">0 Terpilih</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 overflow-y-auto flex-1 space-y-4">
+            <!-- Tab 1: Guru -->
+            <div id="popup-panel-teachers" class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="relative flex-1">
+                        <i class="ri-search-line absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        <input type="text" id="popup_teacher_search" oninput="filterPopupTeacherList(this.value)" placeholder="Cari nama Ustadz / Ustadzah atau NIP..." class="w-full text-xs pl-8 pr-3 py-2 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50/50">
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs">
+                        <button type="button" onclick="selectAllPopupTeachers(true)" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition">Pilih Semua</button>
+                        <button type="button" onclick="selectAllPopupTeachers(false)" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold transition">Batal Semua</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1" id="popup-teachers-grid">
+                    <?php foreach ($teachers as $t): ?>
+                        <label class="flex items-center justify-between p-2.5 hover:bg-indigo-50/50 rounded-xl cursor-pointer border border-gray-100 transition popup-teacher-item" data-name="<?= strtolower(htmlspecialchars(($t['nama_gelar'] ?? '') . ' ' . ($t['nama'] ?? ''))) ?>">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <input type="checkbox" value="<?= $t['id'] ?>" onchange="updatePopupCounters()" class="popup-t-cb rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-gray-800 truncate"><?= htmlspecialchars($t['nama_gelar'] ?? $t['nama']) ?></div>
+                                    <div class="text-[10px] text-gray-400 font-mono"><?= htmlspecialchars($t['nip'] ?: $t['username']) ?></div>
+                                </div>
+                            </div>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Tab 2: Kelas Santri -->
+            <div id="popup-panel-classes" class="hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Centang kelas yang memiliki kewajiban hadir:</span>
+                    <div class="flex items-center gap-1.5 text-xs">
+                        <button type="button" onclick="selectAllPopupClasses(true)" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold transition">Pilih Semua</button>
+                        <button type="button" onclick="selectAllPopupClasses(false)" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold transition">Batal Semua</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1">
+                    <?php foreach ($classes as $c): ?>
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 hover:bg-blue-50/50 cursor-pointer transition">
+                            <input type="checkbox" value="<?= $c['id'] ?>" onchange="updatePopupCounters()" class="popup-c-cb rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                            <span class="text-xs font-bold text-gray-700"><?= htmlspecialchars(($c['tingkat'] ?? '') . ' ' . ($c['abjad'] ?? '')) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+            <span class="text-xs text-gray-500 font-medium" id="popup-summary-text">0 Guru & 0 Kelas Terpilih</span>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeParticipantModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-xl transition">Batal</button>
+                <button type="button" onclick="applyParticipantModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1">
+                    <i class="ri-check-line"></i> Simpan & Terapkan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Form for Direct Participant Update (From Event Cards) -->
+<form id="form_direct_participant_update" method="POST" action="<?= url('/smart-tap/events/update-participants') ?>" class="hidden">
+    <input type="hidden" name="id" id="direct_event_id">
+    <input type="hidden" name="target_teachers" id="direct_target_teachers">
+    <input type="hidden" name="target_classes" id="direct_target_classes">
+</form>
+
 <script>
-// Filter Tab switching
+// Preset Data Sholat 5 Waktu & Sholat Jumat
+const SHOLAT_CONFIG = {
+    'Subuh': {
+        name: 'Sholat Subuh',
+        open: '04:00', start: '04:30', close: '05:00',
+        gender: 'all', days: '1,2,3,4,5,6,7',
+        banner: 'Berjalan 24 jam penuh setiap hari untuk seluruh jamaah (Santri & Ustadz).'
+    },
+    'Dzuhur': {
+        name: 'Sholat Dzuhur',
+        open: '11:45', start: '12:15', close: '12:45',
+        gender: 'all', days: '1,2,3,4,5,6,7',
+        banner: 'Bergulir tiap hari. Khusus di hari Jumat, otomatis berlaku untuk Jamaah Putri (Santriwati & Ustadzah), sedangkan Jamaah Putra Sholat Jumat.'
+    },
+    'Ashar': {
+        name: 'Sholat Ashar',
+        open: '15:00', start: '15:30', close: '16:00',
+        gender: 'all', days: '1,2,3,4,5,6,7',
+        banner: 'Berjalan 24 jam penuh setiap hari untuk seluruh jamaah (Santri & Ustadz).'
+    },
+    'Maghrib': {
+        name: 'Sholat Maghrib',
+        open: '17:45', start: '18:15', close: '18:45',
+        gender: 'all', days: '1,2,3,4,5,6,7',
+        banner: 'Berjalan 24 jam penuh setiap hari untuk seluruh jamaah (Santri & Ustadz).'
+    },
+    'Isya': {
+        name: 'Sholat Isya',
+        open: '19:00', start: '19:30', close: '20:00',
+        gender: 'all', days: '1,2,3,4,5,6,7',
+        banner: 'Berjalan 24 jam penuh setiap hari untuk seluruh jamaah (Santri & Ustadz).'
+    },
+    'Jumat': {
+        name: 'Sholat Jumat',
+        open: '11:15', start: '11:45', close: '12:30',
+        gender: 'L', days: '5',
+        banner: '🕌 Khusus Hari Jumat & Jamaah Putra (Santri & Ustadz). Menggantikan sholat Dzuhur bagi jamaah putra.'
+    }
+};
+
+let currentModalMode = 'form'; // 'form' or 'direct'
+let directTargetEventId = null;
+
+// Tab Filter di Atas Halaman Utama
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('bg-indigo-50', 'text-indigo-700', 'border', 'border-indigo-200/60', 'shadow-xs');
@@ -958,135 +1072,29 @@ function switchTab(tab) {
     }
 }
 
-// Modal Form Logic
-function setDaysPreset(type) {
-    document.querySelectorAll('.day-checkbox').forEach(cb => {
-        const val = parseInt(cb.value);
-        if (type === 'all') {
-            cb.checked = true;
-        } else if (type === 'no_friday') {
-            cb.checked = (val !== 5); // 1,2,3,4,6,7
-        } else if (type === 'friday_only') {
-            cb.checked = (val === 5); // 5 only
-        }
-    });
-}
-
-// Target Audience Handlers
-function toggleTargetType(val) {
-    const boxTeachers = document.getElementById('field_target_teachers_box');
-    const boxClasses = document.getElementById('field_target_classes_box');
-    if (val === 'teachers') {
-        boxTeachers.classList.remove('hidden');
-        boxClasses.classList.add('hidden');
-    } else if (val === 'students') {
-        boxTeachers.classList.add('hidden');
-        boxClasses.classList.remove('hidden');
-    } else { // all
-        boxTeachers.classList.remove('hidden');
-        boxClasses.classList.remove('hidden');
-    }
-}
-
-function toggleTeacherTargetMode(mode) {
-    const container = document.getElementById('teacher_checklist_container');
-    if (mode === 'specific') {
-        container.classList.remove('hidden');
-    } else {
-        container.classList.add('hidden');
-        document.querySelectorAll('.target-teacher-cb').forEach(cb => cb.checked = false);
-    }
-    updateTeacherSelectedCount();
-}
-
-function updateTeacherSelectedCount() {
-    const isAll = document.getElementById('teacher_mode_all').checked;
-    const badge = document.getElementById('teacher-selected-count');
-    if (isAll) {
-        badge.innerText = 'Semua Guru Wajib';
-        badge.className = 'text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full';
-    } else {
-        let count = 0;
-        document.querySelectorAll('.target-teacher-cb:checked').forEach(() => count++);
-        badge.innerText = `${count} Guru Terpilih`;
-        badge.className = 'text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full';
-    }
-}
-
-function selectAllTeachers(check) {
-    document.querySelectorAll('.target-teacher-cb').forEach(cb => {
-        // Hanya centang yang sedang terlihat (tidak tersembunyi karena search)
-        const parent = cb.closest('.teacher-item');
-        if (!parent || parent.style.display !== 'none') {
-            cb.checked = check;
-        }
-    });
-    updateTeacherSelectedCount();
-}
-
-function filterTeacherChecklist(query) {
-    query = (query || '').toLowerCase().trim();
-    document.querySelectorAll('.teacher-item').forEach(item => {
-        const name = item.getAttribute('data-name') || '';
-        item.style.display = name.includes(query) ? '' : 'none';
-    });
-}
-
-function toggleClassTargetMode(mode) {
-    const container = document.getElementById('class_checklist_container');
-    if (mode === 'specific') {
-        container.classList.remove('hidden');
-    } else {
-        container.classList.add('hidden');
-        document.querySelectorAll('.target-class-cb').forEach(cb => cb.checked = false);
-    }
-    updateClassSelectedCount();
-}
-
-function updateClassSelectedCount() {
-    const isAll = document.getElementById('class_mode_all').checked;
-    const badge = document.getElementById('class-selected-count');
-    if (isAll) {
-        badge.innerText = 'Semua Kelas Wajib';
-        badge.className = 'text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full';
-    } else {
-        let count = 0;
-        document.querySelectorAll('.target-class-cb:checked').forEach(() => count++);
-        badge.innerText = `${count} Kelas Terpilih`;
-        badge.className = 'text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full';
-    }
-}
-
-function selectAllClasses(check) {
-    document.querySelectorAll('.target-class-cb').forEach(cb => cb.checked = check);
-    updateClassSelectedCount();
-}
-
+// Buka Modal Tambah Event
 function openEventModal(defaultCategory = 'sholat') {
     document.getElementById('event_id').value = '';
-    document.getElementById('event_name').value = '';
-    document.getElementById('event_date').value = '<?= $today ?>';
-    document.getElementById('event_open_time').value = '04:00';
-    document.getElementById('event_start_time').value = '04:30';
-    document.getElementById('event_close_time').value = '05:00';
-    document.getElementById('event_after_close_action').value = 'reject';
-    document.getElementById('event_target_gender').value = 'all';
+    document.getElementById('hidden_target_teachers').value = '';
+    document.getElementById('hidden_target_classes').value = '';
     document.getElementById('event_is_active').checked = true;
-    document.getElementById('device_all_radio').checked = true;
-    toggleDeviceOptions(true);
-    document.querySelectorAll('.dev-checkbox').forEach(cb => cb.checked = false);
 
-    setDaysPreset('all');
     setCategoryRadio(defaultCategory);
 
-    // Reset Target Personil
-    document.getElementById('teacher_mode_all').checked = true;
-    toggleTeacherTargetMode('all');
-    document.getElementById('class_mode_all').checked = true;
-    toggleClassTargetMode('all');
-    toggleTargetType(document.getElementById('event_target_type').value);
+    // Default Sholat: Subuh
+    if (defaultCategory === 'sholat') {
+        selectSholatPreset('Subuh');
+    } else if (defaultCategory === 'office') {
+        setOfficePreset('Masuk Kantor Pagi', '06:45', '07:15', '07:45');
+    } else {
+        document.getElementById('incidental_name').value = '';
+        document.getElementById('event_open_time').value = '06:30';
+        document.getElementById('event_start_time').value = '07:00';
+        document.getElementById('event_close_time').value = '07:30';
+        toggleIncidentalTimeMode('one_off');
+    }
 
-    document.getElementById('event_sync_academic').checked = (defaultCategory === 'office');
+    updateParticipantBadges();
     document.getElementById('modal-event-title').innerText = 'Tambah Event Baru';
     document.getElementById('modal-event').classList.remove('hidden');
 }
@@ -1098,86 +1106,177 @@ function setCategoryRadio(cat) {
 }
 
 function onCategoryChange(cat) {
-    const hintEl = document.getElementById('days_hint_text');
-    if (cat === 'incidental') {
-        document.getElementById('event_type_select').value = 'one_off';
-        toggleEventType('one_off');
-        document.getElementById('event_target_type').value = 'all';
-        if (hintEl) hintEl.innerHTML = `<em>Event Insidental:</em> Pilih hari aktif mingguan jika berulang, atau ubah Tipe Jadwal di atas menjadi <u>Satu Kali Tanggal Tertentu</u> jika hanya berlaku pada tanggal khusus.`;
-    } else if (cat === 'office') {
-        document.getElementById('event_type_select').value = 'daily';
-        toggleEventType('daily');
-        document.getElementById('event_target_type').value = 'teachers';
-        document.getElementById('event_after_close_action').value = 'very_late';
-        document.getElementById('event_sync_academic').checked = true;
-        if (hintEl) hintEl.innerHTML = `<em>Jadwal Kantor:</em> Centang hari kerja aktif mingguan untuk pegawai kantor. Gunakan preset <u>Tanpa Jumat</u> jika libur rutin hari Jumat.`;
-    } else { // sholat
-        document.getElementById('event_type_select').value = 'daily';
-        toggleEventType('daily');
-        document.getElementById('event_target_type').value = 'all';
+    // Sembunyikan semua subview
+    document.getElementById('view-sholat').classList.add('hidden');
+    document.getElementById('view-office').classList.add('hidden');
+    document.getElementById('view-incidental').classList.add('hidden');
+
+    // Highlight card
+    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('border-emerald-500', 'border-blue-500', 'border-amber-500', 'bg-emerald-50/40', 'bg-blue-50/40', 'bg-amber-50/40'));
+
+    if (cat === 'sholat') {
+        document.getElementById('view-sholat').classList.remove('hidden');
+        document.getElementById('card-cat-sholat').classList.add('border-emerald-500', 'bg-emerald-50/40');
+        document.getElementById('hidden_event_type').value = 'daily';
+        document.getElementById('hidden_target_type').value = 'all';
         document.getElementById('event_after_close_action').value = 'reject';
-        document.getElementById('event_sync_academic').checked = false;
-        if (hintEl) hintEl.innerHTML = `<em>Panduan Sholat Jumat:</em> Atur <strong>Sholat Dzuhur</strong> dengan preset <u>Tanpa Jumat</u>, lalu buat event baru <strong>Sholat Jumat</strong> dengan preset <u>Khusus Jumat</u>.`;
+    } else if (cat === 'office') {
+        document.getElementById('view-office').classList.remove('hidden');
+        document.getElementById('card-cat-office').classList.add('border-blue-500', 'bg-blue-50/40');
+        document.getElementById('hidden_event_type').value = 'daily';
+        document.getElementById('hidden_target_type').value = 'teachers';
+        document.getElementById('hidden_target_gender').value = 'all';
+        document.getElementById('hidden_days_of_week').value = '1,2,3,4,5,6,7';
+        document.getElementById('event_after_close_action').value = 'very_late';
+    } else { // incidental
+        document.getElementById('view-incidental').classList.remove('hidden');
+        document.getElementById('card-cat-incidental').classList.add('border-amber-500', 'bg-amber-50/40');
+        document.getElementById('event_after_close_action').value = 'very_late';
+        syncIncidentalDays();
     }
-    toggleTargetType(document.getElementById('event_target_type').value);
 }
+
+// Preset Sholat 5 Waktu & Jumat
+function selectSholatPreset(key) {
+    const cfg = SHOLAT_CONFIG[key];
+    if (!cfg) return;
+
+    // Highlight pill
+    document.querySelectorAll('.sholat-pill').forEach(btn => {
+        btn.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600');
+        btn.classList.add('text-gray-700', 'border-gray-200');
+    });
+    event?.target?.classList?.add('bg-emerald-600', 'text-white', 'border-emerald-600');
+
+    document.getElementById('sholat_name').value = cfg.name;
+    document.getElementById('event_open_time').value = cfg.open;
+    document.getElementById('event_start_time').value = cfg.start;
+    document.getElementById('event_close_time').value = cfg.close;
+
+    document.getElementById('hidden_target_gender').value = cfg.gender;
+    document.getElementById('hidden_days_of_week').value = cfg.days;
+    document.getElementById('hidden_event_type').value = 'daily';
+    document.getElementById('hidden_target_type').value = 'all';
+
+    document.getElementById('sholat_smart_text').innerText = cfg.banner;
+}
+
+// Preset Kantor Pagi / Sore
+function setOfficePreset(name, open, start, close) {
+    document.getElementById('office_name').value = name;
+    document.getElementById('event_open_time').value = open;
+    document.getElementById('event_start_time').value = start;
+    document.getElementById('event_close_time').value = close;
+}
+
+// Mode Waktu Insidental (Satu Kali vs Rutin Mingguan)
+function toggleIncidentalTimeMode(mode) {
+    document.getElementById('hidden_event_type').value = mode;
+    if (mode === 'one_off') {
+        document.getElementById('box_incidental_date').classList.remove('hidden');
+        document.getElementById('box_incidental_days').classList.add('hidden');
+    } else {
+        document.getElementById('box_incidental_date').classList.add('hidden');
+        document.getElementById('box_incidental_days').classList.remove('hidden');
+        syncIncidentalDays();
+    }
+}
+
+function syncIncidentalDays() {
+    const checked = [];
+    document.querySelectorAll('.incidental-day-cb:checked').forEach(cb => checked.push(cb.value));
+    document.getElementById('hidden_days_of_week').value = checked.join(',') || '1,2,3,4,5,6,7';
+}
+
+function onIncidentalTargetTypeChange(val) {
+    document.getElementById('hidden_target_type').value = val;
+    updateParticipantBadges();
+}
+
+// Sinkronisasi Nama saat Submit
+document.getElementById('form_event_main').addEventListener('submit', function(e) {
+    const cat = document.querySelector('input[name="category"]:checked')?.value || 'sholat';
+    let nameField = null;
+
+    if (cat === 'sholat') {
+        nameField = document.getElementById('sholat_name');
+    } else if (cat === 'office') {
+        nameField = document.getElementById('office_name');
+    } else {
+        nameField = document.getElementById('incidental_name');
+    }
+
+    if (!nameField || !nameField.value.trim()) {
+        e.preventDefault();
+        alert('Silakan isi Nama Kegiatan / Event.');
+        if (nameField) nameField.focus();
+        return false;
+    }
+
+    // Pastikan input name yang dikirim ke server berisi value yang benar
+    nameField.setAttribute('name', 'name');
+    if (cat !== 'sholat') document.getElementById('sholat_name').removeAttribute('name');
+    if (cat !== 'office') document.getElementById('office_name').removeAttribute('name');
+    if (cat !== 'incidental') document.getElementById('incidental_name').removeAttribute('name');
+});
 
 function editEvent(ev) {
     document.getElementById('event_id').value = ev.id;
-    document.getElementById('event_name').value = ev.name;
-    document.getElementById('event_type_select').value = ev.event_type;
-    document.getElementById('event_date').value = ev.event_date || '<?= $today ?>';
-    document.getElementById('event_target_type').value = ev.target_type;
-    document.getElementById('event_target_gender').value = ev.target_gender || 'all';
-    document.getElementById('event_open_time').value = (ev.open_time || '').substr(0, 5);
-    document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
-    document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
-    document.getElementById('event_after_close_action').value = ev.after_close_action;
-    document.getElementById('event_is_active').checked = ev.is_active == 1;
-    document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
-
-    const days = (ev.days_of_week || '1,2,3,4,5,6,7').split(',').map(d => d.trim());
-    document.querySelectorAll('.day-checkbox').forEach(cb => {
-        cb.checked = days.includes(cb.value);
-    });
-
-    // Target Teachers (Khusus Personil Tertentu)
-    const targetTeachers = (ev.target_teachers || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (targetTeachers.length > 0) {
-        document.getElementById('teacher_mode_specific').checked = true;
-        toggleTeacherTargetMode('specific');
-        document.querySelectorAll('.target-teacher-cb').forEach(cb => {
-            cb.checked = targetTeachers.includes(cb.value);
-        });
-    } else {
-        document.getElementById('teacher_mode_all').checked = true;
-        toggleTeacherTargetMode('all');
-    }
-    updateTeacherSelectedCount();
-
-    // Target Classes (Khusus Kelas Tertentu)
-    const targetClasses = (ev.target_classes || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (targetClasses.length > 0) {
-        document.getElementById('class_mode_specific').checked = true;
-        toggleClassTargetMode('specific');
-        document.querySelectorAll('.target-class-cb').forEach(cb => {
-            cb.checked = targetClasses.includes(cb.value);
-        });
-    } else {
-        document.getElementById('class_mode_all').checked = true;
-        toggleClassTargetMode('all');
-    }
-    updateClassSelectedCount();
-    toggleTargetType(ev.target_type || 'all');
-
     let cat = ev.category || 'sholat';
     if (!ev.category) {
         if (ev.event_type === 'one_off') cat = 'incidental';
         else if (ev.name.toLowerCase().includes('kantor') || ev.name.toLowerCase().includes('piket')) cat = 'office';
     }
-    const radio = document.querySelector(`input[name="category"][value="${cat}"]`);
-    if (radio) radio.checked = true;
 
+    setCategoryRadio(cat);
+
+    // Isi Nama
+    if (cat === 'sholat') {
+        document.getElementById('sholat_name').value = ev.name;
+        // Deteksi banner preset
+        if (ev.name.toLowerCase().includes('jumat')) {
+            document.getElementById('sholat_smart_text').innerText = SHOLAT_CONFIG['Jumat'].banner;
+        } else if (ev.name.toLowerCase().includes('dzuhur')) {
+            document.getElementById('sholat_smart_text').innerText = SHOLAT_CONFIG['Dzuhur'].banner;
+        } else {
+            document.getElementById('sholat_smart_text').innerText = 'Berjalan 24 jam penuh setiap hari untuk seluruh jamaah (Santri & Ustadz).';
+        }
+    } else if (cat === 'office') {
+        document.getElementById('office_name').value = ev.name;
+        document.getElementById('office_sync_academic').checked = (ev.sync_academic_calendar == 1);
+    } else {
+        document.getElementById('incidental_name').value = ev.name;
+        document.getElementById('incidental_target_type_select').value = ev.target_type || 'all';
+        if (ev.event_type === 'one_off') {
+            document.getElementById('inc_time_one_off').checked = true;
+            document.getElementById('incidental_date_input').value = ev.event_date || '<?= $today ?>';
+            toggleIncidentalTimeMode('one_off');
+        } else {
+            document.getElementById('inc_time_daily').checked = true;
+            toggleIncidentalTimeMode('daily');
+            const d = (ev.days_of_week || '1,2,3,4,5,6,7').split(',');
+            document.querySelectorAll('.incidental-day-cb').forEach(cb => {
+                cb.checked = d.includes(cb.value);
+            });
+        }
+    }
+
+    // Hidden inputs
+    document.getElementById('hidden_event_type').value = ev.event_type;
+    document.getElementById('hidden_target_type').value = ev.target_type;
+    document.getElementById('hidden_target_gender').value = ev.target_gender || 'all';
+    document.getElementById('hidden_days_of_week').value = ev.days_of_week || '1,2,3,4,5,6,7';
+    document.getElementById('hidden_target_teachers').value = ev.target_teachers || '';
+    document.getElementById('hidden_target_classes').value = ev.target_classes || '';
+
+    // Times
+    document.getElementById('event_open_time').value = (ev.open_time || '').substr(0, 5);
+    document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
+    document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
+    document.getElementById('event_after_close_action').value = ev.after_close_action;
+    document.getElementById('event_is_active').checked = ev.is_active == 1;
+
+    // Devices
     const isAllDev = ev.allow_any_device == 1;
     document.getElementById('device_all_radio').checked = isAllDev;
     document.getElementById('device_specific_radio').checked = !isAllDev;
@@ -1188,61 +1287,20 @@ function editEvent(ev) {
         cb.checked = allowedList.includes(cb.value);
     });
 
+    updateParticipantBadges();
     document.getElementById('modal-event-title').innerText = 'Edit Event: ' + ev.name;
-    toggleEventType(ev.event_type);
     document.getElementById('modal-event').classList.remove('hidden');
 }
 
+// Buka Ulang Event Arsip / Duplikat
 function duplicateEvent(ev) {
-    // Open modal with pre-filled settings but blank id and today's date
-    openEventModal('incidental');
-    document.getElementById('event_name').value = ev.name;
-    document.getElementById('event_type_select').value = 'one_off';
-    document.getElementById('event_date').value = '<?= $today ?>';
-    document.getElementById('event_target_type').value = ev.target_type;
-    document.getElementById('event_target_gender').value = ev.target_gender || 'all';
-    document.getElementById('event_open_time').value = (ev.open_time || '').substr(0, 5);
-    document.getElementById('event_start_time').value = (ev.start_time || '').substr(0, 5);
-    document.getElementById('event_close_time').value = (ev.close_time || '').substr(0, 5);
-    document.getElementById('event_after_close_action').value = ev.after_close_action;
-    document.getElementById('event_sync_academic').checked = (ev.sync_academic_calendar == 1);
-
-    const days = (ev.days_of_week || '1,2,3,4,5,6,7').split(',').map(d => d.trim());
-    document.querySelectorAll('.day-checkbox').forEach(cb => {
-        cb.checked = days.includes(cb.value);
-    });
-
-    // Target Teachers
-    const targetTeachers = (ev.target_teachers || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (targetTeachers.length > 0) {
-        document.getElementById('teacher_mode_specific').checked = true;
-        toggleTeacherTargetMode('specific');
-        document.querySelectorAll('.target-teacher-cb').forEach(cb => {
-            cb.checked = targetTeachers.includes(cb.value);
-        });
-    } else {
-        document.getElementById('teacher_mode_all').checked = true;
-        toggleTeacherTargetMode('all');
-    }
-    updateTeacherSelectedCount();
-
-    // Target Classes
-    const targetClasses = (ev.target_classes || '').split(',').map(s => s.trim()).filter(Boolean);
-    if (targetClasses.length > 0) {
-        document.getElementById('class_mode_specific').checked = true;
-        toggleClassTargetMode('specific');
-        document.querySelectorAll('.target-class-cb').forEach(cb => {
-            cb.checked = targetClasses.includes(cb.value);
-        });
-    } else {
-        document.getElementById('class_mode_all').checked = true;
-        toggleClassTargetMode('all');
-    }
-    updateClassSelectedCount();
-    toggleTargetType(ev.target_type || 'all');
-
-    toggleEventType('one_off');
+    editEvent(ev);
+    document.getElementById('event_id').value = '';
     document.getElementById('modal-event-title').innerText = 'Gunakan Ulang Event: ' + ev.name;
+}
+
+function closeEventModal() {
+    document.getElementById('modal-event').classList.add('hidden');
 }
 
 function toggleDeviceOptions(isAll) {
@@ -1254,15 +1312,172 @@ function toggleDeviceOptions(isAll) {
     }
 }
 
-function closeEventModal() {
-    document.getElementById('modal-event').classList.add('hidden');
+// ==============================================================
+// POPUP LOGIC: PARTICIPANT MODAL
+// ==============================================================
+function updateParticipantBadges() {
+    const tVal = document.getElementById('hidden_target_teachers').value;
+    const cVal = document.getElementById('hidden_target_classes').value;
+
+    const tArr = tVal ? tVal.split(',').filter(Boolean) : [];
+    const cArr = cVal ? cVal.split(',').filter(Boolean) : [];
+
+    // Office Badge
+    const officeLabel = document.getElementById('office-participant-label');
+    if (officeLabel) {
+        if (tArr.length > 0) {
+            officeLabel.innerHTML = `<span class="text-indigo-900 font-bold bg-indigo-100 px-2 py-0.5 rounded-md">✓ ${tArr.length} Staf Khusus Terpilih</span>`;
+        } else {
+            officeLabel.innerText = 'Seluruh Dewan Guru & Staf (Default)';
+        }
+    }
+
+    // Incidental Badge
+    const incLabel = document.getElementById('incidental-participant-label');
+    if (incLabel) {
+        let parts = [];
+        if (tArr.length > 0) parts.push(`${tArr.length} Guru`);
+        if (cArr.length > 0) parts.push(`${cArr.length} Kelas`);
+        if (parts.length > 0) {
+            incLabel.innerHTML = `<span class="text-amber-900 font-bold bg-amber-100 px-2 py-0.5 rounded-md">✓ Khusus: ${parts.join(' & ')}</span>`;
+        } else {
+            incLabel.innerText = 'Seluruh Peserta Sesuai Target';
+        }
+    }
 }
 
-function toggleEventType(type) {
-    if (type === 'one_off') {
-        document.getElementById('field_event_date').classList.remove('hidden');
+function openParticipantModalFromForm(context) {
+    currentModalMode = 'form';
+    directTargetEventId = null;
+
+    // Load data dari hidden input form
+    const currentTeachers = (document.getElementById('hidden_target_teachers').value || '').split(',').map(s => s.trim()).filter(Boolean);
+    const currentClasses = (document.getElementById('hidden_target_classes').value || '').split(',').map(s => s.trim()).filter(Boolean);
+
+    loadPopupSelections(currentTeachers, currentClasses);
+
+    // Sesuaikan tab yang relevan
+    if (context === 'office') {
+        document.getElementById('popup-tab-classes-btn').classList.add('hidden');
+        switchPopupTab('teachers');
     } else {
-        document.getElementById('field_event_date').classList.add('hidden');
+        document.getElementById('popup-tab-classes-btn').classList.remove('hidden');
+        switchPopupTab('teachers');
+    }
+
+    document.getElementById('modal-target-participants').classList.remove('hidden');
+}
+
+function openDirectParticipantModal(ev) {
+    currentModalMode = 'direct';
+    directTargetEventId = ev.id;
+
+    const currentTeachers = (ev.target_teachers || '').split(',').map(s => s.trim()).filter(Boolean);
+    const currentClasses = (ev.target_classes || '').split(',').map(s => s.trim()).filter(Boolean);
+
+    loadPopupSelections(currentTeachers, currentClasses);
+
+    if (ev.category === 'office' || ev.target_type === 'teachers') {
+        document.getElementById('popup-tab-classes-btn').classList.add('hidden');
+        switchPopupTab('teachers');
+    } else {
+        document.getElementById('popup-tab-classes-btn').classList.remove('hidden');
+        switchPopupTab('teachers');
+    }
+
+    document.getElementById('modal-target-participants').classList.remove('hidden');
+}
+
+function loadPopupSelections(teachers, classes) {
+    document.querySelectorAll('.popup-t-cb').forEach(cb => {
+        cb.checked = teachers.includes(cb.value);
+    });
+    document.querySelectorAll('.popup-c-cb').forEach(cb => {
+        cb.checked = classes.includes(cb.value);
+    });
+    document.getElementById('popup_teacher_search').value = '';
+    filterPopupTeacherList('');
+    updatePopupCounters();
+}
+
+function switchPopupTab(tab) {
+    const tBtn = document.getElementById('popup-tab-teachers-btn');
+    const cBtn = document.getElementById('popup-tab-classes-btn');
+    const tPanel = document.getElementById('popup-panel-teachers');
+    const cPanel = document.getElementById('popup-panel-classes');
+
+    if (tab === 'teachers') {
+        tBtn.classList.add('border-indigo-600', 'text-indigo-600');
+        tBtn.classList.remove('border-transparent', 'text-gray-400');
+        cBtn.classList.remove('border-indigo-600', 'text-indigo-600');
+        cBtn.classList.add('border-transparent', 'text-gray-400');
+        tPanel.classList.remove('hidden');
+        cPanel.classList.add('hidden');
+    } else {
+        cBtn.classList.add('border-indigo-600', 'text-indigo-600');
+        cBtn.classList.remove('border-transparent', 'text-gray-400');
+        tBtn.classList.remove('border-indigo-600', 'text-indigo-600');
+        tBtn.classList.add('border-transparent', 'text-gray-400');
+        cPanel.classList.remove('hidden');
+        tPanel.classList.add('hidden');
+    }
+}
+
+function updatePopupCounters() {
+    const selectedT = document.querySelectorAll('.popup-t-cb:checked').length;
+    const selectedC = document.querySelectorAll('.popup-c-cb:checked').length;
+
+    document.getElementById('popup-badge-teacher-count').innerText = `${selectedT} Terpilih`;
+    document.getElementById('popup-badge-class-count').innerText = `${selectedC} Terpilih`;
+    document.getElementById('popup-summary-text').innerText = `${selectedT} Guru & ${selectedC} Kelas Terpilih`;
+}
+
+function selectAllPopupTeachers(select) {
+    document.querySelectorAll('.popup-teacher-item:not([style*="display: none"]) .popup-t-cb').forEach(cb => {
+        cb.checked = select;
+    });
+    updatePopupCounters();
+}
+
+function selectAllPopupClasses(select) {
+    document.querySelectorAll('.popup-c-cb').forEach(cb => {
+        cb.checked = select;
+    });
+    updatePopupCounters();
+}
+
+function filterPopupTeacherList(query) {
+    query = query.toLowerCase();
+    document.querySelectorAll('.popup-teacher-item').forEach(item => {
+        const name = item.getAttribute('data-name') || '';
+        item.style.display = name.includes(query) ? '' : 'none';
+    });
+}
+
+function closeParticipantModal() {
+    document.getElementById('modal-target-participants').classList.add('hidden');
+}
+
+function applyParticipantModal() {
+    const selectedTeachers = [];
+    document.querySelectorAll('.popup-t-cb:checked').forEach(cb => selectedTeachers.push(cb.value));
+
+    const selectedClasses = [];
+    document.querySelectorAll('.popup-c-cb:checked').forEach(cb => selectedClasses.push(cb.value));
+
+    const tStr = selectedTeachers.join(',');
+    const cStr = selectedClasses.join(',');
+
+    if (currentModalMode === 'form') {
+        document.getElementById('hidden_target_teachers').value = tStr;
+        document.getElementById('hidden_target_classes').value = cStr;
+        updateParticipantBadges();
+        closeParticipantModal();
+    } else if (currentModalMode === 'direct' && directTargetEventId) {
+        document.getElementById('direct_event_id').value = directTargetEventId;
+        document.getElementById('direct_target_teachers').value = tStr;
+        document.getElementById('direct_target_classes').value = cStr;
+        document.getElementById('form_direct_participant_update').submit();
     }
 }
 

@@ -262,6 +262,7 @@ class App
         $this->router->get('/smart-tap/exemptions/delete', ['App\Controllers\SmartTapController', 'deleteExemption']);
         $this->router->get('/smart-tap/events', ['App\Controllers\SmartTapController', 'events']);
         $this->router->post('/smart-tap/events/store', ['App\Controllers\SmartTapController', 'storeEvent']);
+        $this->router->post('/smart-tap/events/update-participants', ['App\Controllers\SmartTapController', 'updateParticipants']);
         $this->router->get('/smart-tap/events/delete', ['App\Controllers\SmartTapController', 'deleteEvent']);
         $this->router->get('/smart-tap/cards', ['App\Controllers\SmartTapController', 'cards']);
         $this->router->post('/smart-tap/cards/pair', ['App\Controllers\SmartTapController', 'pairCard']);

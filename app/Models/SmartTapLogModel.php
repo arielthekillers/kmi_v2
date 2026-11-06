@@ -175,6 +175,14 @@ class SmartTapLogModel extends Model
 
         if (!$event) return null;
 
+        // Khusus Hari Jumat untuk Sholat Dzuhur:
+        // Jika hari ini hari Jumat (day 5), Sholat Dzuhur otomatis dialihkan khusus Jamaah Putri ('P')
+        // karena Jamaah Putra melaksanakan Sholat Jumat.
+        $dayOfWeek = (int)date('N', strtotime($date));
+        if ($dayOfWeek === 5 && ($event['category'] ?? '') === 'sholat' && stripos($event['name'], 'Dzuhur') !== false && ($event['target_gender'] ?? 'all') === 'all') {
+            $event['target_gender'] = 'P';
+        }
+
         // 1. Target Audience
         $targetStudents = [];
         $targetTeachers = [];
@@ -358,6 +366,13 @@ class SmartTapLogModel extends Model
                 $effectiveTarget = 'teachers';
             } elseif ($event['target_type'] === 'students') {
                 $effectiveTarget = 'students';
+            }
+
+            // Khusus Hari Jumat untuk Sholat Dzuhur jika filter rentang 1 hari pada hari Jumat:
+            if (($event['category'] ?? '') === 'sholat' && stripos($event['name'], 'Dzuhur') !== false && ($event['target_gender'] ?? 'all') === 'all') {
+                if ($startDate === $endDate && (int)date('N', strtotime($startDate)) === 5) {
+                    $event['target_gender'] = 'P';
+                }
             }
         }
 

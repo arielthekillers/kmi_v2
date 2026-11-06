@@ -422,6 +422,31 @@ class SmartTapController extends Controller
         $this->redirect('/smart-tap/events');
     }
 
+    public function updateParticipants()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak.', 'error');
+            $this->redirect('/smart-tap/events');
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $targetTeachers = !empty($_POST['target_teachers']) 
+            ? (is_array($_POST['target_teachers']) ? implode(',', $_POST['target_teachers']) : $_POST['target_teachers']) 
+            : null;
+        $targetClasses = !empty($_POST['target_classes']) 
+            ? (is_array($_POST['target_classes']) ? implode(',', $_POST['target_classes']) : $_POST['target_classes']) 
+            : null;
+
+        if ($id) {
+            $db = $this->db ?? \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("UPDATE smart_tap_events SET target_teachers = ?, target_classes = ? WHERE id = ?");
+            $stmt->execute([$targetTeachers, $targetClasses, $id]);
+            $_SESSION['success'] = "Daftar peserta wajib absensi berhasil diperbarui.";
+        }
+        $this->redirect('/smart-tap/events');
+    }
+
     public function deleteEvent()
     {
         require_login();
