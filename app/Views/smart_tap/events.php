@@ -812,7 +812,7 @@ foreach ($events as $ev) {
                                     </label>
                                 <?php endforeach; ?>
                             </div>
-                            <p class="text-[10px] text-gray-400 leading-tight">
+                            <p id="days_hint_text" class="text-[10px] text-gray-500 leading-tight">
                                 <em>Panduan Sholat Jumat:</em> Atur <strong>Sholat Dzuhur</strong> dengan preset <u>Tanpa Jumat</u>, lalu buat event baru <strong>Sholat Jumat</strong> dengan preset <u>Khusus Jumat</u>.
                             </p>
                         </div>
@@ -824,10 +824,13 @@ foreach ($events as $ev) {
                                 <div>
                                     <span class="text-xs font-bold text-blue-950 flex items-center gap-1.5">
                                         <i class="ri-calendar-check-line text-blue-600"></i>
-                                        Sinkronkan Kalender Akademik & KBM
+                                        Sinkronkan Kalender Akademik & KBM (Override Hari Libur)
                                     </span>
                                     <p class="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
-                                        Otomatis meliburkan presensi ini pada <strong>hari Jumat</strong>, hari <strong>libur kalender akademik</strong>, serta saat ada agenda <strong>dispensasi KBM untuk seluruh kelas</strong>.
+                                        Jika dicentang: Presensi otomatis diliburkan saat ada <strong>libur kalender akademik</strong> atau agenda <strong>dispensasi KBM</strong>.
+                                        <span class="block text-amber-800 mt-1 font-medium bg-amber-50 p-1.5 rounded-lg border border-amber-200/60">
+                                            💡 <strong>Catatan:</strong> Jika staf kantor / guru tetap wajib masuk bekerja saat KBM santri libur (misal libur hari Kamis/libur semester), <u>jangan centang (uncheck)</u> opsi ini.
+                                        </span>
                                     </p>
                                 </div>
                             </label>
@@ -1095,22 +1098,26 @@ function setCategoryRadio(cat) {
 }
 
 function onCategoryChange(cat) {
+    const hintEl = document.getElementById('days_hint_text');
     if (cat === 'incidental') {
         document.getElementById('event_type_select').value = 'one_off';
         toggleEventType('one_off');
         document.getElementById('event_target_type').value = 'all';
+        if (hintEl) hintEl.innerHTML = `<em>Event Insidental:</em> Pilih hari aktif mingguan jika berulang, atau ubah Tipe Jadwal di atas menjadi <u>Satu Kali Tanggal Tertentu</u> jika hanya berlaku pada tanggal khusus.`;
     } else if (cat === 'office') {
         document.getElementById('event_type_select').value = 'daily';
         toggleEventType('daily');
         document.getElementById('event_target_type').value = 'teachers';
         document.getElementById('event_after_close_action').value = 'very_late';
         document.getElementById('event_sync_academic').checked = true;
+        if (hintEl) hintEl.innerHTML = `<em>Jadwal Kantor:</em> Centang hari kerja aktif mingguan untuk pegawai kantor. Gunakan preset <u>Tanpa Jumat</u> jika libur rutin hari Jumat.`;
     } else { // sholat
         document.getElementById('event_type_select').value = 'daily';
         toggleEventType('daily');
         document.getElementById('event_target_type').value = 'all';
         document.getElementById('event_after_close_action').value = 'reject';
         document.getElementById('event_sync_academic').checked = false;
+        if (hintEl) hintEl.innerHTML = `<em>Panduan Sholat Jumat:</em> Atur <strong>Sholat Dzuhur</strong> dengan preset <u>Tanpa Jumat</u>, lalu buat event baru <strong>Sholat Jumat</strong> dengan preset <u>Khusus Jumat</u>.`;
     }
     toggleTargetType(document.getElementById('event_target_type').value);
 }
