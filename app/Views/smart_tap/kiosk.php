@@ -56,11 +56,12 @@
             </div>
 
             <h2 class="text-2xl font-black text-white tracking-tight">Inisiasi Tablet Presensi</h2>
-            <p class="text-xs text-slate-400 mt-1">
-                Hubungkan tablet ini ke sistem KMI menggunakan <b>Kode Setup</b> dari dashboard Admin.
+            <p class="text-xs text-slate-400 mt-1" id="setup-step-subtitle">
+                Hubungkan tablet ini ke sistem Smart Tap menggunakan <b>Kode Setup</b> dari dashboard Admin.
             </p>
 
-            <form id="form-pair" onsubmit="handlePairing(event)" class="mt-6 text-left space-y-4">
+            <!-- STEP 1: HANDSHAKE (KODE SETUP) -->
+            <form id="setup-step-1" onsubmit="handleHandshake(event)" class="mt-6 text-left space-y-4">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">URL Endpoint Server KMI</label>
                     <input type="text" id="setup-endpoint" value="<?= url('') ?>" readonly class="w-full text-xs font-mono bg-slate-950 border border-slate-800 text-slate-400 rounded-xl px-3.5 py-2.5 focus:outline-none cursor-not-allowed">
@@ -68,24 +69,57 @@
 
                 <div>
                     <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kode Setup Perangkat (8 Karakter)</label>
-                    <input type="text" id="setup-code" placeholder="Contoh: P987-J78T" required maxlength="10" oninput="formatSetupCode(this)" class="w-full text-center text-xl font-mono font-black uppercase bg-slate-950 border-2 border-slate-700 text-indigo-400 tracking-widest rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 transition">
-                    <p class="text-[10px] text-slate-500 mt-1">Salin dari jendela popup <i>Inisiasi Perangkat</i> di web KMI.</p>
+                    <input type="text" id="setup-code" placeholder="Contoh: P987-J78T" required maxlength="10" oninput="formatSetupCode(this)" class="w-full text-center text-2xl font-mono font-black uppercase bg-slate-950 border-2 border-slate-700 text-indigo-400 tracking-widest rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 transition">
+                    <p class="text-[10px] text-slate-500 mt-1">Salin dari jendela popup <i>Inisiasi Perangkat Baru</i> di web KMI.</p>
                 </div>
 
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">PIN Otorisasi Kiosk</label>
-                    <input type="password" id="setup-pin" placeholder="Default: 1234" required maxlength="6" class="w-full text-center text-lg font-mono font-bold bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition">
-                </div>
+                <div id="setup-error-1" class="hidden text-xs text-rose-400 bg-rose-950/60 border border-rose-800/80 rounded-xl p-3 font-medium"></div>
 
-                <div id="setup-error" class="hidden text-xs text-rose-400 bg-rose-950/60 border border-rose-800/80 rounded-xl p-3 font-medium"></div>
-
-                <button type="submit" id="btn-submit-pair" class="w-full mt-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-                    <i class="ri-link"></i> Hubungkan Tablet Ini
+                <button type="submit" id="btn-submit-handshake" class="w-full mt-2 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                    <i class="ri-broadcast-line"></i> Hubungkan ke Server
                 </button>
             </form>
 
+            <!-- STEP 2: VERIFIKASI 2FA -->
+            <div id="setup-step-2" class="mt-5 text-center space-y-4 hidden">
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-left text-xs text-emerald-300 flex items-center gap-2.5">
+                    <i class="ri-checkbox-circle-fill text-2xl text-emerald-400 flex-shrink-0"></i>
+                    <div>
+                        <div class="font-bold text-white text-sm" id="wizard-device-name">Tablet Terhubung</div>
+                        <div class="text-[11px] text-emerald-400 mt-0.5">Server terhubung! Masukkan 6-digit Kode 2FA yang muncul di layar admin:</div>
+                    </div>
+                </div>
+
+                <div>
+                    <input type="text" id="setup-pairing-code" maxlength="6" autofocus placeholder="------" class="w-full text-center text-3xl tracking-[0.4em] font-mono font-black bg-slate-950 border-2 border-slate-700 rounded-2xl py-3 text-amber-400 focus:outline-none focus:border-amber-500">
+                    <div id="setup-error-2" class="hidden mt-2 text-xs text-rose-400 bg-rose-950/60 border border-rose-800/80 rounded-xl p-2.5 font-bold"></div>
+                </div>
+
+                <!-- On-Screen Numpad untuk Tablet Touchscreen -->
+                <div class="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                    <button type="button" onclick="press2FA('1')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">1</button>
+                    <button type="button" onclick="press2FA('2')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">2</button>
+                    <button type="button" onclick="press2FA('3')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">3</button>
+                    <button type="button" onclick="press2FA('4')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">4</button>
+                    <button type="button" onclick="press2FA('5')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">5</button>
+                    <button type="button" onclick="press2FA('6')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">6</button>
+                    <button type="button" onclick="press2FA('7')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">7</button>
+                    <button type="button" onclick="press2FA('8')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">8</button>
+                    <button type="button" onclick="press2FA('9')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">9</button>
+                    <button type="button" onclick="clear2FA()" class="py-2.5 bg-slate-800/60 hover:bg-slate-800 text-xs font-bold text-slate-400 rounded-xl transition">HAPUS</button>
+                    <button type="button" onclick="press2FA('0')" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-lg font-bold rounded-xl transition">0</button>
+                    <button type="button" id="btn-submit-pair" onclick="handlePair2FA()" class="py-2.5 bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 rounded-xl transition shadow-lg shadow-amber-500/30">AKTIFKAN</button>
+                </div>
+
+                <div class="pt-2">
+                    <button type="button" onclick="backToStep1()" class="text-xs text-slate-400 hover:text-slate-200 underline">
+                        &larr; Ganti Kode Setup
+                    </button>
+                </div>
+            </div>
+
             <div class="mt-6 pt-4 border-t border-slate-800/80 text-[10px] text-slate-500">
-                1 Perangkat = 1 Token Terikat Server &bull; Aman & Terenkripsi
+                1 Perangkat = 1 Token Terikat Server &bull; Verifikasi 2FA Aman
             </div>
         </div>
     </div>
@@ -396,46 +430,114 @@
         }
     });
 
-    // 2. Handle Pairing (Handshake + 2FA)
-    async function handlePairing(e) {
+    // 2. Handle Pairing Wizard (Step 1: Handshake -> Step 2: 2FA Pairing)
+    let currentSetupCode = '';
+
+    function press2FA(num) {
+        const inp = document.getElementById('setup-pairing-code');
+        if (inp.value.length < 6) {
+            inp.value += num;
+        }
+        document.getElementById('setup-error-2').classList.add('hidden');
+    }
+
+    function clear2FA() {
+        const inp = document.getElementById('setup-pairing-code');
+        inp.value = '';
+        document.getElementById('setup-error-2').classList.add('hidden');
+        inp.focus();
+    }
+
+    function backToStep1() {
+        document.getElementById('setup-step-2').classList.add('hidden');
+        document.getElementById('setup-step-1').classList.remove('hidden');
+        document.getElementById('setup-step-subtitle').innerHTML = 'Hubungkan tablet ini ke sistem Smart Tap menggunakan <b>Kode Setup</b> dari dashboard Admin.';
+        document.getElementById('setup-error-1').classList.add('hidden');
+    }
+
+    // Step 1: Handshake
+    async function handleHandshake(e) {
         e.preventDefault();
         const codeInput = document.getElementById('setup-code').value.trim();
-        const pinInput = document.getElementById('setup-pin').value.trim();
-        const errDiv = document.getElementById('setup-error');
-        const btn = document.getElementById('btn-submit-pair');
+        const errDiv = document.getElementById('setup-error-1');
+        const btn = document.getElementById('btn-submit-handshake');
 
         errDiv.classList.add('hidden');
         btn.disabled = true;
-        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Menghubungkan...';
+        btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> Menghubungi server...';
 
         try {
-            // Step 1: Handshake
-            const resHandshake = await fetch('<?= url("/api/smart-tap/handshake") ?>', {
+            const res = await fetch('<?= url("/api/smart-tap/handshake") ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ setup_code: codeInput, hostname: navigator.userAgent.substring(0, 50) })
             });
-            const dataH = await resHandshake.json();
+            const dataH = await res.json();
             if (!dataH.success) {
                 throw new Error(dataH.message || 'Kode setup tidak valid atau telah kedaluwarsa');
             }
 
-            // Step 2: 2FA Pairing
+            playBeep('success');
+            currentSetupCode = codeInput;
+
+            const devName = dataH.device ? `${dataH.device.name} (${dataH.device.code})` : 'Tablet Terdaftar';
+            document.getElementById('wizard-device-name').innerText = devName;
+
+            document.getElementById('setup-step-1').classList.add('hidden');
+            document.getElementById('setup-step-2').classList.remove('hidden');
+            document.getElementById('setup-step-subtitle').innerText = 'Step 2: Masukkan Kode Pairing 2FA';
+            clear2FA();
+        } catch (err) {
+            errDiv.innerText = err.message;
+            errDiv.classList.remove('hidden');
+            playBeep('error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-broadcast-line"></i> Hubungkan ke Server';
+        }
+    }
+
+    // Step 2: 2FA Pairing
+    async function handlePair2FA() {
+        const pairingInput = document.getElementById('setup-pairing-code').value.trim();
+        const errDiv = document.getElementById('setup-error-2');
+        const btn = document.getElementById('btn-submit-pair');
+
+        if (pairingInput.length !== 6) {
+            errDiv.innerText = 'Masukkan 6-digit kode pairing 2FA lengkap!';
+            errDiv.classList.remove('hidden');
+            playBeep('error');
+            return;
+        }
+
+        if (!currentSetupCode) {
+            errDiv.innerText = 'Sesi setup tidak ditemukan, silakan kembali ke Step 1.';
+            errDiv.classList.remove('hidden');
+            playBeep('error');
+            return;
+        }
+
+        errDiv.classList.add('hidden');
+        btn.disabled = true;
+        btn.innerText = 'MEMVERIFIKASI...';
+
+        try {
             const resPair = await fetch('<?= url("/api/smart-tap/pair") ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ setup_code: codeInput, pairing_code: pinInput })
+                body: JSON.stringify({ setup_code: currentSetupCode, pairing_code: pairingInput })
             });
             const dataP = await resPair.json();
             if (!dataP.success) {
-                throw new Error(dataP.message || 'Verifikasi PIN otorisasi gagal');
+                const attemptsMsg = dataP.attempts_left !== undefined ? ` (Sisa ${dataP.attempts_left}x)` : '';
+                throw new Error((dataP.message || 'Kode 2FA salah') + attemptsMsg);
             }
 
             // Save credentials
             deviceToken = dataP.device_token;
-            deviceCode = dataP.device_code || '';
-            deviceName = dataP.device_name || 'Tablet Kiosk';
-            devicePin = pinInput;
+            deviceCode = (dataP.device && dataP.device.code) || '';
+            deviceName = (dataP.device && dataP.device.name) || 'Tablet Kiosk';
+            devicePin = (dataP.device && dataP.device.pin_code) || '1234';
 
             localStorage.setItem('smart_tap_device_token', deviceToken);
             localStorage.setItem('smart_tap_device_code', deviceCode);
@@ -452,9 +554,25 @@
             playBeep('error');
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<i class="ri-link"></i> Hubungkan Tablet Ini';
+            btn.innerText = 'AKTIFKAN';
         }
     }
+
+    // Input Enter Listener untuk pairing code
+    window.addEventListener('DOMContentLoaded', () => {
+        const pairInp = document.getElementById('setup-pairing-code');
+        if (pairInp) {
+            pairInp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handlePair2FA();
+                }
+            });
+            pairInp.addEventListener('input', (e) => {
+                pairInp.value = e.target.value.replace(/\D/g, '').substring(0, 6);
+                document.getElementById('setup-error-2').classList.add('hidden');
+            });
+        }
+    });
 
     // 3. Init Kiosk Session
     function initKioskSession() {
