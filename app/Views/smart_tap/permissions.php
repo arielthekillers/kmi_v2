@@ -504,7 +504,7 @@ if (!empty($events)) {
                                 <th class="py-3.5 px-5">Jenis Izin</th>
                                 <th class="py-3.5 px-5">Rentang Tanggal</th>
                                 <th class="py-3.5 px-5">Alasan / Catatan</th>
-                                <th class="py-3.5 px-5 text-center w-24">Aksi</th>
+                                <th class="py-3.5 px-5 text-center w-28">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
@@ -578,13 +578,30 @@ if (!empty($events)) {
                                         <td class="py-4 px-5 text-xs text-gray-500 max-w-xs truncate">
                                             <?= htmlspecialchars($p['reason'] ?: '-') ?>
                                         </td>
-                                        <td class="py-4 px-5 text-center">
-                                            <a href="<?= url('/smart-tap/permissions/delete?id=' . $p['id']) ?>" 
-                                               onclick="return confirm('Hapus data izin ini?')" 
-                                               class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition"
-                                               title="Hapus Izin">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </a>
+                                        <td class="py-4 px-5 text-center whitespace-nowrap">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <button type="button" 
+                                                        onclick='editPermission(<?= htmlspecialchars(json_encode([
+                                                            "id" => $p["id"],
+                                                            "person_type" => $p["person_type"],
+                                                            "person_id" => $p["person_id"],
+                                                            "person_name" => $p["person_name"],
+                                                            "permission_type" => $p["permission_type"],
+                                                            "start_date" => $p["start_date"],
+                                                            "end_date" => $p["end_date"],
+                                                            "reason" => $p["reason"] ?? ""
+                                                        ]), ENT_QUOTES, "UTF-8") ?>)' 
+                                                        class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 transition"
+                                                        title="Edit Izin">
+                                                    <i class="ri-edit-line"></i>
+                                                </button>
+                                                <a href="<?= url('/smart-tap/permissions/delete?id=' . $p['id']) ?>" 
+                                                   onclick="return confirm('Hapus data izin <?= htmlspecialchars(addslashes($p['person_name'])) ?>?')" 
+                                                   class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition"
+                                                   title="Hapus Izin">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -609,23 +626,24 @@ if (!empty($events)) {
                     <i class="ri-hotel-bed-line"></i>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-gray-900">Form Perizinan Sementara</h3>
-                    <p class="text-[11px] text-gray-500">Santri / Guru tidak akan terhitung Alpa selama izin</p>
+                    <h3 id="modal-permission-title" class="text-base font-bold text-gray-900">Form Perizinan Sementara</h3>
+                    <p id="modal-permission-subtitle" class="text-[11px] text-gray-500">Santri / Guru tidak akan terhitung Alpa selama izin</p>
                 </div>
             </div>
             <button onclick="closePermissionModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
         </div>
 
         <form method="POST" action="<?= url('/smart-tap/permissions/store') ?>" class="p-6 space-y-4">
+            <input type="hidden" name="id" id="perm_id" value="">
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Kategori Peserta</label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer hover:bg-indigo-50/50 text-xs font-bold border-gray-200 transition">
-                        <input type="radio" name="person_type" value="student" checked onchange="togglePersonSearch('student')" class="text-indigo-600 focus:ring-indigo-500">
+                        <input type="radio" name="person_type" id="person_type_student" value="student" checked onchange="togglePersonSearch('student')" class="text-indigo-600 focus:ring-indigo-500">
                         <span>Santri</span>
                     </label>
                     <label class="flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer hover:bg-indigo-50/50 text-xs font-bold border-gray-200 transition">
-                        <input type="radio" name="person_type" value="teacher" onchange="togglePersonSearch('teacher')" class="text-indigo-600 focus:ring-indigo-500">
+                        <input type="radio" name="person_type" id="person_type_teacher" value="teacher" onchange="togglePersonSearch('teacher')" class="text-indigo-600 focus:ring-indigo-500">
                         <span>Pengajar / Guru</span>
                     </label>
                 </div>
@@ -649,7 +667,7 @@ if (!empty($events)) {
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Jenis Izin</label>
-                <select name="permission_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
+                <select name="permission_type" id="perm_type" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-3">
                     <option value="sakit">Sakit (Klinik Pondok / Istirahat Kamar)</option>
                     <option value="izin">Izin Pulang / Dinas Resmi</option>
                     <option value="tugas_luar">Tugas Luar / Kegiatan Pesantren</option>
@@ -660,22 +678,22 @@ if (!empty($events)) {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Mulai</label>
-                    <input type="date" name="start_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    <input type="date" name="start_date" id="perm_start_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Selesai</label>
-                    <input type="date" name="end_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    <input type="date" name="end_date" id="perm_end_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
                 </div>
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Alasan / Catatan (Opsional)</label>
-                <textarea name="reason" rows="2" placeholder="Contoh: Demam tinggi di Poskestren / Izin ke dokter spesialis" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3"></textarea>
+                <textarea name="reason" id="perm_reason" rows="2" placeholder="Contoh: Demam tinggi di Poskestren / Izin ke dokter spesialis" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3"></textarea>
             </div>
 
             <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
                 <button type="button" onclick="closePermissionModal()" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Batal</button>
-                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm">Simpan Izin</button>
+                <button type="submit" id="modal-permission-submit-btn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm">Simpan Izin</button>
             </div>
         </form>
     </div>
@@ -1027,10 +1045,79 @@ function applyWaiverPreset(type) {
 }
 // Modal Permission
 function openPermissionModal() {
+    resetPermissionModal();
     document.getElementById('modal-permission').classList.remove('hidden');
 }
 function closePermissionModal() {
     document.getElementById('modal-permission').classList.add('hidden');
+}
+function resetPermissionModal() {
+    document.getElementById('modal-permission-title').innerText = 'Form Perizinan Sementara';
+    document.getElementById('modal-permission-subtitle').innerText = 'Santri / Guru tidak akan terhitung Alpa selama izin';
+    document.getElementById('modal-permission-submit-btn').innerText = 'Simpan Izin';
+    document.getElementById('perm_id').value = '';
+
+    const radioStudent = document.getElementById('person_type_student');
+    if (radioStudent) radioStudent.checked = true;
+    currentType = 'student';
+
+    clearSelectedPerson();
+    const permType = document.getElementById('perm_type');
+    if (permType) permType.value = 'sakit';
+
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = document.getElementById('perm_start_date');
+    const endDate = document.getElementById('perm_end_date');
+    if (startDate) startDate.value = today;
+    if (endDate) endDate.value = today;
+
+    const reason = document.getElementById('perm_reason');
+    if (reason) reason.value = '';
+}
+
+function editPermission(data) {
+    resetPermissionModal();
+    document.getElementById('modal-permission-title').innerText = 'Edit Izin / Sakit';
+    document.getElementById('modal-permission-subtitle').innerText = 'Perbarui data perizinan santri atau pengajar';
+    document.getElementById('modal-permission-submit-btn').innerText = 'Perbarui Izin';
+
+    document.getElementById('perm_id').value = data.id || '';
+
+    const type = data.person_type || 'student';
+    if (type === 'teacher') {
+        const rTeacher = document.getElementById('person_type_teacher');
+        if (rTeacher) rTeacher.checked = true;
+    } else {
+        const rStudent = document.getElementById('person_type_student');
+        if (rStudent) rStudent.checked = true;
+    }
+    currentType = type;
+
+    if (data.person_id) {
+        selectPerson(data.person_id, data.person_name || 'Terpilih');
+    }
+
+    const permType = document.getElementById('perm_type');
+    if (permType && data.permission_type) {
+        permType.value = data.permission_type;
+    }
+
+    const startDate = document.getElementById('perm_start_date');
+    if (startDate && data.start_date) {
+        startDate.value = data.start_date;
+    }
+
+    const endDate = document.getElementById('perm_end_date');
+    if (endDate && data.end_date) {
+        endDate.value = data.end_date;
+    }
+
+    const reason = document.getElementById('perm_reason');
+    if (reason) {
+        reason.value = data.reason || '';
+    }
+
+    document.getElementById('modal-permission').classList.remove('hidden');
 }
 
 // Modal Exemption

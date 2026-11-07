@@ -228,6 +228,7 @@ class SmartTapController extends Controller
     {
         require_login();
 
+        $id = (int)($_POST['id'] ?? 0);
         $personType = $_POST['person_type'] ?? 'student';
         $personId = (int)($_POST['person_id'] ?? 0);
         $permType = $_POST['permission_type'] ?? 'izin';
@@ -238,12 +239,12 @@ class SmartTapController extends Controller
 
         if (!$personId) {
             $_SESSION['error'] = "Pilih santri atau pengajar terlebih dahulu.";
-            $this->redirect('/smart-tap/permissions');
+            $this->redirect('/smart-tap/permissions?tab=permissions');
         }
 
         $userId = $_SESSION['user_id'] ?? null;
 
-        $this->permissionModel->createPermission([
+        $data = [
             'person_type' => $personType,
             'person_id' => $personId,
             'permission_type' => $permType,
@@ -252,10 +253,17 @@ class SmartTapController extends Controller
             'event_ids' => $eventIds,
             'reason' => $reason,
             'created_by' => $userId
-        ]);
+        ];
 
-        $_SESSION['success'] = "Data perizinan berhasil disimpan.";
-        $this->redirect('/smart-tap/permissions');
+        if ($id > 0) {
+            $this->permissionModel->updatePermission($id, $data);
+            $_SESSION['success'] = "Data perizinan berhasil diperbarui.";
+        } else {
+            $this->permissionModel->createPermission($data);
+            $_SESSION['success'] = "Data perizinan berhasil disimpan.";
+        }
+
+        $this->redirect('/smart-tap/permissions?tab=permissions');
     }
 
     public function deletePermission()
@@ -266,7 +274,7 @@ class SmartTapController extends Controller
             $this->permissionModel->deletePermission($id);
             $_SESSION['success'] = "Data perizinan berhasil dihapus.";
         }
-        $this->redirect('/smart-tap/permissions');
+        $this->redirect('/smart-tap/permissions?tab=permissions');
     }
 
     public function storeExemption()
