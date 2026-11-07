@@ -635,6 +635,7 @@ foreach ($events as $ev) {
         <!-- Form with 2-Column Grid Body -->
         <form method="POST" action="<?= url('/smart-tap/events/store') ?>" id="form_event_main" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <input type="hidden" name="id" id="event_id">
+            <input type="hidden" name="name" id="hidden_event_name" value="">
             <input type="hidden" name="event_type" id="hidden_event_type" value="daily">
             <input type="hidden" name="target_type" id="hidden_target_type" value="all">
             <input type="hidden" name="target_gender" id="hidden_target_gender" value="all">
@@ -683,8 +684,8 @@ foreach ($events as $ev) {
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Jadwal Sholat</label>
-                                <input type="text" name="name" id="sholat_name" required placeholder="Contoh: Sholat Subuh" class="w-full text-xs rounded-2xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 py-2.5 px-3 font-medium">
+                                <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Jadwal Sholat <span class="text-rose-500">*</span></label>
+                                <input type="text" id="sholat_name" placeholder="Contoh: Sholat Subuh" class="w-full text-xs rounded-2xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 py-2.5 px-3 font-medium">
                             </div>
 
                             <!-- Smart Note Sholat -->
@@ -711,7 +712,7 @@ foreach ($events as $ev) {
                                         <button type="button" onclick="setOfficePreset('Pulang Kantor Sore', '15:30', '16:00', '17:00')" class="text-blue-600 hover:underline font-bold">+ Sore</button>
                                     </div>
                                 </div>
-                                <input type="text" name="office_name" id="office_name" placeholder="Contoh: Masuk Kantor Pagi / Piket Siang" class="w-full text-xs rounded-2xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 py-2.5 px-3 font-medium">
+                                <input type="text" id="office_name" placeholder="Contoh: Masuk Kantor Pagi / Piket Siang" class="w-full text-xs rounded-2xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 py-2.5 px-3 font-medium">
                             </div>
 
                             <!-- Opsi Kalender Akademik -->
@@ -749,7 +750,7 @@ foreach ($events as $ev) {
                         <div id="view-incidental" class="hidden space-y-3.5">
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1.5">Nama Acara / Kegiatan <span class="text-rose-500">*</span></label>
-                                <input type="text" name="incidental_name" id="incidental_name" placeholder="Contoh: Upacara Bendera / Rapat Pleno Guru" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium">
+                                <input type="text" id="incidental_name" placeholder="Contoh: Upacara Bendera / Rapat Pleno Guru" class="w-full text-xs rounded-2xl border-gray-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 font-medium">
                             </div>
 
                             <!-- Pilihan Waktu Pelaksanaan -->
@@ -1196,28 +1197,29 @@ function onIncidentalTargetTypeChange(val) {
 // Sinkronisasi Nama saat Submit
 document.getElementById('form_event_main').addEventListener('submit', function(e) {
     const cat = document.querySelector('input[name="category"]:checked')?.value || 'sholat';
+    let nameVal = '';
     let nameField = null;
 
     if (cat === 'sholat') {
         nameField = document.getElementById('sholat_name');
+        nameVal = nameField ? nameField.value.trim() : '';
     } else if (cat === 'office') {
         nameField = document.getElementById('office_name');
+        nameVal = nameField ? nameField.value.trim() : '';
     } else {
         nameField = document.getElementById('incidental_name');
+        nameVal = nameField ? nameField.value.trim() : '';
     }
 
-    if (!nameField || !nameField.value.trim()) {
+    if (!nameVal) {
         e.preventDefault();
         alert('Silakan isi Nama Kegiatan / Event.');
         if (nameField) nameField.focus();
         return false;
     }
 
-    // Pastikan input name yang dikirim ke server berisi value yang benar
-    nameField.setAttribute('name', 'name');
-    if (cat !== 'sholat') document.getElementById('sholat_name').removeAttribute('name');
-    if (cat !== 'office') document.getElementById('office_name').removeAttribute('name');
-    if (cat !== 'incidental') document.getElementById('incidental_name').removeAttribute('name');
+    // Set nilai final ke input hidden yang dikirim ke server
+    document.getElementById('hidden_event_name').value = nameVal;
 });
 
 function editEvent(ev) {
