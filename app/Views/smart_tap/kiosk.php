@@ -173,8 +173,13 @@
             <!-- 2. CENTER HERO TAP RESULT (Besar, Bold, Jelas Terbaca dari Jauh) -->
             <div id="tap-result-hero" class="hidden text-center max-w-2xl w-full mx-auto p-8 sm:p-10 rounded-3xl border-2 transition-all duration-300 transform scale-90 opacity-0 flex flex-col items-center justify-center shadow-2xl backdrop-blur-2xl bg-slate-900/95 relative z-30">
                 
-                <!-- Big Icon -->
+                <!-- Big Animated Icon / Photo Avatar -->
                 <div class="relative mb-4 flex items-center justify-center">
+                    <!-- Avatar Foto jika ada -->
+                    <div id="hero-avatar" class="hidden w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-700 overflow-hidden shadow-2xl bg-slate-800">
+                        <img id="hero-avatar-img" src="" alt="Foto Profil Santri / Pengajar" title="Foto Profil" class="w-full h-full object-cover">
+                    </div>
+                    <!-- Icon Box -->
                     <div id="hero-icon-box" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl text-white shadow-2xl transform transition-transform duration-300 bg-emerald-500 shadow-emerald-500/50">
                         <i id="hero-icon" class="ri-checkbox-circle-fill"></i>
                     </div>
@@ -537,9 +542,25 @@
         }
     }
 
+    // Helper: cek kecocokan target audience (santri vs pengajar)
+    function isAudienceMatch(ev, pType) {
+        const target = (ev.target_type || 'all').toLowerCase();
+        if ((target === 'students' || target === 'santri') && pType !== 'student') return false;
+        if ((target === 'teachers' || target === 'teacher' || target === 'guru' || target === 'pegawai') && pType !== 'teacher') return false;
+        return true;
+    }
+
+    // Helper: cek kecocokan gender
+    function isGenderMatch(ev, pGender) {
+        const tGen = (ev.target_gender || 'all').toUpperCase();
+        if (!tGen || tGen === 'ALL') return true;
+        if (!pGender) return true;
+        return tGen === pGender;
+    }
+
     // 6. Handle RFID Card Tap (Local Evaluation)
     function handleCardTap(uid) {
-        if (!uid || !activeEvent) return;
+        if (!uid) return;
 
         uid = uid.trim().toUpperCase();
         const now = new Date();
@@ -559,7 +580,9 @@
                 id: foundS.id,
                 nama: foundS.nama,
                 info: `Santri Kelas ${foundS.kelas_nama || '-'}`,
-                nis: foundS.nis
+                nis: foundS.nis,
+                gender: (foundS.gender || 'L').toUpperCase(),
+                photo: foundS.photo || null
             };
             personType = 'student';
         } else {
@@ -569,7 +592,9 @@
                     id: foundT.id,
                     nama: foundT.nama,
                     info: 'Pengajar / Guru',
-                    nis: foundT.nip || foundT.username
+                    nis: foundT.nip || foundT.username,
+                    gender: (foundT.gender || 'L').toUpperCase(),
+                    photo: foundT.photo || null
                 };
                 personType = 'teacher';
             }
@@ -586,27 +611,79 @@
             return;
         }
 
-        // Cek Kesesuaian Gender & Auto-Match Event (Misal Hari Jumat: Putra -> Sholat Jumat, Putri -> Sholat Dzuhur)
-        const personGender = (foundS ? foundS.gender : (foundT ? foundT.gender : 'L')) || 'L';
-        let currentTapEvent = activeEvent;
+        const personGender = person.gender || 'L';
         const allTodayEvents = masterData.today_events || [];
 
-        // Cari apakah ada sesi aktif saat ini yang khusus sesuai gender orang ini
-        const specificGenderEvent = allTodayEvents.find(ev => {
-            const evG = ev.target_gender || 'all';
-            return evG === personGender && (curTime >= ev.open_time && curTime <= ev.close_time);
-        });
-        if (specificGenderEvent) {
-            currentTapEvent = specificGenderEvent;
+        // 2. Tentukan Sesi Terbaik untuk Orang Ini (Auto Resolving Audience & Gender)
+        let currentTapEvent = null;
+
+        // Jika mode manual dan event terpilih cocok dengan orang ini:
+        if (operationalMode === 'manual' && manualEventId) {
+            const selEv = allTodayEvents.find(ev => ev.id == manualEventId);
+            if (selEv && isAudienceMatch(selEv, personType) && isGenderMatch(selEv, personGender)) {
+                currentTapEvent = selEv;
+            }
         }
 
-        // Validasi jika event saat ini memiliki batasan gender dan tidak cocok
-        const evRequiredGender = currentTapEvent.target_gender || 'all';
-        if (evRequiredGender !== 'all' && evRequiredGender !== personGender) {
+        // Cari sesi yang sedang buka resmi dan cocok audience & gender:
+        if (!currentTapEvent) {
+            const openMatch = allTodayEvents.find(ev => {
+                return isAudienceMatch(ev, personType) &&
+                       isGenderMatch(ev, personGender) &&
+                       (curTime >= ev.open_time && curTime <= ev.close_time);
+            });
+            if (openMatch) {
+                currentTapEvent = openMatch;
+            }
+        }
+
+        // Cari sesi yang baru selesai dan mengizinkan very_late:
+        if (!currentTapEvent) {
+            const veryLateMatch = allTodayEvents.find(ev => {
+                return isAudienceMatch(ev, personType) &&
+                       isGenderMatch(ev, personGender) &&
+                       ev.after_close_action === 'very_late' &&
+                       curTime > ev.close_time;
+            });
+            if (veryLateMatch) {
+                currentTapEvent = veryLateMatch;
+            }
+        }
+
+        // Fallback ke activeEvent saat ini jika ada
+        if (!currentTapEvent) {
+            currentTapEvent = activeEvent;
+        }
+
+        if (!currentTapEvent) {
             showTapResult({
                 success: false,
                 status: 'rejected',
-                message: evRequiredGender === 'L' ? 'SESI INI KHUSUS PUTRA' : 'SESI INI KHUSUS PUTRI',
+                message: 'TIDAK ADA SESI AKTIF UNTUK ANDA',
+                person: person
+            });
+            return;
+        }
+
+        // Validasi Audience
+        if (!isAudienceMatch(currentTapEvent, personType)) {
+            const isTargetSantri = (currentTapEvent.target_type || '').toLowerCase().includes('student') || (currentTapEvent.target_type || '').toLowerCase().includes('santri');
+            showTapResult({
+                success: false,
+                status: 'rejected',
+                message: isTargetSantri ? 'SESI INI KHUSUS SANTRI' : 'SESI INI KHUSUS PENGAJAR / GURU',
+                person: person
+            });
+            return;
+        }
+
+        // Validasi Gender
+        if (!isGenderMatch(currentTapEvent, personGender)) {
+            const reqG = (currentTapEvent.target_gender || 'all').toUpperCase();
+            showTapResult({
+                success: false,
+                status: 'rejected',
+                message: reqG === 'L' ? 'SESI INI KHUSUS SANTRI / JAMAAH PUTRA' : 'SESI INI KHUSUS SANTRI / JAMAAH PUTRI',
                 person: person
             });
             return;
@@ -640,20 +717,66 @@
             }
         }
 
-        // 2. Evaluasi Ketepatan Waktu
+        // Cek Jam Buka
+        if (curTime < currentTapEvent.open_time) {
+            showTapResult({
+                success: false,
+                status: 'rejected',
+                message: `ABSENSI BELUM DIBUKA (BUKA JAM ${currentTapEvent.open_time.substring(0, 5)})`,
+                person: person
+            });
+            return;
+        }
+
+        // 3. Anti Double-Tap (Deterministic per event, person, tanggal)
+        const logSeed = `${currentTapEvent.id}_${personType}_${person.id}_${todayStr}`;
+        const tappedStorageKey = 'smart_tap_tapped_' + todayStr;
+        let tappedSeeds = [];
+        try {
+            tappedSeeds = JSON.parse(localStorage.getItem(tappedStorageKey) || '[]');
+        } catch (e) {
+            tappedSeeds = [];
+        }
+
+        if (tappedSeeds.includes(logSeed)) {
+            showTapResult({
+                success: true,
+                status: 'already_tapped',
+                status_label: 'SUDAH ABSEN SEBELUMNYA',
+                message: 'Sudah melakukan absensi sebelumnya!',
+                person: person,
+                event_name: currentTapEvent.name
+            });
+            return;
+        }
+
+        // 4. Evaluasi Ketepatan Waktu
         let status = 'on_time';
         let statusLabel = 'HADIR TEPAT WAKTU';
         if (curTime > currentTapEvent.start_time && curTime <= currentTapEvent.close_time) {
             status = 'late';
             statusLabel = 'TERLAMBAT';
         } else if (curTime > currentTapEvent.close_time) {
-            status = 'very_late';
-            statusLabel = 'SANGAT TERLAMBAT';
+            if (currentTapEvent.after_close_action === 'very_late') {
+                status = 'very_late';
+                statusLabel = 'SANGAT TERLAMBAT';
+            } else {
+                showTapResult({
+                    success: false,
+                    status: 'rejected',
+                    message: `ABSENSI TELAH DITUTUP JAM ${currentTapEvent.close_time.substring(0, 5)}`,
+                    person: person
+                });
+                return;
+            }
         }
 
-        // 3. Simpan ke Antrean Offline
+        // 5. Catat ke Antrean Offline & Tandai Sudah Tap
+        tappedSeeds.push(logSeed);
+        localStorage.setItem(tappedStorageKey, JSON.stringify(tappedSeeds));
+
         const logEntry = {
-            log_uuid: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            log_uuid: 'log_' + logSeed + '_' + Date.now().toString(36),
             event_id: currentTapEvent.id,
             person_type: personType,
             person_id: person.id,
@@ -669,12 +792,13 @@
         localStorage.setItem('smart_tap_today_taps', todayTapsCount.toString());
         updateFooterCounters();
 
-        // 4. Tampilkan Result Hero Besar di Tengah
+        // 6. Tampilkan Result Hero Besar di Tengah
         showTapResult({
             success: true,
             status: status,
             status_label: statusLabel,
-            person: person
+            person: person,
+            event_name: currentTapEvent.name
         });
 
         // Trigger background sync
@@ -701,7 +825,19 @@
             sound: 'success'
         };
 
-        if (data.status === 'late') {
+        if (data.status === 'already_tapped') {
+            theme = {
+                cardBg: 'bg-slate-900/95',
+                border: 'border-cyan-500',
+                glow: 'shadow-cyan-500/30',
+                iconBoxBg: 'bg-cyan-500 shadow-cyan-500/50',
+                badgeBg: 'bg-cyan-500 text-slate-950',
+                progressBg: 'bg-cyan-400',
+                icon: 'ri-checkbox-circle-fill',
+                label: 'SUDAH ABSEN SEBELUMNYA',
+                sound: 'success'
+            };
+        } else if (data.status === 'late') {
             theme = {
                 cardBg: 'bg-slate-900/95',
                 border: 'border-amber-500',
@@ -749,15 +885,31 @@
             tapDismissTimer = null;
         }
 
+        // Avatar foto jika ada
+        const heroAvatar = document.getElementById('hero-avatar');
+        const heroAvatarImg = document.getElementById('hero-avatar-img');
+        const heroIconBox = document.getElementById('hero-icon-box');
+
+        if (person.photo && heroAvatar && heroAvatarImg) {
+            heroAvatarImg.src = person.photo;
+            heroAvatar.classList.remove('hidden');
+            if (heroIconBox) heroIconBox.classList.add('hidden');
+        } else {
+            if (heroAvatar) heroAvatar.classList.add('hidden');
+            if (heroIconBox) {
+                heroIconBox.classList.remove('hidden');
+                heroIconBox.className = `w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl text-white shadow-2xl transform transition-transform duration-300 ${theme.iconBoxBg}`;
+            }
+        }
+
         // Populate elements
         document.getElementById('hero-name').innerText = person.nama || 'Kartu Tidak Dikenal';
         document.getElementById('hero-subinfo').innerText = person.info || 'Santri / Pengajar';
         document.getElementById('hero-badge-text').innerText = theme.label;
         document.getElementById('hero-badge').className = `inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider mb-2 shadow-md ${theme.badgeBg}`;
-        document.getElementById('hero-icon-box').className = `w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-5xl sm:text-6xl text-white shadow-2xl transform transition-transform duration-300 ${theme.iconBoxBg}`;
         document.getElementById('hero-icon').className = theme.icon;
         document.getElementById('hero-time-text').innerText = timeStr;
-        document.getElementById('hero-event-text').innerText = activeEvent ? activeEvent.name : 'Presensi';
+        document.getElementById('hero-event-text').innerText = data.event_name || (activeEvent ? activeEvent.name : 'Presensi');
 
         heroCard.className = `text-center max-w-2xl w-full mx-auto p-8 sm:p-10 rounded-3xl border-2 transition-all duration-300 transform scale-100 opacity-100 flex flex-col items-center justify-center shadow-2xl backdrop-blur-2xl ${theme.cardBg} ${theme.border} ${theme.glow} relative z-30`;
 
