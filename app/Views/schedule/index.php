@@ -3,8 +3,18 @@
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Jadwal Pelajaran</h2>
-        <p class="text-gray-500 text-sm mb-6">Lihat dan atur jadwal pelajaran.</p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">Jadwal Pelajaran</h2>
+                <p class="text-gray-500 text-sm">Lihat dan atur jadwal pelajaran santri & pengajar.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleModal('exportScheduleModal')" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all hover:shadow-md">
+                    <i class="ri-file-excel-2-line text-lg"></i>
+                    <span>Download Jadwal Pengajar</span>
+                </button>
+            </div>
+        </div>
 
         <!-- Filters -->
         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -60,6 +70,12 @@
                             <i class="ri-swap-line text-base"></i>
                             Pergantian Pengajar / Pelajaran
                         </button>
+                    </div>
+                <?php elseif ($selectedPengajarId): ?>
+                    <div class="flex items-center gap-2">
+                        <a href="<?= url('/schedule/export?teacher_id=' . $selectedPengajarId . '&format=all') ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold shadow-xs transition-colors" title="Download Jadwal Ustadz Ini Saja">
+                            <i class="ri-file-excel-line text-sm"></i> Download Jadwal Pengajar Ini (.xls)
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>
@@ -336,6 +352,102 @@
         </div>
     </div>
     <?php endif; ?>
+
+    <!-- 3. Modal: Download / Export Jadwal Pengajar (Excel) -->
+    <div id="exportScheduleModal" class="hidden fixed z-50 inset-0 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="toggleModal('exportScheduleModal')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all w-full max-w-lg sm:my-8 sm:align-middle">
+                <form action="<?= url('/schedule/export') ?>" method="GET" target="_blank" onsubmit="setTimeout(() => toggleModal('exportScheduleModal'), 500);">
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl text-white">
+                                <i class="ri-file-excel-2-line"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white leading-tight">Download Jadwal Pengajar</h3>
+                                <p class="text-xs text-emerald-100">Ekspor rekap dan jadwal pelajaran ke file Excel (.xls)</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="toggleModal('exportScheduleModal')" class="text-white/80 hover:text-white text-xl">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <!-- Filter Pengajar -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Pilih Pengajar</label>
+                            <select name="teacher_id" class="w-full border-gray-300 rounded-xl shadow-xs focus:ring-emerald-500 focus:border-emerald-500 text-sm p-2.5 border">
+                                <option value="">-- Semua Pengajar (Seluruh Guru) --</option>
+                                <?php foreach ($teacherOptions as $p): ?>
+                                    <option value="<?= $p['id'] ?>" <?= $selectedPengajarId == $p['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($p['nama']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="text-[11px] text-gray-500 mt-1">Biarkan default untuk mengunduh seluruh pengajar sekaligus.</p>
+                        </div>
+
+                        <!-- Format Pilihan -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Format Tampilan Excel</label>
+                            <div class="space-y-2.5">
+                                <label class="flex items-start p-3 border-2 border-emerald-500/80 bg-emerald-50/50 rounded-xl cursor-pointer hover:bg-emerald-50 transition">
+                                    <input type="radio" name="format" value="all" checked class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                    <div class="ml-3">
+                                        <div class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                            Format Lengkap <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-200 text-emerald-800 font-bold uppercase">Rekomendasi</span>
+                                        </div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">
+                                            Berisi <b>Rekap Tugas & Beban Mengajar</b> (daftar mapel & kelas) <b>+ Matriks Jadwal Mingguan</b> (Sabtu-Kamis, Jam 1-7).
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition">
+                                    <input type="radio" name="format" value="rekap" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                    <div class="ml-3">
+                                        <div class="text-xs font-bold text-gray-900">Rekap Tugas & Beban Mengajar Saja</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">
+                                            Fokus pada No, NIP, Nama, Total Jam (JP), Rincian Mata Pelajaran & Kelas yang diampu, dan Hari Mengajar.
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition">
+                                    <input type="radio" name="format" value="matriks" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                    <div class="ml-3">
+                                        <div class="text-xs font-bold text-gray-900">Matriks Jadwal Mingguan Saja</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">
+                                            Tabel roster mingguan per guru (Hari Sabtu s/d Kamis, Jam ke-1 hingga Jam ke-7).
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-start gap-2">
+                            <i class="ri-information-line text-amber-600 mt-0.5"></i>
+                            <div>
+                                Data yang diunduh berdasarkan Tahun Ajaran Aktif (<b><?= htmlspecialchars($currentYear['name'] ?? '2026-2027') ?></b>). File langsung dapat dibuka di Microsoft Excel, Google Sheets, atau LibreOffice.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
+                        <button type="button" onclick="toggleModal('exportScheduleModal')" class="w-full sm:w-auto px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 transition">
+                            Batal
+                        </button>
+                        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition">
+                            <i class="ri-download-2-line text-sm"></i> Download File Excel (.xls)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 </main>
 

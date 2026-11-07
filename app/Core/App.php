@@ -96,6 +96,7 @@ class App
 
         // Schedule Routes
         $this->router->get('/schedule', ['App\Controllers\ScheduleController', 'index']);
+        $this->router->get('/schedule/export', ['App\Controllers\ScheduleController', 'export']);
         $this->router->post('/schedule/store', ['App\Controllers\ScheduleController', 'store']);
 
         // Grades Routes

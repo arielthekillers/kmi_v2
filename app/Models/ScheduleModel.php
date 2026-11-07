@@ -224,4 +224,131 @@ class ScheduleModel extends Model {
         }
         return $map;
     }
+
+    /**
+     * Get all teachers with their teaching schedule summary and weekly timetable grid
+     */
+    public function getAllTeachersWithSchedule($academicYearId = null, $selectedTeacherId = null) {
+        $yearId = $academicYearId ?: $this->academic_year_id;
+
+        // 1. Fetch teachers
+        $teacherParams = [];
+        $teacherSql = "
+            SELECT u.id, u.nama, u.username, u.is_active,
+                   tp.nip, tp.gender, tp.phone as hp
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
+            WHERE u.role IN ('pengajar', 'admin') 
+              AND u.deleted_at IS NULL
+              AND (u.is_active = 1 OR u.is_active IS NULL)
+        ";
+        if ($selectedTeacherId) {
+            $teacherSql .= " AND u.id = ? ";
+            $teacherParams[] = $selectedTeacherId;
+        }
+        $teacherSql .= " ORDER BY u.nama ASC";
+
+        $stmtTeachers = $this->db->prepare($teacherSql);
+        $stmtTeachers->execute($teacherParams);
+        $teachers = $stmtTeachers->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Fetch all active schedules for the academic year
+        $schedParams = [$yearId];
+        $schedSql = "
+            SELECT s.id, s.teacher_id, s.day, s.hour, s.subject_id, s.kelas_id,
+                   sub.nama as subject_name,
+                   k.tingkat, k.abjad
+            FROM schedules s
+            INNER JOIN (
+                SELECT MAX(id) as max_id 
+                FROM schedules 
+                WHERE academic_year_id = ? 
+                GROUP BY kelas_id, day, hour
+            ) latest ON s.id = latest.max_id
+            JOIN subjects sub ON s.subject_id = sub.id
+            JOIN kelas k ON s.kelas_id = k.id
+            WHERE s.teacher_id IS NOT NULL AND s.teacher_id > 0
+        ";
+        if ($selectedTeacherId) {
+            $schedSql .= " AND s.teacher_id = ? ";
+            $schedParams[] = $selectedTeacherId;
+        }
+        $schedSql .= " ORDER BY FIELD(s.day, 'Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis'), s.hour ASC";
+
+        $stmtSchedules = $this->db->prepare($schedSql);
+        $stmtSchedules->execute($schedParams);
+        $schedules = $stmtSchedules->fetchAll(PDO::FETCH_ASSOC);
+
+        // Index schedules by teacher_id
+        $teacherSchedules = [];
+        foreach ($schedules as $sc) {
+            $teacherSchedules[$sc['teacher_id']][] = $sc;
+        }
+
+        $days = ['Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis'];
+        $result = [];
+
+        foreach ($teachers as $t) {
+            $tId = $t['id'];
+            $items = $teacherSchedules[$tId] ?? [];
+
+            $teachingSummary = [];
+            $grid = [];
+            $daysActive = [];
+
+            foreach ($days as $d) {
+                for ($h = 1; $h <= 7; $h++) {
+                    $grid[$d][$h] = null;
+                }
+            }
+
+            foreach ($items as $item) {
+                $subName = $item['subject_name'];
+                $className = $item['tingkat'] . '-' . $item['abjad'];
+                $key = $item['subject_id'] . '_' . $item['kelas_id'];
+
+                if (!isset($teachingSummary[$key])) {
+                    $teachingSummary[$key] = [
+                        'subject_name' => $subName,
+                        'class_name' => $className,
+                        'tingkat' => $item['tingkat'],
+                        'abjad' => $item['abjad'],
+                        'total_hours' => 0,
+                        'slots' => []
+                    ];
+                }
+                $teachingSummary[$key]['total_hours']++;
+                $teachingSummary[$key]['slots'][] = $item['day'] . ' Jam ' . $item['hour'];
+
+                if (!in_array($item['day'], $daysActive)) {
+                    $daysActive[] = $item['day'];
+                }
+
+                if (isset($grid[$item['day']][$item['hour']])) {
+                    $grid[$item['day']][$item['hour']] = [
+                        'subject_name' => $subName,
+                        'class_name' => $className
+                    ];
+                }
+            }
+
+            // Sort summary by subject name then class name
+            uasort($teachingSummary, function($a, $b) {
+                $cmp = strnatcmp($a['subject_name'], $b['subject_name']);
+                if ($cmp === 0) return strnatcmp($a['class_name'], $b['class_name']);
+                return $cmp;
+            });
+
+            $result[] = [
+                'teacher' => $t,
+                'total_hours' => count($items),
+                'total_classes' => count($teachingSummary),
+                'days_active' => $daysActive,
+                'summary' => array_values($teachingSummary),
+                'grid' => $grid
+            ];
+        }
+
+        return $result;
+    }
 }
