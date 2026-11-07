@@ -470,7 +470,6 @@ class ScheduleController extends Controller {
                 $t = $item['teacher'];
                 $grid = $item['grid'];
 
-                $isFirstDay = true;
                 foreach ($days as $day) {
                     $daySlots = $grid[$day] ?? [];
                     $dailyCount = 0;
@@ -479,13 +478,9 @@ class ScheduleController extends Controller {
                     }
 
                     $xml .= '<Row ss:Height="24">';
-                    if ($isFirstDay) {
-                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellCenter"><Data ss:Type="Number">' . $mNo++ . '</Data></Cell>';
-                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($t['nama']) . ' (' . $item['total_hours'] . ' JP)</Data></Cell>';
-                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellText"><Data ss:Type="String">' . $escape($t['nip'] ?? '-') . '</Data></Cell>';
-                        $isFirstDay = false;
-                    }
-
+                    $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . $mNo . '</Data></Cell>';
+                    $xml .= '<Cell ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($t['nama']) . '</Data></Cell>';
+                    $xml .= '<Cell ss:StyleID="CellText"><Data ss:Type="String">' . $escape($t['nip'] ?? '-') . '</Data></Cell>';
                     $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($day) . '</Data></Cell>';
 
                     foreach ($hours as $h) {
@@ -501,6 +496,7 @@ class ScheduleController extends Controller {
                     $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . ($dailyCount > 0 ? $dailyCount . ' JP' : '-') . '</Data></Cell>';
                     $xml .= '</Row>';
                 }
+                $mNo++;
             }
 
             $xml .= '</Table></Worksheet>' . "\n";
