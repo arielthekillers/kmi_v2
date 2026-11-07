@@ -12,8 +12,9 @@
     <meta name="apple-mobile-web-app-title" content="Smart Tap">
     <meta name="theme-color" content="#090d16">
     <link rel="manifest" href="<?= url('/smart-tap/manifest.json') ?>">
-    <link rel="icon" type="image/png" href="<?= url('/img/kmi.png') ?>">
-    <link rel="apple-touch-icon" href="<?= url('/img/kmi.png') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= url('/img/icon-192.png') ?>">
+    <link rel="icon" type="image/png" sizes="512x512" href="<?= url('/img/icon-512.png') ?>">
+    <link rel="apple-touch-icon" sizes="192x192" href="<?= url('/img/icon-192.png') ?>">
 
     <!-- Tailwind CSS & Remix Icon -->
     <script src="https://cdn.tailwindcss.com"></script>
