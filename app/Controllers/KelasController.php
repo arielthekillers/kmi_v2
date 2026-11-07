@@ -1042,4 +1042,250 @@ class KelasController extends Controller {
 
         $this->redirect("/classes/detail?id=$kelas_id&tab=santri");
     }
+
+    public function exportStudents() {
+        require_login();
+
+        $classId = !empty($_GET['class_id']) ? (int)$_GET['class_id'] : null;
+        $academicYearName = $this->currentYear['name'] ?? '2026-2027';
+
+        $classesToExport = [];
+        if ($classId) {
+            $singleClass = $this->kelasModel->getWithWaliKelas($classId);
+            if (!$singleClass) {
+                add_flash('Kelas tidak ditemukan.', 'error');
+                $this->redirect('/classes');
+            }
+            $classesToExport[] = $singleClass;
+            $filename = "Daftar_Santri_Kelas_" . preg_replace('/[^a-zA-Z0-9]/', '_', $singleClass['tingkat'] . '-' . $singleClass['abjad']) . "_" . date('Ymd_His') . ".xls";
+            log_activity("Mengekspor data santri kelas {$singleClass['tingkat']}-{$singleClass['abjad']} ke Excel");
+        } else {
+            $groupedKelas = $this->kelasModel->getAllGrouped();
+            foreach ($groupedKelas as $tingkat => $classes) {
+                foreach ($classes as $c) {
+                    $classesToExport[] = $c;
+                }
+            }
+            $filename = "Daftar_Santri_Seluruh_Kelas_KMI_TA_" . preg_replace('/[^a-zA-Z0-9]/', '_', $academicYearName) . "_" . date('Ymd_His') . ".xls";
+            log_activity("Mengekspor seluruh santri semua kelas (per-tab) ke Excel (TA: {$academicYearName})");
+        }
+
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $output = fopen('php://output', 'w');
+
+        $escape = function($str) {
+            return htmlspecialchars((string)($str ?? ''), ENT_XML1, 'UTF-8');
+        };
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+        $xml .= ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+        $xml .= ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+
+        $xml .= '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>KMI Darussalam</Author>
+  <Company>Pondok Modern Darussalam Bogor</Company>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="Title">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="14" ss:Color="#0F172A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="Subtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E3A8A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="Meta">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="9" ss:Color="#64748B" ss:Italic="1"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Cell">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="CellCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="CellText">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="CellBold">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="TotalRow">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#475569"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#475569"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A" ss:Bold="1"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>' . "\n";
+
+        // Tab 1: Rekap Semua Kelas (if exporting all classes)
+        if (!$classId && count($classesToExport) > 1) {
+            $xml .= '<Worksheet ss:Name="Rekap Semua Kelas"><Table>';
+            $xml .= '<Column ss:Width="35"/><Column ss:Width="50"/><Column ss:Width="90"/><Column ss:Width="80"/><Column ss:Width="180"/><Column ss:Width="180"/><Column ss:Width="120"/><Column ss:Width="90"/>';
+            $xml .= '<Row ss:Height="22"><Cell ss:MergeAcross="7" ss:StyleID="Title"><Data ss:Type="String">PONDOK MODERN DARUSSALAM BOGOR</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="18"><Cell ss:MergeAcross="7" ss:StyleID="Subtitle"><Data ss:Type="String">REKAPITULASI KELAS &amp; JUMLAH SANTRI</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="15"><Cell ss:MergeAcross="7" ss:StyleID="Meta"><Data ss:Type="String">Tahun Ajaran: ' . $escape($academicYearName) . ' | Dicetak pada: ' . date('d F Y, H:i') . ' WIB</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="8"/>';
+            $xml .= '<Row ss:Height="22">';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NO</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">TINGKAT</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">KELAS</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">KELOMPOK</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">WALI KELAS 1</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">WALI KELAS 2</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">LOKASI</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">JUMLAH SANTRI</Data></Cell>';
+            $xml .= '</Row>';
+
+            $rNo = 1;
+            $grandTotal = 0;
+            foreach ($classesToExport as $c) {
+                $cnt = (int)($c['jumlah_murid'] ?? 0);
+                $grandTotal += $cnt;
+                $genderText = ($c['gender'] === 'Pa') ? 'Putra' : (($c['gender'] === 'Pi') ? 'Putri' : 'Campuran');
+
+                $xml .= '<Row ss:Height="18">';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . $rNo++ . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($c['tingkat']) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($c['tingkat'] . '-' . $c['abjad']) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($genderText) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($c['wali_kelas_1'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($c['wali_kelas_2'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($c['location'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . $cnt . '</Data></Cell>';
+                $xml .= '</Row>';
+            }
+            $xml .= '<Row ss:Height="20">';
+            $xml .= '<Cell ss:MergeAcross="6" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL KESELURUHAN (' . count($classesToExport) . ' KELAS):</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="TotalRow"><Data ss:Type="Number">' . $grandTotal . '</Data></Cell>';
+            $xml .= '</Row>';
+            $xml .= '</Table></Worksheet>' . "\n";
+        }
+
+        // Tabs per Class
+        foreach ($classesToExport as $c) {
+            $className = $c['tingkat'] . '-' . $c['abjad'];
+            $tabName = str_replace(['\\', '/', '?', '*', '[', ']', ':'], '-', $className);
+            if (mb_strlen($tabName) > 31) $tabName = mb_substr($tabName, 0, 31);
+
+            $students = $this->kelasModel->getStudentsWithDetails($c['id']);
+            $cntL = 0; $cntP = 0;
+            foreach ($students as $st) {
+                if ($st['gender'] === 'P') $cntP++; else $cntL++;
+            }
+
+            $xml .= '<Worksheet ss:Name="' . $escape($tabName) . '"><Table>';
+            $xml .= '<Column ss:Width="30"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="220"/><Column ss:Width="35"/><Column ss:Width="100"/><Column ss:Width="85"/><Column ss:Width="200"/><Column ss:Width="150"/><Column ss:Width="150"/><Column ss:Width="105"/><Column ss:Width="65"/>';
+            $xml .= '<Row ss:Height="22"><Cell ss:MergeAcross="11" ss:StyleID="Title"><Data ss:Type="String">PONDOK MODERN DARUSSALAM BOGOR</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="18"><Cell ss:MergeAcross="11" ss:StyleID="Subtitle"><Data ss:Type="String">DAFTAR SANTRI KELAS ' . $escape($className) . '</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="15"><Cell ss:MergeAcross="11" ss:StyleID="Meta"><Data ss:Type="String">Tahun Ajaran: ' . $escape($academicYearName) . ' | Wali Kelas: ' . $escape($c['wali_kelas'] ?? '-') . ' | Lokasi: ' . $escape($c['location'] ?? '-') . ' | Total: ' . count($students) . ' Santri (' . $cntL . ' Pa, ' . $cntP . ' Pi)</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="8"/>';
+            $xml .= '<Row ss:Height="22">';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NO</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NIS / STBK</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NISN</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NAMA LENGKAP</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">L/P</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">TEMPAT LAHIR</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">TANGGAL LAHIR</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">ALAMAT / ASAL</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NAMA AYAH / WALI</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NAMA IBU</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NO. HP WALI</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">STATUS</Data></Cell>';
+            $xml .= '</Row>';
+
+            $sNo = 1;
+            foreach ($students as $st) {
+                $hp = $st['no_hp_ayah'] ?: ($st['no_hp_ibu'] ?: '-');
+                $asal = trim(($st['kabupaten'] ?? '') . ', ' . ($st['provinsi'] ?? ''));
+                if ($asal === ',') $asal = $st['alamat'] ?? '-';
+
+                $xml .= '<Row ss:Height="18">';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . $sNo++ . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellText"><Data ss:Type="String">' . $escape($st['nis'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellText"><Data ss:Type="String">' . $escape($st['nisn'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($st['nama']) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($st['gender'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($st['tempat_lahir'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($st['tanggal_lahir'] ? date('d-m-Y', strtotime($st['tanggal_lahir'])) : '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($asal) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($st['nama_wali'] ?: ($st['nama_kk'] ?: '-')) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($st['nama_ibu'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellText"><Data ss:Type="String">' . $escape($hp) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($st['enrollment_status'] ?? 'Active') . '</Data></Cell>';
+                $xml .= '</Row>';
+            }
+
+            $xml .= '<Row ss:Height="20">';
+            $xml .= '<Cell ss:MergeAcross="10" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL SANTRI KELAS: ' . count($students) . ' Santri (' . $cntL . ' Putra, ' . $cntP . ' Putri)</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="TotalRow"><Data ss:Type="String"></Data></Cell>';
+            $xml .= '</Row>';
+
+            $xml .= '</Table></Worksheet>' . "\n";
+        }
+
+        $xml .= '</Workbook>';
+
+        fwrite($output, $xml);
+        fclose($output);
+        exit;
+    }
 }

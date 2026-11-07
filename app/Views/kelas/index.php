@@ -4,9 +4,16 @@
             <h2 class="text-2xl font-bold text-gray-900">Data Kelas</h2>
             <p class="text-gray-500 text-sm">Kelola data kelas dan jumlah santri.</p>
         </div>
-        <button onclick="openAdd()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
-            + Tambah Kelas
-        </button>
+        <div class="flex items-center gap-2.5">
+            <a href="<?= url('/classes/export-students') ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md" title="Download seluruh santri dalam file Excel dengan tab per kelas">
+                <i class="ri-file-excel-2-line text-lg"></i>
+                <span>Download Seluruh Santri</span>
+            </a>
+            <button onclick="openAdd()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-1.5">
+                <i class="ri-add-line text-lg"></i>
+                <span>Tambah Kelas</span>
+            </button>
+        </div>
     </div>
 
 <!-- Content -->
