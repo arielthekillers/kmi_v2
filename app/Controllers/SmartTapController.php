@@ -976,7 +976,7 @@ class SmartTapController extends Controller
             'description' => 'Terminal Presensi Mandiri Santri & Pengajar Smart Tap',
             'start_url' => url('/smart-tap/kiosk'),
             'display' => 'standalone',
-            'orientation' => 'landscape',
+            'orientation' => 'any',
             'background_color' => '#0b0f19',
             'theme_color' => '#4f46e5',
             'icons' => [
