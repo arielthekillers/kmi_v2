@@ -235,34 +235,9 @@ class ScheduleController extends Controller {
 
         $output = fopen('php://output', 'w');
 
-        $html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
-        $html .= '<head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">';
-        $html .= '<style>';
-        $html .= 'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1e293b; }';
-        $html .= '.title-school { font-size: 14pt; font-weight: bold; text-align: center; text-transform: uppercase; color: #0f172a; }';
-        $html .= '.title-sub { font-size: 12pt; font-weight: bold; text-align: center; text-transform: uppercase; color: #1e3a8a; }';
-        $html .= '.meta-info { font-size: 9pt; text-align: center; color: #64748b; margin-bottom: 20px; }';
-        $html .= '.section-title { font-size: 11pt; font-weight: bold; background-color: #e2e8f0; color: #0f172a; padding: 8px 12px; border: 1px solid #94a3b8; }';
-        $html .= '.data-table { border-collapse: collapse; width: 100%; margin-bottom: 30px; font-size: 10pt; }';
-        $html .= '.data-table th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; padding: 8px; border: 1px solid #64748b; }';
-        $html .= '.data-table td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top; }';
-        $html .= '.text-center { text-align: center; }';
-        $html .= '.text-left { text-align: left; }';
-        $html .= '.text-right { text-align: right; }';
-        $html .= '.font-bold { font-weight: bold; }';
-        $html .= '.number-text { mso-number-format: "\@"; text-align: center; }';
-        $html .= '.total-row { background-color: #f1f5f9; font-weight: bold; }';
-        $html .= '.bg-slot-active { background-color: #ecfdf5; border: 1px solid #a7f3d0; text-align: center; }';
-        $html .= '.bg-slot-empty { color: #94a3b8; text-align: center; }';
-        $html .= '.jp-pill { font-weight: bold; color: #1d4ed8; }';
-        $html .= '</style>';
-        $html .= '</head><body>';
-
-        // Official Header
-        $html .= '<div class="title-school">PONDOK MODERN DARUSSALAM BOGOR</div>';
-        $html .= '<div class="title-sub">KULLIYYATUL MU\'ALLIMIN AL-ISLAMIYYAH (KMI)</div>';
-        $html .= '<div class="title-sub" style="font-size: 11pt; color: #334155;">DAFTAR PENGAJAR DAN JADWAL MENGAJAR</div>';
-        $html .= '<div class="meta-info">Tahun Ajaran: <b>' . htmlspecialchars($academicYearName) . '</b> | Diunduh: ' . date('d F Y, H:i') . ' WIB</div>';
+        $escape = function($str) {
+            return htmlspecialchars((string)($str ?? ''), ENT_XML1, 'UTF-8');
+        };
 
         $totalTeachers = count($teacherScheduleData);
         $totalTeachingHours = 0;
@@ -270,23 +245,161 @@ class ScheduleController extends Controller {
             $totalTeachingHours += $row['total_hours'];
         }
 
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+        $xml .= ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+        $xml .= ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+
+        $xml .= '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>KMI Darussalam</Author>
+  <Company>Pondok Modern Darussalam Bogor</Company>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="Title">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="14" ss:Color="#0F172A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="Subtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E3A8A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="Meta">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="9" ss:Color="#64748B" ss:Italic="1"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#475569"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Cell">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="CellWrap">
+   <Alignment ss:Vertical="Top" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="CellCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="CellCenterBold">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="CellText">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="CellBold">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="CellSlotActive">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9" ss:Color="#065F46" ss:Bold="1"/>
+   <Interior ss:Color="#ECFDF5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CellSlotEmpty">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9" ss:Color="#94A3B8"/>
+  </Style>
+  <Style ss:ID="TotalRow">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#475569"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#475569"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A" ss:Bold="1"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>' . "\n";
+
         // =========================================================================
-        // SECTION 1: REKAPITULASI PENGAJAR & BEBAN MENGAJAR (DAFTAR MAPEL & KELAS)
+        // TAB 1: REKAP TUGAS & BEBAN MENGAJAR (DAFTAR MAPEL & KELAS)
         // =========================================================================
         if ($format === 'all' || $format === 'rekap') {
-            $html .= '<table class="data-table" border="1">';
-            $html .= '<thead>';
-            $html .= '<tr><th colspan="7" class="section-title text-left">BAGIAN 1: REKAPITULASI DAFTAR PENGAJAR & BEBAN MENGAJAR (MAPEL & KELAS)</th></tr>';
-            $html .= '<tr>';
-            $html .= '<th style="width: 40px;">NO</th>';
-            $html .= '<th style="width: 110px;">NIP</th>';
-            $html .= '<th style="width: 260px;">NAMA PENGAJAR</th>';
-            $html .= '<th style="width: 50px;">L/P</th>';
-            $html .= '<th style="width: 80px;">TOTAL BEBAN (JP)</th>';
-            $html .= '<th style="width: 450px;">DAFTAR MATA PELAJARAN & KELAS YANG DIAMPU</th>';
-            $html .= '<th style="width: 180px;">HARI MENGAJAR</th>';
-            $html .= '</tr>';
-            $html .= '</thead><tbody>';
+            $xml .= '<Worksheet ss:Name="Rekap Tugas Mengajar"><Table>';
+            $xml .= '<Column ss:Width="35"/><Column ss:Width="100"/><Column ss:Width="230"/><Column ss:Width="40"/><Column ss:Width="80"/><Column ss:Width="420"/><Column ss:Width="170"/>';
+            $xml .= '<Row ss:Height="22"><Cell ss:MergeAcross="6" ss:StyleID="Title"><Data ss:Type="String">PONDOK MODERN DARUSSALAM BOGOR</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="18"><Cell ss:MergeAcross="6" ss:StyleID="Subtitle"><Data ss:Type="String">REKAPITULASI PENGAJAR &amp; BEBAN MENGAJAR (DAFTAR MAPEL &amp; KELAS)</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="15"><Cell ss:MergeAcross="6" ss:StyleID="Meta"><Data ss:Type="String">Tahun Ajaran: ' . $escape($academicYearName) . ' | Dicetak: ' . date('d F Y, H:i') . ' WIB</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="8"/>';
+            $xml .= '<Row ss:Height="24">';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NO</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NIP</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NAMA PENGAJAR</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">L/P</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">TOTAL BEBAN (JP)</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">DAFTAR MATA PELAJARAN &amp; KELAS YANG DIAMPU</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">HARI MENGAJAR</Data></Cell>';
+            $xml .= '</Row>';
 
             $no = 1;
             foreach ($teacherScheduleData as $item) {
@@ -294,119 +407,108 @@ class ScheduleController extends Controller {
                 $summaryList = $item['summary'];
                 $genderCode = ($t['gender'] === 'Perempuan') ? 'P' : (($t['gender'] === 'Laki-laki') ? 'L' : '-');
 
-                $html .= '<tr>';
-                $html .= '<td class="text-center">' . $no++ . '</td>';
-                $html .= '<td class="number-text">' . htmlspecialchars($t['nip'] ?? '-') . '</td>';
-                $html .= '<td class="font-bold text-left">' . htmlspecialchars($t['nama']) . '</td>';
-                $html .= '<td class="text-center">' . $genderCode . '</td>';
-                $html .= '<td class="text-center font-bold jp-pill">' . $item['total_hours'] . ' JP</td>';
-
-                // Daftar Mata Pelajaran & Kelas yang diampu (bullet list style)
-                $html .= '<td class="text-left">';
+                $summaryText = '';
                 if (empty($summaryList)) {
-                    $html .= '<span style="color: #94a3b8; font-style: italic;">Belum ada jadwal mengajar</span>';
+                    $summaryText = 'Belum ada jadwal mengajar';
                 } else {
-                    $html .= '<div style="margin: 0; padding: 0;">';
+                    $lines = [];
                     foreach ($summaryList as $sum) {
-                        $html .= '&bull; <b>' . htmlspecialchars($sum['subject_name']) . '</b> kelas ' . htmlspecialchars($sum['class_name']) . ' <span style="color: #64748b;">(' . $sum['total_hours'] . ' Jam)</span><br/>';
+                        $lines[] = '• ' . $sum['subject_name'] . ' kelas ' . $sum['class_name'] . ' (' . $sum['total_hours'] . ' Jam)';
                     }
-                    $html .= '</div>';
+                    $summaryText = implode("\n", $lines);
                 }
-                $html .= '</td>';
+                $daysText = !empty($item['days_active']) ? implode(', ', $item['days_active']) : '-';
 
-                // Hari aktif mengajar
-                $html .= '<td class="text-center">';
-                if (!empty($item['days_active'])) {
-                    $html .= htmlspecialchars(implode(', ', $item['days_active']));
-                } else {
-                    $html .= '<span style="color: #94a3b8;">-</span>';
-                }
-                $html .= '</td>';
-
-                $html .= '</tr>';
+                $rowHeight = max(20, count($summaryList) * 16);
+                $xml .= '<Row ss:Height="' . $rowHeight . '">';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . $no++ . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellText"><Data ss:Type="String">' . $escape($t['nip'] ?? '-') . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($t['nama']) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($genderCode) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenterBold"><Data ss:Type="Number">' . $item['total_hours'] . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellWrap"><Data ss:Type="String">' . $escape($summaryText) . '</Data></Cell>';
+                $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($daysText) . '</Data></Cell>';
+                $xml .= '</Row>';
             }
 
-            // Total Summary Row
-            $html .= '<tr class="total-row">';
-            $html .= '<td colspan="4" class="text-right font-bold">TOTAL KESELURUHAN (' . $totalTeachers . ' PENGAJAR):</td>';
-            $html .= '<td class="text-center font-bold jp-pill">' . $totalTeachingHours . ' JP</td>';
-            $html .= '<td colspan="2" class="text-left" style="color: #64748b; font-size: 9pt;">Rata-rata beban: ' . ($totalTeachers > 0 ? round($totalTeachingHours / $totalTeachers, 1) : 0) . ' JP/Pengajar</td>';
-            $html .= '</tr>';
-
-            $html .= '</tbody></table>';
+            $xml .= '<Row ss:Height="22">';
+            $xml .= '<Cell ss:MergeAcross="3" ss:StyleID="TotalRow"><Data ss:Type="String">TOTAL KESELURUHAN (' . $totalTeachers . ' PENGAJAR):</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="TotalRow"><Data ss:Type="Number">' . $totalTeachingHours . '</Data></Cell>';
+            $xml .= '<Cell ss:MergeAcross="1" ss:StyleID="TotalRow"><Data ss:Type="String">Rata-rata: ' . ($totalTeachers > 0 ? round($totalTeachingHours / $totalTeachers, 1) : 0) . ' JP/Pengajar</Data></Cell>';
+            $xml .= '</Row>';
+            $xml .= '</Table></Worksheet>' . "\n";
         }
 
         // =========================================================================
-        // SECTION 2: MATRIKS JADWAL MINGGUAN PER PENGAJAR (HARI & JAM KE-1 S/D 7)
+        // TAB 2: MATRIKS JADWAL MINGGUAN PER PENGAJAR (HARI SABTU - KAMIS, JAM 1 S/D 7)
         // =========================================================================
         if ($format === 'all' || $format === 'matriks') {
-            if ($format === 'all') {
-                $html .= '<br/><br/>';
-            }
-
-            $html .= '<table class="data-table" border="1">';
-            $html .= '<thead>';
-            $html .= '<tr><th colspan="12" class="section-title text-left">BAGIAN 2: MATRIKS JADWAL MINGGUAN PER PENGAJAR (HARI SABTU - KAMIS, JAM 1 S/D 7)</th></tr>';
-            $html .= '<tr>';
-            $html .= '<th style="width: 40px;">NO</th>';
-            $html .= '<th style="width: 240px;">NAMA PENGAJAR</th>';
-            $html .= '<th style="width: 100px;">NIP</th>';
-            $html .= '<th style="width: 80px;">HARI</th>';
+            $xml .= '<Worksheet ss:Name="Matriks Jadwal Mingguan"><Table>';
+            $xml .= '<Column ss:Width="35"/><Column ss:Width="210"/><Column ss:Width="95"/><Column ss:Width="70"/>';
             foreach ($hours as $h) {
-                $html .= '<th style="width: 140px;">JAM KE-' . $h . '</th>';
+                $xml .= '<Column ss:Width="125"/>';
             }
-            $html .= '<th style="width: 70px;">TOTAL HARI</th>';
-            $html .= '</tr>';
-            $html .= '</thead><tbody>';
+            $xml .= '<Column ss:Width="75"/>';
 
-            $no = 1;
+            $xml .= '<Row ss:Height="22"><Cell ss:MergeAcross="11" ss:StyleID="Title"><Data ss:Type="String">PONDOK MODERN DARUSSALAM BOGOR</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="18"><Cell ss:MergeAcross="11" ss:StyleID="Subtitle"><Data ss:Type="String">MATRIKS JADWAL MINGGUAN PER PENGAJAR (HARI SABTU - KAMIS, JAM 1 S/D 7)</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="15"><Cell ss:MergeAcross="11" ss:StyleID="Meta"><Data ss:Type="String">Tahun Ajaran: ' . $escape($academicYearName) . ' | Dicetak: ' . date('d F Y, H:i') . ' WIB</Data></Cell></Row>';
+            $xml .= '<Row ss:Height="8"/>';
+            $xml .= '<Row ss:Height="24">';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NO</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NAMA PENGAJAR</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">NIP</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">HARI</Data></Cell>';
+            foreach ($hours as $h) {
+                $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">JAM KE-' . $h . '</Data></Cell>';
+            }
+            $xml .= '<Cell ss:StyleID="Header"><Data ss:Type="String">TOTAL HARI</Data></Cell>';
+            $xml .= '</Row>';
+
+            $mNo = 1;
             foreach ($teacherScheduleData as $item) {
                 $t = $item['teacher'];
                 $grid = $item['grid'];
 
-                $firstDay = true;
+                $isFirstDay = true;
                 foreach ($days as $day) {
                     $daySlots = $grid[$day] ?? [];
                     $dailyCount = 0;
                     foreach ($hours as $h) {
-                        if (!empty($daySlots[$h])) {
-                            $dailyCount++;
-                        }
+                        if (!empty($daySlots[$h])) $dailyCount++;
                     }
 
-                    $html .= '<tr>';
-                    if ($firstDay) {
-                        $html .= '<td rowspan="' . count($days) . '" class="text-center font-bold" style="vertical-align: middle;">' . $no++ . '</td>';
-                        $html .= '<td rowspan="' . count($days) . '" class="text-left font-bold" style="vertical-align: middle;">' . htmlspecialchars($t['nama']) . '<br/><span style="font-size: 8pt; font-weight: normal; color: #64748b;">Total: ' . $item['total_hours'] . ' JP</span></td>';
-                        $html .= '<td rowspan="' . count($days) . '" class="number-text" style="vertical-align: middle;">' . htmlspecialchars($t['nip'] ?? '-') . '</td>';
-                        $firstDay = false;
+                    $xml .= '<Row ss:Height="24">';
+                    if ($isFirstDay) {
+                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellCenter"><Data ss:Type="Number">' . $mNo++ . '</Data></Cell>';
+                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellBold"><Data ss:Type="String">' . $escape($t['nama']) . ' (' . $item['total_hours'] . ' JP)</Data></Cell>';
+                        $xml .= '<Cell ss:MergeDown="5" ss:StyleID="CellText"><Data ss:Type="String">' . $escape($t['nip'] ?? '-') . '</Data></Cell>';
+                        $isFirstDay = false;
                     }
 
-                    $html .= '<td class="text-center font-bold" style="background-color: #f8fafc;">' . $day . '</td>';
+                    $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($day) . '</Data></Cell>';
 
                     foreach ($hours as $h) {
                         $slot = $daySlots[$h] ?? null;
                         if ($slot) {
-                            $html .= '<td class="bg-slot-active">';
-                            $html .= '<div class="font-bold">' . htmlspecialchars($slot['subject_name']) . '</div>';
-                            $html .= '<div style="font-size: 8pt; color: #4338ca; font-weight: bold;">Kelas ' . htmlspecialchars($slot['class_name']) . '</div>';
-                            $html .= '</td>';
+                            $slotText = $slot['subject_name'] . "\n" . 'Kelas ' . $slot['class_name'];
+                            $xml .= '<Cell ss:StyleID="CellSlotActive"><Data ss:Type="String">' . $escape($slotText) . '</Data></Cell>';
                         } else {
-                            $html .= '<td class="bg-slot-empty">-</td>';
+                            $xml .= '<Cell ss:StyleID="CellSlotEmpty"><Data ss:Type="String">-</Data></Cell>';
                         }
                     }
 
-                    $html .= '<td class="text-center font-bold ' . ($dailyCount > 0 ? 'jp-pill' : 'text-gray-400') . '">' . ($dailyCount > 0 ? $dailyCount . ' JP' : '-') . '</td>';
-                    $html .= '</tr>';
+                    $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . ($dailyCount > 0 ? $dailyCount . ' JP' : '-') . '</Data></Cell>';
+                    $xml .= '</Row>';
                 }
             }
 
-            $html .= '</tbody></table>';
+            $xml .= '</Table></Worksheet>' . "\n";
         }
 
-        $html .= '</body></html>';
+        $xml .= '</Workbook>';
 
-        fwrite($output, $html);
+        fwrite($output, $xml);
         fclose($output);
         exit;
     }

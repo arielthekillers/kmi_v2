@@ -401,7 +401,7 @@
                                             Format Lengkap <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-200 text-emerald-800 font-bold uppercase">Rekomendasi</span>
                                         </div>
                                         <div class="text-[11px] text-gray-500 mt-0.5">
-                                            Berisi <b>Rekap Tugas & Beban Mengajar</b> (daftar mapel & kelas) <b>+ Matriks Jadwal Mingguan</b> (Sabtu-Kamis, Jam 1-7).
+                                            Berisi <b>Rekap Tugas & Beban Mengajar</b> dan <b>Matriks Jadwal Mingguan</b> yang dipisahkan ke dalam <b>2 tab terpisah</b> di Excel.
                                         </div>
                                     </div>
                                 </label>
