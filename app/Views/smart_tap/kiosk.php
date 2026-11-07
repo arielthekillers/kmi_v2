@@ -117,8 +117,11 @@
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-800/80 text-[10px] text-slate-500">
-                1 Perangkat = 1 Token Terikat Server &bull; Verifikasi 2FA Aman
+            <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500">
+                <span>1 Perangkat = 1 Token Terikat Server &bull; Verifikasi 2FA Aman</span>
+                <button type="button" onclick="exitKioskApp()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1 transition">
+                    <i class="ri-shut-down-line"></i> Tutup Aplikasi
+                </button>
             </div>
         </div>
     </div>
@@ -170,9 +173,19 @@
                     <div id="clock-date" class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">01 Jan 2026</div>
                 </div>
 
+                <!-- Fullscreen Toggle Button -->
+                <button type="button" onclick="toggleFullscreen()" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg transition shadow-xs" title="Layar Penuh (Fullscreen)">
+                    <i id="fullscreen-icon" class="ri-fullscreen-line"></i>
+                </button>
+
                 <!-- Settings Button -->
                 <button type="button" onclick="openSettingsModal()" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg transition shadow-xs" title="Pengaturan Tablet Kiosk">
                     <i class="ri-settings-4-line"></i>
+                </button>
+
+                <!-- Exit App Button -->
+                <button type="button" onclick="exitKioskApp()" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-rose-950/60 border border-slate-800 hover:border-rose-800/80 text-rose-400 hover:text-rose-300 flex items-center justify-center text-lg transition shadow-xs" title="Tutup / Keluar Aplikasi">
+                    <i class="ri-shut-down-line"></i>
                 </button>
             </div>
         </header>
@@ -334,13 +347,16 @@
                     </select>
                 </div>
 
-                <!-- Sync Action -->
-                <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                <!-- Sync & Danger Actions -->
+                <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
                     <button type="button" onclick="syncMasterData(true)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
                         <i class="ri-refresh-line"></i> Sinkron Sekarang
                     </button>
-                    <button type="button" onclick="unpairTablet()" class="py-2.5 px-4 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
-                        <i class="ri-shut-down-line"></i> Putus Hubungan
+                    <button type="button" onclick="unpairTablet()" class="py-2.5 px-3 bg-amber-950/60 hover:bg-amber-900 border border-amber-800/80 text-amber-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+                        <i class="ri-link-unlink-m"></i> Putus Pairing
+                    </button>
+                    <button type="button" onclick="exitKioskApp()" class="py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+                        <i class="ri-shut-down-line"></i> Tutup Aplikasi
                     </button>
                 </div>
             </div>
@@ -1220,6 +1236,53 @@
         localStorage.removeItem('smart_tap_device_name');
         localStorage.removeItem('smart_tap_master_data');
         location.reload();
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Layar penuh tidak didukung atau diblokir peramban:', err);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        const icon = document.getElementById('fullscreen-icon');
+        if (icon) {
+            if (document.fullscreenElement) {
+                icon.className = 'ri-fullscreen-exit-line';
+            } else {
+                icon.className = 'ri-fullscreen-line';
+            }
+        }
+    });
+
+    function exitKioskApp() {
+        if (!confirm('Apakah Anda yakin ingin menutup / keluar dari Smart Tap Tablet Kiosk?')) return;
+
+        try {
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        } catch (e) {}
+
+        // Pywebview desktop wrapper support (jika dibuka via webview/app wrapper)
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.exit_app) {
+            window.pywebview.api.exit_app();
+            return;
+        }
+
+        // Coba tutup jendela browser / PWA
+        window.close();
+
+        // Fallback untuk tab browser normal jika window.close() dibatasi oleh keamanan browser
+        setTimeout(() => {
+            window.location.href = '<?= url("/smart-tap/devices") ?>';
+        }, 250);
     }
     </script>
 </body>
