@@ -981,8 +981,8 @@ class SmartTapController extends Controller
             'theme_color' => '#4f46e5',
             'icons' => [
                 [
-                    'src' => url('/img/icon-192.png'),
-                    'sizes' => '192x192',
+                    'src' => url('/img/app_icon.png'),
+                    'sizes' => '256x256',
                     'type' => 'image/png',
                     'purpose' => 'any'
                 ],
@@ -993,10 +993,10 @@ class SmartTapController extends Controller
                     'purpose' => 'any'
                 ],
                 [
-                    'src' => url('/img/icon-maskable-512.png'),
-                    'sizes' => '512x512',
+                    'src' => url('/img/icon-192.png'),
+                    'sizes' => '192x192',
                     'type' => 'image/png',
-                    'purpose' => 'maskable'
+                    'purpose' => 'any'
                 ]
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
