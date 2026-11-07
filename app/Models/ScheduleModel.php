@@ -320,15 +320,23 @@ class ScheduleModel extends Model {
                 $teachingSummary[$key]['total_hours']++;
                 $teachingSummary[$key]['slots'][] = $item['day'] . ' Jam ' . $item['hour'];
 
-                if (!in_array($item['day'], $daysActive)) {
-                    $daysActive[] = $item['day'];
+                $dayName = trim($item['day']);
+                $hourNum = (int)$item['hour'];
+
+                if (!in_array($dayName, $daysActive)) {
+                    $daysActive[] = $dayName;
                 }
 
-                if (isset($grid[$item['day']][$item['hour']])) {
-                    $grid[$item['day']][$item['hour']] = [
-                        'subject_name' => $subName,
-                        'class_name' => $className
-                    ];
+                if (in_array($dayName, $days) && $hourNum >= 1 && $hourNum <= 7) {
+                    if (empty($grid[$dayName][$hourNum])) {
+                        $grid[$dayName][$hourNum] = [
+                            'subject_name' => $subName,
+                            'class_name' => $className
+                        ];
+                    } else {
+                        $grid[$dayName][$hourNum]['subject_name'] .= ' / ' . $subName;
+                        $grid[$dayName][$hourNum]['class_name'] .= ' & ' . $className;
+                    }
                 }
             }
 
