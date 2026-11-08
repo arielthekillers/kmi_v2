@@ -340,7 +340,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.2.5';
+        $latestVersion = '1.3.0';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -354,7 +354,7 @@ class SmartTapApiController extends Controller
             'success' => true,
             'latest_version' => $latestVersion,
             'release_date' => '2026-11-08',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.5:\n- Auto-Start Tanpa PIN: Kiosk langsung aktif standby menerima tap kartu saat boot/mati lampu\n- Proteksi PIN dialihkan khusus untuk menu Konfigurasi Terminal dan Tutup Aplikasi\n- Tombol Batal pada Layar PIN untuk kembali ke antarmuka absensi\n- Pemisahan Cerdas Sesi Sholat Jumat (Putra) & Sholat Dzuhur (Putri)", 
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.0:\n- Smart Multimedia Kiosk: Dashboard Informasi (Statistik & Jadwal)\n- Orientasi Adaptif Otomatis: Landscape (Laptop/TV) & Portrait (Standing Kiosk)\n- Widget Statistik Presensi Real-Time & Mini-feed Tap Terakhir\n- Widget Jadwal Sholat 5 Waktu & Hitung Mundur Adzan\n- Widget Jadwal KBM & Monitoring Jam Mengajar Aktif\n- Rotasi Mahfuzhat & Running Text Warta KMI\n- Auto-Start Tanpa PIN saat Booting / Mati Lampu", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false,
