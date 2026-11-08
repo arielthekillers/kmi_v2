@@ -340,7 +340,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.2.4';
+        $latestVersion = '1.2.5';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -353,8 +353,8 @@ class SmartTapApiController extends Controller
         echo json_encode([
             'success' => true,
             'latest_version' => $latestVersion,
-            'release_date' => '2026-11-06',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.4:\n- Pemisahan Cerdas Sesi Sholat Jumat (Putra) & Sholat Dzuhur (Putri) secara otomatis saat tap kartu\n- Validasi target gender dan penugasan guru per-sesi\n- Sinkronisasi otomatis struktur tabel lokal SQLite\n- UI Center Hero Display font besar", 
+            'release_date' => '2026-11-08',
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.2.5:\n- Auto-Start Tanpa PIN: Kiosk langsung aktif standby menerima tap kartu saat boot/mati lampu\n- Proteksi PIN dialihkan khusus untuk menu Konfigurasi Terminal dan Tutup Aplikasi\n- Tombol Batal pada Layar PIN untuk kembali ke antarmuka absensi\n- Pemisahan Cerdas Sesi Sholat Jumat (Putra) & Sholat Dzuhur (Putri)", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false,
