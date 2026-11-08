@@ -193,7 +193,8 @@ class SmartTapApiController extends Controller
             'exempted_teachers' => $this->exemptionModel->getExemptedUserIds(),
             'students' => $masterCards['students'],
             'teachers' => $masterCards['teachers'],
-            'total_registered_cards' => $masterCards['total_registered_cards']
+            'total_registered_cards' => $masterCards['total_registered_cards'],
+            'tv_showcase_bgm_youtube' => (new \App\Models\SettingModel())->get('tv_showcase_bgm_youtube', '')
         ], JSON_PRETTY_PRINT);
         exit;
     }
@@ -340,7 +341,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.3.0';
+        $latestVersion = '1.3.1';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -354,7 +355,7 @@ class SmartTapApiController extends Controller
             'success' => true,
             'latest_version' => $latestVersion,
             'release_date' => '2026-11-08',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.0:\n- Smart Multimedia Kiosk: Dashboard Informasi (Statistik & Jadwal)\n- Orientasi Adaptif Otomatis: Landscape (Laptop/TV) & Portrait (Standing Kiosk)\n- Widget Statistik Presensi Real-Time & Mini-feed Tap Terakhir\n- Widget Jadwal Sholat 5 Waktu & Hitung Mundur Adzan\n- Widget Jadwal KBM & Monitoring Jam Mengajar Aktif\n- Rotasi Mahfuzhat & Running Text Warta KMI\n- Auto-Start Tanpa PIN saat Booting / Mati Lampu", 
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.1:\n- TV Showcase Audio Integration: Pemutaran musik latar BGM identik dengan TV Showcase (YouTube streaming & fallback audio lokal)\n- Audio Ducking Presensi: Volume musik mengecil otomatis saat kartu RFID di-tap agar nada lonceng status presensi tetap jernih\n- Tombol Kontrol Audio: Tombol kontrol BGM di header untuk memutar atau mematikan musik secara mandiri\n- Smart Multimedia Kiosk: Dashboard Informasi (Statistik & Jadwal)\n- Orientasi Adaptif Otomatis: Landscape (Laptop/TV) & Portrait (Standing Kiosk)\n- Auto-Start Tanpa PIN saat Booting / Mati Lampu", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false,
