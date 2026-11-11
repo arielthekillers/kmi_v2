@@ -165,7 +165,10 @@ class SmartTapController extends Controller
 
         $startDate = $_GET['start_date'] ?? date('Y-m-01');
         $endDate = $_GET['end_date'] ?? date('Y-m-d');
-        $targetType = $_GET['target_type'] ?? 'all';
+        $targetType = $_GET['target_type'] ?? 'teachers';
+        if (!in_array($targetType, ['teachers', 'students'])) {
+            $targetType = 'teachers';
+        }
         $rawEventId = $_GET['event_id'] ?? '';
         $category = null;
         $eventId = null;
@@ -207,7 +210,10 @@ class SmartTapController extends Controller
 
         $startDate = $_GET['start_date'] ?? date('Y-m-01');
         $endDate = $_GET['end_date'] ?? date('Y-m-d');
-        $targetType = $_GET['target_type'] ?? 'all';
+        $targetType = $_GET['target_type'] ?? 'teachers';
+        if (!in_array($targetType, ['teachers', 'students'])) {
+            $targetType = 'teachers';
+        }
         $rawEventId = $_GET['event_id'] ?? '';
         $category = null;
         $eventId = null;

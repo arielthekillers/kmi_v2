@@ -369,7 +369,7 @@ class SmartTapLogModel extends Model
      * status pengecualian (exemption), target spesifik, dan gender.
      * Mengkalkulasi kehadiran (Tepat & Terlambat), izin resmi, serta alpa secara presisi.
      */
-    public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null, $category = null)
+    public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'teachers', $eventId = null, $classId = null, $category = null)
     {
         // Deteksi jika eventId memuat prefix kategori, misal "cat:sholat", "cat_sholat", atau "category:sholat"
         if (is_string($eventId) && (str_starts_with($eventId, 'cat:') || str_starts_with($eventId, 'cat_') || str_starts_with($eventId, 'category:'))) {
@@ -377,16 +377,26 @@ class SmartTapLogModel extends Model
             $eventId = null;
         }
 
+        // Pastikan targetType tidak pernah 'all' (data santri dan guru selalu terpisah 100%)
+        if (!in_array($targetType, ['teachers', 'students'])) {
+            $targetType = 'teachers';
+        }
+        $effectiveTarget = $targetType;
+
         // 1. Ambil detail event terpilih (jika spesifik) atau semua event aktif
         $event = null;
         if (!empty($eventId)) {
             $stmtEv = $this->db->prepare("SELECT * FROM smart_tap_events WHERE id = ?");
             $stmtEv->execute([(int)$eventId]);
             $event = $stmtEv->fetch(PDO::FETCH_ASSOC);
+            if ($event && in_array($event['target_type'], ['teachers', 'students'])) {
+                $effectiveTarget = $event['target_type'];
+            }
         }
 
-        $sqlAllEv = "SELECT * FROM smart_tap_events WHERE is_active = 1";
-        $paramsEv = [];
+        // Ambil daftar event aktif yang relevan untuk target (guru atau santri)
+        $sqlAllEv = "SELECT * FROM smart_tap_events WHERE is_active = 1 AND target_type IN ('all', ?)";
+        $paramsEv = [$effectiveTarget];
         if (!empty($eventId)) {
             $sqlAllEv .= " AND id = ?";
             $paramsEv[] = (int)$eventId;
@@ -402,21 +412,6 @@ class SmartTapLogModel extends Model
             $eventMap[(int)$ev['id']] = $ev;
         }
 
-        // Tentukan target tipe efektif:
-        $effectiveTarget = $targetType;
-        if ($event) {
-            if ($event['target_type'] === 'teachers') {
-                $effectiveTarget = 'teachers';
-            } elseif ($event['target_type'] === 'students') {
-                $effectiveTarget = 'students';
-            }
-        } elseif (!empty($category) && $targetType === 'all') {
-            $types = array_unique(array_column($eventsList, 'target_type'));
-            if (count($types) === 1 && in_array($types[0], ['teachers', 'students'])) {
-                $effectiveTarget = $types[0];
-            }
-        }
-
         // 2. Ambil sesi yang terselenggara (memiliki log absensi masuk) pada rentang tanggal & event
         $whereSess = ["DATE(l.tapped_at) BETWEEN ? AND ?"];
         $paramSess = [$startDate, $endDate];
@@ -429,7 +424,7 @@ class SmartTapLogModel extends Model
         }
         if ($effectiveTarget === 'teachers') {
             $whereSess[] = "l.person_type = 'teacher'";
-        } elseif ($effectiveTarget === 'students') {
+        } else {
             $whereSess[] = "l.person_type = 'student'";
         }
         $whereSessStr = implode(" AND ", $whereSess);
@@ -525,11 +520,11 @@ class SmartTapLogModel extends Model
             }
         }
 
-        // 6. Siapkan Target Baseline Peserta
+        // 6. Siapkan Target Baseline Peserta (Hanya Santri ATAU Pengajar, Tidak Pernah Dicampur)
         $participants = [];
 
         // Pengajar
-        if (in_array($effectiveTarget, ['all', 'teachers'])) {
+        if ($effectiveTarget === 'teachers') {
             $sqlTeachers = "SELECT u.id, u.username as identifier, u.nama as name, 'teacher' as person_type,
                                    'Pengajar / Guru' as subinfo, tp.nip, tp.gender
                             FROM users u
@@ -544,15 +539,12 @@ class SmartTapLogModel extends Model
                     'person_id' => (int)$t['id'],
                     'name' => $t['name'],
                     'identifier' => $t['identifier'] ?: ($t['nip'] ?: '-'),
-                    'subinfo' => 'Pengajar / Guru',
+                    'subinfo' => $t['subinfo'] ?: 'Guru',
                     'gender' => $t['gender'] ?? 'L',
                     'kelas_id' => null
                 ];
             }
-        }
-
-        // Santri
-        if (in_array($effectiveTarget, ['all', 'students'])) {
+        } elseif ($effectiveTarget === 'students') {
             $classFilter = "";
             $pClass = [];
             $targetClasses = [];
