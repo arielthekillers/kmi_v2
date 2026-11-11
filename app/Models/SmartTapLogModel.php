@@ -760,9 +760,9 @@ class SmartTapLogModel extends Model
             $percentKepatuhan = $kewajiban > 0 ? round((($totalHadir + $countPermission) / $kewajiban) * 100, 1) : 100.0;
             $percentTepatWaktu = $totalHadir > 0 ? round(($countOnTime / $totalHadir) * 100, 1) : 0;
 
-            // Tentukan status kedisiplinan objektif
+            // Tentukan status kedisiplinan objektif (ringkas & tidak menduplikasi angka alpa/telat)
             $statusDisiplin = 'disiplin';
-            $statusLabel = 'Disiplin';
+            $statusLabel = 'Tertib';
             $badgeColor = 'emerald';
 
             if ($kewajiban === 0) {
@@ -771,29 +771,23 @@ class SmartTapLogModel extends Model
                 $badgeColor = 'gray';
             } elseif ($totalHadir === 0 && $countPermission === 0) {
                 $statusDisiplin = 'alpa_total';
-                $statusLabel = 'Tidak Hadir (' . $countAlpa . 'x Alpa)';
+                $statusLabel = 'Tidak Hadir';
                 $badgeColor = 'rose';
             } elseif ($percentKepatuhan >= 90 && $countLate === 0 && $countAlpa === 0) {
                 $statusDisiplin = 'perfect';
-                $statusLabel = 'Sangat Disiplin (100%)';
+                $statusLabel = 'Sangat Tertib';
                 $badgeColor = 'emerald';
             } elseif ($percentKepatuhan >= 85) {
-                if ($countLate > 0) {
-                    $statusDisiplin = 'disiplin_late';
-                    $statusLabel = 'Tertib (Telat ' . $countLate . 'x)';
-                    $badgeColor = 'teal';
-                } else {
-                    $statusDisiplin = 'disiplin';
-                    $statusLabel = 'Disiplin (' . $percentKehadiran . '%)';
-                    $badgeColor = 'emerald';
-                }
+                $statusDisiplin = $countLate > 0 ? 'disiplin_late' : 'disiplin';
+                $statusLabel = 'Tertib';
+                $badgeColor = 'teal';
             } elseif ($percentKepatuhan >= 70) {
                 $statusDisiplin = 'warning';
-                $statusLabel = 'Cukup (' . $countAlpa . 'x Alpa' . ($countLate > 0 ? ', ' . $countLate . 'x Telat' : '') . ')';
+                $statusLabel = 'Perlu Perhatian';
                 $badgeColor = 'amber';
             } else {
                 $statusDisiplin = 'poor';
-                $statusLabel = 'Kurang Tertib (' . $countAlpa . 'x Alpa)';
+                $statusLabel = 'Kurang Tertib';
                 $badgeColor = 'rose';
             }
 
