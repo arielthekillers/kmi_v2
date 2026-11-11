@@ -94,15 +94,74 @@ foreach ($recap as $r) {
                 </select>
             </div>
 
-            <!-- Event Tertentu -->
+            <!-- Event / Kategori Tertentu -->
             <div class="w-full md:flex-1">
+                <?php
+                $sholatEvents = array_filter($events, fn($e) => ($e['category'] ?? '') === 'sholat');
+                $officeEvents = array_filter($events, fn($e) => ($e['category'] ?? '') === 'office');
+                $incidentalEvents = array_filter($events, fn($e) => ($e['category'] ?? '') === 'incidental');
+                $otherEvents = array_filter($events, fn($e) => !in_array($e['category'] ?? '', ['sholat', 'office', 'incidental']));
+                $currentFilterEvent = $filterEvent ?? ($eventId ?? '');
+                ?>
                 <select name="event_id" class="w-full text-xs font-medium text-gray-700 rounded-xl border border-gray-200 bg-gray-50 py-2 px-3 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua Kegiatan / Event</option>
-                    <?php foreach ($events as $ev): ?>
-                        <option value="<?= $ev['id'] ?>" <?= $eventId == $ev['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($ev['name']) ?> (<?= $ev['target_type'] == 'teachers' ? 'Guru' : ($ev['target_type'] == 'students' ? 'Santri' : 'Semua') ?>)
+
+                    <!-- 1. Kategori Gabungan (Fokus Utama) -->
+                    <optgroup label="── Gabungan Per Kategori ──">
+                        <option value="cat:sholat" <?= $currentFilterEvent === 'cat:sholat' ? 'selected' : '' ?>>
+                            🕌 Sholat 5 Waktu (Subuh, Dzuhur, Ashar, Maghrib, Isya)
                         </option>
-                    <?php endforeach; ?>
+                        <option value="cat:office" <?= $currentFilterEvent === 'cat:office' ? 'selected' : '' ?>>
+                            🏢 Presensi Kantor / Rutin Harian (Guru)
+                        </option>
+                        <option value="cat:incidental" <?= $currentFilterEvent === 'cat:incidental' ? 'selected' : '' ?>>
+                            ⭐ Kegiatan Insidental / Khusus
+                        </option>
+                    </optgroup>
+
+                    <!-- 2. Sholat 5 Waktu Satuan -->
+                    <?php if (!empty($sholatEvents)): ?>
+                        <optgroup label="── Sholat Satuan (Per Waktu) ──">
+                            <?php foreach ($sholatEvents as $ev): ?>
+                                <option value="<?= $ev['id'] ?>" <?= (string)$currentFilterEvent === (string)$ev['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($ev['name']) ?> (<?= $ev['target_type'] == 'teachers' ? 'Guru' : ($ev['target_type'] == 'students' ? 'Santri' : 'Semua') ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+
+                    <!-- 3. Kantor / Rutin Guru Satuan -->
+                    <?php if (!empty($officeEvents)): ?>
+                        <optgroup label="── Presensi Rutin Guru Satuan ──">
+                            <?php foreach ($officeEvents as $ev): ?>
+                                <option value="<?= $ev['id'] ?>" <?= (string)$currentFilterEvent === (string)$ev['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($ev['name']) ?> (<?= $ev['target_type'] == 'teachers' ? 'Guru' : ($ev['target_type'] == 'students' ? 'Santri' : 'Semua') ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+
+                    <!-- 4. Insidental Satuan -->
+                    <?php if (!empty($incidentalEvents)): ?>
+                        <optgroup label="── Kegiatan Insidental Satuan ──">
+                            <?php foreach ($incidentalEvents as $ev): ?>
+                                <option value="<?= $ev['id'] ?>" <?= (string)$currentFilterEvent === (string)$ev['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($ev['name']) ?> (<?= $ev['target_type'] == 'teachers' ? 'Guru' : ($ev['target_type'] == 'students' ? 'Santri' : 'Semua') ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+
+                    <!-- 5. Lainnya -->
+                    <?php if (!empty($otherEvents)): ?>
+                        <optgroup label="── Kegiatan Lainnya ──">
+                            <?php foreach ($otherEvents as $ev): ?>
+                                <option value="<?= $ev['id'] ?>" <?= (string)$currentFilterEvent === (string)$ev['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($ev['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
                 </select>
             </div>
 

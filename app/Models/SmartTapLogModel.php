@@ -357,9 +357,9 @@ class SmartTapLogModel extends Model
     /**
      * Discipline & Attendance Recap across a date range
      */
-    public function getRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null)
+    public function getRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null, $category = null)
     {
-        $res = $this->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId, $classId);
+        $res = $this->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId, $classId, $category);
         return $res['rows'];
     }
 
@@ -369,8 +369,14 @@ class SmartTapLogModel extends Model
      * status pengecualian (exemption), target spesifik, dan gender.
      * Mengkalkulasi kehadiran (Tepat & Terlambat), izin resmi, serta alpa secara presisi.
      */
-    public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null)
+    public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null, $category = null)
     {
+        // Deteksi jika eventId memuat prefix kategori, misal "cat:sholat", "cat_sholat", atau "category:sholat"
+        if (is_string($eventId) && (str_starts_with($eventId, 'cat:') || str_starts_with($eventId, 'cat_') || str_starts_with($eventId, 'category:'))) {
+            $category = str_replace(['category:', 'cat_', 'cat:'], '', $eventId);
+            $eventId = null;
+        }
+
         // 1. Ambil detail event terpilih (jika spesifik) atau semua event aktif
         $event = null;
         if (!empty($eventId)) {
@@ -380,10 +386,17 @@ class SmartTapLogModel extends Model
         }
 
         $sqlAllEv = "SELECT * FROM smart_tap_events WHERE is_active = 1";
+        $paramsEv = [];
         if (!empty($eventId)) {
-            $sqlAllEv .= " AND id = " . (int)$eventId;
+            $sqlAllEv .= " AND id = ?";
+            $paramsEv[] = (int)$eventId;
+        } elseif (!empty($category)) {
+            $sqlAllEv .= " AND category = ?";
+            $paramsEv[] = $category;
         }
-        $eventsList = $this->db->query($sqlAllEv)->fetchAll(PDO::FETCH_ASSOC);
+        $stmtAllEv = $this->db->prepare($sqlAllEv);
+        $stmtAllEv->execute($paramsEv);
+        $eventsList = $stmtAllEv->fetchAll(PDO::FETCH_ASSOC);
         $eventMap = [];
         foreach ($eventsList as $ev) {
             $eventMap[(int)$ev['id']] = $ev;
@@ -397,6 +410,11 @@ class SmartTapLogModel extends Model
             } elseif ($event['target_type'] === 'students') {
                 $effectiveTarget = 'students';
             }
+        } elseif (!empty($category) && $targetType === 'all') {
+            $types = array_unique(array_column($eventsList, 'target_type'));
+            if (count($types) === 1 && in_array($types[0], ['teachers', 'students'])) {
+                $effectiveTarget = $types[0];
+            }
         }
 
         // 2. Ambil sesi yang terselenggara (memiliki log absensi masuk) pada rentang tanggal & event
@@ -405,6 +423,9 @@ class SmartTapLogModel extends Model
         if (!empty($eventId)) {
             $whereSess[] = "l.event_id = ?";
             $paramSess[] = (int)$eventId;
+        } elseif (!empty($category)) {
+            $whereSess[] = "l.event_id IN (SELECT id FROM smart_tap_events WHERE category = ?)";
+            $paramSess[] = $category;
         }
         if ($effectiveTarget === 'teachers') {
             $whereSess[] = "l.person_type = 'teacher'";
@@ -473,6 +494,9 @@ class SmartTapLogModel extends Model
         if (!empty($eventId)) {
             $whereL[] = "l.event_id = ?";
             $paramsL[] = (int)$eventId;
+        } elseif (!empty($category)) {
+            $whereL[] = "l.event_id IN (SELECT id FROM smart_tap_events WHERE category = ?)";
+            $paramsL[] = $category;
         }
         if ($effectiveTarget !== 'all') {
             $whereL[] = "l.person_type = ?";

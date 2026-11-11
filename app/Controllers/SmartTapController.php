@@ -166,10 +166,18 @@ class SmartTapController extends Controller
         $startDate = $_GET['start_date'] ?? date('Y-m-01');
         $endDate = $_GET['end_date'] ?? date('Y-m-d');
         $targetType = $_GET['target_type'] ?? 'all';
-        $eventId = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
+        $rawEventId = $_GET['event_id'] ?? '';
+        $category = null;
+        $eventId = null;
+
+        if (is_string($rawEventId) && (str_starts_with($rawEventId, 'cat:') || str_starts_with($rawEventId, 'cat_') || str_starts_with($rawEventId, 'category:'))) {
+            $category = str_replace(['category:', 'cat_', 'cat:'], '', $rawEventId);
+        } elseif (!empty($rawEventId) && is_numeric($rawEventId) && (int)$rawEventId > 0) {
+            $eventId = (int)$rawEventId;
+        }
 
         $events = $this->eventModel->getAllEvents();
-        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId);
+        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId, null, $category);
         $summary = $recapData['summary'];
         $recap = $recapData['rows'];
 
@@ -177,7 +185,9 @@ class SmartTapController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
             'targetType' => $targetType,
+            'filterEvent' => $rawEventId,
             'eventId' => $eventId,
+            'category' => $category,
             'events' => $events,
             'recap' => $recap,
             'summary' => $summary
@@ -198,16 +208,32 @@ class SmartTapController extends Controller
         $startDate = $_GET['start_date'] ?? date('Y-m-01');
         $endDate = $_GET['end_date'] ?? date('Y-m-d');
         $targetType = $_GET['target_type'] ?? 'all';
-        $eventId = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
+        $rawEventId = $_GET['event_id'] ?? '';
+        $category = null;
+        $eventId = null;
+
+        if (is_string($rawEventId) && (str_starts_with($rawEventId, 'cat:') || str_starts_with($rawEventId, 'cat_') || str_starts_with($rawEventId, 'category:'))) {
+            $category = str_replace(['category:', 'cat_', 'cat:'], '', $rawEventId);
+        } elseif (!empty($rawEventId) && is_numeric($rawEventId) && (int)$rawEventId > 0) {
+            $eventId = (int)$rawEventId;
+        }
+
         $format = $_GET['format'] ?? 'xls';
 
-        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId);
+        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId, null, $category);
         $rows = $recapData['rows'];
 
         $eventTitle = 'Semua Kegiatan';
         if ($eventId) {
             $ev = $this->eventModel->getEventById($eventId);
             if ($ev) $eventTitle = $ev['name'];
+        } elseif ($category) {
+            $catLabels = [
+                'sholat' => 'Sholat 5 Waktu (Seluruh Waktu)',
+                'office' => 'Presensi Kantor / Rutin Harian',
+                'incidental' => 'Kegiatan Insidental / Khusus'
+            ];
+            $eventTitle = $catLabels[$category] ?? ('Kategori ' . ucfirst($category));
         }
 
         $filename = "Rekap_Kedisiplinan_Smart_Tap_" . date('Ymd_His');
