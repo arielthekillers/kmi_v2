@@ -364,18 +364,29 @@ class SmartTapLogModel extends Model
     }
 
     /**
-     * Rekapitulasi Komprehensif: Menggabungkan Target Baseline (Pengajar/Santri),
-     * Log Absensi Masuk (Tepat Waktu & Terlambat), serta Dispensasi/Izin Resmi.
-     * Menghasilkan KPI Summary Cards & Tabel Lengkap (termasuk yang Tidak Hadir / Alpa).
+     * Rekapitulasi Komprehensif & Evaluasi Kedisiplinan:
+     * Menghitung Kewajiban Kehadiran (Target Sesi) per individu berdasarkan sesi terselenggara,
+     * status pengecualian (exemption), target spesifik, dan gender.
+     * Mengkalkulasi kehadiran (Tepat & Terlambat), izin resmi, serta alpa secara presisi.
      */
     public function getComprehensiveRecapReport($startDate, $endDate, $targetType = 'all', $eventId = null, $classId = null)
     {
-        // 1. Ambil detail event jika event_id dipilih
+        // 1. Ambil detail event terpilih (jika spesifik) atau semua event aktif
         $event = null;
         if (!empty($eventId)) {
             $stmtEv = $this->db->prepare("SELECT * FROM smart_tap_events WHERE id = ?");
             $stmtEv->execute([(int)$eventId]);
             $event = $stmtEv->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $sqlAllEv = "SELECT * FROM smart_tap_events WHERE is_active = 1";
+        if (!empty($eventId)) {
+            $sqlAllEv .= " AND id = " . (int)$eventId;
+        }
+        $eventsList = $this->db->query($sqlAllEv)->fetchAll(PDO::FETCH_ASSOC);
+        $eventMap = [];
+        foreach ($eventsList as $ev) {
+            $eventMap[(int)$ev['id']] = $ev;
         }
 
         // Tentukan target tipe efektif:
@@ -386,53 +397,118 @@ class SmartTapLogModel extends Model
             } elseif ($event['target_type'] === 'students') {
                 $effectiveTarget = 'students';
             }
+        }
 
-            // Khusus Hari Jumat untuk Sholat Dzuhur jika filter rentang 1 hari pada hari Jumat:
-            if (($event['category'] ?? '') === 'sholat' && stripos($event['name'], 'Dzuhur') !== false && ($event['target_gender'] ?? 'all') === 'all') {
-                if ($startDate === $endDate && (int)date('N', strtotime($startDate)) === 5) {
-                    $event['target_gender'] = 'P';
+        // 2. Ambil sesi yang terselenggara (memiliki log absensi masuk) pada rentang tanggal & event
+        $whereSess = ["DATE(l.tapped_at) BETWEEN ? AND ?"];
+        $paramSess = [$startDate, $endDate];
+        if (!empty($eventId)) {
+            $whereSess[] = "l.event_id = ?";
+            $paramSess[] = (int)$eventId;
+        }
+        if ($effectiveTarget === 'teachers') {
+            $whereSess[] = "l.person_type = 'teacher'";
+        } elseif ($effectiveTarget === 'students') {
+            $whereSess[] = "l.person_type = 'student'";
+        }
+        $whereSessStr = implode(" AND ", $whereSess);
+
+        $sqlSessions = "SELECT l.event_id, DATE(l.tapped_at) as session_date, COUNT(*) as tap_count
+                        FROM smart_tap_logs l
+                        WHERE $whereSessStr
+                        GROUP BY l.event_id, DATE(l.tapped_at)
+                        ORDER BY session_date ASC, l.event_id ASC";
+        $stmtSess = $this->db->prepare($sqlSessions);
+        $stmtSess->execute($paramSess);
+        $sessionsHeld = $stmtSess->fetchAll(PDO::FETCH_ASSOC);
+
+        // Tambahkan sesi hari ini jika sedang aktif / terjadwal hari ini (meski belum ada yang tap)
+        $today = date('Y-m-d');
+        if ($today >= $startDate && $today <= $endDate) {
+            $todayDow = (int)date('N');
+            foreach ($eventsList as $ev) {
+                $dows = array_map('intval', explode(',', $ev['days_of_week']));
+                if (in_array($todayDow, $dows)) {
+                    $alreadyIn = false;
+                    foreach ($sessionsHeld as $sh) {
+                        if ($sh['session_date'] === $today && (int)$sh['event_id'] === (int)$ev['id']) {
+                            $alreadyIn = true;
+                            break;
+                        }
+                    }
+                    if (!$alreadyIn) {
+                        $sessionsHeld[] = [
+                            'event_id' => (int)$ev['id'],
+                            'session_date' => $today,
+                            'tap_count' => 0
+                        ];
+                    }
                 }
             }
         }
 
+        // 3. Ambil data pengecualian (exemptions)
+        $allExemptions = $this->db->query("SELECT * FROM smart_tap_exemptions")->fetchAll(PDO::FETCH_ASSOC);
+        $exemptionByTeacher = [];
+        foreach ($allExemptions as $ex) {
+            $exemptionByTeacher[(int)$ex['user_id']][] = $ex;
+        }
+
+        // 4. Ambil data perizinan & dispensasi yang beririsan dengan rentang tanggal
+        $sqlPerms = "SELECT person_type, person_id, permission_type, reason, event_ids, start_date, end_date
+                     FROM smart_tap_permissions
+                     WHERE start_date <= ? AND end_date >= ?";
+        $stmtPerms = $this->db->prepare($sqlPerms);
+        $stmtPerms->execute([$endDate, $startDate]);
+        $rawPerms = $stmtPerms->fetchAll(PDO::FETCH_ASSOC);
+        $permMap = [];
+        foreach ($rawPerms as $p) {
+            $key = $p['person_type'] . '_' . $p['person_id'];
+            $permMap[$key][] = $p;
+        }
+
+        // 5. Ambil data log aktual dalam rentang tanggal
+        $whereL = ["DATE(l.tapped_at) BETWEEN ? AND ?"];
+        $paramsL = [$startDate, $endDate];
+        if (!empty($eventId)) {
+            $whereL[] = "l.event_id = ?";
+            $paramsL[] = (int)$eventId;
+        }
+        if ($effectiveTarget !== 'all') {
+            $whereL[] = "l.person_type = ?";
+            $paramsL[] = $effectiveTarget === 'students' ? 'student' : 'teacher';
+        }
+        $whereClauseL = implode(" AND ", $whereL);
+
+        $sqlLogs = "SELECT l.person_type, l.person_id, l.event_id, DATE(l.tapped_at) as tap_date, l.status
+                    FROM smart_tap_logs l
+                    WHERE $whereClauseL";
+        $stmtLogs = $this->db->prepare($sqlLogs);
+        $stmtLogs->execute($paramsL);
+        $rawLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+        // Petakan log: person_key => [ 'date_eventId' => best_status ]
+        $logMap = [];
+        foreach ($rawLogs as $l) {
+            $key = $l['person_type'] . '_' . $l['person_id'];
+            $sessKey = $l['tap_date'] . '_' . $l['event_id'];
+            if (!isset($logMap[$key][$sessKey]) || $l['status'] === 'on_time') {
+                $logMap[$key][$sessKey] = $l['status'];
+            }
+        }
+
+        // 6. Siapkan Target Baseline Peserta
         $participants = [];
 
-        // 2. Ambil data Pengajar jika target mencakup 'all' atau 'teachers'
+        // Pengajar
         if (in_array($effectiveTarget, ['all', 'teachers'])) {
-            $exemptionModel = new \App\Models\SmartTapExemptionModel();
-            $exemptedUserIds = $exemptionModel->getExemptedUserIds($eventId, $event['category'] ?? null);
-
-            $exemptionFilter = "";
-            if (!empty($exemptedUserIds)) {
-                $exemptionFilter = " AND u.id NOT IN (" . implode(',', array_map('intval', $exemptedUserIds)) . ") ";
-            }
-
-            $genderFilterT = "";
-            if ($event && !empty($event['target_gender']) && $event['target_gender'] !== 'all') {
-                if ($event['target_gender'] === 'L') {
-                    $genderFilterT = " AND (tp.gender = 'Laki-laki' OR tp.gender = 'L' OR tp.gender IS NULL) ";
-                } elseif ($event['target_gender'] === 'P') {
-                    $genderFilterT = " AND (tp.gender = 'Perempuan' OR tp.gender = 'P') ";
-                }
-            }
-
-            $targetTeacherFilter = "";
-            if ($event && !empty($event['target_teachers'])) {
-                $teacherIds = array_filter(array_map('intval', explode(',', $event['target_teachers'])));
-                if (!empty($teacherIds)) {
-                    $targetTeacherFilter = " AND u.id IN (" . implode(',', $teacherIds) . ") ";
-                }
-            }
-
             $sqlTeachers = "SELECT u.id, u.username as identifier, u.nama as name, 'teacher' as person_type,
-                                   'Pengajar / Guru' as subinfo, tp.nip, tp.phone
+                                   'Pengajar / Guru' as subinfo, tp.nip, tp.gender
                             FROM users u
                             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
                             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND u.is_active = 1
-                            $exemptionFilter $genderFilterT $targetTeacherFilter
                             ORDER BY u.nama ASC";
             $teachers = $this->db->query($sqlTeachers)->fetchAll(PDO::FETCH_ASSOC);
-
             foreach ($teachers as $t) {
                 $key = 'teacher_' . $t['id'];
                 $participants[$key] = [
@@ -441,54 +517,39 @@ class SmartTapLogModel extends Model
                     'name' => $t['name'],
                     'identifier' => $t['identifier'] ?: ($t['nip'] ?: '-'),
                     'subinfo' => 'Pengajar / Guru',
-                    'count_on_time' => 0,
-                    'count_late' => 0,
-                    'count_very_late' => 0,
-                    'total_attendance' => 0,
-                    'has_permission' => false,
-                    'permission_type' => null,
-                    'permission_reason' => null,
-                    'status' => 'absent'
+                    'gender' => $t['gender'] ?? 'L',
+                    'kelas_id' => null
                 ];
             }
         }
 
-        // 3. Ambil data Santri jika target mencakup 'all' atau 'students'
+        // Santri
         if (in_array($effectiveTarget, ['all', 'students'])) {
             $classFilter = "";
             $pClass = [];
-
             $targetClasses = [];
             if (!empty($classId)) {
                 $targetClasses = [(int)$classId];
             } elseif ($event && !empty($event['target_classes'])) {
                 $targetClasses = array_map('intval', explode(',', $event['target_classes']));
             }
-
             if (!empty($targetClasses)) {
                 $placeholders = implode(',', array_fill(0, count($targetClasses), '?'));
                 $classFilter = " AND se.kelas_id IN ($placeholders) ";
                 $pClass = $targetClasses;
             }
 
-            $genderFilterS = "";
-            if ($event && !empty($event['target_gender']) && $event['target_gender'] !== 'all') {
-                $genderFilterS = " AND s.gender = " . $this->db->quote($event['target_gender']) . " ";
-            }
-
             $sqlStudents = "SELECT s.id, s.nis as identifier, s.nama as name, 'student' as person_type,
                                    CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, '')) as subinfo,
-                                   se.kelas_id
+                                   s.gender, se.kelas_id
                             FROM students s
                             INNER JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
                             LEFT JOIN kelas k ON se.kelas_id = k.id
-                            WHERE s.deleted_at IS NULL $classFilter $genderFilterS
+                            WHERE s.deleted_at IS NULL $classFilter
                             ORDER BY k.tingkat ASC, k.abjad ASC, s.nama ASC";
-
             $stmtS = $this->db->prepare($sqlStudents);
             $stmtS->execute(array_merge([$this->academic_year_id], $pClass));
             $students = $stmtS->fetchAll(PDO::FETCH_ASSOC);
-
             foreach ($students as $s) {
                 $key = 'student_' . $s['id'];
                 $participants[$key] = [
@@ -497,186 +558,252 @@ class SmartTapLogModel extends Model
                     'name' => $s['name'],
                     'identifier' => $s['identifier'] ?: '-',
                     'subinfo' => $s['subinfo'] ?: 'Santri',
-                    'count_on_time' => 0,
-                    'count_late' => 0,
-                    'count_very_late' => 0,
-                    'total_attendance' => 0,
-                    'has_permission' => false,
-                    'permission_type' => null,
-                    'permission_reason' => null,
-                    'status' => 'absent'
+                    'gender' => $s['gender'] ?? 'L',
+                    'kelas_id' => (int)$s['kelas_id']
                 ];
             }
         }
 
-        // 4. Ambil catatan log presensi pada rentang tanggal & event
-        $whereL = ["DATE(l.tapped_at) BETWEEN ? AND ?"];
-        $paramsL = [$startDate, $endDate];
-
-        if ($effectiveTarget !== 'all') {
-            $whereL[] = "l.person_type = ?";
-            $paramsL[] = $effectiveTarget === 'students' ? 'student' : 'teacher';
-        }
-
-        if ($eventId) {
-            $whereL[] = "l.event_id = ?";
-            $paramsL[] = (int)$eventId;
-        }
-
-        $whereClauseL = implode(" AND ", $whereL);
-
-        $sqlLogs = "SELECT l.person_type, l.person_id,
-                           COUNT(CASE WHEN l.status = 'on_time' THEN 1 END) as count_on_time,
-                           COUNT(CASE WHEN l.status = 'late' THEN 1 END) as count_late,
-                           COUNT(CASE WHEN l.status = 'very_late' THEN 1 END) as count_very_late,
-                           COUNT(CASE WHEN l.status != 'rejected' THEN 1 END) as total_attendance,
-                           CASE 
-                               WHEN l.person_type = 'student' THEN s.nama
-                               WHEN l.person_type = 'teacher' THEN u.nama
-                           END as fallback_name,
-                           CASE 
-                               WHEN l.person_type = 'student' THEN s.nis
-                               WHEN l.person_type = 'teacher' THEN u.username
-                           END as fallback_identifier,
-                           CASE 
-                               WHEN l.person_type = 'student' THEN CONCAT(COALESCE(k.tingkat, ''), ' ', COALESCE(k.abjad, ''))
-                               WHEN l.person_type = 'teacher' THEN 'Pengajar / Guru'
-                           END as fallback_subinfo
-                    FROM smart_tap_logs l
-                    LEFT JOIN students s ON l.person_type = 'student' AND l.person_id = s.id
-                    LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.academic_year_id = ?
-                    LEFT JOIN kelas k ON se.kelas_id = k.id
-                    LEFT JOIN users u ON l.person_type = 'teacher' AND l.person_id = u.id
-                    WHERE $whereClauseL
-                    GROUP BY l.person_type, l.person_id";
-
-        $stmtLogs = $this->db->prepare($sqlLogs);
-        $stmtLogs->execute(array_merge([$this->academic_year_id], $paramsL));
-        $logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($logs as $log) {
-            $key = $log['person_type'] . '_' . $log['person_id'];
-            if (!isset($participants[$key])) {
-                $participants[$key] = [
-                    'person_type' => $log['person_type'],
-                    'person_id' => (int)$log['person_id'],
-                    'name' => $log['fallback_name'] ?: 'Tanpa Nama',
-                    'identifier' => $log['fallback_identifier'] ?: '-',
-                    'subinfo' => $log['fallback_subinfo'] ?: '-',
-                    'count_on_time' => 0,
-                    'count_late' => 0,
-                    'count_very_late' => 0,
-                    'total_attendance' => 0,
-                    'has_permission' => false,
-                    'permission_type' => null,
-                    'permission_reason' => null,
-                    'status' => 'absent'
-                ];
-            }
-
-            $participants[$key]['count_on_time'] = (int)$log['count_on_time'];
-            $participants[$key]['count_late'] = (int)$log['count_late'];
-            $participants[$key]['count_very_late'] = (int)$log['count_very_late'];
-            $participants[$key]['total_attendance'] = (int)$log['total_attendance'];
-        }
-
-        // 5. Ambil data perizinan & dispensasi yang beririsan dengan tanggal laporan
-        $sqlPerms = "SELECT person_type, person_id, permission_type, reason, event_ids, start_date, end_date
-                     FROM smart_tap_permissions
-                     WHERE start_date <= ? AND end_date >= ?";
-        $stmtPerms = $this->db->prepare($sqlPerms);
-        $stmtPerms->execute([$endDate, $startDate]);
-        $perms = $stmtPerms->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($perms as $p) {
-            if ($eventId && !empty($p['event_ids'])) {
-                $allowedEvents = explode(',', $p['event_ids']);
-                if (!in_array((string)$eventId, $allowedEvents)) {
-                    continue;
-                }
-            }
-
-            $key = $p['person_type'] . '_' . $p['person_id'];
-            if (isset($participants[$key])) {
-                $participants[$key]['has_permission'] = true;
-                $participants[$key]['permission_type'] = $p['permission_type'];
-                $participants[$key]['permission_reason'] = $p['reason'];
-            }
-        }
-
-        // 5.5. Cek apakah ada Waiver (Pengecualian / Udzur Presensi) untuk tanggal ini
-        $waiverModel = new \App\Models\SmartTapWaiverModel();
-        $dateWaiver = null;
-        if ($startDate === $endDate) {
-            $dateWaiver = $waiverModel->getActiveWaiver($eventId, $event['category'] ?? null, $startDate);
-        }
-
-        // 6. Hitung Status Kedisiplinan & Summary KPI
+        // 7. Hitung Akumulasi Kewajiban, Kehadiran, dan Kedisiplinan per Individu
+        $rows = [];
         $summary = [
             'total_target' => count($participants),
-            'total_hadir' => 0,
-            'total_ontime' => 0,
-            'total_late' => 0,
-            'total_izin' => 0,
-            'total_waived' => 0,
-            'total_tidak_hadir' => 0,
-            'percent_presence' => 0,
-            'is_waived' => !empty($dateWaiver),
-            'waiver_title' => $dateWaiver['title'] ?? null,
-            'sum_taps_ontime' => 0,
-            'sum_taps_late' => 0,
-            'sum_taps_total' => 0
+            'total_sesi_terselenggara' => count($sessionsHeld),
+            'sum_kewajiban_all' => 0,
+            'sum_hadir_all' => 0,
+            'sum_ontime_all' => 0,
+            'sum_late_all' => 0,
+            'sum_izin_all' => 0,
+            'sum_alpa_all' => 0,
+            'percent_presence_aggregate' => 0,
+            'total_peserta_disiplin' => 0,
+            'total_peserta_warning' => 0,
+            'total_peserta_late' => 0,
+            'total_peserta_alpa' => 0,
+            'total_peserta_izin' => 0
         ];
 
-        foreach ($participants as &$p) {
-            $totalLate = $p['count_late'] + $p['count_very_late'];
-            $summary['sum_taps_ontime'] += $p['count_on_time'];
-            $summary['sum_taps_late'] += $totalLate;
-            $summary['sum_taps_total'] += $p['total_attendance'];
+        foreach ($participants as $key => $p) {
+            $pType = $p['person_type'];
+            $pId = (int)$p['person_id'];
+            $gender = $p['gender'] ?? 'L';
+            $pClassId = (int)($p['kelas_id'] ?? 0);
 
-            if ($p['total_attendance'] > 0) {
-                $summary['total_hadir']++;
-                if ($totalLate == 0) {
-                    $p['status'] = 'ontime';
-                    $summary['total_ontime']++;
-                } else {
-                    $p['status'] = 'late';
-                    $summary['total_late']++;
+            $kewajiban = 0;
+            $countOnTime = 0;
+            $countLate = 0;
+            $countPermission = 0;
+            $countAlpa = 0;
+            $permReasons = [];
+
+            foreach ($sessionsHeld as $sess) {
+                $evId = (int)$sess['event_id'];
+                $sessDate = $sess['session_date'];
+                if (!isset($eventMap[$evId])) continue;
+                $ev = $eventMap[$evId];
+
+                // Cek apakah peserta memiliki kewajiban hadir di sesi ini
+                $isObligated = false;
+                if ($pType === 'teacher') {
+                    if (in_array($ev['target_type'], ['all', 'teachers'])) {
+                        // Cek pengecualian (exemption)
+                        $isExempt = false;
+                        if (isset($exemptionByTeacher[$pId])) {
+                            foreach ($exemptionByTeacher[$pId] as $ex) {
+                                if ($ex['scope'] === 'all') { $isExempt = true; break; }
+                                if ($ex['scope'] === ($ev['category'] ?? '')) { $isExempt = true; break; }
+                                if ($ex['scope'] === 'custom' && !empty($ex['event_ids'])) {
+                                    $evIds = array_map('intval', explode(',', $ex['event_ids']));
+                                    if (in_array($evId, $evIds)) { $isExempt = true; break; }
+                                }
+                            }
+                        }
+
+                        if (!$isExempt) {
+                            $isObligated = true;
+                            // Target guru spesifik
+                            if (!empty($ev['target_teachers'])) {
+                                $allowedT = array_map('intval', explode(',', $ev['target_teachers']));
+                                if (!in_array($pId, $allowedT)) $isObligated = false;
+                            }
+                            // Gender filter
+                            if ($isObligated && !empty($ev['target_gender']) && $ev['target_gender'] !== 'all') {
+                                $isMale = in_array($gender, ['L', 'Laki-laki', null]);
+                                if ($ev['target_gender'] === 'L' && !$isMale) $isObligated = false;
+                                if ($ev['target_gender'] === 'P' && $isMale) $isObligated = false;
+                            }
+                        }
+                    }
+                } elseif ($pType === 'student') {
+                    if (in_array($ev['target_type'], ['all', 'students'])) {
+                        $classOk = true;
+                        if (!empty($ev['target_classes'])) {
+                            $allowedC = array_map('intval', explode(',', $ev['target_classes']));
+                            if (!in_array($pClassId, $allowedC)) $classOk = false;
+                        }
+                        $genderOk = true;
+                        if (!empty($ev['target_gender']) && $ev['target_gender'] !== 'all') {
+                            if ($gender !== $ev['target_gender']) $genderOk = false;
+                        }
+                        if ($classOk && $genderOk) $isObligated = true;
+                    }
                 }
-            } elseif ($p['has_permission']) {
-                $p['status'] = 'permission';
-                $summary['total_izin']++;
-            } elseif ($dateWaiver) {
-                // Sesi pada tanggal ini dibebaskan karena Udzur / Libur
-                $p['status'] = 'waived';
-                $p['waiver_title'] = $dateWaiver['title'];
-                $summary['total_waived']++;
-            } else {
-                $p['status'] = 'absent';
-                $summary['total_tidak_hadir']++;
-            }
-        }
-        unset($p);
 
-        if ($summary['total_target'] > 0) {
-            $effectiveTarget = $summary['total_target'] - $summary['total_waived'];
-            if ($effectiveTarget > 0) {
-                $summary['percent_presence'] = round(($summary['total_hadir'] / $effectiveTarget) * 100, 1);
-            } else {
-                $summary['percent_presence'] = 100.0; // 100% jika semua waived
+                if (!$isObligated) continue;
+
+                $kewajiban++;
+
+                // Evaluasi status presensi di sesi ini
+                $sessKey = $sessDate . '_' . $evId;
+                if (isset($logMap[$key][$sessKey])) {
+                    $st = $logMap[$key][$sessKey];
+                    if ($st === 'on_time') {
+                        $countOnTime++;
+                    } else {
+                        $countLate++;
+                    }
+                } else {
+                    // Cek apakah ada perizinan resmi di tanggal & event ini
+                    $hasPerm = false;
+                    $pReason = '';
+                    if (isset($permMap[$key])) {
+                        foreach ($permMap[$key] as $perm) {
+                            if ($sessDate >= $perm['start_date'] && $sessDate <= $perm['end_date']) {
+                                if (empty($perm['event_ids']) || in_array((string)$evId, explode(',', $perm['event_ids']))) {
+                                    $hasPerm = true;
+                                    $pReason = ucfirst($perm['permission_type']) . (!empty($perm['reason']) ? ': ' . $perm['reason'] : '');
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if ($hasPerm) {
+                        $countPermission++;
+                        if (!in_array($pReason, $permReasons)) $permReasons[] = $pReason;
+                    } else {
+                        $countAlpa++;
+                    }
+                }
             }
+
+            $totalHadir = $countOnTime + $countLate;
+            $percentKehadiran = $kewajiban > 0 ? round(($totalHadir / $kewajiban) * 100, 1) : 100.0;
+            $percentKepatuhan = $kewajiban > 0 ? round((($totalHadir + $countPermission) / $kewajiban) * 100, 1) : 100.0;
+            $percentTepatWaktu = $totalHadir > 0 ? round(($countOnTime / $totalHadir) * 100, 1) : 0;
+
+            // Tentukan status kedisiplinan objektif
+            $statusDisiplin = 'disiplin';
+            $statusLabel = 'Disiplin';
+            $badgeColor = 'emerald';
+
+            if ($kewajiban === 0) {
+                $statusDisiplin = 'exempted';
+                $statusLabel = 'Bebas Tugas';
+                $badgeColor = 'gray';
+            } elseif ($totalHadir === 0 && $countPermission === 0) {
+                $statusDisiplin = 'alpa_total';
+                $statusLabel = 'Tidak Hadir (' . $countAlpa . 'x Alpa)';
+                $badgeColor = 'rose';
+            } elseif ($percentKepatuhan >= 90 && $countLate === 0 && $countAlpa === 0) {
+                $statusDisiplin = 'perfect';
+                $statusLabel = 'Sangat Disiplin (100%)';
+                $badgeColor = 'emerald';
+            } elseif ($percentKepatuhan >= 85) {
+                if ($countLate > 0) {
+                    $statusDisiplin = 'disiplin_late';
+                    $statusLabel = 'Tertib (Telat ' . $countLate . 'x)';
+                    $badgeColor = 'teal';
+                } else {
+                    $statusDisiplin = 'disiplin';
+                    $statusLabel = 'Disiplin (' . $percentKehadiran . '%)';
+                    $badgeColor = 'emerald';
+                }
+            } elseif ($percentKepatuhan >= 70) {
+                $statusDisiplin = 'warning';
+                $statusLabel = 'Cukup (' . $countAlpa . 'x Alpa' . ($countLate > 0 ? ', ' . $countLate . 'x Telat' : '') . ')';
+                $badgeColor = 'amber';
+            } else {
+                $statusDisiplin = 'poor';
+                $statusLabel = 'Kurang Tertib (' . $countAlpa . 'x Alpa)';
+                $badgeColor = 'rose';
+            }
+
+            // Summary counters
+            $summary['sum_kewajiban_all'] += $kewajiban;
+            $summary['sum_hadir_all'] += $totalHadir;
+            $summary['sum_ontime_all'] += $countOnTime;
+            $summary['sum_late_all'] += $countLate;
+            $summary['sum_izin_all'] += $countPermission;
+            $summary['sum_alpa_all'] += $countAlpa;
+
+            if ($percentKepatuhan >= 85 && $kewajiban > 0) $summary['total_peserta_disiplin']++;
+            if ($percentKepatuhan < 85 && $kewajiban > 0) $summary['total_peserta_warning']++;
+            if ($countLate > 0) $summary['total_peserta_late']++;
+            if ($countAlpa > 0) $summary['total_peserta_alpa']++;
+            if ($countPermission > 0) $summary['total_peserta_izin']++;
+
+            $rows[] = [
+                'person_type' => $pType,
+                'person_id' => $pId,
+                'name' => $p['name'],
+                'identifier' => $p['identifier'],
+                'subinfo' => $p['subinfo'],
+                'kewajiban' => $kewajiban,
+                'total_attendance' => $totalHadir,
+                'count_on_time' => $countOnTime,
+                'count_late' => $countLate,
+                'count_permission' => $countPermission,
+                'permission_reasons' => implode('; ', $permReasons),
+                'count_alpa' => $countAlpa,
+                'percent_presence' => $percentKehadiran,
+                'percent_compliance' => $percentKepatuhan,
+                'percent_ontime' => $percentTepatWaktu,
+                'status' => ($statusDisiplin === 'exempted' ? 'waived' : ($countAlpa > 0 && $totalHadir === 0 ? 'absent' : ($countLate > 0 ? 'late' : ($countPermission > 0 && $totalHadir === 0 ? 'permission' : 'ontime')))),
+                'status_key' => $statusDisiplin,
+                'status_label' => $statusLabel,
+                'badge_color' => $badgeColor
+            ];
         }
 
-        // 7. Urutkan: Terlambat -> Tidak Hadir -> Izin -> Udzur/Waived -> Tepat Waktu, lalu Nama ASC
-        $rows = array_values($participants);
+        // Summary Aggregates
+        if ($summary['sum_kewajiban_all'] > 0) {
+            $summary['percent_presence_aggregate'] = round(($summary['sum_hadir_all'] / $summary['sum_kewajiban_all']) * 100, 1);
+        } else {
+            $summary['percent_presence_aggregate'] = 100.0;
+        }
+
+        // Backward compatibility keys for existing views/reports
+        $summary['total_hadir'] = $summary['sum_hadir_all'];
+        $summary['total_ontime'] = $summary['sum_ontime_all'];
+        $summary['total_late'] = $summary['sum_late_all'];
+        $summary['total_izin'] = $summary['sum_izin_all'];
+        $summary['total_tidak_hadir'] = $summary['sum_alpa_all'];
+        $summary['percent_presence'] = $summary['percent_presence_aggregate'];
+        $summary['sum_taps_ontime'] = $summary['sum_ontime_all'];
+        $summary['sum_taps_late'] = $summary['sum_late_all'];
+        $summary['sum_taps_total'] = $summary['sum_hadir_all'];
+
+        // Urutkan default:
+        // 1. Peserta dengan kewajiban > 0 didahulukan
+        // 2. Peserta dengan % Kepatuhan terendah / Alpa terbanyak di atas (agar kedisiplinan langsung terlihat)
+        // 3. Nama ASC
         usort($rows, function ($a, $b) {
-            $rank = ['late' => 1, 'absent' => 2, 'permission' => 3, 'waived' => 4, 'ontime' => 5];
-            $rankA = $rank[$a['status']] ?? 9;
-            $rankB = $rank[$b['status']] ?? 9;
-
-            if ($rankA !== $rankB) {
-                return $rankA <=> $rankB;
+            $hasObligA = $a['kewajiban'] > 0 ? 1 : 0;
+            $hasObligB = $b['kewajiban'] > 0 ? 1 : 0;
+            if ($hasObligA !== $hasObligB) {
+                return $hasObligB <=> $hasObligA;
             }
+
+            if ($a['kewajiban'] > 0) {
+                if ($a['percent_compliance'] !== $b['percent_compliance']) {
+                    return $a['percent_compliance'] <=> $b['percent_compliance'];
+                }
+                if ($a['count_alpa'] !== $b['count_alpa']) {
+                    return $b['count_alpa'] <=> $a['count_alpa'];
+                }
+            }
+
             return strcmp($a['name'], $b['name']);
         });
 
