@@ -185,6 +185,257 @@ class SmartTapController extends Controller
     }
 
     /**
+     * Export Laporan Rekapitulasi & Kedisiplinan ke Excel / CSV
+     */
+    public function exportReports()
+    {
+        require_login();
+        if (!auth_is_smart_tap_officer()) {
+            add_flash('Akses ditolak. Modul Smart Tap hanya dapat diakses oleh Admin atau Petugas Smart Tap.', 'error');
+            $this->redirect('/');
+        }
+
+        $startDate = $_GET['start_date'] ?? date('Y-m-01');
+        $endDate = $_GET['end_date'] ?? date('Y-m-d');
+        $targetType = $_GET['target_type'] ?? 'all';
+        $eventId = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
+        $format = $_GET['format'] ?? 'xls';
+
+        $recapData = $this->logModel->getComprehensiveRecapReport($startDate, $endDate, $targetType, $eventId);
+        $rows = $recapData['rows'];
+
+        $eventTitle = 'Semua Kegiatan';
+        if ($eventId) {
+            $ev = $this->eventModel->getEventById($eventId);
+            if ($ev) $eventTitle = $ev['name'];
+        }
+
+        $filename = "Rekap_Kedisiplinan_Smart_Tap_" . date('Ymd_His');
+
+        if ($format === 'csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+
+            fputcsv($output, ['REKAPITULASI & KEDISIPLINAN SMART TAP']);
+            fputcsv($output, ['Periode', $startDate . ' s/d ' . $endDate]);
+            fputcsv($output, ['Kegiatan', $eventTitle]);
+            fputcsv($output, []);
+            fputcsv($output, [
+                'No', 'Nama Lengkap', 'NIP / NIS', 'Peran / Kategori',
+                'Kewajiban Sesi', 'Total Hadir', 'Tepat Waktu', 'Terlambat',
+                'Izin / Dispensasi', 'Alpa', '% Kehadiran', '% Kepatuhan', 'Status Kedisiplinan'
+            ]);
+
+            $no = 1;
+            foreach ($rows as $r) {
+                fputcsv($output, [
+                    $no++,
+                    $r['name'],
+                    "'" . ($r['identifier'] ?: '-'),
+                    $r['subinfo'],
+                    $r['kewajiban'],
+                    $r['total_attendance'],
+                    $r['count_on_time'],
+                    $r['count_late'],
+                    $r['count_permission'],
+                    $r['count_alpa'],
+                    $r['percent_presence'] . '%',
+                    $r['percent_compliance'] . '%',
+                    $r['status_label']
+                ]);
+            }
+
+            fclose($output);
+            exit;
+        }
+
+        // Official Microsoft Excel Spreadsheet 2003 XML (opens cleanly without Table parsing warnings)
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
+        header('Cache-Control: max-age=0');
+
+        $escape = function($str) {
+            return htmlspecialchars((string)($str ?? ''), ENT_XML1, 'UTF-8');
+        };
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+        $xml .= ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+        $xml .= ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        $xml .= ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+        $xml .= '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Smart Tap KMI</Author>
+  <Company>Pondok Modern Darussalam Bogor</Company>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="Title">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="13" ss:Color="#1E3A8A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="Meta">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#475569" ss:Italic="1"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Cell">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A"/>
+  </Style>
+  <Style ss:ID="CellCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A"/>
+  </Style>
+  <Style ss:ID="CellNumber">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A"/>
+   <NumberFormat ss:Format="#,##0"/>
+  </Style>
+  <Style ss:ID="CellAlpa">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FDA4AF"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FDA4AF"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FDA4AF"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FDA4AF"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#BE123C" ss:Bold="1"/>
+   <Interior ss:Color="#FFF1F2" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0"/>
+  </Style>
+  <Style ss:ID="CellHadir">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A7F3D0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#065F46" ss:Bold="1"/>
+   <Interior ss:Color="#ECFDF5" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0"/>
+  </Style>
+  <Style ss:ID="CellPercent">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F172A" ss:Bold="1"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Rekap Kedisiplinan">
+  <Table ss:DefaultRowHeight="19">
+   <Column ss:Width="30"/>
+   <Column ss:Width="170"/>
+   <Column ss:Width="95"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="65"/>
+   <Column ss:Width="65"/>
+   <Column ss:Width="65"/>
+   <Column ss:Width="65"/>
+   <Column ss:Width="75"/>
+   <Column ss:Width="130"/>
+   <Row ss:Height="24">
+    <Cell ss:MergeAcross="11" ss:StyleID="Title"><Data ss:Type="String">REKAPITULASI &amp; KEDISIPLINAN SMART TAP</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="11" ss:StyleID="Meta"><Data ss:Type="String">Periode: ' . $escape($startDate) . ' s/d ' . $escape($endDate) . ' | Kegiatan: ' . $escape($eventTitle) . '</Data></Cell>
+   </Row>
+   <Row ss:Height="10"/>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Lengkap</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">NIP / NIS</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Peran / Kelas</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Kewajiban</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Total Hadir</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Tepat</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Telat</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Izin</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Alpa</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">% Hadir</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Status Kedisiplinan</Data></Cell>
+   </Row>';
+
+        $no = 1;
+        foreach ($rows as $r) {
+            $kew = (int)($r['kewajiban'] ?? 0);
+            $hdr = (int)($r['total_attendance'] ?? 0);
+            $tpt = (int)($r['count_on_time'] ?? 0);
+            $tlt = (int)($r['count_late'] ?? 0);
+            $izn = (int)($r['count_permission'] ?? 0);
+            $alp = (int)($r['count_alpa'] ?? 0);
+            $pct = number_format((float)($r['percent_presence'] ?? 0), 1) . '%';
+            $alpaStyle = $alp > 0 ? 'CellAlpa' : 'CellNumber';
+
+            $xml .= '<Row ss:Height="20">';
+            $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' . ($no++) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($r['name']) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellCenter"><Data ss:Type="String">' . $escape($r['identifier'] ?: '-') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($r['subinfo'] ?: '-') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellNumber"><Data ss:Type="Number">' . $kew . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellHadir"><Data ss:Type="Number">' . $hdr . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellNumber"><Data ss:Type="Number">' . $tpt . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellNumber"><Data ss:Type="Number">' . $tlt . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellNumber"><Data ss:Type="Number">' . $izn . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $alpaStyle . '"><Data ss:Type="Number">' . $alp . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="CellPercent"><Data ss:Type="String">' . $pct . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="Cell"><Data ss:Type="String">' . $escape($r['status_label']) . '</Data></Cell>';
+            $xml .= '</Row>';
+        }
+
+        $xml .= '</Table>
+ </Worksheet>
+</Workbook>';
+
+        echo $xml;
+        exit;
+    }
+
+    /**
      * Manajemen Perizinan (Izin / Sakit)
      */
     public function permissions()

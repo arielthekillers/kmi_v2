@@ -16,6 +16,32 @@ $summary = $summary ?? [
     'total_peserta_alpa' => 0,
     'total_peserta_izin' => 0
 ];
+
+// Siapkan map modal JSON untuk akses cepat tanpa AJAX
+$modalDataMap = [];
+foreach ($recap as $r) {
+    $pKey = $r['participant_key'] ?? ($r['person_type'] . '_' . $r['person_id']);
+    $modalDataMap[$pKey] = [
+        'name' => $r['name'],
+        'identifier' => $r['identifier'] ?: '-',
+        'subinfo' => $r['subinfo'] ?: '-',
+        'person_type' => $r['person_type'],
+        'gender' => $r['gender'] ?? 'L',
+        'kewajiban' => (int)($r['kewajiban'] ?? 0),
+        'total_attendance' => (int)($r['total_attendance'] ?? 0),
+        'count_on_time' => (int)($r['count_on_time'] ?? 0),
+        'count_late' => (int)($r['count_late'] ?? 0),
+        'count_permission' => (int)($r['count_permission'] ?? 0),
+        'permission_reasons' => $r['permission_reasons'] ?: '-',
+        'count_alpa' => (int)($r['count_alpa'] ?? 0),
+        'percent_presence' => (float)($r['percent_presence'] ?? 0),
+        'percent_compliance' => (float)($r['percent_compliance'] ?? 0),
+        'status_key' => $r['status_key'] ?? 'disiplin',
+        'status_label' => $r['status_label'] ?? 'Disiplin',
+        'badge_color' => $r['badge_color'] ?? 'emerald',
+        'sessions' => $r['sessions_detail'] ?? []
+    ];
+}
 ?>
 
 <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
@@ -32,9 +58,14 @@ $summary = $summary ?? [
         </div>
 
         <div class="flex items-center gap-2 print:hidden">
-            <button type="button" onclick="exportTableToExcel('recapTable', 'Rekap_Kedisiplinan_Smart_Tap')" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-xs transition">
-                <i class="ri-file-excel-2-line"></i> Ekspor Excel (.xls)
-            </button>
+            <!-- Server-Side Compliant Excel Export (.xls XML Spreadsheet) -->
+            <a href="<?= url('/smart-tap/reports/export?' . http_build_query($_GET)) ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-xs transition" title="Unduh File Excel Resmi (.xls)">
+                <i class="ri-file-excel-2-line"></i> Ekspor Excel
+            </a>
+            <!-- CSV Download -->
+            <a href="<?= url('/smart-tap/reports/export?' . http_build_query(array_merge($_GET, ['format' => 'csv']))) ?>" class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 transition" title="Unduh File CSV Ringan">
+                <i class="ri-file-text-line"></i> CSV
+            </a>
             <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition">
                 <i class="ri-printer-line"></i> Cetak / PDF
             </button>
@@ -87,7 +118,7 @@ $summary = $summary ?? [
         </form>
     </div>
 
-    <!-- KPI Summary Cards (Berdasarkan Kewajiban Sesi & Realisasi Presensi) -->
+    <!-- KPI Summary Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <!-- 1. Total Sesi Wajib -->
         <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
@@ -180,7 +211,7 @@ $summary = $summary ?? [
         </div>
     </div>
 
-    <!-- Data Table Container -->
+    <!-- Data Table Container (Clean & Airly Design) -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <!-- Table Toolbar & Filters -->
         <div class="p-4 sm:p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -194,7 +225,7 @@ $summary = $summary ?? [
                         <span class="text-xs font-normal text-gray-500">(<span id="visibleCount"><?= count($recap) ?></span> terdata)</span>
                     </h3>
                     <p class="text-xs text-gray-500">
-                        Periode: <?= date('d M Y', strtotime($startDate)) ?> s/d <?= date('d M Y', strtotime($endDate)) ?> &bull; Klik judul kolom untuk mengurutkan data (sort).
+                        Periode: <?= date('d M Y', strtotime($startDate)) ?> s/d <?= date('d M Y', strtotime($endDate)) ?> &bull; Klik nama peserta atau tombol aksi untuk membuka detail sesi.
                     </p>
                 </div>
             </div>
@@ -229,49 +260,44 @@ $summary = $summary ?? [
             </div>
         </div>
 
+        <!-- Clean, Spacious Main Table (Consolidated Columns) -->
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse" id="recapTable">
                 <thead>
                     <tr class="bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 select-none">
-                        <th class="py-3 px-3 text-center w-12 cursor-pointer hover:bg-gray-100" onclick="sortTable(0, 'int')">
+                        <th class="py-3.5 px-3 text-center w-12 cursor-pointer hover:bg-gray-100" onclick="sortTable(0, 'int')">
                             No <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-4 cursor-pointer hover:bg-gray-100" onclick="sortTable(1, 'str')">
+                        <th class="py-3.5 px-4 cursor-pointer hover:bg-gray-100 min-w-[200px]" onclick="sortTable(1, 'str')">
                             Nama Lengkap & NIP/NIS <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-3 cursor-pointer hover:bg-gray-100" onclick="sortTable(2, 'str')">
+                        <th class="py-3.5 px-3 cursor-pointer hover:bg-gray-100" onclick="sortTable(2, 'str')">
                             Peran / Kelas <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 bg-indigo-50/40 text-indigo-900" onclick="sortTable(3, 'int')" title="Total sesi yang wajib dihadiri dalam periode ini">
+                        <th class="py-3.5 px-3 text-center cursor-pointer hover:bg-gray-100 bg-indigo-50/40 text-indigo-900" onclick="sortTable(3, 'int')" title="Total sesi yang wajib dihadiri dalam periode ini">
                             Kewajiban <i class="ri-arrow-up-down-line text-[10px] text-indigo-400"></i>
                         </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 font-extrabold text-emerald-800" onclick="sortTable(4, 'int')" title="Total sesi hadir (Tepat Waktu + Terlambat)">
-                            Total Hadir <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
+                        <th class="py-3.5 px-4 text-center cursor-pointer hover:bg-gray-100 font-extrabold text-emerald-800" onclick="sortTable(4, 'int')" title="Total kehadiran dan rincian tepat/telat">
+                            Realisasi Hadir <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 text-teal-700" onclick="sortTable(5, 'int')">
-                            Tepat <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
+                        <th class="py-3.5 px-3 text-center cursor-pointer hover:bg-gray-100" onclick="sortTable(5, 'int')" title="Jumlah sesi alpa atau izin">
+                            Izin &amp; Alpa <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 text-amber-700" onclick="sortTable(6, 'int')">
-                            Telat <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
-                        </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 text-blue-700" onclick="sortTable(7, 'int')">
-                            Izin <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
-                        </th>
-                        <th class="py-3 px-3 text-center cursor-pointer hover:bg-gray-100 text-rose-700 bg-rose-50/30" onclick="sortTable(8, 'int')" title="Kewajiban dikurangi Hadir & Izin">
-                            Alpa <i class="ri-arrow-up-down-line text-[10px] text-rose-400"></i>
-                        </th>
-                        <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 w-36" onclick="sortTable(9, 'float')" title="Persentase kehadiran fisik (Hadir / Kewajiban)">
+                        <th class="py-3.5 px-4 text-center cursor-pointer hover:bg-gray-100 w-36" onclick="sortTable(6, 'float')" title="Persentase kehadiran fisik (Hadir / Kewajiban)">
                             % Hadir <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
                         </th>
-                        <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100" onclick="sortTable(10, 'str')">
+                        <th class="py-3.5 px-4 text-center cursor-pointer hover:bg-gray-100" onclick="sortTable(7, 'str')">
                             Status Kedisiplinan <i class="ri-arrow-up-down-line text-[10px] text-gray-400"></i>
+                        </th>
+                        <th class="py-3.5 px-3 text-center w-20 print:hidden">
+                            Aksi
                         </th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm">
                     <?php if (empty($recap)): ?>
                         <tr>
-                            <td colspan="11" class="text-center py-12 text-gray-400">
+                            <td colspan="9" class="text-center py-12 text-gray-400">
                                 <i class="ri-inbox-line text-3xl mb-1 block"></i>
                                 Tidak ada data santri atau pengajar pada rentang tanggal atau filter ini.
                             </td>
@@ -280,6 +306,7 @@ $summary = $summary ?? [
                         <?php 
                         $no = 1;
                         foreach ($recap as $row): 
+                            $pKey = $row['participant_key'] ?? ($row['person_type'] . '_' . $row['person_id']);
                             $kewajiban = (int)($row['kewajiban'] ?? 0);
                             $hadir = (int)($row['total_attendance'] ?? 0);
                             $tepat = (int)($row['count_on_time'] ?? 0);
@@ -313,23 +340,38 @@ $summary = $summary ?? [
                                 $filterTags[] = 'permission';
                             }
                             $filterTagsStr = implode(' ', $filterTags);
+
+                            // Avatar initials
+                            $initial = strtoupper(mb_substr($row['name'] ?: 'U', 0, 1));
                         ?>
-                            <tr class="recap-row hover:bg-gray-50/80 transition" data-filter="<?= $filterTagsStr ?>" data-search="<?= strtolower(htmlspecialchars(($row['name'] ?? '') . ' ' . ($row['identifier'] ?? '') . ' ' . ($row['subinfo'] ?? ''))) ?>">
+                            <tr class="recap-row hover:bg-indigo-50/30 transition group" data-filter="<?= $filterTagsStr ?>" data-search="<?= strtolower(htmlspecialchars(($row['name'] ?? '') . ' ' . ($row['identifier'] ?? '') . ' ' . ($row['subinfo'] ?? ''))) ?>">
                                 <td class="py-3 px-3 text-xs font-medium text-gray-400 text-center row-num" data-val="<?= $no ?>"><?= $no++ ?></td>
                                 
-                                <!-- Nama Lengkap & NIP/NIS -->
-                                <td class="py-3 px-4" data-val="<?= htmlspecialchars($row['name'] ?? '') ?>">
-                                    <div class="font-bold text-gray-900 flex items-center gap-1.5">
-                                        <?= htmlspecialchars($row['name'] ?: 'Tanpa Nama') ?>
-                                        <?php if ($statusKey === 'perfect'): ?>
-                                            <i class="ri-star-fill text-amber-400 text-xs" title="Presensi Sempurna 100%"></i>
-                                        <?php elseif ($alpa > 0): ?>
-                                            <i class="ri-close-circle-fill text-rose-500 text-xs" title="Ada Alpa: <?= $alpa ?>x"></i>
-                                        <?php elseif ($telat > 0): ?>
-                                            <i class="ri-alarm-warning-fill text-amber-500 text-xs" title="Ada Terlambat: <?= $telat ?>x"></i>
-                                        <?php endif; ?>
+                                <!-- Nama Lengkap & NIP/NIS (CLICKABLE TO OPEN MODAL) -->
+                                <td class="py-3 px-4 cursor-pointer" onclick="openDetailModal('<?= $pKey ?>')" data-val="<?= htmlspecialchars($row['name'] ?? '') ?>" title="Klik untuk melihat detail presensi &amp; riwayat sesi">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 group-hover:ring-2 group-hover:ring-indigo-300 transition-all">
+                                            <?= $initial ?>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-gray-900 group-hover:text-indigo-600 transition flex items-center gap-1.5 truncate">
+                                                <?= htmlspecialchars($row['name'] ?: 'Tanpa Nama') ?>
+                                                <?php if ($statusKey === 'perfect'): ?>
+                                                    <i class="ri-star-fill text-amber-400 text-xs shrink-0" title="Presensi Sempurna 100%"></i>
+                                                <?php elseif ($alpa > 0): ?>
+                                                    <i class="ri-close-circle-fill text-rose-500 text-xs shrink-0" title="Ada Alpa: <?= $alpa ?>x"></i>
+                                                <?php elseif ($telat > 0): ?>
+                                                    <i class="ri-alarm-warning-fill text-amber-500 text-xs shrink-0" title="Ada Terlambat: <?= $telat ?>x"></i>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="text-[11px] text-gray-400 font-mono tracking-tight flex items-center gap-2">
+                                                <span><?= htmlspecialchars($row['identifier'] ?: '-') ?></span>
+                                                <span class="text-[10px] text-indigo-500 font-sans opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                                                    <i class="ri-arrow-right-up-line"></i> detail
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="text-[11px] text-gray-400 font-mono tracking-tight"><?= htmlspecialchars($row['identifier'] ?: '-') ?></div>
                                 </td>
 
                                 <!-- Peran / Kelas -->
@@ -340,69 +382,51 @@ $summary = $summary ?? [
                                 </td>
 
                                 <!-- Kewajiban Sesi -->
-                                <td class="py-3 px-3 text-center bg-indigo-50/30" data-val="<?= $kewajiban ?>">
+                                <td class="py-3 px-3 text-center bg-indigo-50/20" data-val="<?= $kewajiban ?>">
                                     <?php if ($kewajiban > 0): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold text-indigo-950 bg-indigo-100/70">
-                                            <?= $kewajiban ?>x
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold text-indigo-950 bg-indigo-100/70">
+                                            <?= $kewajiban ?> Sesi
                                         </span>
                                     <?php else: ?>
                                         <span class="text-xs text-gray-400 italic font-mono">Bebas</span>
                                     <?php endif; ?>
                                 </td>
 
-                                <!-- Total Hadir -->
-                                <td class="py-3 px-3 text-center font-extrabold" data-val="<?= $hadir ?>">
+                                <!-- Realisasi Hadir (Consolidated: Hadir + Tepat + Telat) -->
+                                <td class="py-3 px-4 text-center" data-val="<?= $hadir ?>">
                                     <?php if ($hadir > 0): ?>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-extrabold text-emerald-800 bg-emerald-100/70">
-                                            <?= $hadir ?>x
-                                        </span>
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                                <?= $hadir ?>x Hadir
+                                            </span>
+                                            <div class="text-[10px] text-gray-500 font-medium mt-0.5 flex items-center gap-1.5">
+                                                <span class="text-teal-700"><?= $tepat ?> tepat</span>
+                                                <span class="text-gray-300">&bull;</span>
+                                                <span class="<?= $telat > 0 ? 'text-amber-700 font-bold' : 'text-gray-400' ?>"><?= $telat ?> telat</span>
+                                            </div>
+                                        </div>
                                     <?php else: ?>
-                                        <span class="text-xs text-gray-300">0</span>
+                                        <span class="text-xs text-gray-300 font-mono">0 Hadir</span>
                                     <?php endif; ?>
                                 </td>
 
-                                <!-- Tepat Waktu -->
-                                <td class="py-3 px-3 text-center" data-val="<?= $tepat ?>">
-                                    <?php if ($tepat > 0): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60">
-                                            <?= $tepat ?>x
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-300">0</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <!-- Terlambat -->
-                                <td class="py-3 px-3 text-center" data-val="<?= $telat ?>">
-                                    <?php if ($telat > 0): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                            <?= $telat ?>x
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-300">0</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <!-- Izin / Dispensasi -->
-                                <td class="py-3 px-3 text-center" data-val="<?= $izin ?>">
-                                    <?php if ($izin > 0): ?>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 cursor-help" title="<?= htmlspecialchars($permReasons ?: 'Dispensasi Resmi') ?>">
-                                            <i class="ri-file-text-line"></i> <?= $izin ?>x
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-300">-</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <!-- Alpa / Tidak Hadir -->
-                                <td class="py-3 px-3 text-center bg-rose-50/20" data-val="<?= $alpa ?>">
-                                    <?php if ($alpa > 0): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300">
-                                            <?= $alpa ?>x
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-300">0</span>
-                                    <?php endif; ?>
+                                <!-- Izin & Alpa (Consolidated) -->
+                                <td class="py-3 px-3 text-center" data-val="<?= $alpa * 100 + $izin ?>">
+                                    <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                        <?php if ($alpa > 0): ?>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300" title="Tidak Hadir tanpa keterangan: <?= $alpa ?> sesi">
+                                                <?= $alpa ?>x Alpa
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($izin > 0): ?>
+                                            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 cursor-help" title="<?= htmlspecialchars($permReasons ?: 'Dispensasi Resmi') ?>">
+                                                <i class="ri-file-text-line text-[10px]"></i> <?= $izin ?>x Izin
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($alpa === 0 && $izin === 0): ?>
+                                            <span class="text-xs text-gray-300">-</span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
 
                                 <!-- % Kehadiran & Visual Progress Bar -->
@@ -446,6 +470,13 @@ $summary = $summary ?? [
                                         </span>
                                     <?php endif; ?>
                                 </td>
+
+                                <!-- Aksi (Buka Modal Detail) -->
+                                <td class="py-3 px-3 text-center print:hidden">
+                                    <button type="button" onclick="openDetailModal('<?= $pKey ?>')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition" title="Lihat Rekap &amp; Riwayat Sesi">
+                                        <i class="ri-eye-line"></i> Detail
+                                    </button>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -456,15 +487,253 @@ $summary = $summary ?? [
 
 </div>
 
+<!-- Modal Pop-Up Detail Presensi & Evaluasi Peserta -->
+<div id="modalParticipantDetail" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity" onclick="closeDetailModal()"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+        <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-3xl border border-gray-100 flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b border-gray-100 flex items-start justify-between bg-gradient-to-r from-gray-50 via-white to-indigo-50/40">
+                <div class="flex items-center gap-4">
+                    <div id="modalAvatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white text-lg font-bold flex items-center justify-center shadow-sm shrink-0">
+                        U
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-lg font-bold text-gray-900" id="modalName">-</h3>
+                            <span id="modalStatusBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full">-</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 flex items-center gap-2 font-mono">
+                            <span id="modalIdentifier">-</span>
+                            <span>&bull;</span>
+                            <span id="modalSubinfo" class="font-sans font-medium text-gray-600">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="closeDetailModal()" class="w-8 h-8 rounded-xl bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center border border-gray-200 transition shrink-0">
+                    <i class="ri-close-line text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-6">
+                <!-- KPI Breakdown Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-center">
+                        <div class="text-[11px] font-semibold text-gray-500 uppercase">Kewajiban</div>
+                        <div class="text-xl font-black text-gray-900 mt-1" id="modalKewajiban">0</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">Sesi Wajib</div>
+                    </div>
+                    <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100 text-center">
+                        <div class="text-[11px] font-semibold text-emerald-700 uppercase">Tepat Waktu</div>
+                        <div class="text-xl font-black text-emerald-700 mt-1" id="modalOnTime">0</div>
+                        <div class="text-[10px] text-emerald-600 mt-0.5">Sesi Tepat</div>
+                    </div>
+                    <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-100 text-center">
+                        <div class="text-[11px] font-semibold text-amber-700 uppercase">Terlambat</div>
+                        <div class="text-xl font-black text-amber-700 mt-1" id="modalLate">0</div>
+                        <div class="text-[10px] text-amber-600 mt-0.5">Sesi Telat</div>
+                    </div>
+                    <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 text-center">
+                        <div class="text-[11px] font-semibold text-blue-700 uppercase">Izin / Sakit</div>
+                        <div class="text-xl font-black text-blue-700 mt-1" id="modalPermission">0</div>
+                        <div class="text-[10px] text-blue-600 mt-0.5">Dispensasi</div>
+                    </div>
+                    <div class="bg-rose-50/60 p-3.5 rounded-xl border border-rose-100 text-center col-span-2 sm:col-span-1">
+                        <div class="text-[11px] font-semibold text-rose-700 uppercase">Alpa</div>
+                        <div class="text-xl font-black text-rose-700 mt-1" id="modalAlpa">0</div>
+                        <div class="text-[10px] text-rose-600 mt-0.5">Tanpa Keterangan</div>
+                    </div>
+                </div>
+
+                <!-- Progress & Compliance Rate -->
+                <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="w-full sm:w-1/2">
+                        <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                            <span>Tingkat Kehadiran Fisik</span>
+                            <span id="modalPresenceText">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div id="modalPresenceBar" class="h-full rounded-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-1/2">
+                        <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                            <span>Tingkat Kepatuhan (Hadir + Izin)</span>
+                            <span id="modalComplianceText">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div id="modalComplianceBar" class="h-full rounded-full bg-indigo-500 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Riwayat Sesi Periode Ini -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i class="ri-history-line text-indigo-600"></i> Riwayat Presensi Per Sesi (Periode Ini)
+                        </span>
+                        <span id="modalSessionsCount" class="text-[11px] font-normal text-gray-500">0 sesi</span>
+                    </h4>
+                    <div class="border border-gray-100 rounded-xl overflow-hidden shadow-xs">
+                        <div class="max-h-64 overflow-y-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0 border-b border-gray-100 select-none">
+                                    <tr>
+                                        <th class="py-2.5 px-3 text-center w-10">No</th>
+                                        <th class="py-2.5 px-3">Hari &amp; Tanggal</th>
+                                        <th class="py-2.5 px-3">Kegiatan / Sesi</th>
+                                        <th class="py-2.5 px-3 text-center">Waktu Tap</th>
+                                        <th class="py-2.5 px-3 text-center">Status</th>
+                                        <th class="py-2.5 px-3">Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalSessionsTbody" class="divide-y divide-gray-100">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                <div class="text-[11px] text-gray-500">
+                    <i class="ri-information-line"></i> Data presensi tercatat otomatis melalui RFID Smart Tap &amp; Dispensasi resmi.
+                </div>
+                <button type="button" onclick="closeDetailModal()" class="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 text-xs font-bold rounded-xl border border-gray-200 transition">
+                    Tutup
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script>
+// Dictionary data lengkap peserta untuk pop-up modal
+const participantDetails = <?= json_encode($modalDataMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+
 let currentFilterTag = 'all';
 let currentSortCol = null;
 let currentSortDir = 'asc';
 
+// Open Participant Detail Modal
+function openDetailModal(key) {
+    const data = participantDetails[key];
+    if (!data) return;
+
+    // Header info
+    document.getElementById('modalAvatar').innerText = (data.name || 'U').charAt(0).toUpperCase();
+    document.getElementById('modalName').innerText = data.name || 'Tanpa Nama';
+    document.getElementById('modalIdentifier').innerText = data.identifier || '-';
+    document.getElementById('modalSubinfo').innerText = data.subinfo || '-';
+
+    // Status Badge
+    const badge = document.getElementById('modalStatusBadge');
+    badge.innerText = data.status_label || 'Disiplin';
+    badge.className = 'text-xs font-bold px-2.5 py-0.5 rounded-full ';
+    if (data.status_key === 'perfect') {
+        badge.className += 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+    } else if (data.status_key === 'disiplin' || data.status_key === 'disiplin_late') {
+        badge.className += 'bg-teal-50 text-teal-800 border border-teal-200';
+    } else if (data.status_key === 'warning') {
+        badge.className += 'bg-amber-50 text-amber-800 border border-amber-200';
+    } else if (data.status_key === 'exempted') {
+        badge.className += 'bg-gray-100 text-gray-700 border border-gray-200';
+    } else {
+        badge.className += 'bg-rose-50 text-rose-800 border border-rose-200';
+    }
+
+    // KPI Numbers
+    document.getElementById('modalKewajiban').innerText = data.kewajiban;
+    document.getElementById('modalOnTime').innerText = data.count_on_time;
+    document.getElementById('modalLate').innerText = data.count_late;
+    document.getElementById('modalPermission').innerText = data.count_permission;
+    document.getElementById('modalAlpa').innerText = data.count_alpa;
+
+    // Progress Bars
+    const pctPres = Math.min(100, Math.max(0, data.percent_presence));
+    const pctComp = Math.min(100, Math.max(0, data.percent_compliance));
+    document.getElementById('modalPresenceText').innerText = pctPres + '% (' + data.total_attendance + '/' + data.kewajiban + ')';
+    document.getElementById('modalPresenceBar').style.width = pctPres + '%';
+    document.getElementById('modalComplianceText').innerText = pctComp + '%';
+    document.getElementById('modalComplianceBar').style.width = pctComp + '%';
+
+    // Sessions Table
+    const tbody = document.getElementById('modalSessionsTbody');
+    tbody.innerHTML = '';
+    const sessions = data.sessions || [];
+    document.getElementById('modalSessionsCount').innerText = sessions.length + ' sesi wajib';
+
+    if (sessions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-6 text-gray-400">
+                    Tidak ada sesi wajib yang terjadwal untuk peserta ini pada periode tersebut.
+                </td>
+            </tr>
+        `;
+    } else {
+        sessions.forEach((s, idx) => {
+            let statusPill = '';
+            if (s.status === 'on_time') {
+                statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200"><i class="ri-checkbox-circle-fill mr-1"></i> Tepat Waktu</span>';
+            } else if (s.status === 'late') {
+                statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><i class="ri-time-fill mr-1"></i> Terlambat</span>';
+            } else if (s.status === 'permission') {
+                statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200"><i class="ri-file-text-line mr-1"></i> Izin / Sakit</span>';
+            } else {
+                statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="ri-close-circle-fill mr-1"></i> Alpa</span>';
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50/80 transition';
+            tr.innerHTML = `
+                <td class="py-2.5 px-3 text-center text-gray-400 font-mono">${idx + 1}</td>
+                <td class="py-2.5 px-3 font-medium text-gray-800">
+                    <div>${s.day_name || '-'}</div>
+                    <div class="text-[10px] text-gray-400 font-mono">${s.date_formatted || s.date}</div>
+                </td>
+                <td class="py-2.5 px-3 font-semibold text-gray-900">${s.event_name || '-'}</td>
+                <td class="py-2.5 px-3 text-center font-mono text-gray-600">${s.tap_time !== '-' ? s.tap_time + ' WIB' : '-'}</td>
+                <td class="py-2.5 px-3 text-center">${statusPill}</td>
+                <td class="py-2.5 px-3 text-gray-500 text-[11px]">${s.note || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    const modal = document.getElementById('modalParticipantDetail');
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+// Close Modal
+function closeDetailModal() {
+    const modal = document.getElementById('modalParticipantDetail');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeDetailModal();
+    }
+});
+
+// Filter by Status Tab
 function filterStatus(tag) {
     currentFilterTag = tag;
 
-    // Update active tab styles
     document.querySelectorAll('.status-tab').forEach(tab => {
         tab.className = 'status-tab px-3 py-1 rounded-lg text-gray-600 hover:text-gray-900 transition';
     });
@@ -476,6 +745,7 @@ function filterStatus(tag) {
     applyTableFilters();
 }
 
+// Search and Filter Application
 function applyTableFilters() {
     const searchQuery = (document.getElementById('tableSearch')?.value || '').toLowerCase().trim();
     const rows = document.querySelectorAll('.recap-row');
@@ -518,7 +788,7 @@ function sortTable(columnIndex, type) {
         currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
     } else {
         currentSortCol = columnIndex;
-        currentSortDir = (type === 'str') ? 'asc' : 'desc'; // Angka default desc (terbesar di atas)
+        currentSortDir = (type === 'str') ? 'asc' : 'desc';
     }
 
     rows.sort((a, b) => {
@@ -538,118 +808,8 @@ function sortTable(columnIndex, type) {
         }
     });
 
-    // Re-append sorted rows
     rows.forEach(row => tbody.appendChild(row));
-
-    // Re-number visible rows
     applyTableFilters();
-}
-
-// Client-Side Excel Export (.xls HTML Table)
-function exportTableToExcel(tableId, filename) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    let html = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-        <!--[if gte mso 9]>
-        <xml>
-        <x:ExcelWorkbook>
-        <x:ExcelWorksheets>
-            <x:ExcelWorksheet>
-                <x:Name>Rekap Kedisiplinan</x:Name>
-                <x:WorksheetOptions>
-                    <x:DisplayGridlines/>
-                </x:WorksheetOptions>
-            </x:ExcelWorksheet>
-        </x:ExcelWorksheets>
-        </x:ExcelWorkbook>
-        </xml>
-        <![endif]-->
-        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
-        <style>
-            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11pt; }
-            th { background-color: #1e3a8a; color: #ffffff; border: 1px solid #cbd5e1; padding: 8px; text-align: center; }
-            td { border: 1px solid #cbd5e1; padding: 6px; }
-            .num { text-align: center; }
-        </style>
-    </head>
-    <body>
-        <h2>REKAPITULASI & KEDISIPLINAN SMART TAP</h2>
-        <p>Periode: <?= htmlspecialchars($startDate) ?> s/d <?= htmlspecialchars($endDate) ?></p>
-        <table>
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Nama Lengkap</th>
-                    <th>NIP / NIS</th>
-                    <th>Kategori / Peran</th>
-                    <th>Kewajiban Sesi</th>
-                    <th>Total Hadir</th>
-                    <th>Tepat Waktu</th>
-                    <th>Terlambat</th>
-                    <th>Izin / Sakit</th>
-                    <th>Alpa</th>
-                    <th>% Kehadiran</th>
-                    <th>Status Kedisiplinan</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    const visibleRows = Array.from(table.querySelectorAll('tbody tr.recap-row')).filter(r => r.style.display !== 'none');
-    let idx = 1;
-    visibleRows.forEach(row => {
-        const cells = row.children;
-        const nameDiv = cells[1].querySelector('div:first-child');
-        const identDiv = cells[1].querySelector('div:last-child');
-        const name = nameDiv ? nameDiv.innerText.trim() : '';
-        const ident = identDiv ? identDiv.innerText.trim() : '';
-        const role = cells[2].innerText.trim();
-        const kewajiban = cells[3].getAttribute('data-val') || '0';
-        const hadir = cells[4].getAttribute('data-val') || '0';
-        const tepat = cells[5].getAttribute('data-val') || '0';
-        const telat = cells[6].getAttribute('data-val') || '0';
-        const izin = cells[7].getAttribute('data-val') || '0';
-        const alpa = cells[8].getAttribute('data-val') || '0';
-        const pct = (cells[9].getAttribute('data-val') || '0') + '%';
-        const status = cells[10].innerText.trim();
-
-        html += `
-            <tr>
-                <td class="num">${idx++}</td>
-                <td>${name}</td>
-                <td style="mso-number-format:'\\@'">${ident}</td>
-                <td>${role}</td>
-                <td class="num">${kewajiban}</td>
-                <td class="num">${hadir}</td>
-                <td class="num">${tepat}</td>
-                <td class="num">${telat}</td>
-                <td class="num">${izin}</td>
-                <td class="num">${alpa}</td>
-                <td class="num">${pct}</td>
-                <td>${status}</td>
-            </tr>
-        `;
-    });
-
-    html += `
-            </tbody>
-        </table>
-    </body>
-    </html>
-    `;
-
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}_<?= date('Ymd_His') ?>.xls`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }
 </script>
 

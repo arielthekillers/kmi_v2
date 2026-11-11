@@ -480,20 +480,24 @@ class SmartTapLogModel extends Model
         }
         $whereClauseL = implode(" AND ", $whereL);
 
-        $sqlLogs = "SELECT l.person_type, l.person_id, l.event_id, DATE(l.tapped_at) as tap_date, l.status
+        $sqlLogs = "SELECT l.person_type, l.person_id, l.event_id, DATE(l.tapped_at) as tap_date, l.status, l.tapped_at
                     FROM smart_tap_logs l
                     WHERE $whereClauseL";
         $stmtLogs = $this->db->prepare($sqlLogs);
         $stmtLogs->execute($paramsL);
         $rawLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
 
-        // Petakan log: person_key => [ 'date_eventId' => best_status ]
+        // Petakan log: person_key => [ 'date_eventId' => ['status' => ..., 'tap_time' => ...] ]
         $logMap = [];
         foreach ($rawLogs as $l) {
             $key = $l['person_type'] . '_' . $l['person_id'];
             $sessKey = $l['tap_date'] . '_' . $l['event_id'];
+            $tapTime = !empty($l['tapped_at']) ? date('H:i', strtotime($l['tapped_at'])) : '-';
             if (!isset($logMap[$key][$sessKey]) || $l['status'] === 'on_time') {
-                $logMap[$key][$sessKey] = $l['status'];
+                $logMap[$key][$sessKey] = [
+                    'status' => $l['status'],
+                    'tap_time' => $tapTime
+                ];
             }
         }
 
@@ -595,6 +599,7 @@ class SmartTapLogModel extends Model
             $countPermission = 0;
             $countAlpa = 0;
             $permReasons = [];
+            $sessionsDetail = [];
 
             foreach ($sessionsHeld as $sess) {
                 $evId = (int)$sess['event_id'];
@@ -655,12 +660,25 @@ class SmartTapLogModel extends Model
 
                 // Evaluasi status presensi di sesi ini
                 $sessKey = $sessDate . '_' . $evId;
+                $sessStatus = 'absent';
+                $sessStatusLabel = 'Alpa (Tidak Hadir)';
+                $tapTime = '-';
+                $note = '';
+
                 if (isset($logMap[$key][$sessKey])) {
-                    $st = $logMap[$key][$sessKey];
+                    $logInfo = $logMap[$key][$sessKey];
+                    $st = $logInfo['status'];
+                    $tapTime = $logInfo['tap_time'] ?? '-';
                     if ($st === 'on_time') {
                         $countOnTime++;
+                        $sessStatus = 'on_time';
+                        $sessStatusLabel = 'Tepat Waktu';
+                        $note = 'Hadir tepat waktu (' . $tapTime . ' WIB)';
                     } else {
                         $countLate++;
+                        $sessStatus = 'late';
+                        $sessStatusLabel = 'Terlambat';
+                        $note = 'Hadir terlambat (' . $tapTime . ' WIB)';
                     }
                 } else {
                     // Cek apakah ada perizinan resmi di tanggal & event ini
@@ -680,11 +698,37 @@ class SmartTapLogModel extends Model
 
                     if ($hasPerm) {
                         $countPermission++;
+                        $sessStatus = 'permission';
+                        $sessStatusLabel = 'Izin / Sakit';
+                        $note = $pReason ?: 'Dispensasi Resmi';
                         if (!in_array($pReason, $permReasons)) $permReasons[] = $pReason;
                     } else {
                         $countAlpa++;
+                        $sessStatus = 'alpa';
+                        $sessStatusLabel = 'Alpa (Tidak Hadir)';
+                        $note = 'Tidak ada rekaman tap';
                     }
                 }
+
+                $dayNames = [
+                    'Sun' => 'Minggu', 'Mon' => 'Senin', 'Tue' => 'Selasa', 'Wed' => 'Rabu',
+                    'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'
+                ];
+                $dayEng = date('D', strtotime($sessDate));
+                $dayIndo = $dayNames[$dayEng] ?? $dayEng;
+
+                $sessionsDetail[] = [
+                    'date' => $sessDate,
+                    'date_formatted' => date('d/m/Y', strtotime($sessDate)),
+                    'day_name' => $dayIndo,
+                    'event_id' => $evId,
+                    'event_name' => $ev['name'],
+                    'category' => $ev['category'] ?? 'general',
+                    'status' => $sessStatus,
+                    'status_label' => $sessStatusLabel,
+                    'tap_time' => $tapTime,
+                    'note' => $note
+                ];
             }
 
             $totalHadir = $countOnTime + $countLate;
@@ -744,11 +788,13 @@ class SmartTapLogModel extends Model
             if ($countPermission > 0) $summary['total_peserta_izin']++;
 
             $rows[] = [
+                'participant_key' => $key,
                 'person_type' => $pType,
                 'person_id' => $pId,
                 'name' => $p['name'],
                 'identifier' => $p['identifier'],
                 'subinfo' => $p['subinfo'],
+                'gender' => $gender,
                 'kewajiban' => $kewajiban,
                 'total_attendance' => $totalHadir,
                 'count_on_time' => $countOnTime,
@@ -762,7 +808,8 @@ class SmartTapLogModel extends Model
                 'status' => ($statusDisiplin === 'exempted' ? 'waived' : ($countAlpa > 0 && $totalHadir === 0 ? 'absent' : ($countLate > 0 ? 'late' : ($countPermission > 0 && $totalHadir === 0 ? 'permission' : 'ontime')))),
                 'status_key' => $statusDisiplin,
                 'status_label' => $statusLabel,
-                'badge_color' => $badgeColor
+                'badge_color' => $badgeColor,
+                'sessions_detail' => $sessionsDetail
             ];
         }
 
