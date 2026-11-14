@@ -21,7 +21,7 @@ class RunnerController extends Controller
     public function index()
     {
         require_login();
-        $user = auth_user();
+        $user = auth_get_current_user();
         $isAdmin = (auth_get_role() === 'admin');
 
         $events = $this->runnerModel->getActiveEvents();
@@ -72,7 +72,7 @@ class RunnerController extends Controller
     public function join()
     {
         require_login();
-        $user = auth_user();
+        $user = auth_get_current_user();
         $eventId = (int)($_POST['event_id'] ?? 0);
         $bib = trim($_POST['bib_number'] ?? '');
 
@@ -105,7 +105,7 @@ class RunnerController extends Controller
     public function submitActivity()
     {
         require_login();
-        $user = auth_user();
+        $user = auth_get_current_user();
 
         $eventId = (int)($_POST['event_id'] ?? 0);
         $actDate = $_POST['activity_date'] ?? date('Y-m-d');
@@ -169,7 +169,7 @@ class RunnerController extends Controller
     public function updateActivity()
     {
         require_login();
-        $user = auth_user();
+        $user = auth_get_current_user();
 
         $id = (int)($_POST['activity_id'] ?? 0);
         $eventId = (int)($_POST['event_id'] ?? 0);
@@ -210,7 +210,7 @@ class RunnerController extends Controller
     public function deleteActivity()
     {
         require_login();
-        $user = auth_user();
+        $user = auth_get_current_user();
         $isAdmin = (auth_get_role() === 'admin');
 
         $id = (int)($_POST['activity_id'] ?? 0);
@@ -232,7 +232,7 @@ class RunnerController extends Controller
     public function verifyActivity()
     {
         require_admin();
-        $admin = auth_user();
+        $admin = auth_get_current_user();
 
         $activityId = (int)($_POST['activity_id'] ?? 0);
         $status = $_POST['status'] ?? 'approved';
@@ -259,7 +259,7 @@ class RunnerController extends Controller
     public function saveEvent()
     {
         require_admin();
-        $admin = auth_user();
+        $admin = auth_get_current_user();
 
         $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
         $name = trim($_POST['name'] ?? '');

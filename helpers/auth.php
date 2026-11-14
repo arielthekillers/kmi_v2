@@ -294,6 +294,13 @@ if (!function_exists('auth_get_current_user')) {
     }
 }
 
+if (!function_exists('auth_user')) {
+    function auth_user()
+    {
+        return auth_get_current_user();
+    }
+}
+
 if (!function_exists('auth_get_display_name')) {
     function auth_get_display_name()
     {
