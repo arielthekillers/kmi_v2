@@ -345,6 +345,21 @@
                                 <?php endif; ?>
                             <?php endif; ?>
                         <?php endif; ?>
+
+                        <?php if (is_logged_in()): ?>
+                            <!-- Group Ekskul -->
+                            <div class="relative group">
+                                <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/ekskul/') !== false) ? 'text-indigo-600 font-semibold' : '' ?>">
+                                    <i class="ri-run-line text-emerald-600"></i> Ekskul <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
+                                    <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Klub & Kebugaran</div>
+                                    <a href="<?= url('/ekskul/runner') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors group/item">
+                                        <i class="ri-run-line text-emerald-500"></i> Runner (Aktivitas Lari)
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -577,6 +592,13 @@
                             </a>
                         <?php endforeach; ?>
                     <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if (is_logged_in()): ?>
+                    <div class="px-3 py-2 text-xs font-bold text-emerald-600 uppercase tracking-widest mt-2 border-t pt-2">Ekskul</div>
+                    <a href="<?= url('/ekskul/runner') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="ri-run-line mr-2 text-emerald-500"></i>Runner (Aktivitas Lari)
+                    </a>
                 <?php endif; ?>
 
                 <?php if (is_logged_in()): 

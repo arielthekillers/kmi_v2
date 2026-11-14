@@ -303,6 +303,16 @@ class App
         $this->router->get('/api/smart-tap/live-data', ['App\Controllers\SmartTapApiController', 'liveData']);
         $this->router->get('/api/smart-tap/ping', ['App\Controllers\SmartTapApiController', 'ping']);
         $this->router->post('/api/smart-tap/ping', ['App\Controllers\SmartTapApiController', 'ping']);
+
+        // Ekskul - Runner Module Routes
+        $this->router->get('/ekskul/runner', ['App\Controllers\RunnerController', 'index']);
+        $this->router->post('/ekskul/runner/join', ['App\Controllers\RunnerController', 'join']);
+        $this->router->post('/ekskul/runner/activity/store', ['App\Controllers\RunnerController', 'submitActivity']);
+        $this->router->post('/ekskul/runner/activity/update', ['App\Controllers\RunnerController', 'updateActivity']);
+        $this->router->post('/ekskul/runner/activity/delete', ['App\Controllers\RunnerController', 'deleteActivity']);
+        $this->router->post('/ekskul/runner/activity/verify', ['App\Controllers\RunnerController', 'verifyActivity']);
+        $this->router->post('/ekskul/runner/events/store', ['App\Controllers\RunnerController', 'saveEvent']);
+        $this->router->post('/ekskul/runner/events/delete', ['App\Controllers\RunnerController', 'deleteEvent']);
     }
 
     public function run()
