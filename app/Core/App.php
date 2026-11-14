@@ -313,6 +313,8 @@ class App
         $this->router->post('/ekskul/runner/activity/verify', ['App\Controllers\RunnerController', 'verifyActivity']);
         $this->router->post('/ekskul/runner/events/store', ['App\Controllers\RunnerController', 'saveEvent']);
         $this->router->post('/ekskul/runner/events/delete', ['App\Controllers\RunnerController', 'deleteEvent']);
+        $this->router->post('/ekskul/runner/groups/store', ['App\Controllers\RunnerController', 'saveGroup']);
+        $this->router->post('/ekskul/runner/groups/delete', ['App\Controllers\RunnerController', 'deleteGroup']);
     }
 
     public function run()

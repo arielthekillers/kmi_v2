@@ -13,14 +13,41 @@ class RunnerModel extends Model
 
     public function getGroups()
     {
-        return $this->db->query("SELECT * FROM runner_groups ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT g.*, 
+                       (SELECT COUNT(*) FROM runner_events e WHERE e.group_id = g.id) as event_count 
+                FROM runner_groups g 
+                ORDER BY g.name ASC";
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function saveGroup($name, $desc = '')
+    public function saveGroup($data, $desc = '')
     {
-        $stmt = $this->db->prepare("INSERT INTO runner_groups (name, description) VALUES (?, ?)");
-        $stmt->execute([$name, $desc]);
-        return $this->db->lastInsertId();
+        if (is_string($data)) {
+            $name = $data;
+            $id = null;
+        } else {
+            $id = !empty($data['id']) ? (int)$data['id'] : null;
+            $name = trim($data['name'] ?? '');
+            $desc = trim($data['description'] ?? '');
+        }
+
+        if ($id) {
+            $stmt = $this->db->prepare("UPDATE runner_groups SET name = ?, description = ? WHERE id = ?");
+            $stmt->execute([$name, $desc, $id]);
+            return $id;
+        } else {
+            $stmt = $this->db->prepare("INSERT INTO runner_groups (name, description) VALUES (?, ?)");
+            $stmt->execute([$name, $desc]);
+            return (int)$this->db->lastInsertId();
+        }
+    }
+
+    public function deleteGroup($id)
+    {
+        // Unlink events terlebih dahulu agar data event tetap aman
+        $this->db->prepare("UPDATE runner_events SET group_id = NULL WHERE group_id = ?")->execute([(int)$id]);
+        $stmt = $this->db->prepare("DELETE FROM runner_groups WHERE id = ?");
+        return $stmt->execute([(int)$id]);
     }
 
     public function getAllEvents()

@@ -46,6 +46,10 @@ function runner_format_pace($seconds) {
             </div>
 
             <?php if ($isAdmin): ?>
+                <button type="button" onclick="openModal('modal-manage-groups')" 
+                        class="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap" title="Kelola Kategori Event">
+                    <i class="ri-folder-settings-line text-sm text-gray-500"></i> Kategori
+                </button>
                 <button type="button" onclick="openModal('modal-add-event')" 
                         class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                     <i class="ri-add-line text-sm"></i> Event Baru
@@ -660,10 +664,16 @@ function runner_format_pace($seconds) {
                     </h3>
                     <p class="text-xs text-gray-500 mt-0.5">Kelola event, periode tanggal, target KM, dan mode input</p>
                 </div>
-                <button type="button" onclick="openModal('modal-add-event')" 
-                        class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
-                    <i class="ri-add-line text-sm"></i> Tambah Event Baru
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openModal('modal-manage-groups')" 
+                            class="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                        <i class="ri-folder-settings-line text-sm text-gray-500"></i> Kelola Kategori (<?= count($groups) ?>)
+                    </button>
+                    <button type="button" onclick="openModal('modal-add-event')" 
+                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                        <i class="ri-add-line text-sm"></i> Tambah Event Baru
+                    </button>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -999,6 +1009,110 @@ function runner_format_pace($seconds) {
     </div>
 </div>
 
+<!-- ======================================================== -->
+<!-- MODAL: KELOLA KATEGORI EVENT (Group Management)          -->
+<!-- ======================================================== -->
+<div id="modal-manage-groups" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative animate-fade-in max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="closeModal('modal-manage-groups')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <i class="ri-close-line text-xl"></i>
+        </button>
+
+        <div class="mb-4">
+            <h3 class="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                <i class="ri-folder-settings-line text-emerald-600"></i> Kelola Kategori Event Lari
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Kelompokkan event berdasarkan kategori/edisi (misal: Special Edition, Monthly Challenges, Kewajiban Bulanan Guru)</p>
+        </div>
+
+        <!-- Form Tambah / Edit Kategori -->
+        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-5">
+            <h4 id="group-form-heading" class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i class="ri-add-line text-emerald-600"></i> Tambah Kategori Baru
+            </h4>
+            <form action="<?= url('/ekskul/runner/groups/store') ?>" method="POST" class="space-y-3">
+                <input type="hidden" name="id" id="group_form_id" value="">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700 mb-1">Nama Kategori *</label>
+                        <input type="text" name="name" id="group_form_name" required placeholder="Contoh: Special Edition"
+                               class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-700 mb-1">Deskripsi Singkat</label>
+                        <input type="text" name="description" id="group_form_desc" placeholder="Keterangan kategori..."
+                               class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="button" id="btn-cancel-edit-group" onclick="resetGroupForm()" class="hidden px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-bold transition-all">
+                        Batal Edit
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                        <i class="ri-save-line"></i> Simpan Kategori
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Daftar Kategori Terdaftar -->
+        <div>
+            <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Daftar Kategori Terdaftar</span>
+                <span class="text-[11px] text-gray-400 font-normal"><?= count($groups) ?> Kategori</span>
+            </h4>
+
+            <?php if (empty($groups)): ?>
+                <p class="text-xs text-gray-400 italic p-4 text-center">Belum ada kategori yang dibuat.</p>
+            <?php else: ?>
+                <div class="overflow-x-auto border border-gray-100 rounded-xl">
+                    <table class="w-full text-left text-xs divide-y divide-gray-100">
+                        <thead class="bg-gray-50/80 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            <tr>
+                                <th class="py-2.5 px-3">NAMA KATEGORI</th>
+                                <th class="py-2.5 px-3">DESKRIPSI</th>
+                                <th class="py-2.5 px-3 text-center">JUMLAH EVENT</th>
+                                <th class="py-2.5 px-3 text-center">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php foreach ($groups as $grp): ?>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="py-2.5 px-3 font-bold text-gray-900">
+                                        <?= htmlspecialchars($grp['name']) ?>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-gray-500">
+                                        <?= htmlspecialchars($grp['description'] ?? '-') ?>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center">
+                                        <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px]">
+                                            <?= (int)($grp['event_count'] ?? 0) ?> Event
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center">
+                                        <div class="inline-flex items-center gap-2">
+                                            <button type="button" onclick='editGroup(<?= json_encode($grp) ?>)' 
+                                                    class="text-emerald-600 hover:text-emerald-800 font-bold transition-colors">
+                                                Edit
+                                            </button>
+                                            <form action="<?= url('/ekskul/runner/groups/delete') ?>" method="POST" onsubmit="return confirm('Hapus kategori ini? Event yang terhubung akan diset menjadi Umum.');" class="inline">
+                                                <input type="hidden" name="id" value="<?= $grp['id'] ?>">
+                                                <button type="submit" class="text-rose-500 hover:text-rose-700 font-bold transition-colors">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentTab = '<?= $activeTab ?>';
     let currentEventId = '<?= $eventId ?>';
@@ -1127,6 +1241,22 @@ function runner_format_pace($seconds) {
         document.getElementById('event_form_status').value = ev.status;
         document.getElementById('event_form_desc').value = ev.description || '';
         openModal('modal-add-event');
+    }
+
+    function editGroup(grp) {
+        document.getElementById('group-form-heading').innerHTML = '<i class="ri-edit-line text-emerald-600"></i> Edit Kategori';
+        document.getElementById('group_form_id').value = grp.id;
+        document.getElementById('group_form_name').value = grp.name;
+        document.getElementById('group_form_desc').value = grp.description || '';
+        document.getElementById('btn-cancel-edit-group').classList.remove('hidden');
+    }
+
+    function resetGroupForm() {
+        document.getElementById('group-form-heading').innerHTML = '<i class="ri-add-line text-emerald-600"></i> Tambah Kategori Baru';
+        document.getElementById('group_form_id').value = '';
+        document.getElementById('group_form_name').value = '';
+        document.getElementById('group_form_desc').value = '';
+        document.getElementById('btn-cancel-edit-group').classList.add('hidden');
     }
 </script>
 

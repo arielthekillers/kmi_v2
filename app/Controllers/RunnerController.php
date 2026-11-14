@@ -314,6 +314,42 @@ class RunnerController extends Controller
         $this->redirect('/ekskul/runner?tab=admin_panel');
     }
 
+    /**
+     * Simpan / Update Grup Kategori oleh Admin
+     */
+    public function saveGroup()
+    {
+        require_admin();
+        $id = !empty($_POST['id']) ? (int)$_POST['id'] : null;
+        $name = trim($_POST['name'] ?? '');
+        $desc = trim($_POST['description'] ?? '');
+
+        if (empty($name)) {
+            add_flash('Nama kategori wajib diisi.', 'error');
+        } else {
+            $this->runnerModel->saveGroup([
+                'id' => $id,
+                'name' => $name,
+                'description' => $desc
+            ]);
+            add_flash('Kategori event berhasil disimpan.', 'success');
+        }
+
+        $this->redirect('/ekskul/runner?tab=admin_panel');
+    }
+
+    /**
+     * Hapus Grup Kategori oleh Admin
+     */
+    public function deleteGroup()
+    {
+        require_admin();
+        $id = (int)($_POST['id'] ?? 0);
+        $this->runnerModel->deleteGroup($id);
+        add_flash('Kategori event berhasil dihapus.', 'success');
+        $this->redirect('/ekskul/runner?tab=admin_panel');
+    }
+
     // ==========================================
     // HELPER METHODS
     // ==========================================
