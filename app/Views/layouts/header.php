@@ -129,26 +129,26 @@
     <?php endif; ?>
 
     <nav class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-[999]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-[1440px] mx-auto px-3 sm:px-4 lg:px-6">
             <div class="flex justify-between h-16">
-                <div class="flex items-center gap-8">
-                    <a href="<?= url('/') ?>" class="text-xl font-bold text-indigo-600 flex items-center gap-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-3 lg:gap-5">
+                    <a href="<?= url('/') ?>" class="text-lg lg:text-xl font-bold text-indigo-600 flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
+                        <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                         KMI App
                     </a>
 
-                    <div class="hidden md:flex items-center space-x-1">
-                        <a href="<?= url('/') ?>" class="px-3 py-2 rounded-md text-sm font-medium <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>">
-                            <i class="ri-dashboard-line mr-1"></i> Dashboard
+                    <div class="hidden md:flex items-center space-x-0.5 xl:space-x-1">
+                        <a href="<?= url('/') ?>" class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium whitespace-nowrap inline-flex items-center gap-1 <?= ($_SERVER['REQUEST_URI'] === '/' || $_SERVER['REQUEST_URI'] === '/index.php' || strpos($_SERVER['REQUEST_URI'], '/kmi/') === 0 && strlen($_SERVER['REQUEST_URI']) <= 5) ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50' ?>">
+                            <i class="ri-dashboard-line"></i> Dashboard
                         </a>
                         
                         <?php if (auth_get_role() === 'admin'): ?>
                             <!-- Group 1: Manajemen Data & Kesiswaan -->
                             <div class="relative group">
-                                <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                    <i class="ri-database-2-line"></i> Data & Kesiswaan <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 whitespace-nowrap">
+                                    <i class="ri-database-2-line"></i> Data & Kesiswaan <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 <div class="absolute left-0 mt-0 w-60 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                      <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Master Data</div>
@@ -177,8 +177,8 @@
 
                              <!-- Group 2: Akademik & Operasional -->
                              <div class="relative group">
-                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                     <i class="ri-community-line"></i> Akademik & Jadwal <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                 <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 whitespace-nowrap">
+                                     <i class="ri-community-line"></i> Akademik & Jadwal <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                  </button>
                                  <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                      <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manajemen Kelas</div>
@@ -218,8 +218,8 @@
                          <?php if (auth_get_role() === 'admin' || auth_get_role() === 'pengajar'): ?>
                              <!-- Group 3: Ta'lim & Evaluasi -->
                              <div class="relative group">
-                                 <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                     <i class="ri-honor-line"></i> Ta'lim & Evaluasi <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                 <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 whitespace-nowrap">
+                                     <i class="ri-honor-line"></i> Ta'lim & Evaluasi <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                  </button>
                                  <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                      <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kehadiran Harian</div>
@@ -281,8 +281,8 @@
                         <?php if (auth_is_smart_tap_officer()): ?>
                         <!-- Smart Tap RFID Module -->
                         <div class="relative group">
-                            <button class="px-3 py-2 rounded-md text-sm font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 inline-flex items-center gap-1 transition-all">
-                                Smart Tap <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 inline-flex items-center gap-1 whitespace-nowrap transition-all">
+                                Smart Tap <svg class="w-3.5 h-3.5 ml-0.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
                             <div class="absolute left-0 mt-0 w-64 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                 <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Operasional Presensi</div>
@@ -317,7 +317,7 @@
                         <?php endif; ?>
 
                         <?php if (auth_get_role() === 'pengajar'): ?>
-                            <a href="<?= url('/jadwal-saya') ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50">
+                            <a href="<?= url('/jadwal-saya') ?>" class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap inline-flex items-center gap-1">
                                 <i class="ri-calendar-check-line mr-1"></i> Jadwal Mengajar
                             </a>
                             <?php 
@@ -326,13 +326,13 @@
                                 if (count($myClasses) === 1): 
                                     $c = $myClasses[0];
                             ?>
-                                    <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
+                                    <a href="<?= url('/classes/detail?id=' . $c['id']) ?>" class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 whitespace-nowrap inline-flex items-center gap-1">
                                         <i class="ri-community-line"></i> Kelas <?= htmlspecialchars($c['tingkat'] . '-' . $c['abjad']) ?>
                                     </a>
                                 <?php else: ?>
                                     <div class="relative group">
-                                        <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1">
-                                            <i class="ri-community-line"></i> Kelas Wali <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 whitespace-nowrap">
+                                            <i class="ri-community-line"></i> Kelas Wali <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                         </button>
                                         <div class="absolute left-0 mt-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                             <?php foreach ($myClasses as $c): ?>
@@ -349,8 +349,8 @@
                         <?php if (is_logged_in()): ?>
                             <!-- Group Ekskul -->
                             <div class="relative group">
-                                <button class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/ekskul/') !== false) ? 'text-indigo-600 font-semibold' : '' ?>">
-                                    <i class="ri-run-line text-emerald-600"></i> Ekskul <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <button class="px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 inline-flex items-center gap-1 whitespace-nowrap <?= (strpos($_SERVER['REQUEST_URI'] ?? '', '/ekskul/') !== false) ? 'text-indigo-600 font-semibold' : '' ?>">
+                                    <i class="ri-run-line text-emerald-600"></i> Ekskul <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 <div class="absolute left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover:block py-2 z-[999]">
                                     <div class="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Klub & Kebugaran</div>
@@ -367,8 +367,8 @@
                     <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-gray-500 p-2"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
                 </div>
 
-                <div class="hidden md:flex items-center gap-4">
-                    <div class="flex items-center px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold">
+                <div class="hidden md:flex items-center gap-2 lg:gap-3 flex-shrink-0">
+                    <div class="flex items-center px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-[11px] xl:text-xs font-semibold whitespace-nowrap">
                         <i class="ri-calendar-event-line mr-1"></i> TA: <?= htmlspecialchars($__currentYearName) ?>
                     </div>
 
