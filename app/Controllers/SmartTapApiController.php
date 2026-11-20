@@ -174,7 +174,11 @@ class SmartTapApiController extends Controller
         $today = date('Y-m-d');
         $dayOfWeek = date('N'); // 1 (Mon) - 7 (Sun)
 
-        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today, $device['id']);
+        // Sinkronkan seluruh event aktif hari ini ke terminal klien.
+        // Terminal klien (attendance_engine.py dan UI) menangani filter lokasi terminal
+        // untuk mode Otomatis (Jadwal), serta memungkinkan operator mode Manual (Portabel)
+        // untuk memilih event apapun yang aktif pada hari ini.
+        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today);
         $permissions = $this->permissionModel->getActivePermissionsForDate($today);
         $masterCards = $this->cardModel->getAllMasterForSync();
 
@@ -341,7 +345,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.3.1';
+        $latestVersion = '1.3.2';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -354,8 +358,8 @@ class SmartTapApiController extends Controller
         echo json_encode([
             'success' => true,
             'latest_version' => $latestVersion,
-            'release_date' => '2026-11-08',
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.1:\n- TV Showcase Audio Integration: Pemutaran musik latar BGM identik dengan TV Showcase (YouTube streaming & fallback audio lokal)\n- Audio Ducking Presensi: Volume musik mengecil otomatis saat kartu RFID di-tap agar nada lonceng status presensi tetap jernih\n- Tombol Kontrol Audio: Tombol kontrol BGM di header untuk memutar atau mematikan musik secara mandiri\n- Smart Multimedia Kiosk: Dashboard Informasi (Statistik & Jadwal)\n- Orientasi Adaptif Otomatis: Landscape (Laptop/TV) & Portrait (Standing Kiosk)\n- Auto-Start Tanpa PIN saat Booting / Mati Lampu", 
+            'release_date' => date('Y-m-d'),
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.2:\n- Sinkronisasi Event Komprehensif: Seluruh agenda aktif hari ini tersinkron ke terminal untuk mendukung mode Otomatis dan Manual Portabel\n- Dropdown Event Manual Lengkap: Memperbaiki daftar 'Kunci ke Event Spesifik' agar seluruh event hari ini dapat dipilih\n- Filter Terminal Cerdas: Otomatis memfilter terminal yang diizinkan pada mode jadwal tanpa membatasi fleksibilitas mode manual", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false,
