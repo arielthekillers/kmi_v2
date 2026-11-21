@@ -75,7 +75,7 @@ foreach ($sessions as $s) {
             </div>
             <div class="ml-3">
                 <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
-                    Sistem hanya mengizinkan <strong>satu sesi aktif</strong> dalam satu waktu. Sesi yang <strong>"Terbuka"</strong> memungkinkan pengajar menginput nilai. Panitia yang ditugaskan memiliki hak akses koreksi dan administrasi untuk sesi tersebut.
+                    Sistem mendukung <strong>beberapa sesi aktif sekaligus</strong> (misalnya ujian kelas 1–5 dan persiapan kelas 6 berjalan bersamaan). Sesi yang <strong>"Terbuka"</strong> memungkinkan pengajar menginput nilai. Di halaman Koreksi Ujian, guru dan panitia dapat memilih atau berpindah sesi melalui <em>Session Switcher</em>.
                 </p>
             </div>
         </div>
@@ -127,9 +127,21 @@ foreach ($sessions as $s) {
 
                         <div class="flex-shrink-0">
                             <?php if ($isActive): ?>
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-200 animate-pulse">
-                                    <i class="ri-flashlight-fill mr-1"></i> AKTIF
-                                </span>
+                                <div class="flex items-center gap-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-600 text-white shadow-xs">
+                                        <i class="ri-flashlight-fill mr-1"></i> AKTIF
+                                    </span>
+                                    <?php if ($isAdmin): ?>
+                                        <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" class="inline" onsubmit="return confirm('Nonaktifkan sesi <?= htmlspecialchars($session['type']) ?>?')">
+                                            <?= csrf_token_field() ?>
+                                            <input type="hidden" name="id" value="<?= $session['id'] ?>">
+                                            <input type="hidden" name="is_active" value="0">
+                                            <button type="submit" title="Nonaktifkan Sesi" class="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition">
+                                                <i class="ri-close-circle-line text-sm"></i>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
                             <?php elseif ($isAdmin): ?>
                                 <form action="<?= url('/grades/panitia/session/status') ?>" method="POST" class="inline">
                                     <?= csrf_token_field() ?>

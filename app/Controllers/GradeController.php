@@ -45,20 +45,79 @@ class GradeController extends Controller {
         }
         usort($pengajar, function($a, $b) { return strnatcmp($a['nama'], $b['nama']); });
 
-        // Active Session Context
-        $activeSession = $gradeModel->getActiveSession($this->currentYear['id']);
+        // Active Sessions & Multi-Session Context
         $allSessions = $gradeModel->getSessions($this->currentYear['id']);
+        $activeSessions = $gradeModel->getActiveSessions($this->currentYear['id']);
+
+        $typeMap = [
+            'UUPT' => 'Ulangan Umum Pertengahan Tahun',
+            'UPT'  => 'Ujian Pertengahan Tahun',
+            'UUAT' => 'Ulangan Umum Akhir Tahun',
+            'UAT'  => 'Ujian Akhir Tahun',
+            'USA'  => 'Ujian Siswa Akhir'
+        ];
+
+        // Session selection handling
+        $requestedSessionId = $_GET['session'] ?? null;
+        if ($requestedSessionId !== null && $requestedSessionId !== '') {
+            $selectedSessionId = (int)$requestedSessionId;
+            $_SESSION['kmi_exam_session_id'] = $selectedSessionId;
+        } else {
+            $selectedSessionId = $_SESSION['kmi_exam_session_id'] ?? null;
+        }
+
+        // Determine if Gateway (Session Picker) should be shown
+        $showGateway = false;
+        if (isset($_GET['select_session']) || isset($_GET['gateway'])) {
+            $showGateway = true;
+        } elseif (count($activeSessions) > 1 && !isset($_GET['session']) && empty($_SESSION['kmi_exam_session_id'])) {
+            $showGateway = true;
+        }
+
+        // Active Session Resolution
+        $activeSession = $gradeModel->getActiveSession($this->currentYear['id'], $selectedSessionId);
+        if (!$activeSession && !empty($allSessions)) {
+            $activeSession = reset($allSessions);
+        }
 
         // Role Constraints
         $userRole = auth_get_role();
         $userId = auth_get_user_id();
+        $currentSessionId = $activeSession['id'] ?? null;
+        $isPanitia = auth_is_panitia($currentSessionId);
+
+        // Prepare Gateway data if gateway is displayed
+        $gatewaySessions = [];
+        if ($showGateway && !empty($activeSessions)) {
+            foreach ($activeSessions as $as) {
+                $asFilters = [
+                    'academic_year_id' => $this->currentYear['id'],
+                    'exam_session_id' => $as['id']
+                ];
+                if ($userRole === 'pengajar' && $userId && !auth_is_panitia($as['id'])) {
+                    $asFilters['pengajar'] = $userId;
+                    $asFilters['exclude_oral_only'] = true;
+                }
+                $asExams = $gradeModel->getAllExams($asFilters);
+                $tot = count($asExams);
+                $done = 0;
+                foreach ($asExams as $ex) {
+                    if (($ex['status'] ?? '') === 'selesai') $done++;
+                }
+                $as['total_exams'] = $tot;
+                $as['selesai_exams'] = $done;
+                $as['percent'] = $tot > 0 ? round(($done / $tot) * 100) : 0;
+                $as['full_name'] = $typeMap[$as['type']] ?? $as['type'];
+                $gatewaySessions[] = $as;
+            }
+        }
 
         // Stats and Progress per Class (Academic Session wide)
         $progressFilters = [
             'academic_year_id' => $this->currentYear['id'],
             'exam_session_id' => ($activeSession['id'] ?? '')
         ];
-        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
+        if ($userRole === 'pengajar' && $userId && !$isPanitia) {
             $progressFilters['pengajar'] = $userId;
             $progressFilters['exclude_oral_only'] = true;
         }
@@ -112,7 +171,7 @@ class GradeController extends Controller {
             'has_oral' => $_GET['has_oral'] ?? ''
         ];
 
-        if ($userRole === 'pengajar' && $userId && !auth_is_panitia()) {
+        if ($userRole === 'pengajar' && $userId && !$isPanitia) {
             $filters['pengajar'] = $userId;
             $filters['exclude_oral_only'] = true;
         }
@@ -128,17 +187,21 @@ class GradeController extends Controller {
         $specialSubjects = $subjectModel2->getSpecialSubjects();
 
         $this->view('grades/index', [
-            'exams'          => $exams,
-            'kelas'          => $kelas,
-            'allKelas'       => $allKelas,
-            'pelajaran'      => $allSubjects,
-            'pengajar'       => $pengajar,
-            'teachingMap'    => $teachingMap,
-            'specialSubjects'=> $specialSubjects,
-            'academicYears'  => $academicYears,
-            'allSessions'    => $allSessions,
-            'activeSession'  => $activeSession,
-            'filters'        => $filters
+            'exams'           => $exams,
+            'kelas'           => $kelas,
+            'allKelas'        => $allKelas,
+            'pelajaran'       => $allSubjects,
+            'pengajar'        => $pengajar,
+            'teachingMap'     => $teachingMap,
+            'specialSubjects' => $specialSubjects,
+            'academicYears'   => $academicYears,
+            'allSessions'     => $allSessions,
+            'activeSessions'  => $activeSessions,
+            'activeSession'   => $activeSession,
+            'showGateway'     => $showGateway,
+            'gatewaySessions' => $gatewaySessions,
+            'typeMap'         => $typeMap,
+            'filters'         => $filters
         ]);
     }
 
@@ -151,12 +214,15 @@ class GradeController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             csrf_validate_token();
             
+            $targetSessionId = !empty($_POST['exam_session_id']) ? (int)$_POST['exam_session_id'] : ($_SESSION['kmi_exam_session_id'] ?? null);
+
             $data = [
-                'subject_id' => $_POST['id_pelajaran'] ?? null,
-                'kelas_id' => $_POST['id_kelas'] ?? null,
-                'teacher_id' => $_POST['id_pengajar'] ?? null,
-                'skor_maks' => (int)($_POST['skor_maks'] ?? 100),
-                'has_oral' => (int)($_POST['has_oral'] ?? 0)
+                'subject_id'      => $_POST['id_pelajaran'] ?? null,
+                'kelas_id'        => $_POST['id_kelas'] ?? null,
+                'teacher_id'      => $_POST['id_pengajar'] ?? null,
+                'skor_maks'       => (int)($_POST['skor_maks'] ?? 100),
+                'has_oral'        => (int)($_POST['has_oral'] ?? 0),
+                'exam_session_id' => $targetSessionId
             ];
 
             if ($data['subject_id'] && $data['kelas_id'] && $data['teacher_id']) {
@@ -165,17 +231,19 @@ class GradeController extends Controller {
                     $examId = $model->createExam($data);
                     log_activity("Membuat form koreksi ujian (Pelajaran ID: {$data['subject_id']}, Kelas ID: {$data['kelas_id']})");
                     add_flash('Data koreksi berhasil ditambahkan. Silakan lengkapi nomor bayanat.', 'success');
-                    $this->redirect('/grades?kelas=' . $data['kelas_id']);
+                    $sessQuery = $targetSessionId ? '&session=' . $targetSessionId : '';
+                    $this->redirect('/grades?kelas=' . $data['kelas_id'] . $sessQuery);
                 } catch (\Exception $e) {
                     add_flash('Gagal: ' . $e->getMessage(), 'error');
                 }
             } else {
                 add_flash('Semua field harus diisi.', 'error');
             }
+            $sessQuery = $targetSessionId ? '&session=' . $targetSessionId : '';
             if (!empty($data['kelas_id'])) {
-                redirect('/grades?kelas=' . $data['kelas_id']);
+                redirect('/grades?kelas=' . $data['kelas_id'] . $sessQuery);
             } else {
-                redirect('/grades');
+                redirect('/grades' . ($targetSessionId ? '?session=' . $targetSessionId : ''));
             }
         }
     }
@@ -499,7 +567,8 @@ class GradeController extends Controller {
         }
 
         $model = new GradeModel();
-        $activeSession = $model->getActiveSession($this->currentYear['id']);
+        $targetSessionId = $_GET['session'] ?? ($_SESSION['kmi_exam_session_id'] ?? null);
+        $activeSession = $model->getActiveSession($this->currentYear['id'], $targetSessionId);
         if (!$activeSession) {
             add_flash('Tidak ada sesi ujian yang aktif.', 'error');
             $this->redirect('/grades');

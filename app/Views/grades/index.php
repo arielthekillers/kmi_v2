@@ -68,6 +68,76 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
         }
     </style>
 
+<?php if (!empty($showGateway)): ?>
+    <!-- Gateway / Session Picker Screen -->
+    <div class="max-w-4xl mx-auto py-4 sm:py-8">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 mb-3 shadow-xs border border-indigo-100">
+                <i class="ri-calendar-check-line text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Pilih Sesi Ujian</h1>
+            <p class="mt-2 text-sm text-gray-500 max-w-xl mx-auto">
+                Terdapat lebih dari satu sesi ujian yang aktif untuk Tahun Ajaran <strong><?= htmlspecialchars($currentYear['name'] ?? '-') ?></strong>. Silakan pilih ruang kerja sesi yang ingin Anda buka.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <?php foreach ($gatewaySessions as $gs): ?>
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all duration-200 overflow-hidden flex flex-col justify-between group">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    SMT <?= (int)($gs['semester'] ?? 1) ?>
+                                </span>
+                                <h3 class="text-xl font-bold text-gray-900 mt-2">
+                                    <?= htmlspecialchars($gs['type']) ?>
+                                </h3>
+                                <p class="text-xs text-gray-500 font-medium mt-0.5">
+                                    <?= htmlspecialchars($gs['full_name']) ?>
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold <?= $gs['is_open'] ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' ?> border border-current">
+                                <i class="ri-door-<?= $gs['is_open'] ? 'open' : 'closed' ?>-line mr-1"></i>
+                                <?= $gs['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="mt-4 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                            <div class="flex items-center justify-between text-xs mb-1.5 font-medium">
+                                <span class="text-gray-500">Progres Koreksi:</span>
+                                <span class="text-gray-800 font-bold"><?= $gs['selesai_exams'] ?> / <?= $gs['total_exams'] ?> Mapel (<?= $gs['percent'] ?>%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: <?= $gs['percent'] ?>%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-gray-50/60 border-t border-gray-100 flex items-center justify-between">
+                        <span class="text-xs text-gray-500 font-medium">
+                            <?= $gs['use_bayanat'] ? '<i class="ri-shield-keyhole-line mr-1 text-indigo-500"></i>Mode Bayanat' : '<i class="ri-file-list-line mr-1 text-gray-400"></i>Mode Biasa' ?>
+                        </span>
+                        <a href="<?= url('/grades?session=' . $gs['id']) ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-indigo-600 group-hover:bg-indigo-700 transition shadow-xs">
+                            <span>Masuk ke Sesi ini</span>
+                            <i class="ri-arrow-right-line"></i>
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if (auth_get_role() === 'admin'): ?>
+            <div class="mt-8 text-center">
+                <a href="<?= url('/grades/panitia') ?>" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+                    <i class="ri-settings-4-line"></i> Kelola Sesi & Panitia Ujian
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+<?php else: ?>
+
     <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <div class="flex-1 min-w-0">
             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate flex items-center gap-3">
@@ -83,14 +153,56 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
             </p>
         </div>
         <div class="flex items-center gap-1.5 md:gap-2 flex-wrap md:flex-nowrap">
+            <?php if (!empty($activeSessions) && count($activeSessions) > 1): ?>
+                <!-- Session Switcher Dropdown -->
+                <div class="relative" id="sessionSwitcherWrapper">
+                    <button type="button" id="sessionSwitcherBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold bg-white text-gray-800 border border-gray-300 shadow-xs hover:bg-gray-50 hover:border-indigo-400 transition focus:outline-none whitespace-nowrap" style="white-space: nowrap;">
+                        <i class="ri-swap-line text-indigo-600 font-normal"></i>
+                        <span>Sesi: <span class="text-indigo-600"><?= htmlspecialchars($activeSession['type'] ?? '-') ?></span></span>
+                        <i class="ri-arrow-down-s-line text-gray-400"></i>
+                    </button>
+                    <div id="sessionSwitcherMenu" class="hidden absolute left-0 md:right-0 md:left-auto mt-2 w-72 rounded-2xl shadow-xl bg-white border border-gray-200 z-50 py-1 divide-y divide-gray-100">
+                        <div class="px-3.5 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Sesi Ujian Aktif</span>
+                            <span class="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold"><?= count($activeSessions) ?> Sesi</span>
+                        </div>
+                        <div class="py-1">
+                            <?php foreach ($activeSessions as $as): 
+                                $isCur = ($as['id'] == ($activeSession['id'] ?? null));
+                                $asName = $typeMap[$as['type']] ?? $as['name'] ?? $as['type'];
+                            ?>
+                                <a href="<?= url('/grades?session=' . $as['id']) ?>" class="flex items-center justify-between px-3.5 py-2.5 text-xs <?= $isCur ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-gray-700 hover:bg-gray-50' ?> transition">
+                                    <div class="flex items-center gap-2 truncate pr-2">
+                                        <i class="<?= $isCur ? 'ri-checkbox-circle-fill text-indigo-600' : 'ri-checkbox-blank-circle-line text-gray-300' ?>"></i>
+                                        <div class="truncate text-left">
+                                            <div class="truncate"><?= htmlspecialchars($as['type']) ?></div>
+                                            <div class="text-[10px] text-gray-400 font-normal truncate"><?= htmlspecialchars($asName) ?></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 <?= $as['is_open'] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' ?>">
+                                        <?= $as['is_open'] ? 'Buka' : 'Tutup' ?>
+                                    </span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="p-1.5 bg-gray-50/50">
+                            <a href="<?= url('/grades?select_session=1') ?>" class="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-xl transition">
+                                <i class="ri-dashboard-line"></i>
+                                <span>Pilih di Layar Kartu Sesi</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php if (isset($activeSession)): ?>
                 <span class="inline-flex items-center px-2.5 py-1.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold <?= $activeSession['is_open'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' ?> border border-current whitespace-nowrap shadow-sm" style="white-space: nowrap;">
                     <i class="ri-door-<?= $activeSession['is_open'] ? 'open' : 'closed' ?>-line mr-1 text-[11px] md:text-xs"></i>
-                    <span class="hidden sm:inline">Sesi&nbsp;</span><?= $activeSession['type'] ?>: <?= $activeSession['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
+                    <span class="hidden sm:inline">Status&nbsp;</span><?= $activeSession['type'] ?>: <?= $activeSession['is_open'] ? 'DIBUKA' : 'DITUTUP' ?>
                 </span>
             <?php endif; ?>
 
-            <?php if (auth_get_role() === 'admin' || auth_is_panitia()): ?>
+            <?php if (auth_get_role() === 'admin' || auth_is_panitia($activeSession['id'] ?? null)): ?>
                 <?php if ($sessionComplete): ?>
                     <a href="<?= url('/grades/rekap_rata_rata') ?>" class="inline-flex items-center justify-center px-2.5 py-1.5 md:px-4 md:py-2 border border-emerald-500 rounded-xl text-[11px] md:text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap shadow-sm" style="white-space: nowrap;">
                         <i class="ri-file-chart-line mr-1"></i>
@@ -145,7 +257,7 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
                         
                         // Preserve other active filters when switching class
-                        $sidebarQuery = array_filter(array_merge($filters, ['kelas' => $k['id']]));
+                        $sidebarQuery = array_filter(array_merge($filters, ['kelas' => $k['id'], 'session' => $activeSession['id'] ?? '']));
                         $sidebarUrl = url('/grades?' . http_build_query($sidebarQuery));
                     ?>
                         <a href="<?= $sidebarUrl ?>" 
@@ -647,6 +759,7 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
             <?php endif; ?>
         </div>
     </div>
+<?php endif; ?>
 
 </main>
 
@@ -672,6 +785,20 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
                     <?php endif; ?>
 
                     <div class="space-y-4">
+                        <?php if (!empty($activeSessions) && count($activeSessions) > 1): ?>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Sesi Ujian</label>
+                                <select name="exam_session_id" id="modal_exam_session_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-sm">
+                                    <?php foreach ($activeSessions as $as): ?>
+                                        <option value="<?= $as['id'] ?>" <?= ($activeSession['id'] ?? '') == $as['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($as['type']) ?> - <?= htmlspecialchars($typeMap[$as['type']] ?? $as['name'] ?? $as['type']) ?> (<?= $as['is_open'] ? 'Terbuka' : 'Tertutup' ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php else: ?>
+                            <input type="hidden" name="exam_session_id" value="<?= $activeSession['id'] ?? '' ?>">
+                        <?php endif; ?>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Kelas</label>
                             <select name="id_kelas" id="modal_id_kelas" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white" onchange="onClassChange()">
@@ -872,6 +999,25 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
                 behavior: 'smooth', 
                 block: 'nearest', 
                 inline: 'center' 
+            });
+        }
+    });
+</script>
+
+<script>
+    // Session Switcher Dropdown Toggle
+    document.addEventListener('DOMContentLoaded', () => {
+        const switcherBtn = document.getElementById('sessionSwitcherBtn');
+        const switcherMenu = document.getElementById('sessionSwitcherMenu');
+        if (switcherBtn && switcherMenu) {
+            switcherBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switcherMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!switcherMenu.contains(e.target) && e.target !== switcherBtn) {
+                    switcherMenu.classList.add('hidden');
+                }
             });
         }
     });

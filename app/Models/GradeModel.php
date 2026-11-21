@@ -121,8 +121,13 @@ class GradeModel extends Model {
         try {
             $this->db->beginTransaction();
 
-            // Get Current Active Session
-            $session = $this->getActiveSession($this->academic_year_id);
+            // Get Session (support explicit exam_session_id or fallback to active session)
+            if (!empty($data['exam_session_id'])) {
+                $session = $this->getSessionById($data['exam_session_id']);
+            } else {
+                $session = $this->getActiveSession($this->academic_year_id);
+            }
+
             if (!$session) {
                 throw new \Exception("Tidak ada sesi ujian (UUPT/UPT/dll) yang aktif untuk tahun ajaran ini.");
             }
@@ -424,10 +429,35 @@ class GradeModel extends Model {
         return $sessions;
     }
 
-    public function getActiveSession($academicYearId) {
-        $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE academic_year_id = ? AND is_active = 1 LIMIT 1");
+    public function getActiveSessions($academicYearId) {
+        $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE academic_year_id = ? AND is_active = 1 ORDER BY id ASC");
         $stmt->execute([$academicYearId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getSessionById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE id = ?");
+        $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getActiveSession($academicYearId, $preferredSessionId = null) {
+        if ($preferredSessionId) {
+            $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE id = ? AND academic_year_id = ? AND is_active = 1");
+            $stmt->execute([$preferredSessionId, $academicYearId]);
+            $session = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($session) return $session;
+        }
+
+        $stmt = $this->db->prepare("SELECT * FROM exam_sessions WHERE academic_year_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1");
+        $stmt->execute([$academicYearId]);
+        $session = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($session) return $session;
+
+        // Fallback: if no active session, return first session for this year
+        $stmtFallback = $this->db->prepare("SELECT * FROM exam_sessions WHERE academic_year_id = ? ORDER BY id ASC LIMIT 1");
+        $stmtFallback->execute([$academicYearId]);
+        return $stmtFallback->fetch(PDO::FETCH_ASSOC);
     }
 
     public function updateSessionStatus($sessionId, $data) {
@@ -442,18 +472,12 @@ class GradeModel extends Model {
             $params[] = $data['use_bayanat'];
         }
         if (isset($data['is_active'])) {
-             // If we are setting this session to active, deactivate others in same year
-             if ($data['is_active'] == 1) {
-                 $idStmt = $this->db->prepare("SELECT academic_year_id FROM exam_sessions WHERE id = ?");
-                 $idStmt->execute([$sessionId]);
-                 $ayId = $idStmt->fetchColumn();
-                 if ($ayId) {
-                     // Deactivate and Close all sessions in this year first
-                     $this->db->prepare("UPDATE exam_sessions SET is_active = 0, is_open = 0 WHERE academic_year_id = ?")->execute([$ayId]);
-                 }
-             }
             $fields[] = "is_active = ?";
             $params[] = $data['is_active'];
+            // If explicitly deactivated, also close grade input
+            if ($data['is_active'] == 0) {
+                $fields[] = "is_open = 0";
+            }
         }
 
         if (empty($fields)) return false;
@@ -504,7 +528,7 @@ class GradeModel extends Model {
             ORDER BY sub.category ASC, sub.urutan ASC, sub.nama ASC
         ");
         $stmtExams->execute([$classId, $sessionId, $academicYearId]);
-        $exams = $stmtExams->fetchAll(\PDO::FETCH_ASSOC);
+        $exams = $stmtExams->fetchAll(PDO::FETCH_ASSOC);
 
         // Fetch all students
         $stmtStudents = $this->db->prepare("
@@ -515,7 +539,7 @@ class GradeModel extends Model {
             ORDER BY s.nama ASC
         ");
         $stmtStudents->execute([$classId, $academicYearId]);
-        $students = $stmtStudents->fetchAll(\PDO::FETCH_ASSOC);
+        $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
 
         // Fetch all grades for these exams
         $examIds = array_column($exams, 'exam_id');
@@ -533,7 +557,7 @@ class GradeModel extends Model {
                 WHERE g.exam_id IN ($inQuery)
             ");
             $stmtGrades->execute($examIds);
-            while ($row = $stmtGrades->fetch(\PDO::FETCH_ASSOC)) {
+            while ($row = $stmtGrades->fetch(PDO::FETCH_ASSOC)) {
                 $examId = $row['exam_id'];
                 $exam = $examsById[$examId] ?? null;
                 $hasOral = $exam ? (int)$exam['has_oral'] : 0;
@@ -573,6 +597,6 @@ class GradeModel extends Model {
         ";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$sessionId, $academicYearId, $academicYearId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
