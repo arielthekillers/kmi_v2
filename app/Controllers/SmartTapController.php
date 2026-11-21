@@ -515,8 +515,11 @@ class SmartTapController extends Controller
         $personType = $_POST['person_type'] ?? 'student';
         $personId = (int)($_POST['person_id'] ?? 0);
         $permType = $_POST['permission_type'] ?? 'izin';
+        $isFullDay = (isset($_POST['is_full_day']) && (string)$_POST['is_full_day'] === '0') ? 0 : 1;
         $startDate = $_POST['start_date'] ?? date('Y-m-d');
-        $endDate = $_POST['end_date'] ?? $startDate;
+        $endDate = ($isFullDay === 1) ? ($_POST['end_date'] ?? $startDate) : $startDate;
+        $startTime = (!$isFullDay && !empty($_POST['start_time'])) ? trim($_POST['start_time']) : null;
+        $endTime = (!$isFullDay && !empty($_POST['end_time'])) ? trim($_POST['end_time']) : null;
         $eventIds = isset($_POST['event_ids']) ? (is_array($_POST['event_ids']) ? implode(',', $_POST['event_ids']) : $_POST['event_ids']) : null;
         $reason = $_POST['reason'] ?? '';
 
@@ -525,12 +528,28 @@ class SmartTapController extends Controller
             $this->redirect('/smart-tap/permissions?tab=permissions');
         }
 
+        if (!$isFullDay && (empty($startTime) || empty($endTime))) {
+            $_SESSION['error'] = "Jam mulai dan jam selesai wajib diisi untuk izin beberapa jam.";
+            $this->redirect('/smart-tap/permissions?tab=permissions');
+        }
+
+        // Format waktu agar konsisten HH:MM:SS
+        if ($startTime && strlen($startTime) === 5) {
+            $startTime .= ':00';
+        }
+        if ($endTime && strlen($endTime) === 5) {
+            $endTime .= ':00';
+        }
+
         $userId = $_SESSION['user_id'] ?? null;
 
         $data = [
             'person_type' => $personType,
             'person_id' => $personId,
             'permission_type' => $permType,
+            'is_full_day' => $isFullDay,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'event_ids' => $eventIds,

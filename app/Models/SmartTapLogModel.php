@@ -269,7 +269,7 @@ class SmartTapLogModel extends Model
         }
 
         // 3. Fetch active permissions for this date & event
-        $sqlP = "SELECT person_type, person_id, permission_type, reason, event_ids
+        $sqlP = "SELECT person_type, person_id, permission_type, reason, event_ids, is_full_day, start_time, end_time
                  FROM smart_tap_permissions
                  WHERE ? BETWEEN start_date AND end_date";
         $stmtP = $this->db->prepare($sqlP);
@@ -278,10 +278,22 @@ class SmartTapLogModel extends Model
 
         $permMap = [];
         foreach ($allPerms as $p) {
-            if (empty($p['event_ids']) || in_array($eventId, explode(',', $p['event_ids']))) {
-                $key = $p['person_type'] . '_' . $p['person_id'];
-                $permMap[$key] = $p;
+            $eventMatch = empty($p['event_ids']) || in_array($eventId, explode(',', $p['event_ids']));
+            if (!$eventMatch) continue;
+
+            // Jika izin berbasis jam (is_full_day == 0), periksa apakah jadwal sesi event ini beririsan
+            if (isset($p['is_full_day']) && (int)$p['is_full_day'] === 0) {
+                $pStart = $p['start_time'] ?? '00:00:00';
+                $pEnd = $p['end_time'] ?? '23:59:59';
+                $evOpen = $event['open_time'] ?? '00:00:00';
+                $evClose = $event['close_time'] ?? '23:59:59';
+                if ($evOpen >= $pEnd || $evClose <= $pStart) {
+                    continue; // Sesi event berada di luar jam izin
+                }
             }
+
+            $key = $p['person_type'] . '_' . $p['person_id'];
+            $permMap[$key] = $p;
         }
 
         // 3.5. Cek apakah ada Waiver / Pengecualian Presensi (Udzur Cuaca / Libur Perpulangan)
@@ -471,7 +483,7 @@ class SmartTapLogModel extends Model
         }
 
         // 4. Ambil data perizinan & dispensasi yang beririsan dengan rentang tanggal
-        $sqlPerms = "SELECT person_type, person_id, permission_type, reason, event_ids, start_date, end_date
+        $sqlPerms = "SELECT person_type, person_id, permission_type, reason, event_ids, is_full_day, start_time, end_time, start_date, end_date
                      FROM smart_tap_permissions
                      WHERE start_date <= ? AND end_date >= ?";
         $stmtPerms = $this->db->prepare($sqlPerms);
@@ -703,11 +715,26 @@ class SmartTapLogModel extends Model
                     if (isset($permMap[$key])) {
                         foreach ($permMap[$key] as $perm) {
                             if ($sessDate >= $perm['start_date'] && $sessDate <= $perm['end_date']) {
-                                if (empty($perm['event_ids']) || in_array((string)$evId, explode(',', $perm['event_ids']))) {
-                                    $hasPerm = true;
-                                    $pReason = ucfirst($perm['permission_type']) . (!empty($perm['reason']) ? ': ' . $perm['reason'] : '');
-                                    break;
+                                $eventMatch = empty($perm['event_ids']) || in_array((string)$evId, explode(',', $perm['event_ids']));
+                                if (!$eventMatch) continue;
+
+                                // Cek jam jika izin berbasis jam tertentu (parsial)
+                                if (isset($perm['is_full_day']) && (int)$perm['is_full_day'] === 0) {
+                                    $pStart = $perm['start_time'] ?? '00:00:00';
+                                    $pEnd = $perm['end_time'] ?? '23:59:59';
+                                    $evOpen = $ev['open_time'] ?? '00:00:00';
+                                    $evClose = $ev['close_time'] ?? '23:59:59';
+                                    if ($evOpen >= $pEnd || $evClose <= $pStart) {
+                                        continue; // Sesi event berada di luar rentang jam izin
+                                    }
                                 }
+
+                                $hasPerm = true;
+                                $timeNote = (isset($perm['is_full_day']) && (int)$perm['is_full_day'] === 0 && !empty($perm['start_time']))
+                                    ? ' (' . substr($perm['start_time'], 0, 5) . '-' . substr($perm['end_time'], 0, 5) . ' WIB)'
+                                    : '';
+                                $pReason = ucfirst($perm['permission_type']) . $timeNote . (!empty($perm['reason']) ? ': ' . $perm['reason'] : '');
+                                break;
                             }
                         }
                     }

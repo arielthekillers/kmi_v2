@@ -565,14 +565,27 @@ if (!empty($events)) {
                                             </span>
                                         </td>
                                         <td class="py-4 px-5 text-xs font-medium text-gray-700">
-                                            <div class="flex items-center gap-1.5">
-                                                <i class="ri-calendar-line text-gray-400"></i>
-                                                <span>
-                                                    <?= date('d M Y', strtotime($p['start_date'])) ?> 
-                                                    <?php if ($p['start_date'] != $p['end_date']): ?>
-                                                        &mdash; <?= date('d M Y', strtotime($p['end_date'])) ?>
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-1.5">
+                                                    <i class="ri-calendar-line text-gray-400"></i>
+                                                    <span class="font-bold text-gray-900">
+                                                        <?= date('d M Y', strtotime($p['start_date'])) ?> 
+                                                        <?php if ($p['start_date'] != $p['end_date']): ?>
+                                                            &mdash; <?= date('d M Y', strtotime($p['end_date'])) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <?php if (empty($p['is_full_day']) || (int)$p['is_full_day'] === 1): ?>
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                            <i class="ri-calendar-check-line text-[10px]"></i> Seharian (Full Day)
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                                                            <i class="ri-time-line text-[10px] text-amber-600"></i> Jam <?= substr($p['start_time'] ?? '00:00', 0, 5) ?> - <?= substr($p['end_time'] ?? '23:59', 0, 5) ?> WIB
+                                                        </span>
                                                     <?php endif; ?>
-                                                </span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td class="py-4 px-5 text-xs text-gray-500 max-w-xs truncate">
@@ -587,6 +600,9 @@ if (!empty($events)) {
                                                             "person_id" => $p["person_id"],
                                                             "person_name" => $p["person_name"],
                                                             "permission_type" => $p["permission_type"],
+                                                            "is_full_day" => isset($p["is_full_day"]) ? (int)$p["is_full_day"] : 1,
+                                                            "start_time" => $p["start_time"] ?? "",
+                                                            "end_time" => $p["end_time"] ?? "",
                                                             "start_date" => $p["start_date"],
                                                             "end_date" => $p["end_date"],
                                                             "reason" => $p["reason"] ?? ""
@@ -675,14 +691,72 @@ if (!empty($events)) {
                 </select>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <!-- Durasi Izin: Penuh 1 Hari vs Beberapa Jam (Jam-jaman) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1.5">Tipe Durasi Izin</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label id="label_dur_full" class="flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer bg-indigo-50/70 border-indigo-300 text-xs font-bold text-indigo-900 transition">
+                        <input type="radio" name="is_full_day" id="dur_full_day" value="1" checked onchange="toggleDurationType(1)" class="text-indigo-600 focus:ring-indigo-500">
+                        <div class="flex flex-col">
+                            <span class="flex items-center gap-1"><i class="ri-calendar-check-line text-indigo-600"></i> Penuh 1 Hari</span>
+                            <span class="text-[10px] text-gray-500 font-normal">Seharian / Rentang Hari</span>
+                        </div>
+                    </label>
+                    <label id="label_dur_partial" class="flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer hover:bg-gray-50 border-gray-200 text-xs font-bold text-gray-700 transition">
+                        <input type="radio" name="is_full_day" id="dur_partial_day" value="0" onchange="toggleDurationType(0)" class="text-indigo-600 focus:ring-indigo-500">
+                        <div class="flex flex-col">
+                            <span class="flex items-center gap-1"><i class="ri-time-line text-amber-600"></i> Beberapa Jam</span>
+                            <span class="text-[10px] text-gray-500 font-normal">Izin Jam-jaman / Parsial</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- CONTAINER A: FULL DAY (Tanggal Mulai - Tanggal Selesai) -->
+            <div id="container_full_day" class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Mulai</label>
-                    <input type="date" name="start_date" id="perm_start_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    <input type="date" name="start_date" id="perm_start_date" value="<?= date('Y-m-d') ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Selesai</label>
-                    <input type="date" name="end_date" id="perm_end_date" value="<?= date('Y-m-d') ?>" required class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    <input type="date" name="end_date" id="perm_end_date" value="<?= date('Y-m-d') ?>" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                </div>
+            </div>
+
+            <!-- CONTAINER B: BEBERAPA JAM (Tanggal & Jam Mulai - Jam Selesai) -->
+            <div id="container_partial_day" class="hidden space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5">Tanggal Izin</label>
+                    <input type="date" id="perm_partial_date" value="<?= date('Y-m-d') ?>" onchange="syncPartialDate(this.value)" class="w-full text-xs rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1">
+                            <i class="ri-time-line text-indigo-500"></i> Jam Mulai
+                        </label>
+                        <input type="time" name="start_time" id="perm_start_time" value="09:30" oninput="calculateDurationPreview()" class="w-full text-xs font-mono font-bold rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1">
+                            <i class="ri-time-line text-rose-500"></i> Jam Selesai
+                        </label>
+                        <input type="time" name="end_time" id="perm_end_time" value="14:00" oninput="calculateDurationPreview()" class="w-full text-xs font-mono font-bold rounded-2xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3">
+                    </div>
+                </div>
+
+                <!-- Quick Presets for convenience -->
+                <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div class="flex items-center gap-1 text-indigo-800 font-semibold">
+                        <i class="ri-timer-flash-line text-indigo-600"></i>
+                        <span id="perm_duration_text">Durasi: 4 jam 30 menit</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-gray-400 text-[10px]">Preset:</span>
+                        <button type="button" onclick="setQuickTime('07:00','12:00')" class="px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 text-[10px] font-medium transition shadow-2xs">Pagi</button>
+                        <button type="button" onclick="setQuickTime('09:30','14:00')" class="px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 text-[10px] font-medium transition shadow-2xs">Siang</button>
+                        <button type="button" onclick="setQuickTime('15:00','19:00')" class="px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 text-[10px] font-medium transition shadow-2xs">Sore</button>
+                    </div>
                 </div>
             </div>
 
@@ -1051,6 +1125,78 @@ function openPermissionModal() {
 function closePermissionModal() {
     document.getElementById('modal-permission').classList.add('hidden');
 }
+
+function toggleDurationType(isFullDay) {
+    const contFull = document.getElementById('container_full_day');
+    const contPartial = document.getElementById('container_partial_day');
+    const lblFull = document.getElementById('label_dur_full');
+    const lblPartial = document.getElementById('label_dur_partial');
+    const inputStartDate = document.getElementById('perm_start_date');
+    const inputEndDate = document.getElementById('perm_end_date');
+    const inputPartialDate = document.getElementById('perm_partial_date');
+
+    if (isFullDay == 1 || isFullDay === true) {
+        if (contFull) contFull.classList.remove('hidden');
+        if (contPartial) contPartial.classList.add('hidden');
+        if (lblFull) lblFull.className = "flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer bg-indigo-50/70 border-indigo-300 text-xs font-bold text-indigo-900 transition";
+        if (lblPartial) lblPartial.className = "flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer hover:bg-gray-50 border-gray-200 text-xs font-bold text-gray-700 transition";
+    } else {
+        if (contFull) contFull.classList.add('hidden');
+        if (contPartial) contPartial.classList.remove('hidden');
+        if (lblFull) lblFull.className = "flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer hover:bg-gray-50 border-gray-200 text-xs font-bold text-gray-700 transition";
+        if (lblPartial) lblPartial.className = "flex items-center gap-2.5 p-3 border rounded-2xl cursor-pointer bg-indigo-50/70 border-indigo-300 text-xs font-bold text-indigo-900 transition";
+
+        if (inputPartialDate && inputStartDate) {
+            inputStartDate.value = inputPartialDate.value;
+            if (inputEndDate) inputEndDate.value = inputPartialDate.value;
+        }
+        calculateDurationPreview();
+    }
+}
+
+function syncPartialDate(val) {
+    const inputStartDate = document.getElementById('perm_start_date');
+    const inputEndDate = document.getElementById('perm_end_date');
+    if (inputStartDate) inputStartDate.value = val;
+    if (inputEndDate) inputEndDate.value = val;
+}
+
+function setQuickTime(start, end) {
+    const s = document.getElementById('perm_start_time');
+    const e = document.getElementById('perm_end_time');
+    if (s) s.value = start;
+    if (e) e.value = end;
+    calculateDurationPreview();
+}
+
+function calculateDurationPreview() {
+    const s = document.getElementById('perm_start_time') ? document.getElementById('perm_start_time').value : '';
+    const e = document.getElementById('perm_end_time') ? document.getElementById('perm_end_time').value : '';
+    const txt = document.getElementById('perm_duration_text');
+    if (!txt) return;
+
+    if (!s || !e) {
+        txt.innerText = 'Pilih jam mulai & selesai';
+        return;
+    }
+
+    const [sh, sm] = s.split(':').map(Number);
+    const [eh, em] = e.split(':').map(Number);
+    let diffMins = (eh * 60 + em) - (sh * 60 + sm);
+
+    if (diffMins <= 0) {
+        txt.innerText = 'Waktu selesai harus lebih besar dari mulai';
+        return;
+    }
+
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    let durStr = '';
+    if (hours > 0) durStr += `${hours} jam `;
+    if (mins > 0) durStr += `${mins} menit`;
+    txt.innerText = `Durasi: ${durStr.trim()} (${s} - ${e})`;
+}
+
 function resetPermissionModal() {
     document.getElementById('modal-permission-title').innerText = 'Form Perizinan Sementara';
     document.getElementById('modal-permission-subtitle').innerText = 'Santri / Guru tidak akan terhitung Alpa selama izin';
@@ -1065,11 +1211,23 @@ function resetPermissionModal() {
     const permType = document.getElementById('perm_type');
     if (permType) permType.value = 'sakit';
 
+    const durFull = document.getElementById('dur_full_day');
+    if (durFull) durFull.checked = true;
+    toggleDurationType(1);
+
     const today = new Date().toISOString().split('T')[0];
     const startDate = document.getElementById('perm_start_date');
     const endDate = document.getElementById('perm_end_date');
+    const partialDate = document.getElementById('perm_partial_date');
     if (startDate) startDate.value = today;
     if (endDate) endDate.value = today;
+    if (partialDate) partialDate.value = today;
+
+    const sTime = document.getElementById('perm_start_time');
+    const eTime = document.getElementById('perm_end_time');
+    if (sTime) sTime.value = '09:30';
+    if (eTime) eTime.value = '14:00';
+    calculateDurationPreview();
 
     const reason = document.getElementById('perm_reason');
     if (reason) reason.value = '';
@@ -1102,14 +1260,44 @@ function editPermission(data) {
         permType.value = data.permission_type;
     }
 
-    const startDate = document.getElementById('perm_start_date');
-    if (startDate && data.start_date) {
-        startDate.value = data.start_date;
-    }
+    const isFullDay = (data.is_full_day === undefined || data.is_full_day === null || data.is_full_day == 1);
+    if (isFullDay) {
+        const rFull = document.getElementById('dur_full_day');
+        if (rFull) rFull.checked = true;
+        toggleDurationType(1);
 
-    const endDate = document.getElementById('perm_end_date');
-    if (endDate && data.end_date) {
-        endDate.value = data.end_date;
+        const startDate = document.getElementById('perm_start_date');
+        if (startDate && data.start_date) {
+            startDate.value = data.start_date;
+        }
+
+        const endDate = document.getElementById('perm_end_date');
+        if (endDate && data.end_date) {
+            endDate.value = data.end_date;
+        }
+    } else {
+        const rPartial = document.getElementById('dur_partial_day');
+        if (rPartial) rPartial.checked = true;
+        toggleDurationType(0);
+
+        if (data.start_date) {
+            const startDate = document.getElementById('perm_start_date');
+            const endDate = document.getElementById('perm_end_date');
+            const partialDate = document.getElementById('perm_partial_date');
+            if (startDate) startDate.value = data.start_date;
+            if (endDate) endDate.value = data.start_date;
+            if (partialDate) partialDate.value = data.start_date;
+        }
+
+        if (data.start_time) {
+            const sTime = document.getElementById('perm_start_time');
+            if (sTime) sTime.value = data.start_time.substring(0, 5);
+        }
+        if (data.end_time) {
+            const eTime = document.getElementById('perm_end_time');
+            if (eTime) eTime.value = data.end_time.substring(0, 5);
+        }
+        calculateDurationPreview();
     }
 
     const reason = document.getElementById('perm_reason');

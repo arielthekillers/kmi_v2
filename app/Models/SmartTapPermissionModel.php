@@ -9,6 +9,26 @@ class SmartTapPermissionModel extends Model
 {
     protected $table = 'smart_tap_permissions';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema()
+    {
+        try {
+            $cols = $this->db->query("SHOW COLUMNS FROM smart_tap_permissions LIKE 'is_full_day'")->fetchAll();
+            if (empty($cols)) {
+                $this->db->exec("ALTER TABLE smart_tap_permissions ADD COLUMN is_full_day TINYINT(1) NOT NULL DEFAULT 1 AFTER permission_type");
+                $this->db->exec("ALTER TABLE smart_tap_permissions ADD COLUMN start_time TIME NULL DEFAULT NULL AFTER is_full_day");
+                $this->db->exec("ALTER TABLE smart_tap_permissions ADD COLUMN end_time TIME NULL DEFAULT NULL AFTER start_time");
+            }
+        } catch (\Exception $e) {
+            // Ignore if restricted or already exists
+        }
+    }
+
     public function getPermissions($filters = [])
     {
         $where = ["1=1"];
@@ -80,14 +100,17 @@ class SmartTapPermissionModel extends Model
     public function createPermission($data)
     {
         $sql = "INSERT INTO smart_tap_permissions (
-            person_type, person_id, permission_type, start_date, end_date, event_ids, reason, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            person_type, person_id, permission_type, is_full_day, start_time, end_time, start_date, end_date, event_ids, reason, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $data['person_type'],
             $data['person_id'],
             $data['permission_type'],
+            isset($data['is_full_day']) ? (int)$data['is_full_day'] : 1,
+            !empty($data['start_time']) ? $data['start_time'] : null,
+            !empty($data['end_time']) ? $data['end_time'] : null,
             $data['start_date'],
             $data['end_date'],
             !empty($data['event_ids']) ? (is_array($data['event_ids']) ? implode(',', $data['event_ids']) : $data['event_ids']) : null,
@@ -133,6 +156,9 @@ class SmartTapPermissionModel extends Model
                     person_type = ?,
                     person_id = ?,
                     permission_type = ?,
+                    is_full_day = ?,
+                    start_time = ?,
+                    end_time = ?,
                     start_date = ?,
                     end_date = ?,
                     event_ids = ?,
@@ -144,6 +170,9 @@ class SmartTapPermissionModel extends Model
             $data['person_type'],
             $data['person_id'],
             $data['permission_type'],
+            isset($data['is_full_day']) ? (int)$data['is_full_day'] : 1,
+            !empty($data['start_time']) ? $data['start_time'] : null,
+            !empty($data['end_time']) ? $data['end_time'] : null,
             $data['start_date'],
             $data['end_date'],
             !empty($data['event_ids']) ? (is_array($data['event_ids']) ? implode(',', $data['event_ids']) : $data['event_ids']) : null,
