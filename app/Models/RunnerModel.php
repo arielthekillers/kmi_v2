@@ -7,6 +7,102 @@ use PDO;
 
 class RunnerModel extends Model
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTablesExist();
+    }
+
+    private function ensureTablesExist()
+    {
+        try {
+            $check = $this->db->query("SHOW TABLES LIKE 'runner_events'")->fetchAll();
+            if (empty($check)) {
+                $this->db->exec("CREATE TABLE IF NOT EXISTS `runner_groups` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `name` varchar(100) NOT NULL,
+                    `description` text DEFAULT NULL,
+                    `created_at` datetime DEFAULT current_timestamp(),
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $this->db->exec("CREATE TABLE IF NOT EXISTS `runner_events` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `group_id` int(11) DEFAULT NULL,
+                    `name` varchar(255) NOT NULL,
+                    `slug` varchar(255) NOT NULL,
+                    `description` text DEFAULT NULL,
+                    `start_date` date NOT NULL,
+                    `end_date` date NOT NULL,
+                    `target_km` decimal(8,2) NOT NULL DEFAULT 42.00,
+                    `mode` enum('MANUAL','HYBRID','AUTO') NOT NULL DEFAULT 'MANUAL',
+                    `team_mode` enum('solo','team') NOT NULL DEFAULT 'solo',
+                    `team_size` int(11) DEFAULT 1,
+                    `cost` decimal(12,2) NOT NULL DEFAULT 0.00,
+                    `status` enum('DRAFT','ACTIVE','COMPLETED') NOT NULL DEFAULT 'ACTIVE',
+                    `created_by` int(11) DEFAULT NULL,
+                    `created_at` datetime DEFAULT current_timestamp(),
+                    `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                    PRIMARY KEY (`id`),
+                    KEY `group_id` (`group_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $this->db->exec("CREATE TABLE IF NOT EXISTS `runner_participants` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `event_id` int(11) NOT NULL,
+                    `user_id` int(11) NOT NULL,
+                    `bib_number` varchar(50) DEFAULT NULL,
+                    `registered_at` datetime DEFAULT current_timestamp(),
+                    `payment_status` enum('FREE','UNPAID','PENDING','PAID') NOT NULL DEFAULT 'FREE',
+                    `payment_proof` varchar(255) DEFAULT NULL,
+                    `total_km` decimal(8,2) NOT NULL DEFAULT 0.00,
+                    `total_duration_seconds` int(11) NOT NULL DEFAULT 0,
+                    `total_elevation_m` int(11) NOT NULL DEFAULT 0,
+                    `activity_count` int(11) NOT NULL DEFAULT 0,
+                    `is_finisher` tinyint(1) NOT NULL DEFAULT 0,
+                    `finished_at` datetime DEFAULT NULL,
+                    `finisher_rank` int(11) DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uq_event_user` (`event_id`,`user_id`),
+                    KEY `user_id` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $this->db->exec("CREATE TABLE IF NOT EXISTS `runner_activities` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `event_id` int(11) NOT NULL,
+                    `participant_id` int(11) NOT NULL,
+                    `user_id` int(11) NOT NULL,
+                    `activity_date` date NOT NULL,
+                    `activity_type` enum('Run','Walk','Treadmill','Trail Run') NOT NULL DEFAULT 'Run',
+                    `distance_km` decimal(8,2) NOT NULL,
+                    `duration_seconds` int(11) NOT NULL,
+                    `pace_seconds` int(11) NOT NULL,
+                    `elevation_gain_m` int(11) NOT NULL DEFAULT 0,
+                    `strava_url` varchar(500) DEFAULT NULL,
+                    `notes` text DEFAULT NULL,
+                    `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+                    `verified_by` int(11) DEFAULT NULL,
+                    `verified_at` datetime DEFAULT NULL,
+                    `rejection_reason` text DEFAULT NULL,
+                    `created_at` datetime DEFAULT current_timestamp(),
+                    `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                    PRIMARY KEY (`id`),
+                    KEY `event_id` (`event_id`),
+                    KEY `participant_id` (`participant_id`),
+                    KEY `user_id` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                // Seed initial group & event
+                $this->db->exec("INSERT INTO runner_groups (name, description) VALUES ('Monthly Challenges', 'Tantangan kebugaran lari bulanan guru dan staf')");
+                $this->db->exec("INSERT INTO runner_groups (name, description) VALUES ('Special Edition', 'Event lari khusus peringatan atau charity')");
+                $this->db->exec("INSERT INTO runner_events (group_id, name, slug, description, start_date, end_date, target_km, mode, team_mode, cost, status)
+                    VALUES (1, 'KMI Virtual Run 42K', 'kmi-virtual-run-42k', 'Tantangan akumulasi lari 42 KM untuk kebugaran para guru dan staf KMI', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 60 DAY), 42.00, 'MANUAL', 'solo', 0.00, 'ACTIVE')");
+            }
+        } catch (\Exception $e) {
+            // Ignore if restricted or already exists
+        }
+    }
+
     // ==========================================
     // 1. EVENT & GROUP MANAGEMENT
     // ==========================================
