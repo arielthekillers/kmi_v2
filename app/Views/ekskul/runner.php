@@ -183,11 +183,11 @@ function runner_format_pace($seconds) {
                                         <!-- Rank (Podium Medali) -->
                                         <td class="py-4 px-4 text-center font-bold text-gray-500">
                                             <?php if ($rank === 1): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-300 text-amber-950 text-xs font-black shadow-sm ring-2 ring-amber-400/80" title="Juara 1 (Medali Emas)">1</span>
+                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 1 (Medali Emas / Gold)">🥇</span>
                                             <?php elseif ($rank === 2): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 text-xs font-black shadow-sm ring-2 ring-slate-300" title="Juara 2 (Medali Perak)">2</span>
+                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 2 (Medali Perak / Silver)">🥈</span>
                                             <?php elseif ($rank === 3): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-200 text-orange-950 text-xs font-black shadow-sm ring-2 ring-orange-400/80" title="Juara 3 (Medali Perunggu)">3</span>
+                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 3 (Medali Perunggu / Bronze)">🥉</span>
                                             <?php else: ?>
                                                 <span class="text-gray-400 text-xs font-semibold"><?= $rank ?></span>
                                             <?php endif; ?>
