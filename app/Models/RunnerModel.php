@@ -369,16 +369,25 @@ class RunnerModel extends Model
         return (int)$this->db->lastInsertId();
     }
 
-    public function updateActivity($id, $userId, $data)
+    public function updateActivity($id, $userId, $data, $isAdmin = false)
     {
-        // Hanya bisa diedit jika status masih pending
+        $stmt = $this->db->prepare("SELECT * FROM runner_activities WHERE id = ?");
+        $stmt->execute([(int)$id]);
+        $act = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$act) return false;
+
+        // User can only edit their own activity, Admin can edit any activity
+        if (!$isAdmin && (int)$act['user_id'] !== (int)$userId) {
+            return false;
+        }
+
         $sql = "UPDATE runner_activities SET 
                     activity_date = ?, activity_type = ?, distance_km = ?,
                     duration_seconds = ?, pace_seconds = ?, elevation_gain_m = ?,
                     strava_url = ?, notes = ?
-                WHERE id = ? AND user_id = ? AND status = 'pending'";
+                WHERE id = ?";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $ok = $stmt->execute([
             $data['activity_date'],
             $data['activity_type'] ?? 'Run',
             (float)$data['distance_km'],
@@ -387,9 +396,14 @@ class RunnerModel extends Model
             (int)($data['elevation_gain_m'] ?? 0),
             $data['strava_url'] ?? null,
             $data['notes'] ?? null,
-            (int)$id,
-            (int)$userId
+            (int)$id
         ]);
+
+        if ($ok && $act['status'] === 'approved') {
+            $this->updateParticipantStats((int)$act['participant_id']);
+        }
+
+        return $ok;
     }
 
     public function deleteActivity($id, $userId, $isAdmin = false)
@@ -399,8 +413,9 @@ class RunnerModel extends Model
         $act = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$act) return false;
 
-        if (!$isAdmin && ((int)$act['user_id'] !== (int)$userId || $act['status'] !== 'pending')) {
-            return false; // Guru hanya boleh hapus lari pending miliknya
+        // User can delete their own activity, Admin can delete any activity
+        if (!$isAdmin && (int)$act['user_id'] !== (int)$userId) {
+            return false;
         }
 
         $del = $this->db->prepare("DELETE FROM runner_activities WHERE id = ?");

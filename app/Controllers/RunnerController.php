@@ -164,12 +164,13 @@ class RunnerController extends Controller
     }
 
     /**
-     * Edit Aktivitas Lari yang Masih Pending
+     * Edit Aktivitas Lari
      */
     public function updateActivity()
     {
         require_login();
         $user = auth_get_current_user();
+        $isAdmin = (auth_get_role() === 'admin');
 
         $id = (int)($_POST['activity_id'] ?? 0);
         $eventId = (int)($_POST['event_id'] ?? 0);
@@ -193,15 +194,16 @@ class RunnerController extends Controller
             'elevation_gain_m' => $elevM,
             'strava_url' => $stravaUrl ?: null,
             'notes' => $notes ?: null
-        ]);
+        ], $isAdmin);
 
         if ($ok) {
             add_flash('Aktivitas lari berhasil diperbarui.', 'success');
         } else {
-            add_flash('Gagal memperbarui aktivitas. Hanya aktivitas berstatus pending yang dapat diubah.', 'error');
+            add_flash('Gagal memperbarui aktivitas.', 'error');
         }
 
-        $this->redirect('/ekskul/runner?event_id=' . $eventId . '&tab=my_activities');
+        $redirectTab = !empty($_POST['redirect_tab']) ? $_POST['redirect_tab'] : 'my_activities';
+        $this->redirect('/ekskul/runner?event_id=' . $eventId . '&tab=' . $redirectTab);
     }
 
     /**
@@ -223,7 +225,42 @@ class RunnerController extends Controller
             add_flash('Gagal menghapus aktivitas.', 'error');
         }
 
-        $this->redirect('/ekskul/runner?event_id=' . $eventId . '&tab=' . ($isAdmin && !empty($_GET['from_admin']) ? 'admin_panel' : 'my_activities'));
+        $redirectTab = !empty($_POST['redirect_tab']) ? $_POST['redirect_tab'] : ($isAdmin && !empty($_GET['from_admin']) ? 'admin_panel' : 'my_activities');
+        $this->redirect('/ekskul/runner?event_id=' . $eventId . '&tab=' . $redirectTab);
+    }
+
+    /**
+     * Ambil aktivitas user per event dalam format JSON (untuk modal detail admin)
+     */
+    public function getUserActivities()
+    {
+        require_login();
+        $currentUser = auth_get_current_user();
+        $isAdmin = (auth_get_role() === 'admin');
+
+        $userId = (int)($_GET['user_id'] ?? 0);
+        $eventId = (int)($_GET['event_id'] ?? 0);
+
+        // Keamanan: Guru hanya boleh melihat miliknya, Admin bisa melihat siapa saja
+        if (!$isAdmin && (int)$currentUser['id'] !== $userId) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Akses ditolak']);
+            exit;
+        }
+
+        $activities = $this->runnerModel->getActivitiesByUser($userId, $eventId);
+        
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $uStmt = $db->prepare("SELECT id, nama, username FROM users WHERE id = ?");
+        $uStmt->execute([$userId]);
+        $targetUser = $uStmt->fetch(\PDO::FETCH_ASSOC);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'user' => $targetUser,
+            'activities' => $activities
+        ]);
+        exit;
     }
 
     /**

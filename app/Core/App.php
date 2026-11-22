@@ -306,6 +306,7 @@ class App
 
         // Ekskul - Runner Module Routes
         $this->router->get('/ekskul/runner', ['App\Controllers\RunnerController', 'index']);
+        $this->router->get('/ekskul/runner/user-activities', ['App\Controllers\RunnerController', 'getUserActivities']);
         $this->router->post('/ekskul/runner/join', ['App\Controllers\RunnerController', 'join']);
         $this->router->post('/ekskul/runner/activity/store', ['App\Controllers\RunnerController', 'submitActivity']);
         $this->router->post('/ekskul/runner/activity/update', ['App\Controllers\RunnerController', 'updateActivity']);

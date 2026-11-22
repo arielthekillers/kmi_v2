@@ -205,7 +205,13 @@ function runner_format_pace($seconds) {
                                                 </div>
                                                 <div>
                                                     <div class="font-bold text-gray-900 leading-snug flex items-center gap-1.5">
-                                                        <?= htmlspecialchars($row['nama']) ?>
+                                                        <?php if ($isAdmin): ?>
+                                                            <button type="button" onclick="openUserActivitiesModal(<?= $row['user_id'] ?>, '<?= htmlspecialchars(addslashes($row['nama'])) ?>', <?= $event['id'] ?>)" class="text-left hover:text-emerald-600 hover:underline cursor-pointer">
+                                                                <?= htmlspecialchars($row['nama']) ?>
+                                                            </button>
+                                                        <?php else: ?>
+                                                            <?= htmlspecialchars($row['nama']) ?>
+                                                        <?php endif; ?>
                                                         <?php if ($isMe): ?>
                                                             <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold">Saya</span>
                                                         <?php endif; ?>
@@ -259,9 +265,18 @@ function runner_format_pace($seconds) {
 
                                         <!-- Total Activity -->
                                         <td class="py-4 px-4 text-center">
-                                            <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold font-mono">
-                                                <?= (int)$row['activity_count'] ?>
-                                            </span>
+                                            <?php if ($isAdmin): ?>
+                                                <button type="button" onclick="openUserActivitiesModal(<?= $row['user_id'] ?>, '<?= htmlspecialchars(addslashes($row['nama'])) ?>', <?= $event['id'] ?>)" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold font-mono transition shadow-xs group" 
+                                                        title="Klik untuk melihat & kelola aktivitas runner ini">
+                                                    <i class="ri-list-check-2 text-emerald-600"></i>
+                                                    <span><?= (int)$row['activity_count'] ?></span>
+                                                </button>
+                                            <?php else: ?>
+                                                <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold font-mono">
+                                                    <?= (int)$row['activity_count'] ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php 
@@ -530,20 +545,19 @@ function runner_format_pace($seconds) {
                                         </a>
                                     <?php endif; ?>
 
-                                    <?php if ($act['status'] === 'pending'): ?>
-                                        <button type="button" onclick='openEditActivityModal(<?= json_encode($act) ?>)'
-                                                class="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Edit Data Lari">
-                                            <i class="ri-edit-line text-sm"></i>
-                                        </button>
+                                    <button type="button" onclick='openEditActivityModal(<?= json_encode($act) ?>)'
+                                            class="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Edit Data Lari">
+                                        <i class="ri-edit-line text-sm"></i>
+                                    </button>
 
-                                        <form action="<?= url('/ekskul/runner/activity/delete') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan lari ini?');" class="inline">
-                                            <input type="hidden" name="activity_id" value="<?= $act['id'] ?>">
-                                            <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
-                                            <button type="submit" class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus">
-                                                <i class="ri-delete-bin-line text-sm"></i>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
+                                    <form action="<?= url('/ekskul/runner/activity/delete') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan lari ini?');" class="inline">
+                                        <input type="hidden" name="activity_id" value="<?= $act['id'] ?>">
+                                        <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
+                                        <input type="hidden" name="redirect_tab" value="my_activities">
+                                        <button type="submit" class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors" title="Hapus">
+                                            <i class="ri-delete-bin-line text-sm"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -808,6 +822,7 @@ function runner_format_pace($seconds) {
         <form action="<?= url('/ekskul/runner/activity/update') ?>" method="POST" class="space-y-4">
             <input type="hidden" name="activity_id" id="edit_act_id">
             <input type="hidden" name="event_id" value="<?= $eventId ?>">
+            <input type="hidden" name="redirect_tab" id="edit_redirect_tab" value="my_activities">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -908,6 +923,42 @@ function runner_format_pace($seconds) {
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: KELOLA AKTIVITAS USER RUNNER (Khusus Admin)       -->
+<!-- ======================================================== -->
+<div id="modal-user-activities" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative animate-fade-in max-h-[90vh] flex flex-col">
+        <button type="button" onclick="closeModal('modal-user-activities')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <i class="ri-close-line text-xl"></i>
+        </button>
+
+        <div class="border-b border-gray-100 pb-3 mb-4 flex items-center justify-between">
+            <div>
+                <h3 class="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                    <i class="ri-run-line text-emerald-600"></i>
+                    <span id="modal-user-act-title">Aktivitas Runner</span>
+                </h3>
+                <p class="text-xs text-gray-500 mt-0.5" id="modal-user-act-subtitle">Riwayat aktivitas lari</p>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700" id="modal-user-act-count">0 Catatan</span>
+        </div>
+
+        <div id="modal-user-act-content" class="overflow-y-auto flex-1 space-y-3 pr-1 min-h-[150px]">
+            <!-- Dynamic content loaded via JS -->
+            <div class="p-8 text-center text-gray-400">
+                <i class="ri-loader-4-line text-3xl animate-spin text-emerald-600 block mb-2 mx-auto"></i>
+                <p class="text-xs">Memuat catatan lari...</p>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-gray-100 flex justify-end">
+            <button type="button" onclick="closeModal('modal-user-activities')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition">
+                Tutup
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1225,7 +1276,142 @@ function runner_format_pace($seconds) {
         document.getElementById('edit_act_strava').value = act.strava_url || '';
         document.getElementById('edit_act_notes').value = act.notes || '';
 
+        const redTab = document.getElementById('edit_redirect_tab');
+        if (redTab && !redTab.dataset.custom) {
+            redTab.value = 'my_activities';
+        }
+
         openModal('modal-edit-activity');
+    }
+
+    function openEditActivityModalFromLeaderboard(act) {
+        const redTab = document.getElementById('edit_redirect_tab');
+        if (redTab) {
+            redTab.value = 'leaderboard';
+            redTab.dataset.custom = '1';
+        }
+        openEditActivityModal(act);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function openUserActivitiesModal(userId, userName, eventId) {
+        document.getElementById('modal-user-act-title').textContent = 'Aktivitas: ' + userName;
+        document.getElementById('modal-user-act-subtitle').textContent = 'Memuat riwayat aktivitas runner...';
+        document.getElementById('modal-user-act-count').textContent = '...';
+        
+        const container = document.getElementById('modal-user-act-content');
+        container.innerHTML = `
+            <div class="p-8 text-center text-gray-400">
+                <i class="ri-loader-4-line text-3xl animate-spin text-emerald-600 block mb-2 mx-auto"></i>
+                <p class="text-xs font-medium">Memuat catatan lari...</p>
+            </div>
+        `;
+        openModal('modal-user-activities');
+
+        fetch('<?= url('/ekskul/runner/user-activities') ?>?user_id=' + userId + '&event_id=' + eventId)
+            .then(res => res.json())
+            .then(data => {
+                const list = data.activities || [];
+                document.getElementById('modal-user-act-count').textContent = list.length + ' Catatan';
+                document.getElementById('modal-user-act-subtitle').textContent = 'Riwayat aktivitas lari untuk event ini';
+
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-8 text-center text-gray-400">
+                            <i class="ri-file-list-line text-4xl text-gray-300 block mb-2"></i>
+                            <p class="text-xs font-medium">Runner ini belum memiliki catatan aktivitas pada event ini.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                list.forEach(act => {
+                    let badge = '';
+                    if (act.status === 'approved') {
+                        badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1"><i class="ri-checkbox-circle-fill"></i> Disetujui</span>';
+                    } else if (act.status === 'rejected') {
+                        badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 flex items-center gap-1"><i class="ri-close-circle-fill"></i> Ditolak</span>';
+                    } else {
+                        badge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1"><i class="ri-time-line"></i> Menunggu Verifikasi</span>';
+                    }
+
+                    const s = parseInt(act.duration_seconds, 10) || 0;
+                    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+                    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+                    const sec = String(s % 60).padStart(2, '0');
+                    const durStr = h + ':' + m + ':' + sec;
+
+                    const ps = parseInt(act.pace_seconds, 10) || 0;
+                    const pm = String(Math.floor(ps / 60)).padStart(2, '0');
+                    const psec = String(ps % 60).padStart(2, '0');
+                    const paceStr = pm + ':' + psec;
+
+                    const actJson = JSON.stringify(act).replace(/"/g, '&quot;');
+
+                    html += `
+                        <div class="p-3.5 rounded-xl border border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-gray-900 text-sm">
+                                        ${escapeHtml(act.activity_type)} · ${parseFloat(act.distance_km).toFixed(2)} KM
+                                    </span>
+                                    ${badge}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-2">
+                                    <span>${act.activity_date}</span>
+                                    <span>|</span>
+                                    <span>Durasi: <strong>${durStr}</strong></span>
+                                    <span>|</span>
+                                    <span>Pace: <strong>${paceStr}/km</strong></span>
+                                    ${parseInt(act.elevation_gain_m) > 0 ? `<span>|</span><span>Elev: ${act.elevation_gain_m}m</span>` : ''}
+                                </div>
+                                ${act.notes ? `<p class="text-[11px] text-gray-400 italic mt-1">${escapeHtml(act.notes)}</p>` : ''}
+                                ${act.rejection_reason ? `<p class="text-[11px] text-rose-600 font-semibold mt-1">Alasan ditolak: ${escapeHtml(act.rejection_reason)}</p>` : ''}
+                            </div>
+
+                            <div class="flex items-center gap-1.5 self-end sm:self-center">
+                                ${act.strava_url ? `
+                                    <a href="${escapeHtml(act.strava_url)}" target="_blank" class="p-1.5 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Lihat di Strava">
+                                        <i class="ri-external-link-line"></i>
+                                    </a>
+                                ` : ''}
+
+                                <button type="button" onclick="closeModal('modal-user-activities'); openEditActivityModalFromLeaderboard(${actJson})" class="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition" title="Edit Data Lari">
+                                    <i class="ri-edit-line text-sm"></i>
+                                </button>
+
+                                <form action="<?= url('/ekskul/runner/activity/delete') ?>" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan lari ini?');" class="inline">
+                                    <input type="hidden" name="activity_id" value="${act.id}">
+                                    <input type="hidden" name="event_id" value="${eventId}">
+                                    <input type="hidden" name="redirect_tab" value="leaderboard">
+                                    <button type="submit" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="Hapus">
+                                        <i class="ri-delete-bin-line text-sm"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-rose-500">
+                        <i class="ri-error-warning-line text-3xl block mb-2"></i>
+                        <p class="text-xs">Gagal memuat aktivitas runner. Silakan coba lagi.</p>
+                    </div>
+                `;
+            });
     }
 
     function openEditEventModal(ev) {
