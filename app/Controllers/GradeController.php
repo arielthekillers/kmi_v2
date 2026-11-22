@@ -80,6 +80,15 @@ class GradeController extends Controller {
             $activeSession = reset($allSessions);
         }
 
+        // Filter classes by session type:
+        // USA: khusus tingkat 6
+        // Selain USA (UUPT, UPT, UUAT, UAT): khusus tingkat 1-5 (tanpa kelas 6)
+        $isUSA = (isset($activeSession['type']) && strtoupper($activeSession['type']) === 'USA');
+        $kelas = array_values(array_filter($kelas, function ($k) use ($isUSA) {
+            $tingkat = trim($k['tingkat'] ?? '');
+            return $isUSA ? ($tingkat === '6') : ($tingkat !== '6');
+        }));
+
         // Role Constraints
         $userRole = auth_get_role();
         $userId = auth_get_user_id();
@@ -153,9 +162,10 @@ class GradeController extends Controller {
         }
         unset($k);
 
-        // Determine active class by default if none selected, using the filtered list
+        // Determine active class by default if none selected or if previously selected class is not in the filtered list
         $activeKelasId = $_GET['kelas'] ?? '';
-        if (empty($activeKelasId) && !empty($kelas)) {
+        $validKelasIds = array_column($kelas, 'id');
+        if ((empty($activeKelasId) || !in_array($activeKelasId, $validKelasIds)) && !empty($kelas)) {
             $firstKelas = reset($kelas);
             $activeKelasId = $firstKelas['id'];
         }
