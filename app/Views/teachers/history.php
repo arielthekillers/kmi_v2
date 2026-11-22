@@ -19,8 +19,23 @@
             <!-- Profil Ringkas -->
             <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
                 <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-xl font-bold shadow-md mb-4">
-                        <?= mb_strtoupper(mb_substr($teacher['nama_raw'] ?? $teacher['nama'], 0, 2)) ?>
+                    <?php
+                    $histPhotoUrl = get_teacher_photo_url($teacher['id'], $teacher['profile_picture'] ?? null);
+                    $histCleanName = !empty($teacher['nama_raw']) ? $teacher['nama_raw'] : preg_replace('/^(Al-Ustadz|Al-Ustadzah)\s+/i', '', $teacher['nama']);
+                    $histInitials = mb_strtoupper(mb_substr(trim($histCleanName), 0, 2));
+                    ?>
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-xl font-bold shadow-md mb-4 overflow-hidden ring-2 ring-indigo-200">
+                        <?php if ($histPhotoUrl): ?>
+                            <img src="<?= htmlspecialchars($histPhotoUrl) ?>" 
+                                 alt="<?= htmlspecialchars($teacher['nama']) ?>" 
+                                 class="w-full h-full object-cover"
+                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                            <span class="w-full h-full items-center justify-center hidden">
+                                <?= $histInitials ?>
+                            </span>
+                        <?php else: ?>
+                            <span><?= $histInitials ?></span>
+                        <?php endif; ?>
                     </div>
                     <h2 class="text-lg font-bold text-gray-900"><?= htmlspecialchars($teacher['nama']) ?></h2>
                     <p class="text-xs font-mono text-gray-500 mt-1"><?= htmlspecialchars($teacher['nip'] ? 'NIP: ' . $teacher['nip'] : 'NIP: -') ?></p>

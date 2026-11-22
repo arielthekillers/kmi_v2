@@ -27,7 +27,7 @@ class TeacherModel extends Model {
                        WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
                        ELSE u.nama
                    END as nama,
-                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
+                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip, tp.profile_picture
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
@@ -75,7 +75,7 @@ class TeacherModel extends Model {
                        WHEN tp.gender = 'Perempuan' THEN CONCAT('Al-Ustadzah ', u.nama)
                        ELSE u.nama
                    END as nama,
-                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip
+                   u.username, u.password_plain, u.is_active, tp.phone as hp, tp.nip, tp.profile_picture
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.role = 'pengajar' AND u.deleted_at IS NULL AND $statusCond
@@ -185,7 +185,7 @@ class TeacherModel extends Model {
 
     public function getTrash($keyword, $limit, $offset) {
         $sql = "
-            SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip, u.deleted_at
+            SELECT u.id, u.nama, u.username, u.password_plain, tp.phone as hp, tp.nip, tp.profile_picture, u.deleted_at
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.role = 'pengajar' AND u.deleted_at IS NOT NULL
@@ -238,7 +238,7 @@ class TeacherModel extends Model {
                    u.username, u.password_plain, u.is_active, 
                    tp.phone as hp, tp.nip, tp.gender, tp.birth_place, 
                    tp.birth_date, tp.address, tp.education, 
-                   tp.year_graduated, tp.father_name, tp.mother_name
+                   tp.year_graduated, tp.father_name, tp.mother_name, tp.profile_picture
             FROM users u
             LEFT JOIN teacher_profiles tp ON u.id = tp.user_id
             WHERE u.id = ? AND u.role = 'pengajar' AND u.deleted_at IS NULL

@@ -71,9 +71,24 @@
                                 <?= str_pad(($page - 1) * $perPage + $index + 1, 3, '0', STR_PAD_LEFT) ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
+                                <?php
+                                $photoUrl = get_teacher_photo_url($id, $p['profile_picture'] ?? null);
+                                $cleanName = !empty($p['nama_raw']) ? $p['nama_raw'] : preg_replace('/^(Al-Ustadz|Al-Ustadzah)\s+/i', '', $p['nama']);
+                                $initialChar = mb_strtoupper(mb_substr(trim($cleanName), 0, 1));
+                                ?>
                                 <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-xs font-bold mr-3">
-                                        <?= mb_strtoupper(mb_substr($p['nama'], 0, 1)) ?>
+                                    <div class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0 overflow-hidden ring-1 ring-gray-200">
+                                        <?php if ($photoUrl): ?>
+                                            <img src="<?= htmlspecialchars($photoUrl) ?>" 
+                                                 alt="<?= htmlspecialchars($p['nama']) ?>" 
+                                                 class="w-full h-full object-cover"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                            <span class="w-full h-full items-center justify-center hidden">
+                                                <?= $initialChar ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span><?= $initialChar ?></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div>
                                         <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($p['nama']) ?></div>

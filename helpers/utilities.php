@@ -309,3 +309,44 @@ if (!function_exists('tanggal_indo')) {
     }
 }
 
+if (!function_exists('get_teacher_photo_url')) {
+    /**
+     * Dapatkan URL foto profil pengajar yang tersimpan jika file fisik ada, atau null jika tidak ada.
+     *
+     * @param int|string $teacherId
+     * @param string|null $prefetchedPath
+     * @return string|null Web URL dengan parameter cache-busting (?v=...) atau null
+     */
+    function get_teacher_photo_url($teacherId, $prefetchedPath = null) {
+        $baseDir = dirname(__DIR__); // Root folder aplikasi
+
+        // 1. Cek dari path yang tersimpan di kolom teacher_profiles.profile_picture
+        if (!empty($prefetchedPath)) {
+            $cleanPath = ltrim($prefetchedPath, '/');
+            if (file_exists($baseDir . '/' . $cleanPath)) {
+                return url('/' . $cleanPath) . '?v=' . filemtime($baseDir . '/' . $cleanPath);
+            }
+            if (file_exists($baseDir . '/public/' . $cleanPath)) {
+                return url('/public/' . $cleanPath) . '?v=' . filemtime($baseDir . '/public/' . $cleanPath);
+            }
+            if (strpos($cleanPath, 'http://') === 0 || strpos($cleanPath, 'https://') === 0) {
+                return $cleanPath;
+            }
+        }
+
+        // 2. Cek file fisik langsung di folder uploads/profiles/{teacherId}.{ext}
+        if (!empty($teacherId)) {
+            $extensions = ['jpg', 'jpeg', 'png', 'webp'];
+            foreach ($extensions as $ext) {
+                $candidate = $baseDir . '/uploads/profiles/' . $teacherId . '.' . $ext;
+                if (file_exists($candidate)) {
+                    return url('/uploads/profiles/' . $teacherId . '.' . $ext) . '?v=' . filemtime($candidate);
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
+

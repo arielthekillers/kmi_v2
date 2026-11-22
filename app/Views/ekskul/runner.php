@@ -196,32 +196,7 @@ function runner_format_pace($seconds) {
                                         <!-- Runner Profile -->
                                         <td class="py-4 px-6">
                                             <?php
-                                            // Deteksi foto profil asli guru yang diupload di profil
-                                            $photoSrc = null;
-                                            $baseDir = dirname(__DIR__, 2);
-
-                                            // 1. Cek dari path yang tersimpan di database teacher_profiles
-                                            if (!empty($row['profile_picture'])) {
-                                                $cleanPath = ltrim($row['profile_picture'], '/');
-                                                if (file_exists($baseDir . '/' . $cleanPath)) {
-                                                    $photoSrc = url('/' . $cleanPath) . '?v=' . filemtime($baseDir . '/' . $cleanPath);
-                                                } elseif (file_exists($baseDir . '/public/' . $cleanPath)) {
-                                                    $photoSrc = url('/public/' . $cleanPath) . '?v=' . filemtime($baseDir . '/public/' . $cleanPath);
-                                                } elseif (strpos($cleanPath, 'http://') === 0 || strpos($cleanPath, 'https://') === 0) {
-                                                    $photoSrc = $cleanPath;
-                                                }
-                                            }
-
-                                            // 2. Fallback cek file langsung berdasarkan user_id di folder uploads/profiles/
-                                            if (!$photoSrc && !empty($row['user_id'])) {
-                                                foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
-                                                    $candidate = $baseDir . '/uploads/profiles/' . $row['user_id'] . '.' . $ext;
-                                                    if (file_exists($candidate)) {
-                                                        $photoSrc = url('/uploads/profiles/' . $row['user_id'] . '.' . $ext) . '?v=' . filemtime($candidate);
-                                                        break;
-                                                    }
-                                                }
-                                            }
+                                            $photoSrc = get_teacher_photo_url($row['user_id'], $row['profile_picture'] ?? null);
                                             ?>
                                             <div class="flex items-center gap-3">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0 overflow-hidden ring-2 ring-white">
