@@ -180,14 +180,14 @@ function runner_format_pace($seconds) {
                                     $percent = ($targetKm > 0) ? min(100, round(($row['total_km'] / $targetKm) * 100, 1)) : 0;
                                 ?>
                                     <tr class="hover:bg-slate-50/80 transition-colors <?= $isMe ? 'bg-emerald-50/40' : '' ?>">
-                                        <!-- Rank (Podium Medali) -->
+                                        <!-- Rank (Podium Medali RemixIcon) -->
                                         <td class="py-4 px-4 text-center font-bold text-gray-500">
                                             <?php if ($rank === 1): ?>
-                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 1 (Medali Emas / Gold)">🥇</span>
+                                                <i class="ri-medal-fill text-2xl text-amber-400 inline-block transform hover:scale-110 transition-transform cursor-default" title="Juara 1 (Medali Emas)"></i>
                                             <?php elseif ($rank === 2): ?>
-                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 2 (Medali Perak / Silver)">🥈</span>
+                                                <i class="ri-medal-fill text-2xl text-slate-400 inline-block transform hover:scale-110 transition-transform cursor-default" title="Juara 2 (Medali Perak)"></i>
                                             <?php elseif ($rank === 3): ?>
-                                                <span class="text-xl select-none inline-flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform cursor-default" title="Juara 3 (Medali Perunggu / Bronze)">🥉</span>
+                                                <i class="ri-medal-fill text-2xl text-amber-700 inline-block transform hover:scale-110 transition-transform cursor-default" title="Juara 3 (Medali Perunggu)"></i>
                                             <?php else: ?>
                                                 <span class="text-gray-400 text-xs font-semibold"><?= $rank ?></span>
                                             <?php endif; ?>
