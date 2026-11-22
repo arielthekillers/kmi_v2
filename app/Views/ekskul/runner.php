@@ -180,27 +180,61 @@ function runner_format_pace($seconds) {
                                     $percent = ($targetKm > 0) ? min(100, round(($row['total_km'] / $targetKm) * 100, 1)) : 0;
                                 ?>
                                     <tr class="hover:bg-slate-50/80 transition-colors <?= $isMe ? 'bg-emerald-50/40' : '' ?>">
-                                        <!-- Rank -->
+                                        <!-- Rank (Podium Medali) -->
                                         <td class="py-4 px-4 text-center font-bold text-gray-500">
                                             <?php if ($rank === 1): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-black shadow-sm">1</span>
+                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-300 text-amber-950 text-xs font-black shadow-sm ring-2 ring-amber-400/80" title="Juara 1 (Medali Emas)">1</span>
                                             <?php elseif ($rank === 2): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-black shadow-sm">2</span>
+                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 text-xs font-black shadow-sm ring-2 ring-slate-300" title="Juara 2 (Medali Perak)">2</span>
                                             <?php elseif ($rank === 3): ?>
-                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-50 text-amber-800 text-xs font-black shadow-sm">3</span>
+                                                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-200 text-orange-950 text-xs font-black shadow-sm ring-2 ring-orange-400/80" title="Juara 3 (Medali Perunggu)">3</span>
                                             <?php else: ?>
-                                                <span class="text-gray-400 text-xs"><?= $rank ?></span>
+                                                <span class="text-gray-400 text-xs font-semibold"><?= $rank ?></span>
                                             <?php endif; ?>
                                         </td>
 
                                         <!-- Runner Profile -->
                                         <td class="py-4 px-6">
+                                            <?php
+                                            // Deteksi foto profil asli guru yang diupload di profil
+                                            $photoSrc = null;
+                                            $baseDir = dirname(__DIR__, 2);
+
+                                            // 1. Cek dari path yang tersimpan di database teacher_profiles
+                                            if (!empty($row['profile_picture'])) {
+                                                $cleanPath = ltrim($row['profile_picture'], '/');
+                                                if (file_exists($baseDir . '/' . $cleanPath)) {
+                                                    $photoSrc = url('/' . $cleanPath) . '?v=' . filemtime($baseDir . '/' . $cleanPath);
+                                                } elseif (file_exists($baseDir . '/public/' . $cleanPath)) {
+                                                    $photoSrc = url('/public/' . $cleanPath) . '?v=' . filemtime($baseDir . '/public/' . $cleanPath);
+                                                } elseif (strpos($cleanPath, 'http://') === 0 || strpos($cleanPath, 'https://') === 0) {
+                                                    $photoSrc = $cleanPath;
+                                                }
+                                            }
+
+                                            // 2. Fallback cek file langsung berdasarkan user_id di folder uploads/profiles/
+                                            if (!$photoSrc && !empty($row['user_id'])) {
+                                                foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+                                                    $candidate = $baseDir . '/uploads/profiles/' . $row['user_id'] . '.' . $ext;
+                                                    if (file_exists($candidate)) {
+                                                        $photoSrc = url('/uploads/profiles/' . $row['user_id'] . '.' . $ext) . '?v=' . filemtime($candidate);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            ?>
                                             <div class="flex items-center gap-3">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0 overflow-hidden ring-2 ring-white">
-                                                    <?php if (!empty($row['profile_picture']) && file_exists('public/uploads/profile/' . $row['profile_picture'])): ?>
-                                                        <img src="<?= url('/uploads/profile/' . $row['profile_picture']) ?>" alt="" class="w-full h-full object-cover">
+                                                    <?php if ($photoSrc): ?>
+                                                        <img src="<?= htmlspecialchars($photoSrc) ?>" 
+                                                             alt="<?= htmlspecialchars($row['nama']) ?>" 
+                                                             class="w-full h-full object-cover"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');">
+                                                        <span class="w-full h-full items-center justify-center hidden">
+                                                            <?= mb_strtoupper(mb_substr($row['nama'], 0, 1)) ?>
+                                                        </span>
                                                     <?php else: ?>
-                                                        <?= mb_strtoupper(mb_substr($row['nama'], 0, 1)) ?>
+                                                        <span><?= mb_strtoupper(mb_substr($row['nama'], 0, 1)) ?></span>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div>
