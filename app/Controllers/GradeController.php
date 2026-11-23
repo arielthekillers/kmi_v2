@@ -208,6 +208,7 @@ class GradeController extends Controller {
             'allSessions'     => $allSessions,
             'activeSessions'  => $activeSessions,
             'activeSession'   => $activeSession,
+            'isUSA'           => $isUSA,
             'showGateway'     => $showGateway,
             'gatewaySessions' => $gatewaySessions,
             'typeMap'         => $typeMap,

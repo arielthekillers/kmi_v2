@@ -800,6 +800,11 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
                             <select name="id_pelajaran" id="modal_id_pelajaran" required class="tom-select mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white" onchange="onSubjectChange()">
                                 <option value="">Pilih Kelas Terlebih Dahulu...</option>
                             </select>
+                            <?php if ($isUSA ?? (isset($activeSession['type']) && strtoupper($activeSession['type']) === 'USA')): ?>
+                                <p class="text-[11px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                                    <i class="ri-information-line"></i> Khusus USA: Menampilkan pelajaran jadwal kelas 6 & tingkat sebelumnya.
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Pemeriksa</label>
@@ -851,6 +856,8 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
 <script>
     const teachingMap = <?= json_encode($teachingMap) ?>;
     const specialSubjects = <?= json_encode($specialSubjects ?? []) ?>;
+    const allSubjects = <?= json_encode($pelajaran ?? []) ?>;
+    const isUSA = <?= json_encode($isUSA ?? (isset($activeSession['type']) && strtoupper($activeSession['type']) === 'USA')) ?>;
     let isSpecialMode = false;
 
     function resetKoreksiForm() {
@@ -912,6 +919,7 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
         isSpecialMode = document.getElementById('toggle_special').checked;
         updateToggleUI(isSpecialMode);
         const tsSubject = document.getElementById('modal_id_pelajaran').tomselect;
+        if (!tsSubject) return;
         tsSubject.clear();
         tsSubject.clearOptions();
         if (isSpecialMode) {
@@ -928,14 +936,58 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
         const subjectSelect = document.getElementById('modal_id_pelajaran');
         const classId = classSelect.value;
         const tsSubject = subjectSelect.tomselect;
+        if (!tsSubject) return;
+
         tsSubject.clear();
         tsSubject.clearOptions();
-        if (classId && teachingMap[classId]) {
-            const subjects = teachingMap[classId];
-            subjects.forEach(s => { tsSubject.addOption({ value: s.subject_id, text: s.subject_name }); });
+
+        if (!classId) {
+            tsSubject.addOption({ value: "", text: "Pilih Kelas Terlebih Dahulu..." });
+            return;
+        }
+
+        const scheduledSubjects = (classId && teachingMap[classId]) ? teachingMap[classId] : [];
+        const scheduledIds = new Set(scheduledSubjects.map(s => String(s.subject_id)));
+
+        if (isUSA) {
+            // Sesi USA (Ujian Siswa Akhir):
+            // Tampilkan seluruh mata pelajaran kurikulum pondok
+            // 1. Pelajaran di Jadwal Kelas 6 (dengan pengajar otomatis)
+            try {
+                tsSubject.addOptionGroup('jadwal_k6', { label: '★ Pelajaran Jadwal Kelas 6' });
+                tsSubject.addOptionGroup('sebelumnya', { label: '📚 Pelajaran Tingkat Sebelumnya / Lengkap' });
+            } catch (e) {}
+
+            scheduledSubjects.forEach(s => {
+                tsSubject.addOption({
+                    value: s.subject_id,
+                    text: s.subject_name,
+                    optgroup: 'jadwal_k6'
+                });
+            });
+
+            // 2. Pelajaran dari tingkat sebelumnya (materi akumulasi kelulusan)
+            allSubjects.forEach(s => {
+                if (!scheduledIds.has(String(s.id))) {
+                    tsSubject.addOption({
+                        value: s.id,
+                        text: s.nama,
+                        optgroup: 'sebelumnya'
+                    });
+                }
+            });
+
             tsSubject.refreshOptions(false);
         } else {
-            tsSubject.addOption({ value: "", text: "Pilih Kelas Terlebih Dahulu..." });
+            // Sesi Reguler (UPT, UAT, UUPT, UUAT): Hanya mapel yang ada di jadwal kelas bersangkutan
+            if (scheduledSubjects.length > 0) {
+                scheduledSubjects.forEach(s => { 
+                    tsSubject.addOption({ value: s.subject_id, text: s.subject_name }); 
+                });
+                tsSubject.refreshOptions(false);
+            } else {
+                tsSubject.addOption({ value: "", text: "Tidak ada jadwal untuk kelas ini" });
+            }
         }
     }
 
@@ -944,11 +996,18 @@ if (isset($kelas) && is_array($kelas) && !empty($kelas)) {
         const classId = document.getElementById('modal_id_kelas').value;
         const subjectId = document.getElementById('modal_id_pelajaran').value;
         const pengajarSelect = document.getElementById('modal_id_pengajar');
+        if (!pengajarSelect || !pengajarSelect.tomselect) return;
+
         if (classId && subjectId && teachingMap[classId]) {
             const assignment = teachingMap[classId].find(s => s.subject_id == subjectId);
             if (assignment && assignment.teacher_id) {
                 pengajarSelect.tomselect.setValue(assignment.teacher_id);
+            } else {
+                // Mapel tingkat sebelumnya / di luar jadwal K6: kosongkan agar panitia leluasa menunjuk pemeriksa
+                pengajarSelect.tomselect.clear();
             }
+        } else {
+            pengajarSelect.tomselect.clear();
         }
     }
 </script>
