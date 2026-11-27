@@ -344,7 +344,7 @@ class SmartTapApiController extends Controller
             $base .= rtrim(str_replace('\\', '/', $scriptDir), '/');
         }
 
-        $latestVersion = '1.3.2';
+        $latestVersion = '1.3.3';
         $updateZipUrl = $base . '/api/smart-tap/download-update';
         $exeUrl = $base . '/smart-tap/download-client';
 
@@ -358,7 +358,7 @@ class SmartTapApiController extends Controller
             'success' => true,
             'latest_version' => $latestVersion,
             'release_date' => date('Y-m-d'),
-            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.2:\n- Sinkronisasi Event Komprehensif: Seluruh agenda aktif hari ini tersinkron ke terminal untuk mendukung mode Otomatis dan Manual Portabel\n- Dropdown Event Manual Lengkap: Memperbaiki daftar 'Kunci ke Event Spesifik' agar seluruh event hari ini dapat dipilih\n- Filter Terminal Cerdas: Otomatis memfilter terminal yang diizinkan pada mode jadwal tanpa membatasi fleksibilitas mode manual", 
+            'release_notes' => "Pembaruan Smart Tap Kiosk Client v1.3.3:\n- Strict Device Filtering: Memfilter daftar event manual agar HANYA menampilkan event yang berhak dijalankan oleh terminal ini\n- Keamanan Presensi Terisolasi: Mencegah akses ke event di luar lokasi terminal yang diizinkan", 
             'download_url' => $updateZipUrl,
             'exe_download_url' => $exeUrl,
             'mandatory' => false,

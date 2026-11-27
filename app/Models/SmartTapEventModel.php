@@ -103,7 +103,7 @@ class SmartTapEventModel extends Model
         try {
             $this->db->exec("UPDATE smart_tap_events SET days_of_week = '1,2,3,4,5,6,7' WHERE days_of_week IS NULL OR TRIM(days_of_week) = ''");
             $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 1 WHERE allow_any_device IS NULL");
-            $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 1 WHERE (category = 'sholat' OR LOWER(name) LIKE '%sholat%') AND (allow_any_device = 0 AND (allowed_devices = '2,4' OR allowed_devices IS NULL OR allowed_devices = ''))");
+            $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 0 WHERE allowed_devices IS NOT NULL AND TRIM(allowed_devices) != ''");
             $this->db->exec("UPDATE smart_tap_events SET sync_academic_calendar = 0 WHERE category = 'sholat' OR LOWER(name) LIKE '%sholat%'");
             $this->db->exec("UPDATE smart_tap_events SET sync_academic_calendar = 0 WHERE category = 'incidental' OR event_type = 'one_off'");
         } catch (\Exception $e) {
