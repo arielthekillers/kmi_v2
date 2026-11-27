@@ -1115,6 +1115,9 @@ function onCategoryChange(cat) {
     // Highlight card
     document.querySelectorAll('.category-card').forEach(c => c.classList.remove('border-emerald-500', 'border-blue-500', 'border-amber-500', 'bg-emerald-50/40', 'bg-blue-50/40', 'bg-amber-50/40'));
 
+    const officeSyncCb = document.getElementById('office_sync_academic');
+    if (officeSyncCb) officeSyncCb.disabled = (cat !== 'office');
+
     if (cat === 'sholat') {
         document.getElementById('view-sholat').classList.remove('hidden');
         document.getElementById('card-cat-sholat').classList.add('border-emerald-500', 'bg-emerald-50/40');
@@ -1220,6 +1223,12 @@ document.getElementById('form_event_main').addEventListener('submit', function(e
 
     // Set nilai final ke input hidden yang dikirim ke server
     document.getElementById('hidden_event_name').value = nameVal;
+
+    // Pastikan sync_academic_calendar hanya terkirim jika kategori office
+    const officeSyncCb = document.getElementById('office_sync_academic');
+    if (officeSyncCb) {
+        officeSyncCb.disabled = (cat !== 'office');
+    }
 });
 
 function editEvent(ev) {

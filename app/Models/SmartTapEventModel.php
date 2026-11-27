@@ -105,6 +105,7 @@ class SmartTapEventModel extends Model
             $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 1 WHERE allow_any_device IS NULL");
             $this->db->exec("UPDATE smart_tap_events SET allow_any_device = 1 WHERE (category = 'sholat' OR LOWER(name) LIKE '%sholat%') AND (allow_any_device = 0 AND (allowed_devices = '2,4' OR allowed_devices IS NULL OR allowed_devices = ''))");
             $this->db->exec("UPDATE smart_tap_events SET sync_academic_calendar = 0 WHERE category = 'sholat' OR LOWER(name) LIKE '%sholat%'");
+            $this->db->exec("UPDATE smart_tap_events SET sync_academic_calendar = 0 WHERE category = 'incidental' OR event_type = 'one_off'");
         } catch (\Exception $e) {
             // Ignore if restricted
         }
@@ -136,17 +137,29 @@ class SmartTapEventModel extends Model
         $activeEvents = [];
         foreach ($allEvents as $ev) {
             $isSholat = ($ev['category'] ?? '') === 'sholat' || stripos($ev['name'] ?? '', 'sholat') !== false;
-            $syncAcademic = !$isSholat && (isset($ev['sync_academic_calendar']) 
+            $isIncidental = ($ev['category'] ?? '') === 'incidental' || ($ev['event_type'] ?? '') === 'one_off';
+
+            $syncAcademic = !$isSholat && !$isIncidental && (isset($ev['sync_academic_calendar']) 
                 ? (int)$ev['sync_academic_calendar'] 
                 : (($ev['category'] ?? '') === 'office' ? 1 : 0));
 
-            if ($syncAcademic) {
+            $syncIncidental = $isIncidental && !empty($ev['sync_academic_calendar']);
+
+            if ($syncAcademic || $syncIncidental) {
                 if ($holidayInfo === null) {
                     $holidayInfo = $this->getAcademicHolidayInfo($dateStr);
                 }
                 if ($holidayInfo['is_holiday']) {
-                    // Libur Jumat / Kalender Akademik / Dispensasi KBM Full Day, event ini otomatis dilewati!
-                    continue;
+                    // Libur mingguan Jumat HANYA meliburkan presensi kantor/KBM harian rutin.
+                    // Event insidental yang memang dijadwalkan pada hari Jumat TIDAK BOLEH dilewati!
+                    if ($holidayInfo['type'] === 'friday') {
+                        if (!$isIncidental) {
+                            continue;
+                        }
+                    } else {
+                        // Libur Kalender Akademik Resmi / Dispensasi KBM
+                        continue;
+                    }
                 }
             }
             $activeEvents[] = $ev;
@@ -210,7 +223,7 @@ class SmartTapEventModel extends Model
             isset($data['allow_any_device']) ? (int)$data['allow_any_device'] : 1,
             !empty($data['allowed_devices']) ? (is_array($data['allowed_devices']) ? implode(',', $data['allowed_devices']) : $data['allowed_devices']) : null,
             isset($data['is_active']) ? (int)$data['is_active'] : 1,
-            isset($data['sync_academic_calendar']) ? (int)$data['sync_academic_calendar'] : (($data['category'] ?? '') === 'office' ? 1 : 0)
+            (($data['category'] ?? '') === 'office') ? (isset($data['sync_academic_calendar']) ? (int)$data['sync_academic_calendar'] : 1) : 0
         ]);
         return $this->db->lastInsertId();
     }
@@ -241,7 +254,7 @@ class SmartTapEventModel extends Model
             isset($data['allow_any_device']) ? (int)$data['allow_any_device'] : 1,
             !empty($data['allowed_devices']) ? (is_array($data['allowed_devices']) ? implode(',', $data['allowed_devices']) : $data['allowed_devices']) : null,
             isset($data['is_active']) ? (int)$data['is_active'] : 1,
-            isset($data['sync_academic_calendar']) ? (int)$data['sync_academic_calendar'] : (($data['category'] ?? '') === 'office' ? 1 : 0),
+            (($data['category'] ?? '') === 'office') ? (isset($data['sync_academic_calendar']) ? (int)$data['sync_academic_calendar'] : 1) : 0,
             $id
         ]);
     }

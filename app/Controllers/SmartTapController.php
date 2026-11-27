@@ -785,7 +785,7 @@ class SmartTapController extends Controller
             'allow_any_device' => (isset($_POST['allow_any_device']) && $_POST['allow_any_device'] == '1') ? 1 : 0,
             'allowed_devices' => !empty($_POST['allowed_devices']) ? (is_array($_POST['allowed_devices']) ? implode(',', $_POST['allowed_devices']) : $_POST['allowed_devices']) : null,
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
-            'sync_academic_calendar' => isset($_POST['sync_academic_calendar']) ? (int)$_POST['sync_academic_calendar'] : (($category === 'office') ? 1 : 0)
+            'sync_academic_calendar' => ($category === 'office') ? (isset($_POST['sync_academic_calendar']) ? (int)$_POST['sync_academic_calendar'] : 1) : 0
         ];
 
         if (empty($data['name'])) {
