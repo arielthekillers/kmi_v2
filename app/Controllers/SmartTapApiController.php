@@ -174,11 +174,10 @@ class SmartTapApiController extends Controller
         $today = date('Y-m-d');
         $dayOfWeek = date('N'); // 1 (Mon) - 7 (Sun)
 
-        // Sinkronkan seluruh event aktif hari ini ke terminal klien.
-        // Terminal klien (attendance_engine.py dan UI) menangani filter lokasi terminal
-        // untuk mode Otomatis (Jadwal), serta memungkinkan operator mode Manual (Portabel)
-        // untuk memilih event apapun yang aktif pada hari ini.
-        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today);
+        // Strict device filter: hanya kirimkan event yang diizinkan untuk perangkat ini
+        // (allow_any_device = 1 ATAU device_id terdaftar di allowed_devices)
+        // Mencegah perangkat ilegal/laptop lain melakukan absen untuk event di luar lokasinya.
+        $events = $this->eventModel->getActiveEventsForToday($dayOfWeek, $today, $device['id']);
         $permissions = $this->permissionModel->getActivePermissionsForDate($today);
         $masterCards = $this->cardModel->getAllMasterForSync();
 

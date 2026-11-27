@@ -23,6 +23,19 @@ class SmartTapLogModel extends Model
         $skipped = 0;
         $errors = [];
 
+        // Validasi izin perangkat terhadap event (Strict Security: tolak log dari perangkat ilegal)
+        $eventDeviceMap = [];
+        $eventIds = array_unique(array_filter(array_column($logs, 'event_id')));
+        if (!empty($eventIds)) {
+            $inClause = implode(',', array_map('intval', $eventIds));
+            $evStmt = $this->db->query("SELECT id, allow_any_device, allowed_devices FROM smart_tap_events WHERE id IN ($inClause)");
+            if ($evStmt) {
+                while ($evRow = $evStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $eventDeviceMap[(int)$evRow['id']] = $evRow;
+                }
+            }
+        }
+
         $sql = "INSERT INTO smart_tap_logs (
             log_uuid, event_id, device_id, person_type, person_id, card_uid,
             tapped_at, status, note, synced_at
@@ -35,9 +48,24 @@ class SmartTapLogModel extends Model
 
         foreach ($logs as $log) {
             try {
-                $logUuid = !empty($log['log_uuid']) ? $log['log_uuid'] : md5(($log['event_id'] ?? 0) . '_' . ($log['card_uid'] ?? '') . '_' . ($log['tapped_at'] ?? ''));
                 $eventId = (int)($log['event_id'] ?? 0);
-                $devId = !empty($log['device_id']) ? (int)$log['device_id'] : $deviceId;
+                $devId = !empty($deviceId) ? (int)$deviceId : (int)($log['device_id'] ?? 0);
+
+                // Strict Check: Pastikan perangkat ini berwenang untuk event ini
+                if (isset($eventDeviceMap[$eventId])) {
+                    $evCfg = $eventDeviceMap[$eventId];
+                    $isAny = (int)($evCfg['allow_any_device'] ?? 1);
+                    if ($isAny !== 1) {
+                        $allowed = array_filter(explode(',', $evCfg['allowed_devices'] ?? ''));
+                        if (!in_array((string)$devId, $allowed)) {
+                            $skipped++;
+                            $errors[] = "Ditolak: Perangkat #{$devId} tidak memiliki izin untuk event #{$eventId}.";
+                            continue;
+                        }
+                    }
+                }
+
+                $logUuid = !empty($log['log_uuid']) ? $log['log_uuid'] : md5(($log['event_id'] ?? 0) . '_' . ($log['card_uid'] ?? '') . '_' . ($log['tapped_at'] ?? ''));
                 $personType = in_array($log['person_type'] ?? '', ['student', 'teacher']) ? $log['person_type'] : 'student';
                 $personId = (int)($log['person_id'] ?? 0);
                 $cardUid = trim($log['card_uid'] ?? '');
